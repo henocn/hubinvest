@@ -5,6 +5,8 @@ import {
   Clock3,
   Cloud,
   CloudOff,
+  Eye,
+  EyeOff,
   LogOut,
   Plus,
   RefreshCw,
@@ -32,6 +34,19 @@ function ConnectionState({ online }) {
       {online ? <Cloud size={16} /> : <CloudOff size={16} />}
       {online ? 'API disponible' : 'API indisponible'}
     </span>
+  );
+}
+
+function PasswordInput(props) {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <div className="password-field">
+      <input {...props} type={visible ? 'text' : 'password'} />
+      <button type="button" onClick={() => setVisible((current) => !current)} aria-label={visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}>
+        {visible ? <EyeOff size={20} /> : <Eye size={20} />}
+      </button>
+    </div>
   );
 }
 
@@ -84,8 +99,7 @@ function LoginScreen({ apiOnline, onLogin }) {
           </label>
           <label>
             Mot de passe
-            <input
-              type="password"
+            <PasswordInput
               autoComplete="current-password"
               minLength={8}
               value={form.password}

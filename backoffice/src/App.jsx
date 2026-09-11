@@ -4,7 +4,8 @@ import {
   Check,
   Cloud,
   CloudOff,
-  KeyRound,
+  Eye,
+  EyeOff,
   LogOut,
   Pencil,
   Plus,
@@ -39,6 +40,19 @@ function ConnectionState({ online }) {
       {online ? <Cloud size={15} /> : <CloudOff size={15} />}
       {online ? 'API disponible' : 'API indisponible'}
     </span>
+  );
+}
+
+function PasswordInput(props) {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <div className="password-field">
+      <input {...props} type={visible ? 'text' : 'password'} />
+      <button type="button" onClick={() => setVisible((current) => !current)} aria-label={visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'} title={visible ? 'Masquer' : 'Afficher'}>
+        {visible ? <EyeOff size={18} /> : <Eye size={18} />}
+      </button>
+    </div>
   );
 }
 
@@ -91,8 +105,7 @@ function LoginScreen({ apiOnline, onLogin }) {
           </label>
           <label>
             Mot de passe
-            <input
-              type="password"
+            <PasswordInput
               autoComplete="current-password"
               minLength={8}
               value={form.password}
@@ -234,7 +247,7 @@ function UserForm({ user, occupants, onClose, onSaved, token, currentRole, curre
         occupantId: needsOccupant ? form.occupantId : null,
         isActive: form.isActive,
       };
-      if (!isEditing) values.password = form.password;
+      if (!isEditing || form.password) values.password = form.password;
 
       const saved = isEditing
         ? await api.updateUser(token, user.id, values)
@@ -291,61 +304,15 @@ function UserForm({ user, occupants, onClose, onSaved, token, currentRole, curre
               </select>
             </label>
           )}
-          {!isEditing && <label>Mot de passe temporaire<input type="password" minLength={8} value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required /></label>}
+          <label>
+            {isEditing ? 'Nouveau mot de passe' : 'Mot de passe temporaire'}
+            <PasswordInput minLength={8} autoComplete="new-password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required={!isEditing} />
+            {isEditing && <small className="field-hint">Laisser vide pour conserver le mot de passe actuel.</small>}
+          </label>
           {error && <p className="form-error">{error}</p>}
           <footer className="drawer-actions">
             <button className="button button-secondary" type="button" onClick={onClose}>Annuler</button>
             <button className="button button-primary" type="submit" disabled={loading}>{loading ? 'Enregistrement...' : isEditing ? 'Enregistrer les modifications' : "Creer l'utilisateur"}</button>
-          </footer>
-        </form>
-      </aside>
-    </div>
-  );
-}
-
-function PasswordForm({ user, onClose, onSaved, token }) {
-  const [form, setForm] = useState({ password: '', confirmation: '' });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const submit = async (event) => {
-    event.preventDefault();
-    setError('');
-
-    if (form.password !== form.confirmation) {
-      setError('Les deux mots de passe ne correspondent pas.');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await api.updateUser(token, user.id, { password: form.password });
-      await onSaved();
-    } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="drawer-backdrop" role="presentation" onMouseDown={onClose}>
-      <aside className="drawer drawer-compact" role="dialog" aria-modal="true" aria-labelledby="password-title" onMouseDown={(event) => event.stopPropagation()}>
-        <header className="drawer-header">
-          <div>
-            <span className="eyebrow">Securite du compte</span>
-            <h2 id="password-title">Modifier le mot de passe</h2>
-            <p className="drawer-copy">{user.firstName} {user.lastName}</p>
-          </div>
-          <button className="icon-button" type="button" onClick={onClose} aria-label="Fermer"><X size={19} /></button>
-        </header>
-        <form onSubmit={submit} className="drawer-form">
-          <label>Nouveau mot de passe<input type="password" minLength={8} autoComplete="new-password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required autoFocus /></label>
-          <label>Confirmer le mot de passe<input type="password" minLength={8} autoComplete="new-password" value={form.confirmation} onChange={(event) => setForm({ ...form, confirmation: event.target.value })} required /></label>
-          {error && <p className="form-error">{error}</p>}
-          <footer className="drawer-actions">
-            <button className="button button-secondary" type="button" onClick={onClose}>Annuler</button>
-            <button className="button button-primary" type="submit" disabled={loading}>{loading ? 'Enregistrement...' : 'Modifier le mot de passe'}</button>
           </footer>
         </form>
       </aside>
@@ -522,7 +489,6 @@ function AppShell({ session, onLogout }) {
                     <td>
                       <div className="row-actions">
                         <button className="table-action" type="button" onClick={() => setDrawer({ type: 'user', item: user })}><Pencil size={15} /> Modifier</button>
-                        <button className="table-action" type="button" onClick={() => setDrawer({ type: 'password', item: user })}><KeyRound size={15} /> Mot de passe</button>
                         <button className="table-action is-danger" type="button" disabled={user.id === session.user.id} title={user.id === session.user.id ? 'Votre propre compte ne peut pas etre supprime' : undefined} onClick={() => { setDeleteError(''); setPendingDelete({ type: 'user', item: user, label: `l'utilisateur ${user.firstName} ${user.lastName}` }); }}><Trash2 size={15} /> Supprimer</button>
                       </div>
                     </td>
@@ -536,7 +502,6 @@ function AppShell({ session, onLogout }) {
 
       {drawer?.type === 'occupant' && <OccupantForm occupant={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'user' && <UserForm user={drawer.item} occupants={occupants} token={session.token} currentRole={session.user.role} currentUserId={session.user.id} onClose={() => setDrawer(null)} onSaved={saved} />}
-      {drawer?.type === 'password' && <PasswordForm user={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {pendingDelete && <ConfirmDelete subject={pendingDelete} loading={deleting} error={deleteError} onCancel={() => setPendingDelete(null)} onConfirm={confirmDelete} />}
     </div>
   );
