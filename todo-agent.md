@@ -1,198 +1,227 @@
-# TODO-AGENT — Suivi d'exécution HubInvest
+# TODO Agent - Execution pas a pas
 
-> Ce fichier est mon plan de travail opérationnel. Il découpe les phases de `TODO.md` en tâches
-> concrètes, réparties entre les 3 dossiers vides (`backend/`, `backoffice/`, `frontend/`), et je
-> le coche au fur et à mesure. Les règles qui pilotent chaque décision restent `README.md`
-> (contraintes dures + stack), `SKILL.md` (UX/UI) et `NEEDS.md` (placeholders à centraliser).
+Ce document fixe la facon de coder HubInvest. `README.md` porte le besoin, `TODO.md` l'ordre des lots, `SKILL.md` l'interface et `NEEDS.md` les donnees externes.
 
----
+## Regles de travail
 
-## 0. Architecture retenue (à valider avec LIKSOFT si possible)
+- Avancer sur un seul petit parcours a la fois.
+- Ne pas creer un ecran, une table ou une abstraction pour un besoin futur non commence.
+- Tout bouton visible doit avoir un comportement reel.
+- Montrer et verifier le resultat actuel avant d'elargir le lot.
+- Preferer du code direct et lisible aux couches generiques.
+- Ne pas ajouter de commentaires qui repetent le nom d'une fonction ou d'une variable.
+- Ne pas ajouter de texte d'interface pour remplir l'espace.
+- Accepter les alertes de vulnerabilites des packages pendant la construction.
+- Ne pas lancer de refonte automatique des dependances en cours de lot.
+- Traiter les vulnerabilites pertinentes pendant la stabilisation finale.
+- Ecrire seulement les tests qui protegent un risque metier critique.
 
-Trois dossiers vides = trois applications distinctes qui partagent une seule base Postgres via l'API :
+## Backend retenu
 
-- **`backend/`** — API unique (NestJS/TypeScript, cf. §3 README — choix par défaut car cohérent
-  avec un frontend React ; à revoir si LIKSOFT maîtrise mieux Laravel/PHP). PostgreSQL + Row-Level
-  Security, auth par rôles, files d'attente (WhatsApp/SMS/e-mail/IA), génération PDF, exports.
-- **`frontend/`** — la PWA mobile-first (React + Vite) pour visiteurs, occupants (saisie
-  contacts M2), invités Studio (M5), Défis (M6), vitrine (M1), Bourse des besoins + RDV (M4).
-  C'est elle qui porte toute la contrainte hors-ligne.
-- **`backoffice/`** — l'admin desktop (React + Vite, SPA classique, pas de contrainte hors-ligne)
-  pour équipe API-ZF, Investor Desk (M3), équipe de campagne, Administration (M9), Tableau de
-  bord + rapports (M8), Mur du Hub (M7, souhaitable).
+Le backend utilise JavaScript, Node.js, Express, PostgreSQL et Sequelize. Il n'utilise pas TypeScript, NestJS, Prisma ou une architecture microservices.
 
-Pas de monorepo lourd (pas de Nx/Turborepo) : 3 projets indépendants + éventuellement un
-`package.json` racine avec workspaces npm pour lancer les 3 en dev. Un seul VPS, Docker Compose
-(backend + Postgres + les 2 fronts buildés en statique servis par Nginx).
+### Commandes attendues
 
-**Placeholders** : toute valeur en attente de `NEEDS.md` (couleurs, logos, textes) va dans un
-fichier de thème/config central par app (`frontend/src/config/theme.ts`,
-`backoffice/src/config/theme.ts`) — jamais en dur dans un composant.
+```json
+{
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "db:migrate": "sequelize-cli db:migrate",
+    "db:migrate:undo": "sequelize-cli db:migrate:undo"
+  }
+}
+```
 
----
+Ajouter d'autres scripts seulement lorsqu'un lot les utilise reellement.
 
-## Phase 0 — Fondations
+### Variables d'environnement
 
-### backend/
-- [ ] Init projet NestJS + TypeScript, structure modules (auth, occupants, contacts, etc.)
-- [ ] Docker Compose : service `backend` + `postgres`
-- [ ] Connexion PostgreSQL (TypeORM ou Prisma) + migrations initiales
-- [ ] Auth (JWT) + les 8 rôles (`super-admin`, `admin-apizf`, `investor-desk`,
-      `equipe-campagne`, `animateur`, `occupant-responsable`, `occupant-membre`, `visiteur`)
-- [ ] Cloisonnement des données **côté serveur** : Row-Level Security Postgres par occupant
-      (tester qu'un occupant ne peut jamais lire les contacts d'un autre)
-- [ ] Endpoints de santé + config CORS pour `frontend` et `backoffice`
+La connexion ne contient aucune valeur sensible en dur.
 
-### frontend/
-- [ ] Init React + Vite, PWA via `vite-plugin-pwa`/Workbox (manifest, service worker, app-shell
-      en cache)
-- [ ] i18n FR/EN (`i18next`) branché dès le départ, sélecteur de langue visible
-- [ ] Tailwind CSS + tokens de design (`SKILL.md` : contrastes AAA, boutons ≥48px, une colonne)
-- [ ] Brique hors-ligne transverse : Dexie.js (IndexedDB) + file de synchronisation maison
-      + indicateur d'état réseau + bouton « Synchroniser » manuel (pas de Background Sync API,
-      Safari ne la supporte pas)
-- [ ] Connexion à l'API backend (client HTTP + gestion des tokens)
+```env
+NODE_ENV=development
+PORT=3000
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=hubinvest
+DB_USER=
+DB_PASSWORD=
+DB_DIALECT=postgres
+```
 
-### backoffice/
-- [ ] Init React + Vite (SPA, pas de PWA nécessaire)
-- [ ] i18n FR/EN, Tailwind + mêmes tokens de design que le frontend (cohérence de marque)
-- [ ] Connexion à l'API backend, auth par rôle admin
+Les variables suivantes seront ajoutees uniquement au moment ou leur fonction existe : secret d'authentification, duree de session, origines CORS, services de messages, stockage et IA.
 
----
+### Arborescence backend
 
-## Phase 1 — Socle QR & administration
+```text
+backend/
+|-- .env
+|-- .env.example
+|-- .sequelizerc
+|-- package.json
+`-- src/
+    |-- app.js
+    |-- server.js
+    |-- config/
+    |   |-- database.js
+    |   `-- env.js
+    |-- database/
+    |   |-- migrations/
+    |   `-- seeders/
+    |-- models/
+    |   |-- index.js
+    |   |-- occupant.model.js
+    |   |-- user.model.js
+    |   `-- contact.model.js
+    |-- modules/
+    |   |-- health/
+    |   |   |-- health.route.js
+    |   |   `-- health.controller.js
+    |   |-- occupant/
+    |   |   |-- occupant.route.js
+    |   |   |-- occupant.validation.js
+    |   |   |-- occupant.repository.js
+    |   |   |-- occupant.service.js
+    |   |   `-- occupant.controller.js
+    |   `-- contact/
+    |       |-- contact.route.js
+    |       |-- contact.validation.js
+    |       |-- contact.repository.js
+    |       |-- contact.service.js
+    |       `-- contact.controller.js
+    |-- middlewares/
+    `-- shared/
+```
 
-### backend/
-- [ ] Modèle de données `passeport`, `scan`, QR codes **typés** (occupant, action, invitation,
-      passeport, récompense) avec identifiants uniques + suivi des scans
-- [ ] Endpoints génération QR + résolution/routage d'un QR scanné
+Les dossiers et fichiers d'exemple ne sont crees que lorsque leur lot commence. Le premier socle ne cree que `health`.
 
-### backoffice/ (M9 Administration — priorité haute, conditionne tout le reste)
-- [ ] Gestion occupants (CRUD, 19 stands)
-- [ ] Gestion comptes/rôles
-- [ ] Gestion contenus (programme, textes vitrine)
-- [ ] Gestion agendas/créneaux
-- [ ] Import Excel (occupants, contacts en masse)
-- [ ] Journal d'accès (qui a fait quoi, quand)
+### Responsabilite des fichiers
 
----
+- `models/*.model.js` declare les attributs, associations et options Sequelize du model.
+- `database/migrations/*` modifie le schema et reste la source de l'historique de base.
+- `*.route.js` declare les chemins, middlewares et controller appele.
+- `*.validation.js` valide et normalise les entrees HTTP du module.
+- `*.repository.js` contient les lectures et ecritures Sequelize.
+- `*.service.js` porte les regles metier et les transactions.
+- `*.controller.js` transforme la requete HTTP en appel metier et retourne la reponse.
 
-## Phase 2 — Modules indispensables « avant la Foire »
+Un controller ne contient pas de requete Sequelize. Une route ne contient pas de logique metier. Un repository ne decide pas des droits de l'utilisateur. La verification du contexte utilisateur et les regles de cloisonnement sont appliquees avant toute lecture ou ecriture.
 
-### frontend/ — M1 Vitrine du Hub
-- [ ] Fiches occupants (les 19 stands, placeholders tant que `NEEDS.md` §3 n'est pas fourni)
-- [ ] Recherche « Que recherchez-vous ? »
-- [ ] Programme + plan du Hub
-- [ ] 3 boutons d'action principaux
-- [ ] Versions avant/pendant/après Foire (contenu qui change selon la date)
+### Conventions de base de donnees
 
-### frontend/ — M4 Bourse des besoins + RDV B2B
-- [ ] Publier besoin/offre (occupant connecté)
-- [ ] Consulter la bourse
-- [ ] Demander une rencontre (flux double-accord)
-- [ ] Réservation de créneau **sans chevauchement** (contrainte de réception §13)
-- [ ] Retour post-rencontre (formulaire court)
+- noms de tables et colonnes en `snake_case` ;
+- noms de fichiers et modules au singulier ;
+- identifiants stables et non devinables pour les objets exposes ;
+- dates `created_at` et `updated_at` ;
+- suppression logique seulement lorsqu'une fonction en a besoin ;
+- contrainte unique en base pour toute unicite metier ;
+- transaction pour reservation concurrente, synchronisation sensible et retrait de recompense ;
+- migration creee avec chaque changement de schema ;
+- ne jamais utiliser `sequelize.sync({ alter: true })` comme mecanisme de migration.
 
-### backoffice/ — M3 Investor Desk
-- [ ] Formulaire bilingue de qualification (9 infos, cf. cahier des charges)
-- [ ] Réservation de créneau Investor Desk
-- [ ] Classement A/B/C
-- [ ] Alertes de relance
+Les attributs d'un model sont ecrits explicitement dans son fichier. La migration correspondante porte les contraintes de base, index et cles etrangeres utiles au parcours actuel.
 
----
+### Reponses API
 
-## Phase 3 — Modules indispensables « pendant la Foire »
+Garder un format court et stable.
 
-### frontend/ — M2 Contacts des occupants (cœur hors-ligne)
-- [ ] Formulaire de saisie < 1 min (5 champs obligatoires max, une colonne, bon clavier par champ)
-- [ ] Auto-inscription visiteur par QR
-- [ ] Scan passeport (BarcodeDetector natif, repli html5-qrcode)
-- [ ] Qualification chaud/tiède/froid (couleur + texte/icône, jamais couleur seule)
-- [ ] Prochaine action à mener
-- [ ] Export Excel
-- [ ] Tableau de résultats par occupant
-- [ ] Tout testé en mode avion → sync au retour réseau
+```json
+{
+  "data": {},
+  "message": ""
+}
+```
 
-### frontend/ — M6 Défis de la preuve
-- [ ] Ouverture de passeport (sans compte obligatoire)
-- [ ] Parcours 3 preuves / 3 stands
-- [ ] Validation humaine par scan (animateur)
-- [ ] Quiz (questions en placeholder tant que `NEEDS.md` §4 n'est pas fourni)
-- [ ] Badge de complétion
-- [ ] Retrait de récompense **à usage unique** + suivi de stock (côté backend)
+En erreur, retourner un statut HTTP correct, un code exploitable par le frontend et un message clair. Ne pas exposer une stack ou un detail de connexion.
 
-### frontend/ — M5 Studio et invités
-- [ ] Invitation personnelle sans compte (lien unique)
-- [ ] Choix de créneau
-- [ ] Confirmation + rappels (branché sur la file de messages backend)
-- [ ] Planning avec statuts (vue backoffice équipe de campagne)
+## Frontend et backoffice
 
----
+Utiliser React et Vite. Le frontend mobile devient une PWA lorsque commence le premier parcours hors ligne. Le backoffice reste une application web classique sauf besoin contraire.
 
-## Phase 4 — Mesure & rapports
+### Arborescence indicative
 
-### backoffice/ — M8 Tableau de bord + rapports
-- [ ] Écran du jour (chiffres **mesurés uniquement**, jamais d'estimation) pour API-ZF
-- [ ] Écran de résultats par occupant (cloisonné, RLS vérifiée)
-- [ ] Rapport du soir : génération IA à partir des chiffres agrégés, **file d'attente de
-      validation humaine** avant diffusion (19h) — jamais d'envoi direct
-- [ ] Génération PDF aux couleurs API-ZF (rapport final par occupant)
-- [ ] Exports Excel/CSV
-- [ ] Micro-enquêtes de satisfaction (occupants + visiteurs)
+```text
+frontend/src/
+|-- app/
+|-- assets/
+|-- components/
+|-- features/
+|-- lib/
+|-- styles/
+`-- main.jsx
 
----
+backoffice/src/
+|-- app/
+|-- assets/
+|-- components/
+|-- features/
+|-- lib/
+|-- styles/
+`-- main.jsx
+```
 
-## Phase 5 — Intégrations & IA (garde-fou humain partout)
+Une feature contient uniquement le parcours en cours. Les composants partages apparaissent apres une reutilisation reelle, pas par anticipation.
 
-### backend/
-- [ ] Intégration WhatsApp Business Platform via BSP agréé + repli SMS + e-mail
-      (attente `NEEDS.md` §6 : compte, BSP, modèles validés)
-- [ ] Export dossiers investisseurs vers INVEST TRACK (format à confirmer, `NEEDS.md` §6)
-- [ ] Appel LLM côté serveur uniquement, sur données agrégées/pro, jamais de coordonnées
-      personnelles de visiteur envoyées ; sortie toujours mise en file pour validation humaine
-- [ ] Briques IA souhaitables : rapprochements B2B (M4), suggestions de questions d'interview (M5)
-      — chacune avec écran de validation avant envoi (backoffice)
+### Choix d'interface
 
----
+- `Inter Variable` pour la typographie ;
+- `lucide-react` pour les icones ;
+- tokens CSS communs issus de `assets/Couleurs.png` ;
+- primitives Radix au cas par cas pour les interactions complexes ;
+- IndexedDB avec Dexie lorsque commence la saisie hors ligne ;
+- i18n lorsque commence le premier parcours bilingue.
 
-## Phase 6 — Souhaitable si le temps le permet
+Ne pas installer une grande bibliotheque de composants pre-styles qui imposerait son apparence. Construire les composants HubInvest a partir des tokens et des comportements necessaires.
 
-### frontend/ (ou écran dédié) — M7 Mur du Hub
-- [ ] Grand écran temps réel : occupant du jour, compteurs mesurés, capsules
-- [ ] Repli boucle vidéo si temps insuffisant
+## Tests essentiels uniquement
 
-### backend/
-- [ ] Livraison automatique des vidéos aux invités Studio (M5)
+Ne pas mettre en place une couverture generale ou des tests de rendu qui recopient l'implementation.
 
----
+Ajouter un test automatise uniquement pour :
 
-## Phase 7 — Durcissement & réception
+- prouver qu'un occupant ne peut pas lire ou modifier les donnees d'un autre ;
+- prouver qu'une operation synchronisee deux fois ne cree pas de doublon ;
+- prouver que deux reservations concurrentes ne prennent pas la meme ressource ;
+- prouver qu'une recompense ne peut pas etre retiree deux fois ;
+- proteger un calcul de rapport dont une erreur changerait les chiffres affiches.
 
-- [ ] Checklist de tous les critères de réception du cahier des charges §13
-- [ ] Tests réels : mode avion + synchro, réseau 3G, Android d'entrée de gamme **et** iPhone,
-      plein soleil
-- [ ] Sécurité : droits par profil testés, journal d'accès, limitation des tentatives (rate
-      limiting login), sauvegarde quotidienne chiffrée, procédure papier de secours documentée
-- [ ] Performance (Lighthouse PWA côté frontend), accessibilité (cibles tactiles, contraste,
-      focus clavier — les deux apps)
-- [ ] Contenus finaux chargés, 100% fiches occupants publiées, textes FR/EN complets
+Les parcours visuels et les clics sont verifies dans le navigateur. Les appareils et le mode hors ligne sont testes manuellement aux etapes prevues.
 
----
+## Deroulement du premier lot de code
 
-## Phase 8 — Gel & exploitation
+Ne pas executer cette section avant validation de `TODO1.md`.
 
-- [ ] Gel le 20 nov. : plus que des corrections d'anomalie
-- [ ] Support quotidien pendant la Foire, rapport chaque soir
-- [ ] Après Foire : rapports finaux, transfert des dossiers, bilan/notes 2027
+### Etape 1 - Backend minimal
 
----
+- [ ] Initialiser `backend/package.json`.
+- [ ] Installer Express, Sequelize, le pilote PostgreSQL, dotenv et nodemon.
+- [ ] Ajouter Sequelize CLI pour les migrations.
+- [ ] Creer `.env.example`, `.sequelizerc` et la configuration `DB_*`.
+- [ ] Creer `app.js`, `server.js` et le module `health`.
+- [ ] Ajouter une migration initiale minimale seulement si elle permet de verifier la connexion.
+- [ ] Lancer `npm run db:migrate`.
+- [ ] Lancer `npm run dev` et appeler la route de sante.
+- [ ] S'arreter et montrer le resultat.
 
-## Rappels transverses (à ne jamais oublier en cours de route)
+### Etape 2 - Premier ecran
 
-- Ne jamais commencer M7 ou les briques IA de M4/M5 avant que les modules indispensables (I)
-  ne soient prêts et testés.
-- Centraliser tout placeholder (couleur, logo, texte) — jamais en dur dans un composant.
-- Chiffres affichés = uniquement des chiffres mesurés, jamais d'estimation.
-- Bilingue FR/EN dès la construction de chaque écran, pas en ajout final.
-- Revoir `SKILL.md` avant de construire tout nouvel écran/formulaire/bouton.
-- Revoir `NEEDS.md` avant d'assumer une valeur définitive (couleur, logo, texte légal).
+- [ ] Initialiser `frontend` avec React et Vite.
+- [ ] Ajouter les tokens, la police, les icones et le logo.
+- [ ] Construire un seul shell mobile utile.
+- [ ] Brancher l'etat de disponibilite de l'API si celui-ci est visible.
+- [ ] Ouvrir l'ecran dans le navigateur, cliquer et examiner une capture.
+- [ ] S'arreter et demander le retour sur le design.
+
+### Etape 3 - Premiere tranche metier
+
+Commencer ensuite le lot Contacts de `TODO.md` : un occupant, un utilisateur, un contact, un formulaire, un enregistrement local et une synchronisation. Ne pas construire les autres modules pendant cette tranche.
+
+## Controle avant chaque arret
+
+- Le serveur ou l'ecran demarre avec la commande documentee.
+- Les clics visibles fonctionnent.
+- Les erreurs sont compréhensibles.
+- Aucun secret n'est versionne.
+- Aucun fichier sans usage actuel n'a ete ajoute.
+- Le resultat correspond au lot et peut etre montre en quelques minutes.

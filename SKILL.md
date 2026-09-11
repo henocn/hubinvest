@@ -1,98 +1,189 @@
 ---
-name: hubinvest-ux-ui
-description: >
-  Règles UX/UI à appliquer sur TOUT le frontend HubInvest. À charger avant de
-  construire ou modifier un écran, un formulaire, un bouton ou une vue. Couvre
-  cibles tactiles, contraste plein soleil, formulaires < 1 minute, feedback
-  hors-ligne, bilinguisme FR/EN, et sobriété visuelle. Contexte : PWA mobile
-  utilisée debout, en extérieur, sur réseau faible, par des personnes non
-  techniciennes formées en 30 minutes.
+name: hubinvest-interface
+description: Concevoir ou modifier un ecran, un composant, un formulaire ou un parcours du frontend mobile ou du backoffice HubInvest. Appliquer une direction sobre inspiree des outils de travail comme Postman, les couleurs API-ZF, une vraie hierarchie visuelle, des interactions completes et une verification dans le navigateur. Ne pas utiliser pour le backend seul.
 ---
 
-# HubInvest — UX/UI : pro mais simple
+# Interface HubInvest
 
-Chaque décision d'interface répond à une seule question : **une personne debout dans un pavillon bruyant, au soleil, sur un téléphone bas de gamme, réussit-elle du premier coup ?** Si non, simplifier.
+Construire une interface sobre, nette et fonctionnelle. Elle doit ressembler a un produit de travail concu par une equipe humaine, pas a une demonstration d'IA.
 
-Trois utilisateurs pilotent le design : l'**hôtesse de stand** qui saisit un contact entre deux visiteurs, le **visiteur** qui n'a jamais vu l'app, et l'**animateur** qui scanne des passeports toute la journée. Aucun d'eux ne lit de manuel.
+Le frontend mobile et le backoffice partagent la meme identite, mais pas la meme densite. Le mobile favorise une action evidente a la fois. Le backoffice peut etre plus compact, avec une navigation stable et un espace de travail clair.
 
----
+## Avant de toucher au code
 
-## 1. Cibles tactiles (la règle la plus importante)
+1. Relire le parcours concerne dans `README.md` et, si une regle manque, dans le cahier des charges `.docx`.
+2. Verifier `NEEDS.md` avant d'inventer un contenu, une option ou une valeur metier.
+3. Definir l'action principale, les informations necessaires et les etats reellement utiles.
+4. Faire un wireframe court du seul ecran en cours. Ne pas concevoir toute l'application d'avance.
+5. Reutiliser les composants et tokens existants avant d'en creer de nouveaux.
 
-Les gens tapent debout, à une main, parfois en mouvement.
+Si la direction de l'ecran est encore incertaine, proposer ou produire un seul concept visuel pour cet ecran. Ne pas generer une serie de maquettes non validees.
 
-- **Boutons d'action : 48 px de haut minimum**, 56 px pour l'action principale d'un écran. (Material Design recommande 48 dp, Apple HIG 44 pt ; on prend le plus grand comme plancher.)
-- **Minimum absolu WCAG 2.2 (2.5.8) : 24×24 px** — c'est un plancher légal, pas un objectif. Ne l'utiliser que pour des icônes secondaires, et toujours avec **≥ 24 px d'espacement** autour.
-- La **zone tactile compte plus que la taille visible** : un bouton qui paraît petit peut avoir du padding invisible pour atteindre 48 px. Ne jamais coller deux actions destructrices/opposées côte à côte.
-- Un seul **bouton principal par écran**, très visible. Les actions secondaires sont visuellement plus discrètes.
+## Direction visuelle
 
-## 2. Lisible en plein soleil
+S'inspirer de la clarte de Postman sans le copier : navigation constante, barres d'outils discretes, panneaux bien delimites, onglets seulement lorsqu'ils servent le travail, etat de synchronisation visible et espace principal dominant.
 
-Le Hub est un espace ouvert et lumineux.
+Utiliser :
 
-- **Contraste élevé** : texte principal ≥ 7:1 sur le fond, jamais de gris clair sur blanc. Viser AAA sur les textes courts et les boutons.
-- **Corps de texte ≥ 16 px** (jamais moins — évite aussi le zoom auto sur iOS). Titres et chiffres clés nettement plus gros.
-- Fonds **unis et clairs**, pas de dégradés ni de photos derrière du texte. Les états (chaud/tiède/froid, A/B/C, créneau libre/pris) se lisent **par la couleur ET par un mot ou une icône** — jamais par la couleur seule (daltonisme + soleil).
+- des fonds blancs ou gris neutres tres legers ;
+- des bordures fines pour separer les zones ;
+- peu d'ombres, reservees aux menus, dialogues et elements flottants ;
+- des rayons moderes et coherents ;
+- une grille d'espacement reguliere ;
+- une densite confortable sur mobile et maitrisee dans le backoffice ;
+- une seule zone visuellement forte par ecran.
 
-## 3. Formulaires : réussis en moins d'une minute
+Eviter :
 
-C'est le cœur de M2 et M6. La recherche est claire : chaque champ en trop fait chuter le taux de complétion, et sur mobile ça décroche dès 4–6 champs.
+- les degradés decoratifs ;
+- les grandes cartes arrondies imbriquees ;
+- les ombres grises sur chaque bloc ;
+- les badges et pastilles utilises comme decoration ;
+- les titres surdimensionnes sans utilite ;
+- les textes en capitales avec espacement artificiel ;
+- les fleches ajoutees automatiquement aux boutons ;
+- les animations d'entree repetees ;
+- les chiffres, graphiques ou activites fictifs ;
+- les emojis ;
+- les textes d'explication et commentaires de code evidents.
 
-- **Une seule colonne**, jamais deux champs côte à côte. Flux vertical, sans hésitation.
-- **Le minimum de champs.** Pour un contact : les 5 champs obligatoires du cahier des charges, le reste plus tard. Pour un visiteur : prénom + numéro, point.
-- **Label au-dessus du champ**, en toutes lettres et sans ambiguïté (« Numéro de téléphone », pas « Détails »). Jamais de label uniquement en placeholder : il disparaît dès la première frappe.
-- **Le bon clavier par champ** : `type="tel"` pour un numéro, `inputmode="numeric"`, `type="email"` pour un e-mail. Réduit les erreurs et la fatigue.
-- **Validation après chaque champ**, message clair et proche du champ, qui dit quoi corriger — pas un pavé d'erreurs en fin de formulaire.
-- **Enregistrement optimiste** : dès qu'on valide, l'écran confirme immédiatement (l'envoi réseau se fait derrière). L'utilisateur ne doit jamais attendre le réseau pour continuer.
-- Éviter le multi-étapes tant que le formulaire est court ; il n'aide qu'au-delà de ~7 champs, et jamais plus de 3 étapes.
+## Couleurs
 
-## 4. Hors-ligne : l'app ne « casse » jamais
+Les fichiers du dossier `assets/` sont la source de marque actuelle.
 
-Contrainte critique du projet. L'utilisateur ne doit jamais perdre une saisie.
+- Rouge API-ZF : `#D11135`
+- Vert API-ZF : `#006A4F`
+- Jaune API-ZF : `#FFCF11`
+- Noir : `#000000`
+- Blanc : `#FFFFFF`
 
-- **Écrire d'abord en local (IndexedDB), toujours.** Le serveur est une copie, pas la source de vérité pendant la saisie.
-- **Indicateur d'état permanent et discret** : « En ligne » / « Hors ligne — X à synchroniser ». Plus un **bouton « Synchroniser »** manuel.
-  ⚠️ La Background Sync API ne marche pas sur Safari (iPhone) : vider la file à l'ouverture de l'app, sur l'événement `online`, et à l'appui du bouton.
-- **Feedback d'intention** : une saisie hors-ligne s'affiche aussitôt avec une petite marque « en attente d'envoi », puis « envoyé » une fois synchronisée. L'utilisateur voit que rien n'est perdu.
-- **Résolution de conflit simple** : dernier écrivain gagne (timestamp), suffisant ici.
-- Pages **légères** : app-shell précaché, images compressées et différées, pas de dépendance lourde au premier chargement (cible 3G).
+Centraliser ces valeurs dans des tokens. Les surfaces neutres proviennent du noir et du blanc avec des niveaux controles ; ne pas ajouter une autre couleur chromatique sans raison metier.
 
-## 5. Bilinguisme FR/EN
+Le jaune fonctionne comme accent ou signal avec du texte noir. Le rouge sert avec mesure aux actions de marque ou aux erreurs. Le vert porte la marque et les confirmations, mais un succes doit aussi etre nomme par du texte ou une icone. Verifier le contraste reel avant usage ; la presence d'une couleur dans la charte ne garantit pas qu'elle convienne a un petit texte.
 
-- Sélecteur de langue **visible dès le premier écran** de la vitrine, de l'Investor Desk et des invitations.
-- Toutes les chaînes passent par i18n — **aucun texte en dur**. Prévoir que l'anglais est parfois plus long : les boutons ne doivent pas casser.
+Ne pas utiliser le logo comme motif decoratif. Choisir `Logo sans fond.png` lorsque le fond le permet et conserver ses proportions.
 
-## 6. Sobriété visuelle (pro, pas « template »)
+## Typographie
 
-L'identité vient de la campagne « La preuve par le Togo » (voir `NEEDS.md`) — la respecter exactement quand elle est fournie. En attendant, tenir un plancher de qualité sans tomber dans les tics du design généré :
+Utiliser `Inter Variable`, auto-hebergee dans le projet avec Fontsource ou des fichiers locaux. Garder une pile systeme en repli.
 
-- **Dépenser l'audace à un seul endroit** par écran (un chiffre clé, une photo d'occupant, un badge). Le reste reste calme et discipliné.
-- **Éviter les tics génériques** : eyebrow en MAJUSCULES au-dessus de chaque titre ; une seule couleur d'accent posée partout ; toutes les cartes avec le même rayon et la même ombre grise molle ; un `→` collé à la fin de chaque bouton ; dégradés décoratifs.
-- **La structure porte du sens** : ne numéroter (01/02/03) que si le contenu est vraiment une séquence (parcours des Défis, étapes de réservation). Les numéros de « preuve » des occupants viennent du contenu, pas de la déco.
-- **Mouvement rare et utile** : une animation répond à une action (envoi confirmé, étape validée). Pas d'entrées « fade-up » sur chaque section.
-- **Typographie** : une famille, deux au maximum, bien distinctes. Échelle de tailles claire. Ne pas mettre un seul mot en couleur/italique dans un titre.
+- une seule famille pour l'interface ;
+- texte courant de 16 px minimum sur mobile ;
+- libelles et donnees secondaires de 13 a 14 px minimum dans le backoffice ;
+- interligne lisible ;
+- titres courts, alignes a gauche ;
+- deux ou trois graisses suffisent ;
+- aucun mot colore ou italique au milieu d'un titre pour faire joli.
 
-## 7. Écrit d'interface (les mots sont du design)
+## Icones
 
-- Nommer par ce que l'utilisateur comprend, pas par la technique : « Mes contacts », pas « Enregistrements CRM ».
-- **Voix active, l'action dit ce qui se passe** : le bouton « Enregistrer le contact » produit « Contact enregistré » — même verbe du début à la fin.
-- **Erreurs sans excuse et sans flou** : dire ce qui a raté et comment corriger. Un écran vide est une invitation à agir (« Aucun contact aujourd'hui — appuyez sur + pour en ajouter »), pas un cul-de-sac.
-- Ton simple, phrases courtes, casse de phrase (pas de MAJUSCULES criardes).
+Utiliser `lucide-react` et importer seulement les icones affichees.
 
-## 8. Accessibilité, plancher non négociable
+- taille et epaisseur de trait coherentes dans une meme zone ;
+- icone + texte pour une action importante ou inhabituelle ;
+- icone seule uniquement pour une action universellement comprise ;
+- `aria-label` obligatoire pour un bouton sans texte ;
+- infobulle dans le backoffice lorsqu'une icone seule peut etre ambigue ;
+- aucun caractere Unicode ou emoji a la place d'une icone.
 
-- Focus clavier visible, ordre de tabulation logique, `aria-label` sur les boutons-icônes.
-- `prefers-reduced-motion` respecté.
-- Chaque information portée par la couleur est doublée par du texte ou une icône.
-- Contraste vérifié sur les vrais écrans, pas seulement en maquette.
+## Composants
 
-## 9. Auto-critique avant de livrer un écran
+Construire quelques primitives propres au projet : bouton, champ, selecteur, dialogue, panneau, tableau, onglets, message d'etat et navigation. Utiliser les primitives Radix lorsque leur comportement complexe apporte une vraie valeur, notamment pour les dialogues, menus, selects, onglets et infobulles. Ne pas installer une bibliotheque complete pour un seul composant simple.
 
-Avant de considérer un écran fini, se poser :
-1. Une personne non formée réussit-elle l'action principale **du premier coup, en < 1 min** ?
-2. Est-ce lisible **au soleil**, sur un **petit écran bas de gamme** ?
-3. Que se passe-t-il **hors-ligne** ? La saisie est-elle sauvée et visible ?
-4. Y a-t-il **un** seul bouton principal évident ?
-5. Ai-je ajouté un tic générique (eyebrow majuscule, flèche sur bouton, carte molle) ? Si oui, l'enlever.
+### Actions
 
-À la manière de Chanel : avant de livrer l'écran, enlever un élément décoratif de trop.
+- un bouton principal visible par ecran ou par panneau de travail ;
+- hauteur minimale de 48 px sur mobile et 40 px dans le backoffice ;
+- etats normal, survol, focus, chargement, desactive, succes et erreur si necessaires ;
+- le libelle decrit le resultat : `Enregistrer le contact`, pas `Valider` ;
+- une action destructive demande confirmation lorsque l'annulation n'est pas simple.
+
+### Formulaires
+
+- une colonne sur mobile ;
+- label toujours visible au-dessus du champ ;
+- bon type de clavier pour telephone, nombre et e-mail ;
+- erreur pres du champ concerne ;
+- valeurs conservees apres une erreur ;
+- pas d'etape supplementaire si le formulaire tient naturellement sur un ecran ;
+- confirmation immediate lorsque l'enregistrement local a reussi.
+
+### Donnees et tableaux
+
+- afficher d'abord les donnees necessaires a une decision ;
+- utiliser une liste sur petit ecran et un tableau seulement lorsque la comparaison en colonnes est utile ;
+- garder les filtres visibles et courts ;
+- eviter les tableaux remplis d'actions en icones ;
+- prevoir les etats vide, chargement, erreur et resultat ;
+- ne jamais afficher une metrique non mesuree.
+
+## Structures d'ecran
+
+### Frontend mobile
+
+- largeur principale limitee et une seule colonne ;
+- en-tete court avec marque, langue et etat utile ;
+- navigation basse seulement si trois a cinq destinations sont utilisees regulierement ;
+- action principale atteignable au pouce ;
+- aucun menu profond ;
+- contenu critique disponible en connexion faible.
+
+### Backoffice
+
+- barre laterale gauche stable pour les fonctions disponibles au role connecte ;
+- barre haute contextuelle courte ;
+- espace de travail central prioritaire ;
+- panneau lateral droit uniquement pour un detail temporaire ou contextuel ;
+- onglets reserves a plusieurs vues du meme objet ;
+- masquer les modules non autorises au lieu de les afficher desactives.
+
+## Hors ligne et synchronisation
+
+L'utilisateur ne doit jamais se demander si sa saisie est perdue.
+
+- enregistrer localement avant l'appel reseau pour les actions concernees ;
+- afficher `Hors ligne` et le nombre d'elements en attente ;
+- afficher `Enregistre sur ce telephone` apres une saisie locale ;
+- distinguer clairement `A synchroniser`, `Synchronisation` et `Synchronise` ;
+- fournir un bouton `Synchroniser` ;
+- tenter la synchronisation a l'ouverture, au retour de l'evenement `online` et sur action manuelle ;
+- expliquer une erreur de synchronisation sans bloquer une nouvelle saisie.
+
+## Texte d'interface
+
+Chaque texte doit aider a comprendre ou agir.
+
+- phrases courtes et actives ;
+- vocabulaire utilisateur, jamais architecture technique ;
+- aucun slogan dans une interface de travail ;
+- aucun paragraphe si un libelle clair suffit ;
+- un ecran vide propose l'action suivante ;
+- une erreur dit ce qui n'a pas fonctionne et ce que l'utilisateur peut faire ;
+- toutes les chaines des parcours bilingues passent par i18n.
+
+## Accessibilite et appareils
+
+- focus visible ;
+- ordre clavier logique ;
+- labels accessibles ;
+- information jamais transmise par la couleur seule ;
+- `prefers-reduced-motion` respecte ;
+- zones tactiles suffisantes ;
+- verification sur largeur mobile et bureau ;
+- controle du contraste avec les couleurs finales ;
+- aucune dependance critique au survol.
+
+## Methode de livraison d'un ecran
+
+1. Implementer le plus petit ecran complet qui permet l'action demandee.
+2. Brancher les clics visibles ; ne pas livrer de bouton factice.
+3. Ouvrir l'ecran dans le navigateur et exercer le parcours principal.
+4. Verifier mobile, bureau si pertinent, et les etats vide, erreur et chargement.
+5. Examiner une capture d'ecran et retirer le bruit visuel restant.
+6. Presenter cet ecran avant de construire le suivant.
+
+Un ecran n'est termine que si son action principale fonctionne, son retour est visible et aucun element n'annonce une fonction absente.
+
+## References adaptees
+
+Ce skill est une adaptation propre a HubInvest, nourrie par les principes du skill [Frontend Design d'Anthropic](https://github.com/anthropics/skills/tree/main/skills/frontend-design), publie sous licence Apache 2.0, du skill [Frontend App Builder d'OpenAI](https://github.com/openai/plugins/tree/main/plugins/build-web-apps/skills/frontend-app-builder), de la structure de travail documentee par [Postman](https://learning.postman.com/docs/getting-started/basics/navigating-postman), des primitives accessibles de [Radix UI](https://www.radix-ui.com/primitives/docs/overview/accessibility) et des icones [Lucide](https://lucide.dev/).

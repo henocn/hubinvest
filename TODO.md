@@ -1,58 +1,127 @@
-# TODO — Grandes phases HubInvest
+# TODO - Lots fonctionnels HubInvest
 
-> Ce fichier fixe **les phases et leur ordre**, pas les sous-étapes.
-> L'agent découpe librement chaque phase en tâches et coche au fur et à mesure.
-> Règle d'or : ne jamais entamer un module « souhaitable » (M7, et les briques IA de M4/M5) tant que les indispensables ne sont pas prêts et testés.
+Le projet avance par petits parcours complets. Chaque lot doit etre utilisable et verifiable avant le suivant. Aucun ecran ou endpoint n'est cree uniquement parce qu'il pourrait servir plus tard.
 
----
+## Lot 0 - Preparation
 
-## Phase 0 — Fondations
-- [ ] Squelette PWA (React + Vite, manifest, service worker, installable, app-shell en cache).
-- [ ] i18n FR/EN branché dès le départ.
-- [ ] Système de design appliqué (tokens de `SKILL.md` : couleurs, type, tailles de boutons).
-- [ ] Backend + PostgreSQL + Docker qui tournent en local et en préprod.
-- [ ] Auth, rôles, et **cloisonnement des données côté serveur** (à écrire et tester en premier — c'est structurant).
-- [ ] Brique **hors-ligne** transverse : IndexedDB (Dexie) + file de synchronisation + indicateur d'état réseau + bouton « Synchroniser ». À valider avant tout module de saisie.
+- [x] Lire le cahier des charges initial.
+- [x] Refaire le contexte, les conventions, le skill d'interface et les besoins de code.
+- [ ] Faire valider cette preparation avant le premier code.
 
-## Phase 1 — Socle QR & administration
-- [ ] Génération et routage des **QR codes typés** (occupant, action, invitation, passeport, récompense) avec suivi des scans.
-- [ ] **M9 Administration** : gérer occupants, comptes/rôles, contenus, agendas, import Excel, journal d'accès.
-  *(Priorité haute : l'admin conditionne le remplissage de tous les autres modules.)*
+## Lot 1 - Premier socle executable
 
-## Phase 2 — Modules indispensables « avant la Foire »
-*(Ce sont ceux qui doivent vivre dès le 12 nov. pour le pré-lancement et les réservations.)*
-- [ ] **M1 Vitrine du Hub** : fiches occupants, recherche « Que recherchez-vous ? », programme, plan, 3 boutons d'action, versions avant/pendant/après.
-- [ ] **M4 Bourse des besoins + RDV B2B** : publier besoins/offres, consulter, demander (double accord), réserver un créneau **sans chevauchement**, retour post-rencontre.
-- [ ] **M3 Investor Desk** : formulaire bilingue, réservation, qualification 9 infos, classement A/B/C, alertes de relance.
+Objectif : lancer un backend minimal, verifier la base et afficher une premiere surface conforme a la marque.
 
-## Phase 3 — Modules indispensables « pendant la Foire »
-- [ ] **M2 Contacts des occupants** : saisie < 1 min, auto-inscription visiteur par QR, scan passeport, qualification, prochaine action, export Excel, tableau de résultats — **le tout hors-ligne**.
-- [ ] **M6 Défis de la preuve** : ouverture de passeport, parcours 3 preuves, validation humaine par scan, quiz, badge, **retrait de récompense à usage unique** avec suivi de stock.
-- [ ] **M5 Studio et invités** : invitation personnelle sans compte, choix de créneau, confirmation + rappels, planning avec statuts.
+- [ ] Initialiser le backend Node.js et Express.
+- [ ] Ajouter `npm run dev` avec nodemon.
+- [ ] Configurer Sequelize avec les variables `DB_*`.
+- [ ] Ajouter la commande `npm run db:migrate`.
+- [ ] Creer une route de sante et verifier son fonctionnement.
+- [ ] Initialiser le frontend React et Vite sans ecrans metier anticipes.
+- [ ] Charger les couleurs, le logo, Inter et Lucide.
+- [ ] Afficher et faire valider un premier shell mobile sobre.
 
-## Phase 4 — Mesure & rapports
-- [ ] **M8 Tableau de bord** : écran du jour pour l'API-ZF, écran de résultats par occupant (cloisonné).
-- [ ] **Rapport du soir** : synthèse rédigée par l'IA à partir des chiffres, **soumise à relecture** avant diffusion (19 h).
-- [ ] Génération **PDF** aux couleurs API-ZF (rapport final par occupant) + **exports** Excel/CSV.
-- [ ] Micro-enquêtes de satisfaction (occupants + visiteurs).
+Arret de validation : serveur demarrable, migration executable, route de sante joignable et premier ecran visible.
 
-## Phase 5 — Intégrations & IA (avec garde-fou humain partout)
-- [ ] Envoi **WhatsApp** (BSP agréé) + repli SMS + e-mail, avec modèles validés en amont.
-- [ ] Export des dossiers investisseurs vers **INVEST TRACK**.
-- [ ] Briques IA **souhaitables** : rapprochements B2B (M4), suggestions de sujets & questions d'interview (M5) — chacune avec validation avant envoi.
+## Lot 2 - Ne plus perdre les contacts
 
-## Phase 6 — Souhaitable si le temps le permet
-- [ ] **M7 Mur du Hub** (grand écran temps réel) + sa boucle vidéo de repli.
-- [ ] Livraison automatique des vidéos aux invités (M5).
+Objectif : prouver le parcours le plus critique avec un occupant et un contact.
 
-## Phase 7 — Durcissement & réception
-- [ ] Passer **chaque critère de réception** du cahier des charges (§13) comme une checklist de tests.
-- [ ] Tests réels : mode avion + synchro, réseau 3G, Android d'entrée de gamme **et** iPhone, plein soleil.
-- [ ] Sécurité : droits par profil testés, journal d'accès, limitation des tentatives, sauvegarde quotidienne chiffrée, procédure papier de secours.
-- [ ] Performance (Lighthouse PWA), accessibilité (cibles tactiles, contraste, focus clavier).
-- [ ] Contenus finaux chargés, 100 % des fiches occupants publiées, textes FR/EN complets.
+- [ ] Creer les models et migrations minimaux pour occupant, utilisateur et contact.
+- [ ] Ajouter l'authentification minimale necessaire au parcours.
+- [ ] Garantir cote API qu'un occupant ne lit que ses contacts.
+- [ ] Creer le formulaire `Nouveau contact` avec les champs valides.
+- [ ] Enregistrer le contact localement avant l'appel API.
+- [ ] Afficher les etats a synchroniser, synchronisation et synchronise.
+- [ ] Synchroniser a l'ouverture, au retour du reseau et sur clic.
+- [ ] Afficher `Mes contacts` et la prochaine action.
+- [ ] Tester uniquement le cloisonnement et le cycle hors ligne critique.
 
-## Phase 8 — Gel & exploitation
-- [ ] **Gel le 20 nov.** : plus que des corrections d'anomalie.
-- [ ] Support quotidien pendant la Foire, rapport chaque soir.
-- [ ] Après : rapports finaux, transfert des dossiers, bilan et notes pour 2027.
+Arret de validation : un contact est saisi en mode avion, reste visible, se synchronise et demeure inaccessible a un autre occupant.
+
+## Lot 3 - Mesurer ce qui est enregistre
+
+Objectif : rendre visibles les resultats reels sans inventer de chiffres.
+
+- [ ] Ajouter les indicateurs de contacts utiles au responsable d'occupant.
+- [ ] Creer la premiere vue backoffice API-ZF.
+- [ ] Afficher les totaux globaux et le detail autorise.
+- [ ] Ajouter les filtres strictement necessaires.
+- [ ] Ajouter l'export demande lorsque son format est connu.
+
+Arret de validation : les chiffres du backoffice correspondent aux donnees creees et les vues restent cloisonnees.
+
+## Lot 4 - Provoquer les rencontres utiles
+
+Objectif : publier un besoin et obtenir un rendez-vous sans chevauchement.
+
+- [ ] Ajouter besoins et offres.
+- [ ] Afficher la bourse avec les filtres utiles.
+- [ ] Permettre une demande de rencontre puis le double accord.
+- [ ] Ajouter creneaux, tables et reservations.
+- [ ] Bloquer les reservations concurrentes sur le meme creneau et la meme table.
+- [ ] Ajouter le retour apres rencontre.
+- [ ] Ajouter ensuite le parcours Investor Desk et ses classes A, B et C.
+- [ ] Tester uniquement la concurrence de reservation et les droits critiques.
+
+Arret de validation : le parcours complet fonctionne et deux reservations ne peuvent jamais occuper la meme ressource.
+
+## Lot 5 - Organiser le Studio
+
+Objectif : inviter une personne, lui faire choisir un creneau et suivre son passage.
+
+- [ ] Creer les invitations a lien unique.
+- [ ] Afficher les creneaux reellement disponibles.
+- [ ] Confirmer la reservation sans compte.
+- [ ] Ajouter le planning et les statuts dans le backoffice.
+- [ ] Brancher un premier canal de rappel seulement lorsque ses acces sont disponibles.
+
+Arret de validation : invitation, reservation et changement de statut fonctionnent de bout en bout.
+
+## Lot 6 - Faire decouvrir le Hub
+
+Objectif : publier une vitrine utile a partir des vraies donnees disponibles.
+
+- [ ] Afficher les occupants et leurs fiches.
+- [ ] Ajouter la recherche `Que recherchez-vous ?`.
+- [ ] Ajouter le programme et le plan lorsqu'ils sont fournis.
+- [ ] Ajouter les versions francaise et anglaise.
+- [ ] Ajouter uniquement des actions deja fonctionnelles.
+- [ ] Mettre en cache les ressources indispensables.
+
+Arret de validation : la vitrine est utile, rapide en connexion faible et aucun bouton ne mene vers une fonction vide.
+
+## Lot 7 - Faire circuler le public
+
+Objectif : terminer un parcours de trois preuves et remettre une recompense une seule fois.
+
+- [ ] Creer le passeport et son QR code personnel.
+- [ ] Generer un parcours de trois preuves valide.
+- [ ] Permettre la validation humaine d'une etape par scan.
+- [ ] Ajouter le quiz lorsque son contenu est fourni.
+- [ ] Marquer le parcours termine.
+- [ ] Enregistrer le retrait et decrementer le stock de facon atomique.
+- [ ] Tester le double scan et la concurrence sur le retrait.
+
+Arret de validation : le meme passeport ne permet jamais deux retraits.
+
+## Lot 8 - Rapports et finitions indispensables
+
+- [ ] Completer les ecrans d'administration exiges par les parcours existants.
+- [ ] Produire les exports Excel ou CSV demandes.
+- [ ] Produire le rapport quotidien avec validation humaine.
+- [ ] Produire le rapport final PDF par occupant.
+- [ ] Verifier les parcours FR et EN.
+- [ ] Verifier les appareils, la connexion faible et le mode hors ligne.
+- [ ] Corriger les alertes de securite et vulnerabilites de dependances pertinentes.
+- [ ] Executer uniquement les tests de reception et tests critiques.
+
+## Reportable
+
+Ces fonctions ne commencent qu'apres validation des lots indispensables :
+
+- [ ] Mur du Hub en temps reel.
+- [ ] Suggestions de rapprochement par IA.
+- [ ] Suggestions de sujets ou questions d'interview.
+- [ ] Livraison automatique des videos.
+- [ ] Bouton d'assistance et micro-enquetes souhaitables.

@@ -1,121 +1,160 @@
-# HubInvest — Cadrage projet (pour l'agent Claude Code)
+# HubInvest
 
-> Plateforme digitale du **Hub de l'Investissement**, 21e Foire internationale de Lomé (FIL 2026).
-> Commanditaire : **API-ZF** (Agence de Promotion des Investissements et de la Zone Franche).
-> Réalisation : **DEKA Éditions** (conception, contenus, UX) + **LIKSOFT** (développement, hébergement, support).
+HubInvest est la plateforme digitale du Hub de l'Investissement de la 21e Foire internationale de Lome. Elle doit transformer les echanges realises pendant la Foire en contacts suivis, rendez-vous, donnees mesurables et actions concretes.
 
-Ce dépôt est cadré par 4 fichiers. **Lis-les dans cet ordre avant de coder :**
-1. `README.md` — ce fichier : quoi, pour qui, avec quelles règles.
-2. `TODO.md` — les grandes phases (tu décides toi-même des sous-étapes).
-3. `SKILL.md` — les règles UX/UI à appliquer sur tout le frontend.
-4. `NEEDS.md` — ce que le client fournit au fur et à mesure (identité, contenus, accès).
+La source fonctionnelle du projet est le cahier des charges initial :
+`Volume2_HubInvest_Cahier_des_charges_API-ZF_V1.docx`.
 
----
+Ce README en est la synthese de travail. En cas de doute sur une regle metier, relire le cahier des charges avant d'inventer un comportement.
 
-## 1. Ce qu'on construit, en une phrase
+## Les problemes a resoudre
 
-Un **site mobile (PWA) qui s'ouvre par QR code, sans téléchargement**, qui relie en un seul outil : visiteurs, entreprises exposantes (« occupants »), investisseurs, invités du Studio et l'équipe API-ZF, pendant les 17 jours de la Foire.
+Le produit existe pour traiter cinq problemes precis.
 
-**Philosophie non négociable : fiabilité avant sophistication.** 6 modules indispensables parfaitement exécutés valent mieux que 30 fonctions bancales. Tout ce qui n'est pas prêt et **testé le 20 novembre** est reporté.
+1. Les contacts pris sur les stands se perdent et sont peu relances.
+2. Les resultats du Hub ne sont pas mesures de facon fiable.
+3. Les rencontres utiles entre entreprises, acheteurs et investisseurs dependent du hasard.
+4. Les invitations, reservations et rappels du Studio sont difficiles a organiser manuellement.
+5. Le public manque de raisons de s'arreter et de circuler entre les stands.
 
----
+Une fonctionnalite n'est prioritaire que si elle resout directement l'un de ces problemes ou si elle est indispensable au fonctionnement d'une fonctionnalite prioritaire.
 
-## 2. Contraintes dures (elles pilotent l'architecture)
+## Le produit
 
-Ces contraintes priment sur toute élégance technique.
+HubInvest est une application web progressive concue d'abord pour le telephone. Elle s'ouvre depuis un lien ou un QR code et ne demande aucun telechargement obligatoire.
 
-| Contrainte | Conséquence directe |
-|---|---|
-| **Hors-ligne qui se synchronise** | La saisie de contacts (M2) et les scans (M6) doivent fonctionner **sans réseau** et se synchroniser au retour. IndexedDB = source de vérité locale + file d'attente d'écritures. C'est le point le plus risqué du projet. |
-| **iPhone + Android d'entrée de gamme** | ⚠️ La **Background Sync API n'est pas supportée par Safari** (début 2026). Ne pas en dépendre : vider la file à l'ouverture de l'app, sur l'événement `online`, et via un **bouton « Synchroniser » manuel**. |
-| **Réseau faible (3G)** | Pages légères, peu d'images lourdes, app-shell en cache, chargement progressif. |
-| **Aucun téléchargement obligatoire** | PWA installable (manifest + service worker), mais 100 % utilisable dans le navigateur sans installation. |
-| **Cloisonnement strict des données** | Un occupant ne voit **jamais** les données d'un autre. À imposer **côté serveur** (ex. PostgreSQL Row-Level Security), jamais seulement côté client. |
-| **Bilingue FR/EN** | Vitrine, Investor Desk et invitations en français **et** anglais dès le départ (i18n, pas un ajout tardif). |
-| **Lisible en plein soleil** | Fort contraste, gros boutons, testé en extérieur (voir `SKILL.md`). |
-| **L'IA ne décide jamais seule** | Toute sortie d'IA (rapport du soir, rapprochements B2B, questions d'interview) passe par une validation humaine avant diffusion. Aucune coordonnée personnelle de visiteur n'est envoyée au service d'IA. |
-| **Chiffres mesurés uniquement** | Jamais d'estimations de fréquentation ou de chiffres invérifiables affichés. |
+Elle s'adresse a six profils fonctionnels :
 
----
+- le visiteur ;
+- le visiteur professionnel ;
+- l'occupant du Hub et son equipe ;
+- l'invite du Studio ;
+- l'equipe API-ZF ;
+- l'equipe de campagne.
 
-## 3. Stack recommandée
+Les roles techniques seront plus precis que ces profils, notamment pour distinguer l'administration, l'Investor Desk, l'animation et les membres d'un occupant.
 
-Choix guidé par le hors-ligne et par un délai court — pile éprouvée, un seul serveur, zéro sur-ingénierie.
+## Les fonctions retenues
 
-**Frontend (la PWA)**
-- **React + Vite** (mobile-first), PWA via **vite-plugin-pwa / Workbox**.
-- **Dexie.js** (IndexedDB) pour le stockage local + une **file de synchronisation** maison.
-- **Tailwind CSS** (voir tokens dans `SKILL.md`), **i18next** (FR/EN).
-- Scan QR : `BarcodeDetector` natif avec repli `html5-qrcode`.
+### Ne plus perdre les contacts
 
-**Backend (l'API)**
-- **NestJS (Node)** si l'équipe est JavaScript, **sinon Laravel (PHP)**. Un seul vrai arbitrage : **choisir selon ce que LIKSOFT maîtrise déjà** — le délai interdit d'apprendre une techno.
-- API REST, auth par rôles, files d'attente (messages, IA), génération PDF, exports.
+- carnet de contacts propre a chaque occupant ;
+- saisie d'un contact en moins d'une minute ;
+- qualification chaud, tiede ou froid ;
+- prochaine action datee et attribuee ;
+- saisie hors ligne puis synchronisation ;
+- export et indicateurs propres a l'occupant.
 
-**Base de données**
-- **PostgreSQL.** Row-Level Security pour le cloisonnement par occupant, vérifié côté serveur.
+### Mesurer les resultats
 
-**Intégrations (des services, pas de la pile)**
-- **WhatsApp Business Platform** via un BSP agréé (repli SMS + e-mail).
-- **LLM** appelé côté serveur, sur données agrégées/professionnelles, sortie mise en file pour validation humaine.
-- **PDF** aux couleurs API-ZF (Puppeteer ou DomPDF) ; **exports** Excel/CSV.
+- chiffres du jour fondes uniquement sur les donnees enregistrees ;
+- tableau de bord global pour l'API-ZF ;
+- vue confidentielle pour chaque occupant ;
+- rapport quotidien relu avant diffusion ;
+- rapports finaux et exports.
 
-**Hébergement**
-- Un **VPS unique** suffit (charge modeste : quelques milliers de visiteurs / 17 jours). **Docker**, HTTPS, mots de passe hachés, **sauvegarde quotidienne chiffrée**. Vérifier le lieu d'hébergement avec le juridique (loi n° 2019-014).
+### Provoquer les rencontres utiles
 
-**À éviter absolument :** microservices, Kubernetes, plusieurs bases. Un monolithe bien structuré + Postgres + un serveur avec sauvegardes = livrable à temps.
+- publication des besoins et des offres ;
+- demande de mise en relation ;
+- accord des deux parties ;
+- reservation d'un creneau et d'une table sans chevauchement ;
+- qualification et suivi des investisseurs par l'Investor Desk ;
+- prochaine action obligatoire pour les dossiers utiles.
 
----
+### Organiser le Studio
 
-## 4. Les 9 modules
+- invitation personnelle sans creation de compte ;
+- choix d'un creneau disponible ;
+- confirmation et rappels ;
+- planning de tournage et statuts ;
+- livraison de la video si cette fonction peut etre terminee sans fragiliser le reste.
 
-Priorité : **I** = indispensable (prêt le 20 nov.), **S** = souhaitable (livré si les I sont prêts, sinon repli manuel).
+### Faire venir et circuler le public
 
-| # | Module | Rôle | Prio |
-|---|---|---|---|
-| M1 | Vitrine du Hub | Site public : occupants, programme, recherche « Que recherchez-vous ? », plan, FR/EN | I |
-| M2 | Contacts des occupants | CRM par stand : saisie < 1 min, scan passeport, qualification chaud/tiède/froid, export Excel, **hors-ligne** | I |
-| M3 | Investor Desk | Réservé API-ZF : qualification en 9 infos, classement A/B/C, alertes de relance, export vers INVEST TRACK | I |
-| M4 | Bourse des besoins + RDV B2B | Publier besoins/offres, demander une rencontre (double accord), réserver un créneau/table | I |
-| M5 | Studio et invités | Invitation personnelle (sans compte), réservation de créneau, rappels, livraison vidéo | I |
-| M6 | Défis de la preuve | Jeu : passeport QR, parcours 3 preuves/3 stands, validation humaine par scan, badge, retrait de récompense à usage unique | I |
-| M7 | Mur du Hub | Grand écran : occupant du jour, compteurs mesurés, capsules. Repli : boucle vidéo | S |
-| M8 | Tableau de bord + rapports | Chiffres du jour, rapport du soir (19 h, IA + relecture), rapport final PDF par occupant | I (rapports finaux en déc.) |
-| M9 | Administration | Gérer occupants, contenus, agendas, comptes/rôles ; import/export ; journal d'accès | I |
+- vitrine publique du Hub et des occupants ;
+- recherche par besoin ;
+- programme et plan ;
+- passeport personnel des Defis de la preuve ;
+- parcours dans trois stands avec validation humaine ;
+- recompense retirable une seule fois.
 
----
+### Administrer ce qui doit changer
 
-## 5. Les 6 rôles et ce qu'ils voient
+L'administration est construite au fur et a mesure des fonctions. Elle permet de gerer les occupants, utilisateurs, contenus, agendas, questions, recompenses et acces utiles aux parcours deja implementes. Elle n'est pas un logiciel separe rempli d'ecrans anticipes.
 
-Chaque rôle ne voit **que ce qui le concerne**. Rôles techniques : `super-admin`, `admin-apizf`, `investor-desk`, `equipe-campagne`, `animateur`, `occupant-responsable`, `occupant-membre`, `visiteur`.
+## Priorite reelle
 
-- **Visiteur** — compte facultatif (prénom + tél). Joue aux Défis, retire ses récompenses.
-- **Visiteur professionnel** — compte léger. Consulte les besoins, demande une mise en relation, réserve un RDV.
-- **Occupant** — compte créé par l'API-ZF. Tient sa fiche, saisit/qualifie ses contacts (les siens seulement), publie ses besoins, suit ses résultats.
-- **Invité du Studio** — aucun compte, lien personnel. Réserve son créneau, reçoit rappels puis vidéo.
-- **Équipe API-ZF** — compte admin. Qualifie les investisseurs, valide les rencontres/rapports, distribue les récompenses, pilote.
-- **Équipe de campagne** — compte admin. Planning Studio, publication des vidéos, alimentation du mur du Hub.
+Le tableau des modules du cahier des charges marque M1, M2, M3, M4, M5, M6, M8 et M9 comme indispensables. M7, les rapprochements par IA et la livraison automatique des videos sont reportables.
 
-Le détail des parcours utilisateur est dans le cahier des charges (section 07) ; ne pas ajouter d'écran hors périmètre.
+L'ordre de developpement ne suit pas obligatoirement les numeros des modules. Il suit les risques et les problemes a resoudre. La premiere preuve technique doit couvrir le risque principal : enregistrer un contact hors ligne, le synchroniser et garantir qu'un autre occupant ne peut pas le lire.
 
----
+## Regles non negociables
 
-## 6. Objets de données principaux
+- Aucun occupant ne voit les contacts ou les resultats detailles d'un autre occupant.
+- Les controles d'acces sont appliques par l'API, jamais uniquement par l'interface.
+- Une saisie critique est conservee localement avant toute tentative d'envoi.
+- La synchronisation ne depend pas de Background Sync, absent ou limite sur iPhone.
+- Une reservation ne peut pas creer de chevauchement.
+- Une recompense ne peut pas etre retiree deux fois.
+- Les chiffres affiches sont mesures, jamais estimes.
+- Les coordonnees personnelles ne sont pas envoyees a un service d'IA.
+- Une sortie d'IA est toujours validee par une personne avant diffusion.
+- Le francais et l'anglais sont prevus des la creation des ecrans concernes.
+- L'interface reste utilisable sur petit telephone, en 3G et en pleine lumiere.
 
-`occupant`, `utilisateur`, `visiteur`, `contact`, `dossier_investisseur`, `besoin`, `offre`, `mise_en_relation`, `creneau`, `reservation`, `invite`, `contenu`, `passeport`, `etape`, `recompense`, `scan`, `rapport`.
+## Direction technique validee
 
-QR codes : identifiants **uniques et typés** (`occupant`, `action`, `invitation`, `passeport`, `recompense`) avec suivi des scans ; codes de récompense **à usage unique**.
+### Backend
 
----
+- JavaScript sur Node.js ;
+- API REST avec Express ;
+- `nodemon` pour `npm run dev` ;
+- PostgreSQL ;
+- Sequelize avec models et migrations ;
+- `npm run db:migrate` pour appliquer les migrations ;
+- variables d'environnement pour toute la connexion a la base ;
+- modules organises en route, validation, repository, service et controller.
 
-## 7. Jalons clés (voir cahier des charges §10)
+### Frontend et backoffice
 
-`16 oct.` gel du périmètre (aucune fonction ajoutée après) · `12 nov.` vitrine en ligne · `9–18 nov.` tests de réception · `20 nov.` **gel total** · `27 nov.–13 déc.` exploitation · `14–18 déc.` rapports finaux.
+- React avec Vite ;
+- PWA pour l'interface mobile ;
+- stockage local IndexedDB pour les actions hors ligne ;
+- interface bilingue lorsque le parcours l'exige ;
+- design system commun fonde sur les couleurs et logos du dossier `assets/` ;
+- composants accessibles et bibliotheque d'icones coherente.
 
-**Critères de réception à garder en tête pendant tout le dev** (§13) : contact saisi en < 1 min par une personne non formée ; saisie qui marche en mode avion puis se synchronise ; un occupant ne voit jamais les contacts d'un autre ; pas de chevauchement de réservations ; récompense non retirable deux fois ; vitrine correcte FR/EN sur Android d'entrée de gamme et iPhone ; rapport du soir produit à 19 h.
+Le detail d'architecture se trouve dans `todo-agent.md`. Les regles visuelles se trouvent dans `SKILL.md`.
 
----
+## Methode de developpement
 
-## 8. Ce que le projet n'est PAS (hors périmètre 2026)
+Le projet avance par petits lots utilisables.
 
-Pas de vente / paiement / commission. Pas de classement public d'occupants ou de visiteurs. Pas de matching B2B automatique sans validation. Pas de messagerie instantanée entre participants. Pas d'assistant conversationnel. Pas de score de probabilité d'achat par l'IA. Pas de comptage de fréquentation par capteurs. Ces pistes sont documentées pour 2027 (§15) — ne pas les commencer.
+1. Choisir un probleme et le plus petit parcours qui le resout.
+2. Implementer uniquement les donnees, l'API et l'ecran necessaires a ce parcours.
+3. Ouvrir l'interface et verifier les clics, les erreurs et les etats vides.
+4. Montrer le resultat avant d'etendre le parcours.
+5. Modifier a partir du retour reel, puis passer au lot suivant.
+
+Un bouton visible doit fonctionner. Un ecran non necessaire n'est pas cree. Les commentaires evidents et les textes de remplissage ne sont pas ajoutes.
+
+Les tests automatiques se limitent aux risques critiques : droits d'acces, synchronisation, absence de chevauchement, unicite du retrait d'une recompense et calculs importants. Les alertes de vulnerabilites de dependances sont acceptees pendant la construction et traitees lors de la stabilisation finale.
+
+## Documents de travail
+
+- `TODO1.md` : preparation avant le premier code ;
+- `TODO.md` : ordre des lots fonctionnels ;
+- `todo-agent.md` : conventions et execution pas a pas ;
+- `SKILL.md` : direction frontend et backoffice ;
+- `NEEDS.md` : entrees externes strictement necessaires au code.
+
+## Calendrier du cahier des charges
+
+- validation du perimetre : 25 septembre 2026 ;
+- gel des nouvelles fonctions : 16 octobre 2026 ;
+- vitrine en ligne : 12 novembre 2026 ;
+- tests de reception : du 9 au 18 novembre 2026 ;
+- gel de la plateforme : 20 novembre 2026 ;
+- exploitation : du 27 novembre au 13 decembre 2026 ;
+- rapports par occupant : du 14 au 18 decembre 2026.
