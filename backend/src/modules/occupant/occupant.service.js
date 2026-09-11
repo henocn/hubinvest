@@ -43,4 +43,9 @@ const update = async (id, values) => {
   return occupantRepository.update(occupant, nextValues);
 };
 
-module.exports = { list, listPublic, get, getPublic, create, update };
+const remove = async (id) => {
+  const occupant = await get(id);
+  await occupantRepository.remove(occupant);
+};
+
+module.exports = { list, listPublic, get, getPublic, create, update, remove };

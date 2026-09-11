@@ -55,6 +55,15 @@ const update = async (actor, id, values) => {
   protectSuperAdmin(actor, user.role);
   protectSuperAdmin(actor, values.role);
   const nextValues = { ...values };
+
+  if (actor.id === user.id && nextValues.isActive === false) {
+    throw new AppError(409, 'SELF_DEACTIVATION_FORBIDDEN', 'Vous ne pouvez pas desactiver votre propre compte.');
+  }
+
+  if (actor.id === user.id && nextValues.role && nextValues.role !== user.role) {
+    throw new AppError(409, 'SELF_ROLE_CHANGE_FORBIDDEN', 'Vous ne pouvez pas modifier votre propre role.');
+  }
+
   const resultingValues = {
     role: nextValues.role || user.role,
     occupantId: Object.prototype.hasOwnProperty.call(nextValues, 'occupantId')
@@ -76,4 +85,15 @@ const update = async (actor, id, values) => {
   return serialize(updated);
 };
 
-module.exports = { list, get, create, update };
+const remove = async (actor, id) => {
+  const user = await get(id);
+  protectSuperAdmin(actor, user.role);
+
+  if (actor.id === user.id) {
+    throw new AppError(409, 'SELF_DELETE_FORBIDDEN', 'Vous ne pouvez pas supprimer votre propre compte.');
+  }
+
+  await userRepository.remove(user);
+};
+
+module.exports = { list, get, create, update, remove };

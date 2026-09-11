@@ -36,7 +36,15 @@ export const api = {
   occupants: (token) => request('/occupants', authorized(token)),
   createOccupant: (token, values) =>
     request('/occupants', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
+  updateOccupant: (token, id, values) =>
+    request(`/occupants/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
+  deleteOccupant: (token, id) =>
+    request(`/occupants/${id}`, authorized(token, { method: 'DELETE' })),
   users: (token) => request('/users', authorized(token)),
   createUser: (token, values) =>
     request('/users', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
+  updateUser: (token, id, values) =>
+    request(`/users/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
+  deleteUser: (token, id) =>
+    request(`/users/${id}`, authorized(token, { method: 'DELETE' })),
 };

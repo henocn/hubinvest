@@ -26,4 +26,9 @@ const update = async (request, response) => {
   response.json({ data: occupant, message: 'Occupant modifie.' });
 };
 
-module.exports = { list, listPublic, get, getPublic, create, update };
+const remove = async (request, response) => {
+  await occupantService.remove(request.params.id);
+  response.status(204).send();
+};
+
+module.exports = { list, listPublic, get, getPublic, create, update, remove };

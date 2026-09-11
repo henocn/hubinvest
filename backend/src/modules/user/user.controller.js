@@ -18,4 +18,9 @@ const update = async (request, response) => {
   response.json({ data: user, message: 'Utilisateur modifie.' });
 };
 
-module.exports = { list, get, create, update };
+const remove = async (request, response) => {
+  await userService.remove(request.user, request.params.id);
+  response.status(204).send();
+};
+
+module.exports = { list, get, create, update, remove };

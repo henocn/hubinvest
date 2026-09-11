@@ -26,5 +26,10 @@ router.patch(
   validate(occupantValidation.update),
   asyncHandler(occupantController.update),
 );
+router.delete(
+  '/:id',
+  validate(occupantValidation.params, 'params'),
+  asyncHandler(occupantController.remove),
+);
 
 module.exports = router;

@@ -4,11 +4,14 @@ import {
   Check,
   Cloud,
   CloudOff,
+  KeyRound,
   LogOut,
+  Pencil,
   Plus,
   RefreshCw,
   Search,
   ShieldCheck,
+  Trash2,
   UserRound,
   Users,
   X,
@@ -117,8 +120,14 @@ function EmptyState({ icon: Icon, title, copy }) {
   );
 }
 
-function OccupantForm({ onClose, onCreated, token }) {
-  const [form, setForm] = useState({ name: '', proofNumber: '', activity: '' });
+function OccupantForm({ occupant, onClose, onSaved, token }) {
+  const isEditing = Boolean(occupant);
+  const [form, setForm] = useState(() => ({
+    name: occupant?.name || '',
+    proofNumber: occupant?.proofNumber || '',
+    activity: occupant?.activity || '',
+    status: occupant?.status || 'active',
+  }));
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -128,12 +137,16 @@ function OccupantForm({ onClose, onCreated, token }) {
     setError('');
 
     try {
-      const created = await api.createOccupant(token, {
+      const values = {
         name: form.name,
         proofNumber: form.proofNumber ? Number(form.proofNumber) : null,
         activity: form.activity || null,
-      });
-      onCreated(created);
+        status: form.status,
+      };
+      const saved = isEditing
+        ? await api.updateOccupant(token, occupant.id, values)
+        : await api.createOccupant(token, values);
+      await onSaved(saved);
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -146,8 +159,8 @@ function OccupantForm({ onClose, onCreated, token }) {
       <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="occupant-title" onMouseDown={(event) => event.stopPropagation()}>
         <header className="drawer-header">
           <div>
-            <span className="eyebrow">Nouvel occupant</span>
-            <h2 id="occupant-title">Creer une structure</h2>
+            <span className="eyebrow">{isEditing ? 'Modification' : 'Nouvel occupant'}</span>
+            <h2 id="occupant-title">{isEditing ? 'Modifier la structure' : 'Creer une structure'}</h2>
           </div>
           <button className="icon-button" type="button" onClick={onClose} aria-label="Fermer">
             <X size={19} />
@@ -167,11 +180,20 @@ function OccupantForm({ onClose, onCreated, token }) {
             Activite
             <textarea rows="5" value={form.activity} onChange={(event) => setForm({ ...form, activity: event.target.value })} />
           </label>
+          {isEditing && (
+            <label>
+              Statut
+              <select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })}>
+                <option value="active">Actif</option>
+                <option value="inactive">Inactif</option>
+              </select>
+            </label>
+          )}
           {error && <p className="form-error">{error}</p>}
           <footer className="drawer-actions">
             <button className="button button-secondary" type="button" onClick={onClose}>Annuler</button>
             <button className="button button-primary" type="submit" disabled={loading}>
-              {loading ? 'Creation...' : 'Creer l’occupant'}
+              {loading ? 'Enregistrement...' : isEditing ? 'Enregistrer les modifications' : "Creer l'occupant"}
             </button>
           </footer>
         </form>
@@ -180,10 +202,19 @@ function OccupantForm({ onClose, onCreated, token }) {
   );
 }
 
-function UserForm({ occupants, onClose, onCreated, token, currentRole }) {
-  const [form, setForm] = useState({
-    firstName: '', lastName: '', email: '', phone: '', password: '', role: 'occupant-responsable', occupantId: '',
-  });
+function UserForm({ user, occupants, onClose, onSaved, token, currentRole, currentUserId }) {
+  const isEditing = Boolean(user);
+  const isCurrentUser = user?.id === currentUserId;
+  const [form, setForm] = useState(() => ({
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    password: '',
+    role: user?.role || 'occupant-responsable',
+    occupantId: user?.occupantId || '',
+    isActive: user?.isActive ?? true,
+  }));
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const needsOccupant = occupantRoles.has(form.role);
@@ -194,12 +225,21 @@ function UserForm({ occupants, onClose, onCreated, token, currentRole }) {
     setError('');
 
     try {
-      const created = await api.createUser(token, {
-        ...form,
+      const values = {
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
         phone: form.phone || null,
+        role: form.role,
         occupantId: needsOccupant ? form.occupantId : null,
-      });
-      onCreated(created);
+        isActive: form.isActive,
+      };
+      if (!isEditing) values.password = form.password;
+
+      const saved = isEditing
+        ? await api.updateUser(token, user.id, values)
+        : await api.createUser(token, values);
+      await onSaved(saved);
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -212,8 +252,8 @@ function UserForm({ occupants, onClose, onCreated, token, currentRole }) {
       <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="user-title" onMouseDown={(event) => event.stopPropagation()}>
         <header className="drawer-header">
           <div>
-            <span className="eyebrow">Nouvel utilisateur</span>
-            <h2 id="user-title">Creer un acces</h2>
+            <span className="eyebrow">{isEditing ? 'Modification' : 'Nouvel utilisateur'}</span>
+            <h2 id="user-title">{isEditing ? 'Modifier le compte' : 'Creer un acces'}</h2>
           </div>
           <button className="icon-button" type="button" onClick={onClose} aria-label="Fermer"><X size={19} /></button>
         </header>
@@ -227,7 +267,7 @@ function UserForm({ occupants, onClose, onCreated, token, currentRole }) {
           <label>Telephone<input type="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} /></label>
           <label>
             Role
-            <select value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value, occupantId: '' })}>
+            <select value={form.role} disabled={isCurrentUser} onChange={(event) => setForm({ ...form, role: event.target.value, occupantId: '' })}>
               {Object.entries(roleLabels)
                 .filter(([value]) => currentRole === 'super-admin' || value !== 'super-admin')
                 .map(([value, label]) => <option key={value} value={value}>{label}</option>)}
@@ -242,14 +282,92 @@ function UserForm({ occupants, onClose, onCreated, token, currentRole }) {
               </select>
             </label>
           )}
-          <label>Mot de passe temporaire<input type="password" minLength={8} value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required /></label>
+          {isEditing && (
+            <label>
+              Statut
+              <select value={form.isActive ? 'active' : 'inactive'} disabled={isCurrentUser} onChange={(event) => setForm({ ...form, isActive: event.target.value === 'active' })}>
+                <option value="active">Actif</option>
+                <option value="inactive">Inactif</option>
+              </select>
+            </label>
+          )}
+          {!isEditing && <label>Mot de passe temporaire<input type="password" minLength={8} value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required /></label>}
           {error && <p className="form-error">{error}</p>}
           <footer className="drawer-actions">
             <button className="button button-secondary" type="button" onClick={onClose}>Annuler</button>
-            <button className="button button-primary" type="submit" disabled={loading}>{loading ? 'Creation...' : 'Creer l’utilisateur'}</button>
+            <button className="button button-primary" type="submit" disabled={loading}>{loading ? 'Enregistrement...' : isEditing ? 'Enregistrer les modifications' : "Creer l'utilisateur"}</button>
           </footer>
         </form>
       </aside>
+    </div>
+  );
+}
+
+function PasswordForm({ user, onClose, onSaved, token }) {
+  const [form, setForm] = useState({ password: '', confirmation: '' });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setError('');
+
+    if (form.password !== form.confirmation) {
+      setError('Les deux mots de passe ne correspondent pas.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await api.updateUser(token, user.id, { password: form.password });
+      await onSaved();
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="drawer-backdrop" role="presentation" onMouseDown={onClose}>
+      <aside className="drawer drawer-compact" role="dialog" aria-modal="true" aria-labelledby="password-title" onMouseDown={(event) => event.stopPropagation()}>
+        <header className="drawer-header">
+          <div>
+            <span className="eyebrow">Securite du compte</span>
+            <h2 id="password-title">Modifier le mot de passe</h2>
+            <p className="drawer-copy">{user.firstName} {user.lastName}</p>
+          </div>
+          <button className="icon-button" type="button" onClick={onClose} aria-label="Fermer"><X size={19} /></button>
+        </header>
+        <form onSubmit={submit} className="drawer-form">
+          <label>Nouveau mot de passe<input type="password" minLength={8} autoComplete="new-password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required autoFocus /></label>
+          <label>Confirmer le mot de passe<input type="password" minLength={8} autoComplete="new-password" value={form.confirmation} onChange={(event) => setForm({ ...form, confirmation: event.target.value })} required /></label>
+          {error && <p className="form-error">{error}</p>}
+          <footer className="drawer-actions">
+            <button className="button button-secondary" type="button" onClick={onClose}>Annuler</button>
+            <button className="button button-primary" type="submit" disabled={loading}>{loading ? 'Enregistrement...' : 'Modifier le mot de passe'}</button>
+          </footer>
+        </form>
+      </aside>
+    </div>
+  );
+}
+
+function ConfirmDelete({ subject, loading, error, onCancel, onConfirm }) {
+  return (
+    <div className="dialog-backdrop" role="presentation" onMouseDown={onCancel}>
+      <section className="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="delete-title" onMouseDown={(event) => event.stopPropagation()}>
+        <span className="danger-icon"><Trash2 size={21} /></span>
+        <div>
+          <h2 id="delete-title">Supprimer {subject.label}</h2>
+          <p>Cette action est definitive. Les elements encore utilises par la plateforme ne pourront pas etre supprimes.</p>
+        </div>
+        {error && <p className="form-error dialog-error">{error}</p>}
+        <footer>
+          <button className="button button-secondary" type="button" onClick={onCancel} disabled={loading}>Annuler</button>
+          <button className="button button-danger" type="button" onClick={onConfirm} disabled={loading}>{loading ? 'Suppression...' : 'Supprimer'}</button>
+        </footer>
+      </section>
     </div>
   );
 }
@@ -262,6 +380,9 @@ function AppShell({ session, onLogout }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [drawer, setDrawer] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const [deleteError, setDeleteError] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -294,6 +415,29 @@ function AppShell({ session, onLogout }) {
     setSearch('');
   };
 
+  const saved = async () => {
+    setDrawer(null);
+    await loadData();
+  };
+
+  const confirmDelete = async () => {
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      if (pendingDelete.type === 'occupant') {
+        await api.deleteOccupant(session.token, pendingDelete.item.id);
+      } else {
+        await api.deleteUser(session.token, pendingDelete.item.id);
+      }
+      setPendingDelete(null);
+      await loadData();
+    } catch (requestError) {
+      setDeleteError(requestError.message);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -323,7 +467,7 @@ function AppShell({ session, onLogout }) {
             <h1>{section === 'occupants' ? 'Occupants' : 'Utilisateurs'}</h1>
             <p>{section === 'occupants' ? 'Structures presentes et informations de stand.' : 'Comptes et niveaux d’acces a la plateforme.'}</p>
           </div>
-          <button className="button button-primary" type="button" onClick={() => setDrawer(section === 'occupants' ? 'occupant' : 'user')}>
+          <button className="button button-primary" type="button" onClick={() => setDrawer({ type: section === 'occupants' ? 'occupant' : 'user', item: null })}>
             <Plus size={18} /> {section === 'occupants' ? 'Nouvel occupant' : 'Nouvel utilisateur'}
           </button>
         </header>
@@ -346,13 +490,19 @@ function AppShell({ session, onLogout }) {
           {!loading && section === 'occupants' && (visibleOccupants.length ? (
             <div className="table-scroll">
               <table>
-                <thead><tr><th>Structure</th><th>Stand</th><th>Activite</th><th>Statut</th></tr></thead>
+                <thead><tr><th>Structure</th><th>Stand</th><th>Activite</th><th>Statut</th><th className="actions-heading">Actions</th></tr></thead>
                 <tbody>{visibleOccupants.map((occupant) => (
                   <tr key={occupant.id}>
                     <td><strong>{occupant.name}</strong><small>{occupant.slug}</small></td>
                     <td>{occupant.proofNumber || '—'}</td>
                     <td className="activity-cell">{occupant.activity || 'Non renseignee'}</td>
                     <td><span className={`status-pill ${occupant.status === 'active' ? 'is-active' : ''}`}>{occupant.status === 'active' && <Check size={13} />}{occupant.status === 'active' ? 'Actif' : 'Inactif'}</span></td>
+                    <td>
+                      <div className="row-actions">
+                        <button className="table-action" type="button" onClick={() => setDrawer({ type: 'occupant', item: occupant })}><Pencil size={15} /> Modifier</button>
+                        <button className="table-action is-danger" type="button" onClick={() => { setDeleteError(''); setPendingDelete({ type: 'occupant', item: occupant, label: `l'occupant ${occupant.name}` }); }}><Trash2 size={15} /> Supprimer</button>
+                      </div>
+                    </td>
                   </tr>
                 ))}</tbody>
               </table>
@@ -362,13 +512,20 @@ function AppShell({ session, onLogout }) {
           {!loading && section === 'users' && (visibleUsers.length ? (
             <div className="table-scroll">
               <table>
-                <thead><tr><th>Utilisateur</th><th>Role</th><th>Occupant</th><th>Statut</th></tr></thead>
+                <thead><tr><th>Utilisateur</th><th>Role</th><th>Occupant</th><th>Statut</th><th className="actions-heading">Actions</th></tr></thead>
                 <tbody>{visibleUsers.map((user) => (
                   <tr key={user.id}>
                     <td><strong>{user.firstName} {user.lastName}</strong><small>{user.email}</small></td>
                     <td>{roleLabels[user.role] || user.role}</td>
                     <td>{user.occupant?.name || 'API-ZF'}</td>
                     <td><span className={`status-pill ${user.isActive ? 'is-active' : ''}`}>{user.isActive && <Check size={13} />}{user.isActive ? 'Actif' : 'Inactif'}</span></td>
+                    <td>
+                      <div className="row-actions">
+                        <button className="table-action" type="button" onClick={() => setDrawer({ type: 'user', item: user })}><Pencil size={15} /> Modifier</button>
+                        <button className="table-action" type="button" onClick={() => setDrawer({ type: 'password', item: user })}><KeyRound size={15} /> Mot de passe</button>
+                        <button className="table-action is-danger" type="button" disabled={user.id === session.user.id} title={user.id === session.user.id ? 'Votre propre compte ne peut pas etre supprime' : undefined} onClick={() => { setDeleteError(''); setPendingDelete({ type: 'user', item: user, label: `l'utilisateur ${user.firstName} ${user.lastName}` }); }}><Trash2 size={15} /> Supprimer</button>
+                      </div>
+                    </td>
                   </tr>
                 ))}</tbody>
               </table>
@@ -377,8 +534,10 @@ function AppShell({ session, onLogout }) {
         </section>
       </main>
 
-      {drawer === 'occupant' && <OccupantForm token={session.token} onClose={() => setDrawer(null)} onCreated={(created) => { setOccupants((current) => [...current, created].sort((a, b) => a.name.localeCompare(b.name))); setDrawer(null); }} />}
-      {drawer === 'user' && <UserForm occupants={occupants} token={session.token} currentRole={session.user.role} onClose={() => setDrawer(null)} onCreated={(created) => { setUsers((current) => [...current, created]); setDrawer(null); }} />}
+      {drawer?.type === 'occupant' && <OccupantForm occupant={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
+      {drawer?.type === 'user' && <UserForm user={drawer.item} occupants={occupants} token={session.token} currentRole={session.user.role} currentUserId={session.user.id} onClose={() => setDrawer(null)} onSaved={saved} />}
+      {drawer?.type === 'password' && <PasswordForm user={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
+      {pendingDelete && <ConfirmDelete subject={pendingDelete} loading={deleting} error={deleteError} onCancel={() => setPendingDelete(null)} onConfirm={confirmDelete} />}
     </div>
   );
 }

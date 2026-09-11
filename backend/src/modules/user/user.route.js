@@ -19,5 +19,10 @@ router.patch(
   validate(userValidation.update),
   asyncHandler(userController.update),
 );
+router.delete(
+  '/:id',
+  validate(userValidation.params, 'params'),
+  asyncHandler(userController.remove),
+);
 
 module.exports = router;
