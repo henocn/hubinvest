@@ -44,12 +44,12 @@ Format prefere pour les listes : fichier Excel ou CSV avec une ligne par element
 
 ## Pour la vitrine
 
-- [ ] Nom public definitif de la plateforme.
-- [ ] Pour chaque occupant : description, produits ou services, marches servis, chiffre cle, contact public et photo.
+- [ ] Nom public definitif de la plateforme. : HubInvest
+- [ ] Pour chaque occupant : description, produits ou services, marches servis, chiffre cle, contact public et photo. : Dynamique et ajoutable au backoffice
 - [ ] Categories de la recherche `Que recherchez-vous ?` et occupants associes.
-- [ ] Programme date et heures de chaque activite.
-- [ ] Plan du Hub avec les numeros de stands.
-- [ ] Textes anglais valides pour les contenus publics.
+- [ ] Programme date et heures de chaque activite. : Depuis le backoffice
+- [ ] Plan du Hub avec les numeros de stands. depuis le backoffice
+- [ ] Textes anglais valides pour les contenus publics. : Traduction automatique uniquement du frontend
 
 ## Pour l'Investor Desk
 

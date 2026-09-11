@@ -194,15 +194,15 @@ Ne pas executer cette section avant validation de `TODO1.md`.
 
 ### Etape 1 - Backend minimal
 
-- [ ] Initialiser `backend/package.json`.
-- [ ] Installer Express, Sequelize, le pilote PostgreSQL, dotenv et nodemon.
-- [ ] Ajouter Sequelize CLI pour les migrations.
-- [ ] Creer `.env.example`, `.sequelizerc` et la configuration `DB_*`.
-- [ ] Creer `app.js`, `server.js` et le module `health`.
-- [ ] Ajouter une migration initiale minimale seulement si elle permet de verifier la connexion.
+- [x] Initialiser `backend/package.json`.
+- [x] Installer Express, Sequelize, le pilote PostgreSQL, dotenv et nodemon.
+- [x] Ajouter Sequelize CLI pour les migrations.
+- [x] Creer `.env.example`, `.sequelizerc` et la configuration `DB_*`.
+- [x] Creer `app.js`, `server.js` et le module `health`.
+- [x] Ajouter les migrations initiales utiles au premier parcours.
 - [ ] Lancer `npm run db:migrate`.
-- [ ] Lancer `npm run dev` et appeler la route de sante.
-- [ ] S'arreter et montrer le resultat.
+- [x] Lancer le serveur et appeler la route de sante.
+- [x] S'arreter et montrer le resultat.
 
 ### Etape 2 - Premier ecran
 

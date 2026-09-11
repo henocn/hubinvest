@@ -12,11 +12,11 @@ Le projet avance par petits parcours complets. Chaque lot doit etre utilisable e
 
 Objectif : lancer un backend minimal, verifier la base et afficher une premiere surface conforme a la marque.
 
-- [ ] Initialiser le backend Node.js et Express.
-- [ ] Ajouter `npm run dev` avec nodemon.
-- [ ] Configurer Sequelize avec les variables `DB_*`.
-- [ ] Ajouter la commande `npm run db:migrate`.
-- [ ] Creer une route de sante et verifier son fonctionnement.
+- [x] Initialiser le backend Node.js et Express.
+- [x] Ajouter `npm run dev` avec nodemon.
+- [x] Configurer Sequelize avec les variables `DB_*`.
+- [x] Ajouter la commande `npm run db:migrate`.
+- [x] Creer une route de sante et verifier son fonctionnement.
 - [ ] Initialiser le frontend React et Vite sans ecrans metier anticipes.
 - [ ] Charger les couleurs, le logo, Inter et Lucide.
 - [ ] Afficher et faire valider un premier shell mobile sobre.

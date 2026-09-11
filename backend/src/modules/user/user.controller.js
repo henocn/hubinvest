@@ -1,0 +1,21 @@
+const userService = require('./user.service');
+
+const list = async (request, response) => {
+  response.json({ data: await userService.list() });
+};
+
+const get = async (request, response) => {
+  response.json({ data: await userService.get(request.params.id) });
+};
+
+const create = async (request, response) => {
+  const user = await userService.create(request.body);
+  response.status(201).json({ data: user, message: 'Utilisateur cree.' });
+};
+
+const update = async (request, response) => {
+  const user = await userService.update(request.params.id, request.body);
+  response.json({ data: user, message: 'Utilisateur modifie.' });
+};
+
+module.exports = { list, get, create, update };
