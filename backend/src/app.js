@@ -7,12 +7,14 @@ const authRoutes = require('./modules/auth/auth.route');
 const occupantRoutes = require('./modules/occupant/occupant.route');
 const userRoutes = require('./modules/user/user.route');
 const contactRoutes = require('./modules/contact/contact.route');
+const httpLogger = require('./middlewares/http-logger.middleware');
 const notFound = require('./middlewares/not-found.middleware');
 const errorHandler = require('./middlewares/error.middleware');
 
 const app = express();
 
 app.disable('x-powered-by');
+app.use(httpLogger);
 app.use(helmet());
 app.use(
   cors({

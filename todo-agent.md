@@ -135,6 +135,12 @@ Garder un format court et stable.
 
 En erreur, retourner un statut HTTP correct, un code exploitable par le frontend et un message clair. Ne pas exposer une stack ou un detail de connexion.
 
+### Journalisation locale
+
+- journaliser les requetes HTTP avec methode, route, statut et duree ;
+- garder les requetes SQL Sequelize silencieuses par defaut ;
+- ne jamais journaliser les corps, mots de passe, jetons ou donnees personnelles.
+
 ## Frontend et backoffice
 
 Utiliser React et Vite. Le frontend mobile devient une PWA lorsque commence le premier parcours hors ligne. Le backoffice reste une application web classique sauf besoin contraire.
