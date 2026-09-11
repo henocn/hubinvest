@@ -6,7 +6,7 @@ Le projet avance par petits parcours complets. Chaque lot doit etre utilisable e
 
 - [x] Lire le cahier des charges initial.
 - [x] Refaire le contexte, les conventions, le skill d'interface et les besoins de code.
-- [ ] Faire valider cette preparation avant le premier code.
+- [x] Faire valider cette preparation avant le premier code.
 
 ## Lot 1 - Premier socle executable
 
@@ -17,9 +17,9 @@ Objectif : lancer un backend minimal, verifier la base et afficher une premiere 
 - [x] Configurer Sequelize avec les variables `DB_*`.
 - [x] Ajouter la commande `npm run db:migrate`.
 - [x] Creer une route de sante et verifier son fonctionnement.
-- [ ] Initialiser le frontend React et Vite sans ecrans metier anticipes.
-- [ ] Charger les couleurs, le logo, Inter et Lucide.
-- [ ] Afficher et faire valider un premier shell mobile sobre.
+- [x] Initialiser le frontend React et Vite sans ecrans metier anticipes.
+- [x] Charger les couleurs, le logo, Inter et Lucide.
+- [x] Afficher et verifier un premier shell mobile sobre.
 
 Arret de validation : serveur demarrable, migration executable, route de sante joignable et premier ecran visible.
 
@@ -27,14 +27,14 @@ Arret de validation : serveur demarrable, migration executable, route de sante j
 
 Objectif : prouver le parcours le plus critique avec un occupant et un contact.
 
-- [ ] Creer les models et migrations minimaux pour occupant, utilisateur et contact.
-- [ ] Ajouter l'authentification minimale necessaire au parcours.
-- [ ] Garantir cote API qu'un occupant ne lit que ses contacts.
-- [ ] Creer le formulaire `Nouveau contact` avec les champs valides.
-- [ ] Enregistrer le contact localement avant l'appel API.
-- [ ] Afficher les etats a synchroniser, synchronisation et synchronise.
-- [ ] Synchroniser a l'ouverture, au retour du reseau et sur clic.
-- [ ] Afficher `Mes contacts` et la prochaine action.
+- [x] Creer les models et migrations minimaux pour occupant, utilisateur et contact.
+- [x] Ajouter l'authentification minimale necessaire au parcours.
+- [x] Garantir cote API qu'un occupant ne lit que ses contacts.
+- [x] Creer le formulaire `Nouveau contact` avec les champs valides.
+- [x] Enregistrer le contact localement avant l'appel API.
+- [x] Afficher les etats a synchroniser, synchronisation et synchronise.
+- [x] Synchroniser a l'ouverture, au retour du reseau et sur clic.
+- [x] Afficher `Mes contacts` et la prochaine action.
 - [ ] Tester uniquement le cloisonnement et le cycle hors ligne critique.
 
 Arret de validation : un contact est saisi en mode avion, reste visible, se synchronise et demeure inaccessible a un autre occupant.
@@ -44,7 +44,7 @@ Arret de validation : un contact est saisi en mode avion, reste visible, se sync
 Objectif : rendre visibles les resultats reels sans inventer de chiffres.
 
 - [ ] Ajouter les indicateurs de contacts utiles au responsable d'occupant.
-- [ ] Creer la premiere vue backoffice API-ZF.
+- [x] Creer la premiere vue backoffice API-ZF.
 - [ ] Afficher les totaux globaux et le detail autorise.
 - [ ] Ajouter les filtres strictement necessaires.
 - [ ] Ajouter l'export demande lorsque son format est connu.

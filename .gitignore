@@ -5,3 +5,5 @@ backoffice/.env
 backend/node_modules/
 frontend/node_modules/
 backoffice/node_modules/
+frontend/dist/
+backoffice/dist/

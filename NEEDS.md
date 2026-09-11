@@ -27,9 +27,16 @@ DB_NAME=hubinvest
 DB_USER=
 DB_PASSWORD=
 DB_DIALECT=postgres
+JWT_SECRET=
+ADMIN_EMAIL=
+ADMIN_PASSWORD=
+ADMIN_FIRST_NAME=
+ADMIN_LAST_NAME=
 ```
 
 Le code doit egalement fournir un `.env.example` sans secret. Les vraies valeurs de production ne seront demandees qu'au moment du deploiement.
+
+Etat actuel verifie sans lire ni afficher les valeurs : `DB_USER`, `DB_PASSWORD`, `JWT_SECRET` et les quatre variables `ADMIN_*` sont encore vides dans `backend/.env`.
 
 ## Pour les occupants et les contacts
 
@@ -44,38 +51,31 @@ Format prefere pour les listes : fichier Excel ou CSV avec une ligne par element
 
 ## Pour la vitrine
 
-- [ ] Nom public definitif de la plateforme. : HubInvest
-- [ ] Pour chaque occupant : description, produits ou services, marches servis, chiffre cle, contact public et photo. : Dynamique et ajoutable au backoffice
+- [x] Nom public definitif de la plateforme : HubInvest.
+- [x] Les contenus des occupants sont dynamiques et administrables depuis le backoffice ; aucun jeu de donnees fixe n'est necessaire au code.
 - [ ] Categories de la recherche `Que recherchez-vous ?` et occupants associes.
-- [ ] Programme date et heures de chaque activite. : Depuis le backoffice
-- [ ] Plan du Hub avec les numeros de stands. depuis le backoffice
-- [ ] Textes anglais valides pour les contenus publics. : Traduction automatique uniquement du frontend
+- [x] Le programme, ses dates et ses heures seront geres depuis le backoffice.
+- [x] Le plan et les numeros de stands seront geres depuis le backoffice.
+- [x] La traduction anglaise sera automatique et appliquee uniquement dans le frontend public.
 
 ## Pour l'Investor Desk
 
 - [ ] Libelle et type exact des neuf informations de qualification.
 - [ ] Regles definitives des classes A, B et C.
 - [ ] Delais de relance definitifs par classe.
-- [ ] Horaires et duree des creneaux disponibles.
-- [ ] Format attendu par INVEST TRACK : modele Excel, CSV ou documentation API.
+- [x] Les horaires et la duree des creneaux seront dynamiques.
+- [ ] Fichier modele Excel reel attendu par INVEST TRACK.
 
 ## Pour les besoins et rendez-vous B2B
 
-- [ ] Categories de besoins et d'offres.
-- [ ] Duree d'un rendez-vous.
-- [ ] Horaires ouverts a la reservation.
-- [ ] Nombre et noms ou numeros des tables.
-- [ ] Regle d'annulation et delai limite eventuel.
-- [ ] Personne ou role qui valide une mise en relation lorsque les deux parties ont accepte.
+Aucune valeur fixe n'est demandee a ce stade. Le parcours sera adapte aux cas d'utilisation observes avant de figer ses categories ou ses regles.
 
 ## Pour le Studio
 
-- [ ] Types de contenus ou tournages reservables.
-- [ ] Duree des creneaux par type.
-- [ ] Horaires disponibles.
-- [ ] Informations demandees a l'invite.
-- [ ] Statuts du planning utilises par l'equipe.
-- [ ] Textes de confirmation et de rappel.
+- [x] Les horaires disponibles seront geres depuis le backoffice.
+- [x] Les textes de confirmation et de rappel peuvent etre proposes lors de l'implementation.
+
+Les types de contenus, durees, informations invite et statuts ne sont pas des entrees necessaires au code pour le moment.
 
 ## Pour les Defis de la preuve
 

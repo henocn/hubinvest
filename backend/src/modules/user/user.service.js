@@ -5,6 +5,12 @@ const userRepository = require('./user.repository');
 
 const occupantRoles = [roles.OCCUPANT_MANAGER, roles.OCCUPANT_MEMBER];
 
+const protectSuperAdmin = (actor, targetRole) => {
+  if (actor.role !== roles.SUPER_ADMIN && targetRole === roles.SUPER_ADMIN) {
+    throw new AppError(403, 'FORBIDDEN_ROLE', 'Seul un super administrateur peut gerer ce role.');
+  }
+};
+
 const serialize = (user) => {
   const payload = user.toJSON();
   delete payload.passwordHash;
@@ -34,7 +40,8 @@ const get = async (id) => {
   return user;
 };
 
-const create = async (values) => {
+const create = async (actor, values) => {
+  protectSuperAdmin(actor, values.role);
   const normalized = { ...values, email: values.email.toLowerCase() };
   await validateOccupant(normalized);
   normalized.passwordHash = await bcrypt.hash(normalized.password, 12);
@@ -43,8 +50,10 @@ const create = async (values) => {
   return serialize(user);
 };
 
-const update = async (id, values) => {
+const update = async (actor, id, values) => {
   const user = await get(id);
+  protectSuperAdmin(actor, user.role);
+  protectSuperAdmin(actor, values.role);
   const nextValues = { ...values };
   const resultingValues = {
     role: nextValues.role || user.role,
