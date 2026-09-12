@@ -21,6 +21,7 @@ import {
   queueContact,
   syncPendingContacts,
 } from './lib/contact-store';
+import PublicPages from './PublicPages';
 
 const qualificationLabels = {
   hot: 'Chaud',
@@ -104,6 +105,7 @@ function LoginScreen({ onLogin }) {
             {loading ? 'Connexion...' : 'Se connecter'}
           </button>
         </form>
+        <a className="login-public-link" href="/stands">Découvrir les stands</a>
       </section>
     </main>
   );
@@ -476,6 +478,7 @@ function ContactsScreen({ session, apiOnline, setApiOnline, onLogout }) {
 }
 
 export default function App() {
+  const path = window.location.pathname.replace(/\/$/, '') || '/';
   const [session, setSession] = useState(() => {
     try {
       const stored = localStorage.getItem('hubinvest-session');
@@ -511,12 +514,26 @@ export default function App() {
     }
     localStorage.setItem('hubinvest-session', JSON.stringify(result));
     setSession(result);
+    window.location.assign('/espace-occupant');
   };
 
   const logout = useCallback(() => {
     localStorage.removeItem('hubinvest-session');
     setSession(null);
+    window.location.assign('/connexion');
   }, []);
+
+  if (path === '/' || path === '/stands' || path.startsWith('/stands/')) {
+    return <PublicPages path={path} />;
+  }
+
+  if (path !== '/connexion' && path !== '/espace-occupant') {
+    return <PublicPages path={path} />;
+  }
+
+  if (path === '/connexion') {
+    return <LoginScreen onLogin={login} />;
+  }
 
   return session ? (
     <ContactsScreen session={session} apiOnline={apiOnline} setApiOnline={setApiOnline} onLogout={logout} />

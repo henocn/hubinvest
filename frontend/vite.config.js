@@ -11,7 +11,7 @@ export default defineConfig({
       manifest: {
         name: 'HubInvest',
         short_name: 'HubInvest',
-        description: 'Collecte et suivi des contacts HubInvest',
+        description: 'Les stands et les contacts du Hub de l’Investissement',
         theme_color: '#006A4F',
         background_color: '#FFFFFF',
         display: 'standalone',

@@ -4,8 +4,10 @@ const jwt = require('jsonwebtoken');
 const { UniqueConstraintError } = require('sequelize');
 const contactService = require('../src/modules/contact/contact.service');
 const contactRepository = require('../src/modules/contact/contact.repository');
+const occupantService = require('../src/modules/occupant/occupant.service');
+const occupantRepository = require('../src/modules/occupant/occupant.repository');
 const { authenticate } = require('../src/middlewares/auth.middleware');
-const { User } = require('../src/models');
+const { User, Occupant } = require('../src/models');
 const env = require('../src/config/env');
 const app = require('../src/app');
 
@@ -147,4 +149,30 @@ test('la route des totaux refuse un jeton occupant et accepte un administrateur'
     total: 2,
     byOccupant: { 'occupant-a': 2 },
   });
+});
+
+test('la liste publique ne lit que les stands actifs et publiés', async (context) => {
+  context.mock.method(Occupant, 'findAll', async (options) => options);
+  const result = await occupantRepository.findPublic();
+  assert.deepEqual(result.where, { status: 'active', isPublished: true });
+  assert.ok(!result.attributes.includes('status'));
+  assert.ok(!result.attributes.includes('isPublished'));
+  assert.ok(!result.attributes.includes('proofNumber'));
+});
+
+test('une fiche publiée garde son adresse quand son nom change', async (context) => {
+  const saved = { id: 'stand-a', slug: 'ancien-nom', name: 'Ancien nom', status: 'active', activity: 'Industrie', isPublished: true };
+  context.mock.method(occupantRepository, 'findById', async () => saved);
+  context.mock.method(occupantRepository, 'update', async (_occupant, values) => values);
+
+  const changed = await occupantService.update(saved.id, { name: 'Nouveau nom' });
+  assert.equal(changed.slug, undefined);
+  await assert.rejects(
+    occupantService.update(saved.id, { slug: 'nouveau-nom' }),
+    (error) => error.status === 409 && error.code === 'PUBLIC_LINK_LOCKED',
+  );
+  await assert.rejects(
+    occupantService.update(saved.id, { activity: '' }),
+    (error) => error.status === 422 && error.code === 'STAND_NOT_READY',
+  );
 });

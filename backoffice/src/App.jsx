@@ -4,6 +4,7 @@ import {
   Check,
   Eye,
   EyeOff,
+  ExternalLink,
   LogOut,
   Pencil,
   Plus,
@@ -31,6 +32,8 @@ const roleLabels = {
 
 const adminRoles = new Set(['super-admin', 'admin-apizf']);
 const occupantRoles = new Set(['occupant-responsable', 'occupant-membre']);
+const availableRoles = new Set(['super-admin', 'admin-apizf', 'occupant-responsable', 'occupant-membre']);
+const publicBaseUrl = (import.meta.env.VITE_PUBLIC_URL || 'http://localhost:5173').replace(/\/$/, '');
 
 function PasswordInput(props) {
   const [visible, setVisible] = useState(false);
@@ -126,8 +129,10 @@ function OccupantForm({ occupant, onClose, onSaved, token }) {
   const [form, setForm] = useState(() => ({
     name: occupant?.name || '',
     proofNumber: occupant?.proofNumber || '',
+    standLabel: occupant?.standLabel || '',
     activity: occupant?.activity || '',
     status: occupant?.status || 'active',
+    isPublished: occupant?.isPublished ?? false,
   }));
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -141,8 +146,10 @@ function OccupantForm({ occupant, onClose, onSaved, token }) {
       const values = {
         name: form.name,
         proofNumber: form.proofNumber ? Number(form.proofNumber) : null,
+        standLabel: form.standLabel || null,
         activity: form.activity || null,
         status: form.status,
+        isPublished: isEditing ? form.isPublished : false,
       };
       const saved = isEditing
         ? await api.updateOccupant(token, occupant.id, values)
@@ -161,7 +168,7 @@ function OccupantForm({ occupant, onClose, onSaved, token }) {
         <header className="drawer-header">
           <div>
             <span className="eyebrow">{isEditing ? 'Modification' : 'Nouvel occupant'}</span>
-            <h2 id="occupant-title">{isEditing ? 'Modifier la structure' : 'Créer une structure'}</h2>
+            <h2 id="occupant-title">{isEditing ? 'Modifier le stand' : 'Créer un stand'}</h2>
           </div>
           <button className="icon-button" type="button" onClick={onClose} aria-label="Fermer">
             <X size={19} />
@@ -174,7 +181,11 @@ function OccupantForm({ occupant, onClose, onSaved, token }) {
             <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} minLength={2} required autoFocus />
           </label>
           <label>
-            Numéro de stand
+            Emplacement du stand
+            <input value={form.standLabel} onChange={(event) => setForm({ ...form, standLabel: event.target.value })} placeholder="Ex. : Pavillon Oti · Stand 12" />
+          </label>
+          <label>
+            Numéro de preuve
             <input type="number" min="1" value={form.proofNumber} onChange={(event) => setForm({ ...form, proofNumber: event.target.value })} />
           </label>
           <label>
@@ -182,13 +193,30 @@ function OccupantForm({ occupant, onClose, onSaved, token }) {
             <textarea rows="5" value={form.activity} onChange={(event) => setForm({ ...form, activity: event.target.value })} />
           </label>
           {isEditing && (
-            <label>
-              Statut
-              <select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })}>
-                <option value="active">Actif</option>
-                <option value="inactive">Inactif</option>
-              </select>
-            </label>
+            <>
+              <label>
+                Accès de l’équipe
+                <select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value, isPublished: event.target.value === 'active' ? form.isPublished : false })}>
+                  <option value="active">Actif</option>
+                  <option value="inactive">Inactif</option>
+                </select>
+              </label>
+              <label>
+                Visibilité publique
+                <select value={form.isPublished ? 'published' : 'draft'} onChange={(event) => setForm({ ...form, isPublished: event.target.value === 'published' })}>
+                  <option value="draft">Non publié</option>
+                  <option value="published">Publié</option>
+                </select>
+                <span className="field-hint">La publication nécessite un stand actif et une activité renseignée.</span>
+              </label>
+              <div className="stand-preview">
+                <span className="eyebrow">Aperçu de la fiche</span>
+                <strong>{form.name || 'Nom de la structure'}</strong>
+                {form.standLabel && <small>{form.standLabel}</small>}
+                <p>{form.activity || 'L’activité apparaîtra ici après sa saisie.'}</p>
+                {occupant.isPublished && <a href={`${publicBaseUrl}/stands/${occupant.slug}`} target="_blank" rel="noreferrer">Voir la fiche publiée <ExternalLink size={15} /></a>}
+              </div>
+            </>
           )}
           {error && <p className="form-error">{error}</p>}
           <footer className="drawer-actions">
@@ -270,7 +298,7 @@ function UserForm({ user, occupants, onClose, onSaved, token, currentRole, curre
             Rôle
             <select value={form.role} disabled={isCurrentUser} onChange={(event) => setForm({ ...form, role: event.target.value, occupantId: '' })}>
               {Object.entries(roleLabels)
-                .filter(([value]) => currentRole === 'super-admin' || value !== 'super-admin')
+                .filter(([value]) => availableRoles.has(value) && (currentRole === 'super-admin' || value !== 'super-admin'))
                 .map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select>
           </label>
@@ -364,7 +392,7 @@ function AppShell({ session, onLogout }) {
 
   const query = search.trim().toLowerCase();
   const visibleOccupants = useMemo(() => occupants.filter((occupant) =>
-    !query || [occupant.name, occupant.activity, occupant.proofNumber].some((value) => String(value || '').toLowerCase().includes(query))), [occupants, query]);
+    !query || [occupant.name, occupant.activity, occupant.standLabel, occupant.proofNumber].some((value) => String(value || '').toLowerCase().includes(query))), [occupants, query]);
   const visibleUsers = useMemo(() => users.filter((user) =>
     !query || [user.firstName, user.lastName, user.email, user.role, user.occupant?.name].some((value) => String(value || '').toLowerCase().includes(query))), [users, query]);
 
@@ -405,10 +433,10 @@ function AppShell({ session, onLogout }) {
         </div>
         <nav aria-label="Navigation principale">
           <button className={section === 'occupants' ? 'is-active' : ''} onClick={() => switchSection('occupants')}>
-            <Building2 size={18} /> Occupants
+            <Building2 size={18} /> Stands
           </button>
           <button className={section === 'users' ? 'is-active' : ''} onClick={() => switchSection('users')}>
-            <Users size={18} /> Utilisateurs
+            <Users size={18} /> Accès
           </button>
         </nav>
         <div className="sidebar-user">
@@ -422,16 +450,16 @@ function AppShell({ session, onLogout }) {
         <header className="workspace-header">
           <div>
             <span className="eyebrow">Gestion</span>
-            <h1>{section === 'occupants' ? 'Occupants' : 'Utilisateurs'}</h1>
-            <p>{section === 'occupants' ? 'Structures présentes et informations de stand.' : 'Comptes et niveaux d’accès à la plateforme.'}</p>
+            <h1>{section === 'occupants' ? 'Stands' : 'Accès'}</h1>
+            <p>{section === 'occupants' ? 'Fiches publiques, emplacements et publication.' : 'Comptes et niveaux d’accès à la plateforme.'}</p>
           </div>
           <button className="button button-primary" type="button" onClick={() => setDrawer({ type: section === 'occupants' ? 'occupant' : 'user', item: null })}>
-            <Plus size={18} /> {section === 'occupants' ? 'Nouvel occupant' : 'Nouvel utilisateur'}
+            <Plus size={18} /> {section === 'occupants' ? 'Nouveau stand' : 'Nouvel utilisateur'}
           </button>
         </header>
 
         <section className="summary-row" aria-label="Résumé">
-          <article><span>Total occupants</span><strong>{loading || error ? '—' : occupants.length}</strong><small>{!loading && !error && `${occupants.filter((item) => item.status === 'active').length} actifs`}</small></article>
+          <article><span>Stands</span><strong>{loading || error ? '—' : occupants.length}</strong><small>{!loading && !error && `${occupants.filter((item) => item.isPublished && item.status === 'active').length} publiés`}</small></article>
           <article><span>Utilisateurs</span><strong>{loading || error ? '—' : users.length}</strong><small>{!loading && !error && `${users.filter((item) => item.isActive).length} actifs`}</small></article>
           {section === 'occupants' ? (
             <article><span>Contacts enregistrés</span><strong>{loading || error ? '—' : contactStats.total}</strong><small>tous les occupants</small></article>
@@ -452,16 +480,18 @@ function AppShell({ session, onLogout }) {
           {!loading && !error && section === 'occupants' && (visibleOccupants.length ? (
             <div className="table-scroll">
               <table>
-                <thead><tr><th>Structure</th><th>Stand</th><th>Activité</th><th>Contacts</th><th>Statut</th><th className="actions-heading">Actions</th></tr></thead>
+                <thead><tr><th>Structure</th><th>Emplacement</th><th>Activité</th><th>Contacts</th><th>Publication</th><th>Accès</th><th className="actions-heading">Actions</th></tr></thead>
                 <tbody>{visibleOccupants.map((occupant) => (
                   <tr key={occupant.id}>
                     <td><strong>{occupant.name}</strong><small>{occupant.slug}</small></td>
-                    <td>{occupant.proofNumber || '—'}</td>
+                    <td>{occupant.standLabel || '—'}</td>
                     <td className="activity-cell">{occupant.activity || 'Non renseignée'}</td>
                     <td className="contact-count">{contactStats.byOccupant[occupant.id] || 0}</td>
+                    <td><span className={`status-pill ${occupant.isPublished && occupant.status === 'active' ? 'is-active' : ''}`}>{occupant.isPublished && occupant.status === 'active' ? 'Publié' : 'Non publié'}</span></td>
                     <td><span className={`status-pill ${occupant.status === 'active' ? 'is-active' : ''}`}>{occupant.status === 'active' && <Check size={13} />}{occupant.status === 'active' ? 'Actif' : 'Inactif'}</span></td>
                     <td>
                       <div className="row-actions">
+                        {occupant.isPublished && occupant.status === 'active' && <a className="table-action" href={`${publicBaseUrl}/stands/${occupant.slug}`} target="_blank" rel="noreferrer"><ExternalLink size={15} /> Voir</a>}
                         <button className="table-action" type="button" onClick={() => setDrawer({ type: 'occupant', item: occupant })}><Pencil size={15} /> Modifier</button>
                         <button className="table-action is-danger" type="button" onClick={() => { setDeleteError(''); setPendingDelete({ type: 'occupant', item: occupant, label: `l'occupant ${occupant.name}` }); }}><Trash2 size={15} /> Supprimer</button>
                       </div>
@@ -470,7 +500,7 @@ function AppShell({ session, onLogout }) {
                 ))}</tbody>
               </table>
             </div>
-          ) : <EmptyState icon={Building2} title="Aucun occupant" copy={query ? 'Aucun résultat ne correspond à la recherche.' : 'Créez la première structure présente sur le salon.'} />)}
+          ) : <EmptyState icon={Building2} title="Aucun stand" copy={query ? 'Aucun résultat ne correspond à la recherche.' : 'Créez la première fiche du Hub.'} />)}
 
           {!loading && !error && section === 'users' && (visibleUsers.length ? (
             <div className="table-scroll">

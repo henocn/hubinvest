@@ -32,6 +32,8 @@ const authorized = (token, options = {}) => ({
 
 export const api = {
   health: () => request('/health'),
+  publicOccupants: () => request('/occupants/public'),
+  publicOccupant: (slug) => request(`/occupants/public/${encodeURIComponent(slug)}`),
   login: (values) => request('/auth/login', { method: 'POST', body: JSON.stringify(values) }),
   contacts: (token) => request('/contacts', authorized(token)),
   contactStats: (token) => request('/contacts/stats', authorized(token)),

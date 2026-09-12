@@ -7,6 +7,7 @@ Les informations absentes ne doivent pas etre inventees. Utiliser des donnees de
 ## Deja fourni
 
 - [x] Cahier des charges fonctionnel : `Volume2_HubInvest_Cahier_des_charges_API-ZF_V1.docx`
+- [x] Cadrage global complémentaire : `APIZF - FIL2026 - DK.pdf` (document de travail à diffusion restreinte ; ses jalons et objectifs indicatifs restent à confirmer)
 - [x] Logo API-ZF sur fond blanc : `assets/Logo fond blanc.jpeg`
 - [x] Logo API-ZF en PNG avec transparence : `assets/Logo sans fond.png`
 - [x] Palette de couleurs : `assets/Couleurs.png`
@@ -36,7 +37,7 @@ ADMIN_LAST_NAME=
 
 Le code doit egalement fournir un `.env.example` sans secret. Les vraies valeurs de production ne seront demandees qu'au moment du deploiement.
 
-Etat actuel verifie sans lire ni afficher les valeurs : `DB_USER`, `DB_PASSWORD`, `JWT_SECRET` et les quatre variables `ADMIN_*` sont encore vides dans `backend/.env`.
+Ne pas déduire l'état actuel de `.env` de ce document : vérifier uniquement la présence des variables nécessaires au moment d'exécuter la fonction concernée, sans afficher leurs valeurs.
 
 ## Pour les occupants et les contacts
 
@@ -46,6 +47,8 @@ Etat actuel verifie sans lire ni afficher les valeurs : `DB_USER`, `DB_PASSWORD`
 - [ ] Les cinq champs obligatoires exacts du formulaire de contact.
 - [ ] Confirmation de la possibilite ou non de noter une vente : produit, quantite et montant.
 - [ ] Texte de consentement a afficher avant l'enregistrement d'un contact, en francais et en anglais si necessaire.
+- [ ] Parcours exact de l'auto-inscription par QR code de stand : champs, consentement, rattachement à l'occupant, confirmation et gestion des doublons.
+- [ ] Colonnes et périmètre de l'export Excel du carnet de contacts de l'occupant.
 
 Format prefere pour les listes : fichier Excel ou CSV avec une ligne par element et des colonnes stables.
 
@@ -54,6 +57,7 @@ Format prefere pour les listes : fichier Excel ou CSV avec une ligne par element
 - [x] Nom public definitif de la plateforme : HubInvest.
 - [x] Les contenus des occupants sont dynamiques et administrables depuis le backoffice ; aucun jeu de donnees fixe n'est necessaire au code.
 - [ ] Categories de la recherche `Que recherchez-vous ?` et occupants associes.
+- [ ] Destinations des QR codes d'accueil, de fiche occupant, de l'Investor Desk et des Défis ; n'imprimer que les parcours réellement prêts.
 - [x] Le programme, ses dates et ses heures seront geres depuis le backoffice.
 - [x] Le plan et les numeros de stands seront geres depuis le backoffice.
 - [x] La traduction anglaise sera automatique et appliquee uniquement dans le frontend public.
@@ -65,6 +69,8 @@ Format prefere pour les listes : fichier Excel ou CSV avec une ligne par element
 - [ ] Delais de relance definitifs par classe.
 - [x] Les horaires et la duree des creneaux seront dynamiques.
 - [ ] Fichier modele Excel reel attendu par INVEST TRACK.
+- [ ] Contenu et fichier approuvé de l'Investor Pack bilingue, ainsi que sa règle d'accès par QR code.
+- [ ] Règles de réservation et personne responsable des relances, si le parcours Investor Desk est retenu.
 
 ## Pour les besoins et rendez-vous B2B
 
@@ -76,6 +82,8 @@ Aucune valeur fixe n'est demandee a ce stade. Le parcours sera adapte aux cas d'
 - [x] Les textes de confirmation et de rappel peuvent etre proposes lors de l'implementation.
 
 Les types de contenus, durees, informations invite et statuts ne sont pas des entrees necessaires au code pour le moment.
+
+- [ ] Lieu de stockage des capsules validées, responsable de validation et règle de mise à disposition à l'invité.
 
 ## Pour les Defis de la preuve
 
@@ -101,6 +109,7 @@ Tous les secrets passent par des variables d'environnement et ne sont jamais ajo
 ## Pour les rapports et l'IA
 
 - [ ] Indicateurs exacts a afficher dans le tableau de bord.
+- [ ] Définition et source de chaque indicateur demandé pour un parcours effectivement développé ; les objectifs chiffrés ne sont pas des résultats à afficher.
 - [ ] Structure attendue du rapport quotidien.
 - [ ] Structure du rapport final par occupant.
 - [ ] Fournisseur et modele d'IA, uniquement lorsque la redaction assistee est implementee.

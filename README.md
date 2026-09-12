@@ -1,160 +1,49 @@
 # HubInvest
 
-HubInvest est la plateforme digitale du Hub de l'Investissement de la 21e Foire internationale de Lome. Elle doit transformer les echanges realises pendant la Foire en contacts suivis, rendez-vous, donnees mesurables et actions concretes.
+HubInvest est le site mobile du **Hub de l’Investissement de l’API-ZF**. Son rôle est simple : faire découvrir les acteurs présents au Hub, transformer une rencontre en contact consenti, puis aider les personnes concernées à donner une suite à ce contact. Ce n’est ni la plateforme de toute la Foire, ni une boutique, ni un réseau social.
 
-La source fonctionnelle du projet est le cahier des charges initial :
-`Volume2_HubInvest_Cahier_des_charges_API-ZF_V1.docx`.
+Ce cadrage est une **interprétation de travail à valider**, issue du cahier des charges propre à HubInvest (`Volume2_HubInvest_Cahier_des_charges_API-ZF_V1.docx`) et du document plus large de campagne (`APIZF - FIL2026 - DK.pdf`). Les deux sont des documents de travail rédigés avec l’aide de l’IA : leurs scénarios, chiffres et automatisations ne valent pas décision métier. Le cahier des charges annonce d’ailleurs six modules indispensables, alors que son tableau en étiquette huit ainsi. On retient donc d’abord l’intention et les gestes des personnes, pas la liste brute des modules.
 
-Ce README en est la synthese de travail. En cas de doute sur une regle metier, relire le cahier des charges avant d'inventer un comportement.
+## Qui fait quoi
 
-## Les problemes a resoudre
+| Personne | Ce qu’elle fait elle-même dans HubInvest | Ce qu’elle doit obtenir |
+| --- | --- | --- |
+| Visiteur | Scanne un QR code, découvre le Hub et les occupants, consulte une fiche. S’il le souhaite, laisse une demande de contact. | Une information compréhensible sur téléphone, sans compte obligatoire. |
+| Visiteur professionnel, acheteur ou investisseur | Cherche une entreprise ou une information, expose son besoin, demande à rencontrer un occupant ou l’API-ZF. | Un interlocuteur identifié et une suite claire, pas une simple collecte de coordonnées. |
+| Membre d’un stand | Enregistre avec accord les personnes réellement rencontrées, précise leur besoin et prévoit une relance. | Son propre carnet de contacts et ses actions à faire. |
+| Responsable d’un occupant | Tient la fiche de son stand à jour, suit les contacts de son équipe et leurs suites. | Une vue limitée à son occupant, avec des résultats utiles et exportables. |
+| Équipe API-ZF | Reçoit les demandes qui lui sont adressées, qualifie les projets d’investissement, attribue un responsable et suit les prochaines actions. | Une vue d’ensemble fiable, sans exposer les contacts privés d’un stand aux autres. |
+| Administrateur API-ZF | Crée les occupants et les accès, publie ou corrige les informations, ouvre seulement les parcours réellement utilisés. | Un backoffice sobre qui permet de garder la main sans développeur. |
 
-Le produit existe pour traiter cinq problemes precis.
+L’invité du Studio et l’animateur des Défis sont des profils supplémentaires **si ces opérations sont confirmées**. Le public n’a pas à se connecter pour simplement consulter. Un formulaire ponctuel n’équivaut pas automatiquement à un compte utilisateur.
 
-1. Les contacts pris sur les stands se perdent et sont peu relances.
-2. Les resultats du Hub ne sont pas mesures de facon fiable.
-3. Les rencontres utiles entre entreprises, acheteurs et investisseurs dependent du hasard.
-4. Les invitations, reservations et rappels du Studio sont difficiles a organiser manuellement.
-5. Le public manque de raisons de s'arreter et de circuler entre les stands.
+## Les parcours à rendre vrais en premier
 
-Une fonctionnalite n'est prioritaire que si elle resout directement l'un de ces problemes ou si elle est indispensable au fonctionnement d'une fonctionnalite prioritaire.
+1. **Découvrir.** Depuis un QR code ou un lien, le visiteur arrive sur une page publique du Hub, voit les occupants et ouvre leur fiche. Un QR code de stand mène directement à la bonne fiche. Une action n’apparaît que si sa destination fonctionne.
+2. **Exprimer un intérêt.** Le visiteur choisit de demander à être recontacté par un occupant ou de s’adresser à l’API-ZF. Il indique seulement les informations nécessaires et donne un accord explicite pour l’usage annoncé. Il voit une confirmation et sait qui doit reprendre contact.
+3. **Saisir une rencontre.** Un membre de stand peut lui-même créer un contact après un échange réel, le qualifier simplement et noter la prochaine action. Le responsable retrouve les contacts de son stand, y compris ceux saisis sans réseau puis synchronisés.
+4. **Faire le suivi.** La personne responsable consulte ses demandes, effectue la relance et met à jour l’avancement. L’API-ZF suit séparément ses dossiers investisseurs. Les chiffres affichés proviennent des actions enregistrées, pas de prévisions.
 
-## Le produit
+Le QR code est une **porte d’entrée**, pas la promesse d’un parcours complexe. Scanner pour consulter, scanner pour laisser ses coordonnées et scanner pour jouer sont trois intentions différentes. Participer à un jeu ne doit pas inscrire quelqu’un automatiquement comme prospect commercial.
 
-HubInvest est une application web progressive concue d'abord pour le telephone. Elle s'ouvre depuis un lien ou un QR code et ne demande aucun telechargement obligatoire.
+## Ce que les documents envisagent au-delà de ce noyau
 
-Elle s'adresse a six profils fonctionnels :
+Le cahier des charges propose aussi une bourse de besoins et des rendez-vous B2B, une réservation d’entretiens avec l’API-ZF, un planning du Studio avec lien personnel pour les invités, un jeu de visite entre plusieurs stands, ainsi que des rapports. Ces parcours ont un sens pour l’événement, mais chacun dépend d’une organisation réelle : qui accepte les rendez-vous, qui anime le Studio, qui valide les étapes du jeu, qui remet les récompenses et qui exploite les rapports. Ils seront développés **un par un après validation de leur usage**, avec une solution manuelle possible lorsque cela suffit.
 
-- le visiteur ;
-- le visiteur professionnel ;
-- l'occupant du Hub et son equipe ;
-- l'invite du Studio ;
-- l'equipe API-ZF ;
-- l'equipe de campagne.
+Le document de campagne décrit également la presse, les vidéos, la scénographie, les invitations et les objectifs de communication. Ce sont des activités humaines autour du Hub, pas automatiquement des fonctionnalités à coder. Le mur d’écran, les suggestions par IA, les messages automatiques, les badges partageables et les tableaux de bord élaborés sont des améliorations possibles, non le point de départ.
 
-Les roles techniques seront plus precis que ces profils, notamment pour distinguer l'administration, l'Investor Desk, l'animation et les membres d'un occupant.
+## Règles de produit
 
-## Les fonctions retenues
+- Chaque occupant ne voit que ses contacts et ses résultats. L’API-ZF voit les chiffres globaux ; elle n’accède au détail d’un contact de stand que si la personne l’a accepté. Les dossiers investisseurs restent réservés à l’équipe API-ZF autorisée.
+- Le consentement est demandé pour chaque finalité utile ; rien n’est précoché. Les règles et textes définitifs doivent être validés par l’API-ZF compétente.
+- Le suivi d’un contact appartient à une personne identifiable : une demande reçue sans responsable ni prochaine action ne résout pas le problème initial.
+- La saisie essentielle doit rester utilisable sur un téléphone modeste et avec une connexion faible. La synchronisation hors ligne est vérifiée sur appareil avant d’être annoncée comme fiable.
+- Le français est la langue de base. Les parcours publics ou investisseurs nécessitant l’anglais sont traduits et vérifiés avant publication.
+- Aucun chiffre fictif, aucune estimation présentée comme un résultat, aucune décision ou communication de l’IA sans validation humaine.
+- Aucun paiement, vente en ligne, classement public des occupants ou extension automatique à toute la Foire.
 
-### Ne plus perdre les contacts
+## Où en est le projet
 
-- carnet de contacts propre a chaque occupant ;
-- saisie d'un contact en moins d'une minute ;
-- qualification chaud, tiede ou froid ;
-- prochaine action datee et attribuee ;
-- saisie hors ligne puis synchronisation ;
-- export et indicateurs propres a l'occupant.
+Le socle Node.js, PostgreSQL/Sequelize, le frontend React et le backoffice existent. Le parcours de saisie et de consultation des contacts d’un occupant est engagé. Le public peut désormais ouvrir `/stands` et une fiche `/stands/:slug` sans compte ; seules les fiches publiées par l’API-ZF sont visibles. **Le formulaire public de demande de recontact n’est pas encore réalisé.** Les fonctions décrites ci-dessus ne doivent pas toutes être lues comme déjà livrées.
 
-### Mesurer les resultats
-
-- chiffres du jour fondes uniquement sur les donnees enregistrees ;
-- tableau de bord global pour l'API-ZF ;
-- vue confidentielle pour chaque occupant ;
-- rapport quotidien relu avant diffusion ;
-- rapports finaux et exports.
-
-### Provoquer les rencontres utiles
-
-- publication des besoins et des offres ;
-- demande de mise en relation ;
-- accord des deux parties ;
-- reservation d'un creneau et d'une table sans chevauchement ;
-- qualification et suivi des investisseurs par l'Investor Desk ;
-- prochaine action obligatoire pour les dossiers utiles.
-
-### Organiser le Studio
-
-- invitation personnelle sans creation de compte ;
-- choix d'un creneau disponible ;
-- confirmation et rappels ;
-- planning de tournage et statuts ;
-- livraison de la video si cette fonction peut etre terminee sans fragiliser le reste.
-
-### Faire venir et circuler le public
-
-- vitrine publique du Hub et des occupants ;
-- recherche par besoin ;
-- programme et plan ;
-- passeport personnel des Defis de la preuve ;
-- parcours dans trois stands avec validation humaine ;
-- recompense retirable une seule fois.
-
-### Administrer ce qui doit changer
-
-L'administration est construite au fur et a mesure des fonctions. Elle permet de gerer les occupants, utilisateurs, contenus, agendas, questions, recompenses et acces utiles aux parcours deja implementes. Elle n'est pas un logiciel separe rempli d'ecrans anticipes.
-
-## Priorite reelle
-
-Le tableau des modules du cahier des charges marque M1, M2, M3, M4, M5, M6, M8 et M9 comme indispensables. M7, les rapprochements par IA et la livraison automatique des videos sont reportables.
-
-L'ordre de developpement ne suit pas obligatoirement les numeros des modules. Il suit les risques et les problemes a resoudre. La premiere preuve technique doit couvrir le risque principal : enregistrer un contact hors ligne, le synchroniser et garantir qu'un autre occupant ne peut pas le lire.
-
-## Regles non negociables
-
-- Aucun occupant ne voit les contacts ou les resultats detailles d'un autre occupant.
-- Les controles d'acces sont appliques par l'API, jamais uniquement par l'interface.
-- Une saisie critique est conservee localement avant toute tentative d'envoi.
-- La synchronisation ne depend pas de Background Sync, absent ou limite sur iPhone.
-- Une reservation ne peut pas creer de chevauchement.
-- Une recompense ne peut pas etre retiree deux fois.
-- Les chiffres affiches sont mesures, jamais estimes.
-- Les coordonnees personnelles ne sont pas envoyees a un service d'IA.
-- Une sortie d'IA est toujours validee par une personne avant diffusion.
-- Le francais et l'anglais sont prevus des la creation des ecrans concernes.
-- L'interface reste utilisable sur petit telephone, en 3G et en pleine lumiere.
-
-## Direction technique validee
-
-### Backend
-
-- JavaScript sur Node.js ;
-- API REST avec Express ;
-- `nodemon` pour `npm run dev` ;
-- PostgreSQL ;
-- Sequelize avec models et migrations ;
-- `npm run db:migrate` pour appliquer les migrations ;
-- variables d'environnement pour toute la connexion a la base ;
-- modules organises en route, validation, repository, service et controller.
-
-### Frontend et backoffice
-
-- React avec Vite ;
-- PWA pour l'interface mobile ;
-- stockage local IndexedDB pour les actions hors ligne ;
-- interface bilingue lorsque le parcours l'exige ;
-- design system commun fonde sur les couleurs et logos du dossier `assets/` ;
-- composants accessibles et bibliotheque d'icones coherente.
-
-Le detail d'architecture se trouve dans `todo-agent.md`. Les regles visuelles se trouvent dans `SKILL.md`.
-
-## Methode de developpement
-
-Le projet avance par petits lots utilisables.
-
-1. Choisir un probleme et le plus petit parcours qui le resout.
-2. Implementer uniquement les donnees, l'API et l'ecran necessaires a ce parcours.
-3. Ouvrir l'interface et verifier les clics, les erreurs et les etats vides.
-4. Montrer le resultat avant d'etendre le parcours.
-5. Modifier a partir du retour reel, puis passer au lot suivant.
-
-Un bouton visible doit fonctionner. Un ecran non necessaire n'est pas cree. Les commentaires evidents et les textes de remplissage ne sont pas ajoutes.
-
-Les tests automatiques se limitent aux risques critiques : droits d'acces, synchronisation, absence de chevauchement, unicite du retrait d'une recompense et calculs importants. Les alertes de vulnerabilites de dependances sont acceptees pendant la construction et traitees lors de la stabilisation finale.
-
-## Documents de travail
-
-- `TODO1.md` : preparation avant le premier code ;
-- `TODO.md` : ordre des lots fonctionnels ;
-- `todo-agent.md` : conventions et execution pas a pas ;
-- `SKILL.md` : direction frontend et backoffice ;
-- `NEEDS.md` : entrees externes strictement necessaires au code.
-
-## Calendrier du cahier des charges
-
-- validation du perimetre : 25 septembre 2026 ;
-- gel des nouvelles fonctions : 16 octobre 2026 ;
-- vitrine en ligne : 12 novembre 2026 ;
-- tests de reception : du 9 au 18 novembre 2026 ;
-- gel de la plateforme : 20 novembre 2026 ;
-- exploitation : du 27 novembre au 13 decembre 2026 ;
-- rapports par occupant : du 14 au 18 decembre 2026.
+Le travail continue par petits parcours complets : données, API, écran, vérification des clics et des droits, puis retour utilisateur. `TODO.md` distingue le travail déjà fait, la prochaine étape et les parcours à confirmer. `NEEDS.md` ne demande les données externes qu’au moment où elles sont nécessaires au code. `SKILL.md` fixe la direction visuelle du frontend et du backoffice : sobre, claire, facile à utiliser, fondée sur les couleurs et logos de `assets/`.

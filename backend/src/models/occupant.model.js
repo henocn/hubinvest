@@ -22,6 +22,11 @@ module.exports = (sequelize, DataTypes) =>
         unique: true,
         field: 'proof_number',
       },
+      standLabel: {
+        type: DataTypes.STRING(80),
+        allowNull: true,
+        field: 'stand_label',
+      },
       activity: {
         type: DataTypes.TEXT,
         allowNull: true,
@@ -31,6 +36,12 @@ module.exports = (sequelize, DataTypes) =>
         allowNull: false,
         defaultValue: 'active',
         validate: { isIn: [['active', 'inactive']] },
+      },
+      isPublished: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        field: 'is_published',
       },
     },
     {
