@@ -8,6 +8,13 @@ const contactController = require('./contact.controller');
 
 const router = express.Router();
 
+router.get(
+  '/admin/stats',
+  asyncHandler(authenticate),
+  requireRoles(roles.SUPER_ADMIN, roles.ADMIN_APIZF),
+  asyncHandler(contactController.adminStats),
+);
+
 router.use(
   asyncHandler(authenticate),
   requireRoles(roles.OCCUPANT_MANAGER, roles.OCCUPANT_MEMBER),

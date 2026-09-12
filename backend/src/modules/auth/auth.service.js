@@ -16,7 +16,7 @@ const login = async ({ email, password }) => {
     throw new AppError(401, 'INVALID_CREDENTIALS', 'Identifiants incorrects.');
   }
 
-  if (user.occupant && user.occupant.status !== 'active') {
+  if (user.occupantId && user.occupant?.status !== 'active') {
     throw new AppError(403, 'OCCUPANT_INACTIVE', "Le compte de l'occupant est inactif.");
   }
 

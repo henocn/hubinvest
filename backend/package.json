@@ -10,7 +10,8 @@
     "db:migrate": "sequelize-cli db:migrate",
     "db:migrate:undo": "sequelize-cli db:migrate:undo",
     "db:migrate:status": "sequelize-cli db:migrate:status",
-    "db:seed": "sequelize-cli db:seed:all"
+    "db:seed": "sequelize-cli db:seed:all",
+    "test:critical": "node --test test/critical.test.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

@@ -41,6 +41,7 @@ export const api = {
   deleteOccupant: (token, id) =>
     request(`/occupants/${id}`, authorized(token, { method: 'DELETE' })),
   users: (token) => request('/users', authorized(token)),
+  contactStats: (token) => request('/contacts/admin/stats', authorized(token)),
   createUser: (token, values) =>
     request('/users', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   updateUser: (token, id, values) =>

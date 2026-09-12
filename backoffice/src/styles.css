@@ -97,6 +97,7 @@ td strong, td small { display: block; }
 td strong { color: var(--ink); }
 td small { margin-top: 4px; color: #85898d; }
 .activity-cell { max-width: 330px; color: #64686d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.contact-count { font-variant-numeric: tabular-nums; font-weight: 700; }
 .actions-heading { width: 1%; text-align: right; }
 .row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 5px; white-space: nowrap; }
 .table-action { min-height: 32px; padding: 0 8px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid #dedfdd; border-radius: 6px; color: #55595e; background: #fff; font-size: 11px; font-weight: 700; }
@@ -151,7 +152,6 @@ td small { margin-top: 4px; color: #85898d; }
   .workspace-header { align-items: flex-start; flex-direction: column; }
   .workspace-header .button { width: 100%; }
   .summary-row { grid-template-columns: 1fr; }
-  .summary-row article:nth-child(3) { display: none; }
   .field-row { grid-template-columns: 1fr; }
   .drawer { padding: 22px; }
   .drawer-actions { bottom: -22px; margin: 9px -22px -22px; padding: 16px 22px; }

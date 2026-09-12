@@ -35,7 +35,8 @@ Objectif : prouver le parcours le plus critique avec un occupant et un contact.
 - [x] Afficher les etats a synchroniser, synchronisation et synchronise.
 - [x] Synchroniser a l'ouverture, au retour du reseau et sur clic.
 - [x] Afficher `Mes contacts` et la prochaine action.
-- [ ] Tester uniquement le cloisonnement et le cycle hors ligne critique.
+- [x] Tester le cloisonnement des contacts, la resynchronisation sans doublon et l'acces refuse apres desactivation d'un occupant.
+- [ ] Verifier sur appareil le cycle complet : saisie en mode avion, retour du reseau et synchronisation.
 
 Arret de validation : un contact est saisi en mode avion, reste visible, se synchronise et demeure inaccessible a un autre occupant.
 
@@ -45,9 +46,11 @@ Objectif : rendre visibles les resultats reels sans inventer de chiffres.
 
 - [ ] Ajouter les indicateurs de contacts utiles au responsable d'occupant.
 - [x] Creer la premiere vue backoffice API-ZF.
-- [ ] Afficher les totaux globaux et le detail autorise.
+- [x] Afficher le nombre de contacts enregistres, au total et par occupant, dans le backoffice API-ZF.
+- [ ] Completer les totaux globaux et le detail autorise selon les indicateurs encore a preciser.
 - [ ] Ajouter les filtres strictement necessaires.
 - [ ] Ajouter l'export demande lorsque son format est connu.
+- [ ] Verifier visuellement la vue des contacts dans le backoffice.
 
 Arret de validation : les chiffres du backoffice correspondent aux donnees creees et les vues restent cloisonnees.
 

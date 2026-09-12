@@ -1,4 +1,6 @@
+const { UniqueConstraintError } = require('sequelize');
 const AppError = require('../../shared/app-error');
+const roles = require('../../shared/roles');
 const contactRepository = require('./contact.repository');
 
 const requireOccupant = (user) => {
@@ -10,7 +12,7 @@ const requireOccupant = (user) => {
 
 const list = async (user, query) => {
   const occupantId = requireOccupant(user);
-  const result = await contactRepository.findAll({ occupantId, ...query });
+  const result = await contactRepository.findAll({ ...query, occupantId });
   return {
     items: result.rows,
     pagination: {
@@ -33,25 +35,35 @@ const get = async (user, id) => {
 const create = async (user, values) => {
   const occupantId = requireOccupant(user);
 
-  return contactRepository.sequelize.transaction(async (transaction) => {
-    if (values.id) {
-      const existing = await contactRepository.findExisting(occupantId, values.id, transaction);
+  try {
+    return await contactRepository.sequelize.transaction(async (transaction) => {
+      if (values.id) {
+        const existing = await contactRepository.findExisting(occupantId, values.id, transaction);
+        if (existing) {
+          return { contact: existing, created: false };
+        }
+      }
+
+      const contact = await contactRepository.create(
+        {
+          ...values,
+          occupantId,
+          createdByUserId: user.id,
+        },
+        transaction,
+      );
+
+      return { contact, created: true };
+    });
+  } catch (error) {
+    if (values.id && error instanceof UniqueConstraintError) {
+      const existing = await contactRepository.findExisting(occupantId, values.id);
       if (existing) {
         return { contact: existing, created: false };
       }
     }
-
-    const contact = await contactRepository.create(
-      {
-        ...values,
-        occupantId,
-        createdByUserId: user.id,
-      },
-      transaction,
-    );
-
-    return { contact, created: true };
-  });
+    throw error;
+  }
 };
 
 const update = async (user, id, values) => {
@@ -74,4 +86,22 @@ const stats = async (user) => {
   return { total, byQualification };
 };
 
-module.exports = { list, get, create, update, stats };
+const adminStats = async (user) => {
+  if (![roles.SUPER_ADMIN, roles.ADMIN_APIZF].includes(user.role)) {
+    throw new AppError(403, 'FORBIDDEN', "Vous n'avez pas acces a cette action.");
+  }
+
+  const groups = await contactRepository.countByOccupant();
+  const byOccupant = {};
+  let total = 0;
+
+  groups.forEach((group) => {
+    const count = Number(group.count);
+    byOccupant[group.occupantId] = count;
+    total += count;
+  });
+
+  return { total, byOccupant };
+};
+
+module.exports = { list, get, create, update, stats, adminStats };

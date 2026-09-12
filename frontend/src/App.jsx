@@ -250,7 +250,7 @@ function ContactForm({ onCancel, onCreated }) {
   );
 }
 
-function ContactsScreen({ session, apiOnline, onLogout }) {
+function ContactsScreen({ session, apiOnline, setApiOnline, onLogout }) {
   const [view, setView] = useState('list');
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -267,7 +267,8 @@ function ContactsScreen({ session, apiOnline, onLogout }) {
   const sync = useCallback(async () => {
     setError('');
 
-    if (!apiOnline) {
+    if (!navigator.onLine) {
+      setApiOnline(false);
       await readLocal();
       setLoading(false);
       return;
@@ -278,17 +279,19 @@ function ContactsScreen({ session, apiOnline, onLogout }) {
       const contactData = await api.contacts(session.token);
       await mergeServerContacts(occupantId, contactData.items);
       await readLocal();
+      setApiOnline(true);
     } catch (requestError) {
-      if (requestError.status === 401) {
+      if (requestError.status === 401 || requestError.status === 403) {
         onLogout();
         return;
       }
+      if (!requestError.status) setApiOnline(false);
       setError(requestError.message);
       await readLocal();
     } finally {
       setLoading(false);
     }
-  }, [apiOnline, occupantId, onLogout, readLocal, session.token]);
+  }, [occupantId, onLogout, readLocal, session.token, setApiOnline]);
 
   useEffect(() => {
     let active = true;
@@ -327,6 +330,7 @@ function ContactsScreen({ session, apiOnline, onLogout }) {
     result.byQualification[contact.qualification] += 1;
     return result;
   }, { total: 0, byQualification: { hot: 0, warm: 0, cold: 0 } });
+  const pendingCount = contacts.filter((contact) => contact.syncStatus !== 'synced').length;
 
   return (
     <>
@@ -372,6 +376,10 @@ function ContactsScreen({ session, apiOnline, onLogout }) {
             Synchroniser
           </button>
         </div>
+
+        {pendingCount > 0 && (
+          <p className="pending-count">{pendingCount} contact{pendingCount > 1 ? 's' : ''} a synchroniser</p>
+        )}
 
         {error && <p className="panel-error">{error}</p>}
         {loading && <p className="empty-state">Chargement des contacts...</p>}
@@ -460,7 +468,7 @@ export default function App() {
   }, []);
 
   return session ? (
-    <ContactsScreen session={session} apiOnline={apiOnline} onLogout={logout} />
+    <ContactsScreen session={session} apiOnline={apiOnline} setApiOnline={setApiOnline} onLogout={logout} />
   ) : (
     <LoginScreen apiOnline={apiOnline} onLogin={login} />
   );

@@ -370,6 +370,13 @@ select:focus {
   margin-bottom: 16px;
 }
 
+.pending-count {
+  margin: -5px 0 14px;
+  color: #755c00;
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
 .search-field {
   flex: 1;
   display: flex;

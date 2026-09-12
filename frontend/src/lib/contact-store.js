@@ -62,7 +62,7 @@ export const syncPendingContacts = async (occupantId, send) => {
     await database.contacts.update(contact.id, { syncStatus: 'syncing', syncError: null });
     try {
       const result = await send(toApiPayload(contact));
-      const saved = result.contact || contact;
+      const saved = result;
       await database.contacts.put({
         ...contact,
         ...saved,

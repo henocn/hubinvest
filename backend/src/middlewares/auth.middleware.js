@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const env = require('../config/env');
 const AppError = require('../shared/app-error');
-const { User } = require('../models');
+const { User, Occupant } = require('../models');
 
 const authenticate = async (request, response, next) => {
   const authorization = request.headers.authorization || '';
@@ -25,10 +25,15 @@ const authenticate = async (request, response, next) => {
   const user = await User.findOne({
     where: { id: payload.sub, isActive: true },
     attributes: ['id', 'occupantId', 'email', 'firstName', 'lastName', 'role'],
+    include: [{ model: Occupant, as: 'occupant', attributes: ['status'], required: false }],
   });
 
   if (!user) {
     return next(new AppError(401, 'INVALID_TOKEN', 'Session invalide ou expiree.'));
+  }
+
+  if (user.occupantId && user.occupant?.status !== 'active') {
+    return next(new AppError(403, 'OCCUPANT_INACTIVE', "Le compte de l'occupant est inactif."));
   }
 
   request.user = user.toJSON();

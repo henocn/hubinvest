@@ -25,4 +25,8 @@ const stats = async (request, response) => {
   response.json({ data: await contactService.stats(request.user) });
 };
 
-module.exports = { list, get, create, update, stats };
+const adminStats = async (request, response) => {
+  response.json({ data: await contactService.adminStats(request.user) });
+};
+
+module.exports = { list, get, create, update, stats, adminStats };

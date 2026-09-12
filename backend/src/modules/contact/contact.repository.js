@@ -52,6 +52,13 @@ const countByQualification = (occupantId) =>
 
 const countAll = (occupantId) => Contact.count({ where: { occupantId } });
 
+const countByOccupant = () =>
+  Contact.findAll({
+    attributes: ['occupantId', [fn('COUNT', col('id')), 'count']],
+    group: ['occupantId'],
+    raw: true,
+  });
+
 module.exports = {
   sequelize,
   findAll,
@@ -61,4 +68,5 @@ module.exports = {
   update,
   countByQualification,
   countAll,
+  countByOccupant,
 };

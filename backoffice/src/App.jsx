@@ -343,6 +343,7 @@ function AppShell({ session, onLogout }) {
   const [section, setSection] = useState('occupants');
   const [occupants, setOccupants] = useState([]);
   const [users, setUsers] = useState([]);
+  const [contactStats, setContactStats] = useState({ total: 0, byOccupant: {} });
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -355,12 +356,14 @@ function AppShell({ session, onLogout }) {
     setLoading(true);
     setError('');
     try {
-      const [occupantData, userData] = await Promise.all([
+      const [occupantData, userData, statsData] = await Promise.all([
         api.occupants(session.token),
         api.users(session.token),
+        api.contactStats(session.token),
       ]);
       setOccupants(occupantData);
       setUsers(userData);
+      setContactStats(statsData);
     } catch (requestError) {
       if (requestError.status === 401 || requestError.status === 403) onLogout();
       else setError(requestError.message);
@@ -440,9 +443,13 @@ function AppShell({ session, onLogout }) {
         </header>
 
         <section className="summary-row" aria-label="Resume">
-          <article><span>Total occupants</span><strong>{occupants.length}</strong><small>{occupants.filter((item) => item.status === 'active').length} actifs</small></article>
-          <article><span>Utilisateurs</span><strong>{users.length}</strong><small>{users.filter((item) => item.isActive).length} actifs</small></article>
-          <article><span>Administration</span><strong>{users.filter((item) => adminRoles.has(item.role)).length}</strong><small>comptes internes</small></article>
+          <article><span>Total occupants</span><strong>{loading || error ? '—' : occupants.length}</strong><small>{!loading && !error && `${occupants.filter((item) => item.status === 'active').length} actifs`}</small></article>
+          <article><span>Utilisateurs</span><strong>{loading || error ? '—' : users.length}</strong><small>{!loading && !error && `${users.filter((item) => item.isActive).length} actifs`}</small></article>
+          {section === 'occupants' ? (
+            <article><span>Contacts enregistrés</span><strong>{loading || error ? '—' : contactStats.total}</strong><small>tous les occupants</small></article>
+          ) : (
+            <article><span>Administration</span><strong>{loading || error ? '—' : users.filter((item) => adminRoles.has(item.role)).length}</strong><small>comptes internes</small></article>
+          )}
         </section>
 
         <section className="data-panel">
@@ -454,15 +461,16 @@ function AppShell({ session, onLogout }) {
           {error && <p className="panel-message is-error">{error}</p>}
           {loading && <p className="panel-message">Chargement des donnees...</p>}
 
-          {!loading && section === 'occupants' && (visibleOccupants.length ? (
+          {!loading && !error && section === 'occupants' && (visibleOccupants.length ? (
             <div className="table-scroll">
               <table>
-                <thead><tr><th>Structure</th><th>Stand</th><th>Activite</th><th>Statut</th><th className="actions-heading">Actions</th></tr></thead>
+                <thead><tr><th>Structure</th><th>Stand</th><th>Activite</th><th>Contacts</th><th>Statut</th><th className="actions-heading">Actions</th></tr></thead>
                 <tbody>{visibleOccupants.map((occupant) => (
                   <tr key={occupant.id}>
                     <td><strong>{occupant.name}</strong><small>{occupant.slug}</small></td>
                     <td>{occupant.proofNumber || '—'}</td>
                     <td className="activity-cell">{occupant.activity || 'Non renseignee'}</td>
+                    <td className="contact-count">{contactStats.byOccupant[occupant.id] || 0}</td>
                     <td><span className={`status-pill ${occupant.status === 'active' ? 'is-active' : ''}`}>{occupant.status === 'active' && <Check size={13} />}{occupant.status === 'active' ? 'Actif' : 'Inactif'}</span></td>
                     <td>
                       <div className="row-actions">
@@ -476,7 +484,7 @@ function AppShell({ session, onLogout }) {
             </div>
           ) : <EmptyState icon={Building2} title="Aucun occupant" copy={query ? 'Aucun resultat ne correspond a la recherche.' : 'Creez la premiere structure presente sur le salon.'} />)}
 
-          {!loading && section === 'users' && (visibleUsers.length ? (
+          {!loading && !error && section === 'users' && (visibleUsers.length ? (
             <div className="table-scroll">
               <table>
                 <thead><tr><th>Utilisateur</th><th>Role</th><th>Occupant</th><th>Statut</th><th className="actions-heading">Actions</th></tr></thead>
