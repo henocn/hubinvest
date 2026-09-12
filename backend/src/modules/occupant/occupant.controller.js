@@ -18,12 +18,12 @@ const getPublic = async (request, response) => {
 
 const create = async (request, response) => {
   const occupant = await occupantService.create(request.body);
-  response.status(201).json({ data: occupant, message: 'Occupant cree.' });
+  response.status(201).json({ data: occupant, message: 'Occupant créé.' });
 };
 
 const update = async (request, response) => {
   const occupant = await occupantService.update(request.params.id, request.body);
-  response.json({ data: occupant, message: 'Occupant modifie.' });
+  response.json({ data: occupant, message: 'Occupant modifié.' });
 };
 
 const remove = async (request, response) => {

@@ -12,7 +12,7 @@ module.exports = (schema, property = 'body') => (request, response, next) => {
       message: item.message,
     }));
 
-    return next(new AppError(422, 'VALIDATION_ERROR', 'Les donnees ne sont pas valides.', details));
+    return next(new AppError(422, 'VALIDATION_ERROR', 'Les données ne sont pas valides.', details));
   }
 
   request[property] = value;

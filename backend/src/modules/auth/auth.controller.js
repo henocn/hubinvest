@@ -2,7 +2,7 @@ const authService = require('./auth.service');
 
 const login = async (request, response) => {
   const result = await authService.login(request.body);
-  response.json({ data: result, message: 'Connexion reussie.' });
+  response.json({ data: result, message: 'Connexion réussie.' });
 };
 
 const me = (request, response) => {

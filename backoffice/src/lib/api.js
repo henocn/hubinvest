@@ -12,7 +12,7 @@ const request = async (path, options = {}) => {
   const payload = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    const error = new Error(payload.message || 'La requete a echoue.');
+    const error = new Error(payload.message || 'La requête a échoué.');
     error.status = response.status;
     error.code = payload.code;
     error.details = payload.details;
@@ -31,7 +31,6 @@ const authorized = (token, options = {}) => ({
 });
 
 export const api = {
-  health: () => request('/health'),
   login: (values) => request('/auth/login', { method: 'POST', body: JSON.stringify(values) }),
   occupants: (token) => request('/occupants', authorized(token)),
   createOccupant: (token, values) =>

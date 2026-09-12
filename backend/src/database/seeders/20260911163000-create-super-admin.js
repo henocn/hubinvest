@@ -10,7 +10,7 @@ module.exports = {
     const password = process.env.ADMIN_PASSWORD || '';
 
     if (!email || password.length < 8) {
-      throw new Error('ADMIN_EMAIL et ADMIN_PASSWORD de 8 caracteres minimum sont requis.');
+      throw new Error('ADMIN_EMAIL et ADMIN_PASSWORD de 8 caractères minimum sont requis.');
     }
 
     const existing = await queryInterface.rawSelect('users', { where: { email } }, ['id']);

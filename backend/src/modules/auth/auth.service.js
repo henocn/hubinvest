@@ -6,7 +6,7 @@ const authRepository = require('./auth.repository');
 
 const login = async ({ email, password }) => {
   if (!env.auth.secret) {
-    throw new AppError(500, 'AUTH_NOT_CONFIGURED', "L'authentification n'est pas configuree.");
+    throw new AppError(500, 'AUTH_NOT_CONFIGURED', "L’authentification n’est pas configurée.");
   }
 
   const user = await authRepository.findUserByEmail(email.toLowerCase());
@@ -17,7 +17,7 @@ const login = async ({ email, password }) => {
   }
 
   if (user.occupantId && user.occupant?.status !== 'active') {
-    throw new AppError(403, 'OCCUPANT_INACTIVE', "Le compte de l'occupant est inactif.");
+    throw new AppError(403, 'OCCUPANT_INACTIVE', "Le compte de l’occupant est inactif.");
   }
 
   const token = jwt.sign(

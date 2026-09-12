@@ -12,7 +12,7 @@ const request = async (path, options = {}) => {
   const payload = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    const error = new Error(payload.message || 'La requete a echoue.');
+    const error = new Error(payload.message || 'La requête a échoué.');
     error.status = response.status;
     error.code = payload.code;
     error.details = payload.details;

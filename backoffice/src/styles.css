@@ -27,9 +27,6 @@ button { cursor: pointer; }
 .login-brand strong { font-size: 20px; }
 .login-brand span { color: rgba(255,255,255,.74); font-size: 13px; }
 .login-panel { width: min(440px, calc(100% - 64px)); margin: auto; display: flex; flex-direction: column; gap: 42px; }
-.connection-state { width: fit-content; display: inline-flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 7px; font-size: 12px; font-weight: 650; background: #f0f1f0; color: var(--muted); }
-.connection-state.is-online { color: var(--green); background: #e8f5f0; }
-.connection-state.is-offline { color: #9e2e43; background: #fff0f2; }
 .login-copy h1, .workspace-header h1 { margin: 0; color: var(--ink); letter-spacing: -.035em; }
 .login-copy h1 { font-size: 38px; }
 .login-copy p, .workspace-header p { margin: 10px 0 0; color: var(--muted); line-height: 1.55; }

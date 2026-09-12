@@ -4,10 +4,10 @@ import {
   Check,
   Clock3,
   Cloud,
-  CloudOff,
   Eye,
   EyeOff,
   LogOut,
+  Phone,
   Plus,
   RefreshCw,
   Search,
@@ -24,18 +24,9 @@ import {
 
 const qualificationLabels = {
   hot: 'Chaud',
-  warm: 'Tiede',
+  warm: 'Tiède',
   cold: 'Froid',
 };
-
-function ConnectionState({ online }) {
-  return (
-    <span className={`connection-state ${online ? 'is-online' : 'is-offline'}`}>
-      {online ? <Cloud size={16} /> : <CloudOff size={16} />}
-      {online ? 'API disponible' : 'API indisponible'}
-    </span>
-  );
-}
 
 function PasswordInput(props) {
   const [visible, setVisible] = useState(false);
@@ -50,7 +41,7 @@ function PasswordInput(props) {
   );
 }
 
-function LoginScreen({ apiOnline, onLogin }) {
+function LoginScreen({ onLogin }) {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -80,10 +71,9 @@ function LoginScreen({ apiOnline, onLogin }) {
       </section>
 
       <section className="login-panel">
-        <ConnectionState online={apiOnline} />
         <div className="login-copy">
           <h1>Connexion</h1>
-          <p>Accedez aux contacts de votre stand.</p>
+          <p>Accédez aux contacts de votre stand.</p>
         </div>
 
         <form onSubmit={submit} className="form-stack">
@@ -171,7 +161,7 @@ function ContactForm({ onCancel, onCreated }) {
           <input value={form.fullName} onChange={(event) => field('fullName', event.target.value)} required />
         </label>
         <label>
-          Numero de telephone
+          Numéro de téléphone
           <input
             type="tel"
             inputMode="tel"
@@ -224,7 +214,7 @@ function ContactForm({ onCancel, onCreated }) {
             onChange={(event) => field('consentOccupant', event.target.checked)}
             required
           />
-          <span>La personne accepte d'etre recontactee par cet occupant.</span>
+          <span>La personne accepte d’être recontactée par cet occupant.</span>
         </label>
         <label className="check-row">
           <input
@@ -250,8 +240,62 @@ function ContactForm({ onCancel, onCreated }) {
   );
 }
 
+function ContactDetail({ contact, onBack }) {
+  const dialNumber = contact.phone?.replace(/[^\d+]/g, '');
+  const nextActionDate = contact.nextActionAt ? new Date(contact.nextActionAt) : null;
+  const formattedDate = nextActionDate && !Number.isNaN(nextActionDate.getTime())
+    ? new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }).format(nextActionDate)
+    : null;
+
+  return (
+    <section className="workspace contact-detail-view">
+      <button type="button" className="back-button" onClick={onBack}>
+        <ArrowLeft size={18} />
+        Mes contacts
+      </button>
+
+      <div className="detail-heading">
+        <div>
+          <h1>{contact.fullName}</h1>
+          <span className={`qualification-label ${contact.qualification}`}>
+            <Check size={14} />
+            {qualificationLabels[contact.qualification]}
+          </span>
+        </div>
+        {dialNumber && (
+          <a className="button button-primary" href={`tel:${dialNumber}`}>
+            <Phone size={18} />
+            Appeler
+          </a>
+        )}
+      </div>
+
+      <div className="detail-panel">
+        <dl className="detail-fields">
+          <div><dt>Téléphone</dt><dd>{contact.phone}</dd></div>
+          {contact.company && <div><dt>Entreprise</dt><dd>{contact.company}</dd></div>}
+          {contact.need && <div><dt>Recherche</dt><dd>{contact.need}</dd></div>}
+          {(contact.nextAction || formattedDate) && (
+            <div>
+              <dt>Prochaine action</dt>
+              <dd>{contact.nextAction || 'Date planifiée'}{formattedDate && <small>{formattedDate}</small>}</dd>
+            </div>
+          )}
+        </dl>
+        <div className="detail-sync">
+          {contact.syncStatus === 'pending' && <><Clock3 size={16} /> Enregistré sur ce téléphone · À synchroniser</>}
+          {contact.syncStatus === 'syncing' && <><RefreshCw size={16} /> Synchronisation en cours</>}
+          {(contact.syncStatus === 'synced' || !contact.syncStatus) && <><Cloud size={16} /> Synchronisé</>}
+        </div>
+        {contact.syncError && <p className="detail-error">Synchronisation impossible. Revenez à Mes contacts pour réessayer.</p>}
+      </div>
+    </section>
+  );
+}
+
 function ContactsScreen({ session, apiOnline, setApiOnline, onLogout }) {
   const [view, setView] = useState('list');
+  const [selectedContactId, setSelectedContactId] = useState(null);
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -308,14 +352,22 @@ function ContactsScreen({ session, apiOnline, setApiOnline, onLogout }) {
   }, [apiOnline, sync]);
 
   const createContact = async (values) => {
-    await queueContact(occupantId, values);
+    const queued = await queueContact(occupantId, values);
     await readLocal();
-    setView('list');
+    setSelectedContactId(queued.id);
+    setView('detail');
     if (apiOnline) sync();
   };
 
   if (view === 'new') {
     return <ContactForm onCancel={() => setView('list')} onCreated={createContact} />;
+  }
+
+  if (view === 'detail') {
+    const selectedContact = contacts.find((contact) => contact.id === selectedContactId);
+    if (selectedContact) {
+      return <ContactDetail contact={selectedContact} onBack={() => setView('list')} />;
+    }
   }
 
   const filteredContacts = contacts.filter((contact) => {
@@ -336,8 +388,7 @@ function ContactsScreen({ session, apiOnline, setApiOnline, onLogout }) {
     <>
       <header className="app-header">
         <div className="brand-name">HubInvest</div>
-        <ConnectionState online={apiOnline} />
-        <button className="icon-button" type="button" onClick={onLogout} aria-label="Se deconnecter">
+        <button className="icon-button" type="button" onClick={onLogout} aria-label="Se déconnecter">
           <LogOut size={20} />
         </button>
       </header>
@@ -357,7 +408,7 @@ function ContactsScreen({ session, apiOnline, setApiOnline, onLogout }) {
         <section className="metric-strip" aria-label="Contacts par qualification">
           <div><strong>{stats.total}</strong><span>Total</span></div>
           <div><strong>{stats.byQualification.hot}</strong><span>Chauds</span></div>
-          <div><strong>{stats.byQualification.warm}</strong><span>Tiedes</span></div>
+          <div><strong>{stats.byQualification.warm}</strong><span>Tièdes</span></div>
           <div><strong>{stats.byQualification.cold}</strong><span>Froids</span></div>
         </section>
 
@@ -378,7 +429,7 @@ function ContactsScreen({ session, apiOnline, setApiOnline, onLogout }) {
         </div>
 
         {pendingCount > 0 && (
-          <p className="pending-count">{pendingCount} contact{pendingCount > 1 ? 's' : ''} a synchroniser</p>
+          <p className="pending-count">{pendingCount} contact{pendingCount > 1 ? 's' : ''} à synchroniser</p>
         )}
 
         {error && <p className="panel-error">{error}</p>}
@@ -387,14 +438,14 @@ function ContactsScreen({ session, apiOnline, setApiOnline, onLogout }) {
           <div className="empty-state">
             <UserRound size={28} />
             <strong>Aucun contact</strong>
-            <span>Enregistrez la premiere personne rencontree sur le stand.</span>
+            <span>Enregistrez la première personne rencontrée sur le stand.</span>
           </div>
         )}
 
         {!loading && filteredContacts.length > 0 && (
           <div className="contact-list">
             {filteredContacts.map((contact) => (
-              <article className="contact-row" key={contact.id}>
+              <button className="contact-row" type="button" key={contact.id} onClick={() => { setSelectedContactId(contact.id); setView('detail'); }} aria-label={`Voir le contact ${contact.fullName}`}>
                 <div className="contact-avatar">{contact.fullName.slice(0, 1).toUpperCase()}</div>
                 <div className="contact-main">
                   <strong>{contact.fullName}</strong>
@@ -406,16 +457,16 @@ function ContactsScreen({ session, apiOnline, setApiOnline, onLogout }) {
                     {contact.syncStatus === 'pending' && <Clock3 size={13} />}
                     {contact.syncStatus === 'syncing' && <RefreshCw size={13} />}
                     {(contact.syncStatus === 'synced' || !contact.syncStatus) && <Cloud size={13} />}
-                    {contact.syncStatus === 'pending' && 'A synchroniser'}
+                    {contact.syncStatus === 'pending' && 'À synchroniser'}
                     {contact.syncStatus === 'syncing' && 'Synchronisation'}
-                    {(contact.syncStatus === 'synced' || !contact.syncStatus) && 'Synchronise'}
+                    {(contact.syncStatus === 'synced' || !contact.syncStatus) && 'Synchronisé'}
                   </small>
                 </div>
                 <span className={`qualification-label ${contact.qualification}`}>
                   <Check size={14} />
                   {qualificationLabels[contact.qualification]}
                 </span>
-              </article>
+              </button>
             ))}
           </div>
         )}
@@ -456,7 +507,7 @@ export default function App() {
   const login = async (values) => {
     const result = await api.login(values);
     if (!result.user.occupantId) {
-      throw new Error("Ce compte n'est pas rattache a un occupant.");
+      throw new Error("Ce compte n’est pas rattaché à un occupant.");
     }
     localStorage.setItem('hubinvest-session', JSON.stringify(result));
     setSession(result);
@@ -470,6 +521,6 @@ export default function App() {
   return session ? (
     <ContactsScreen session={session} apiOnline={apiOnline} setApiOnline={setApiOnline} onLogout={logout} />
   ) : (
-    <LoginScreen apiOnline={apiOnline} onLogin={login} />
+    <LoginScreen onLogin={login} />
   );
 }

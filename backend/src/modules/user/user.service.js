@@ -7,7 +7,7 @@ const occupantRoles = [roles.OCCUPANT_MANAGER, roles.OCCUPANT_MEMBER];
 
 const protectSuperAdmin = (actor, targetRole) => {
   if (actor.role !== roles.SUPER_ADMIN && targetRole === roles.SUPER_ADMIN) {
-    throw new AppError(403, 'FORBIDDEN_ROLE', 'Seul un super administrateur peut gerer ce role.');
+    throw new AppError(403, 'FORBIDDEN_ROLE', 'Seul un super administrateur peut gérer ce rôle.');
   }
 };
 
@@ -19,7 +19,7 @@ const serialize = (user) => {
 
 const validateOccupant = async (values) => {
   if (occupantRoles.includes(values.role) && !values.occupantId) {
-    throw new AppError(422, 'OCCUPANT_REQUIRED', 'Un utilisateur occupant doit etre rattache a un occupant.');
+    throw new AppError(422, 'OCCUPANT_REQUIRED', 'Un utilisateur occupant doit être rattaché à un occupant.');
   }
 
   if (values.occupantId) {
@@ -57,11 +57,11 @@ const update = async (actor, id, values) => {
   const nextValues = { ...values };
 
   if (actor.id === user.id && nextValues.isActive === false) {
-    throw new AppError(409, 'SELF_DEACTIVATION_FORBIDDEN', 'Vous ne pouvez pas desactiver votre propre compte.');
+    throw new AppError(409, 'SELF_DEACTIVATION_FORBIDDEN', 'Vous ne pouvez pas désactiver votre propre compte.');
   }
 
   if (actor.id === user.id && nextValues.role && nextValues.role !== user.role) {
-    throw new AppError(409, 'SELF_ROLE_CHANGE_FORBIDDEN', 'Vous ne pouvez pas modifier votre propre role.');
+    throw new AppError(409, 'SELF_ROLE_CHANGE_FORBIDDEN', 'Vous ne pouvez pas modifier votre propre rôle.');
   }
 
   const resultingValues = {

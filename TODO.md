@@ -35,8 +35,10 @@ Objectif : prouver le parcours le plus critique avec un occupant et un contact.
 - [x] Afficher les etats a synchroniser, synchronisation et synchronise.
 - [x] Synchroniser a l'ouverture, au retour du reseau et sur clic.
 - [x] Afficher `Mes contacts` et la prochaine action.
+- [x] Ouvrir une fiche contact locale avec le telephone et les informations de suivi.
 - [x] Tester le cloisonnement des contacts, la resynchronisation sans doublon et l'acces refuse apres desactivation d'un occupant.
 - [ ] Verifier sur appareil le cycle complet : saisie en mode avion, retour du reseau et synchronisation.
+- [ ] Verifier visuellement sur mobile l'ouverture de la fiche contact depuis la liste.
 
 Arret de validation : un contact est saisi en mode avion, reste visible, se synchronise et demeure inaccessible a un autre occupant.
 

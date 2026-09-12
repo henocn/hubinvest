@@ -5,7 +5,7 @@ const contactRepository = require('./contact.repository');
 
 const requireOccupant = (user) => {
   if (!user.occupantId) {
-    throw new AppError(403, 'OCCUPANT_REQUIRED', 'Ce compte ne depend pas d’un occupant.');
+    throw new AppError(403, 'OCCUPANT_REQUIRED', 'Ce compte ne dépend pas d’un occupant.');
   }
   return user.occupantId;
 };
@@ -88,7 +88,7 @@ const stats = async (user) => {
 
 const adminStats = async (user) => {
   if (![roles.SUPER_ADMIN, roles.ADMIN_APIZF].includes(user.role)) {
-    throw new AppError(403, 'FORBIDDEN', "Vous n'avez pas acces a cette action.");
+    throw new AppError(403, 'FORBIDDEN', "Vous n’avez pas accès à cette action.");
   }
 
   const groups = await contactRepository.countByOccupant();

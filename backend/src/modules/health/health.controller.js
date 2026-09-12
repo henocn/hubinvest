@@ -17,7 +17,7 @@ const database = async (request, response) => {
   } catch (error) {
     response.status(503).json({
       code: 'DATABASE_UNAVAILABLE',
-      message: 'La base de donnees est indisponible.',
+      message: 'La base de données est indisponible.',
     });
   }
 };

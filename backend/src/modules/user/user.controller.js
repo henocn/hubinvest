@@ -10,12 +10,12 @@ const get = async (request, response) => {
 
 const create = async (request, response) => {
   const user = await userService.create(request.user, request.body);
-  response.status(201).json({ data: user, message: 'Utilisateur cree.' });
+  response.status(201).json({ data: user, message: 'Utilisateur créé.' });
 };
 
 const update = async (request, response) => {
   const user = await userService.update(request.user, request.params.id, request.body);
-  response.json({ data: user, message: 'Utilisateur modifie.' });
+  response.json({ data: user, message: 'Utilisateur modifié.' });
 };
 
 const remove = async (request, response) => {

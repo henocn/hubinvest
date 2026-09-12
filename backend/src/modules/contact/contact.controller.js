@@ -12,13 +12,13 @@ const create = async (request, response) => {
   const result = await contactService.create(request.user, request.body);
   response.status(result.created ? 201 : 200).json({
     data: result.contact,
-    message: result.created ? 'Contact enregistre.' : 'Contact deja synchronise.',
+    message: result.created ? 'Contact enregistré.' : 'Contact déjà synchronisé.',
   });
 };
 
 const update = async (request, response) => {
   const contact = await contactService.update(request.user, request.params.id, request.body);
-  response.json({ data: contact, message: 'Contact modifie.' });
+  response.json({ data: contact, message: 'Contact modifié.' });
 };
 
 const stats = async (request, response) => {
