@@ -2,6 +2,8 @@
 
 On avance par gestes réels des utilisateurs, pas par une liste de neuf modules à remplir. Les dates et objectifs chiffrés des documents de travail ne fixent pas l’ordre du code. Chaque parcours doit être visible et utilisable de bout en bout avant d’ajouter le suivant.
 
+Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence durable sur l’UI, l’UX, le code ou la stratégie d’affichage doit y être consignée avant l’implémentation.
+
 ## Cadrage à valider avant la suite
 
 - [x] Faire valider la lecture des rôles et du noyau produit décrits dans `README.md`.
@@ -13,6 +15,7 @@ On avance par gestes réels des utilisateurs, pas par une liste de neuf modules 
 
 - [x] Initialiser le backend Node.js/Express avec nodemon, Sequelize, migrations et variables `DB_*`.
 - [x] Créer le socle React/Vite et une première interface de marque.
+- [x] Répartir les deux interfaces React entre pages, composants, tiroirs et tableaux réutilisables.
 - [x] Créer occupants, utilisateurs, contacts et authentification nécessaires à la saisie par un stand.
 - [x] Limiter côté API la lecture des contacts à l’occupant concerné.
 - [x] Saisir un contact localement, afficher son état de synchronisation, puis le retrouver dans « Mes contacts ».
@@ -26,8 +29,9 @@ La découverte est commencée. Le formulaire de recontact attend la confirmation
 
 - [x] Ouvrir le frontend public sans connexion obligatoire.
 - [x] Afficher les stands actifs et une fiche courte avec leur couverture, à partir des données administrées.
-- [ ] Générer et tester les QR codes réels : accueil vers `/stands`, stand vers `/stands/:slug`.
-- [ ] Vérifier les anciennes valeurs de « numéro de preuve » : ce champ était auparavant présenté comme numéro de stand dans le backoffice et n’est pas affiché au public tant qu’il n’est pas clarifié.
+- [x] Générer depuis le backoffice les QR codes du Hub vers `/stands` et de chaque stand vers `/stands/:slug`.
+- [ ] Scanner les QR codes avec l’URL publique de production avant leur impression.
+- [x] Retirer l’ancien « numéro de preuve » : l’emplacement administré du stand remplit ce besoin.
 - [ ] Vérifier le parcours sur téléphone, connexion lente et écran étroit.
 - [x] Ajouter une recherche simple par structure ou activité.
 - [ ] Ajouter le programme, le plan et l’anglais lorsque leurs contenus sont disponibles ; ne pas bloquer la première fiche utile pour eux.

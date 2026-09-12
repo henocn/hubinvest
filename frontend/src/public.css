@@ -161,35 +161,35 @@
 
 .stand-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
 }
 
 .stand-card {
-  min-height: 310px;
-  display: grid;
-  grid-template-rows: 150px 1fr;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(0, 0, 0, 0.16);
   border-radius: 8px;
   color: inherit;
   background: #fff;
   text-decoration: none;
-  transition: border-color 120ms ease, transform 120ms ease;
+  transition: border-color 120ms ease;
 }
 
 .stand-card:hover {
-  border-color: #8baea2;
-  transform: translateY(-2px);
+  border-color: rgba(0, 106, 79, 0.7);
 }
 
 .stand-card-cover {
   width: 100%;
-  height: 150px;
+  aspect-ratio: 16 / 9;
   display: grid;
   place-items: center;
-  color: var(--green);
-  background: linear-gradient(135deg, #e3eee9, #f2f5f3);
+  overflow: hidden;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  background: #eef0ee;
 }
 
 .stand-card-cover img {
@@ -200,25 +200,28 @@
 
 .stand-card-content {
   min-width: 0;
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: start;
-  padding: 20px 22px 22px;
+  padding: 17px 18px 16px;
 }
 
 .stand-location {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: var(--green);
-  font-size: 0.76rem;
-  font-weight: 750;
+  margin-top: 7px;
+  color: #59605d;
+  font-size: 0.78rem;
+  font-weight: 650;
 }
 
 .stand-card h2 {
-  margin: 6px 0 8px;
-  font-size: 1.12rem;
-  line-height: 1.3;
+  margin: 0;
+  color: var(--ink);
+  font-size: 1.06rem;
+  line-height: 1.35;
 }
 
 .stand-card p {
@@ -226,19 +229,23 @@
   overflow: hidden;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  margin: 0 0 18px;
+  margin: 11px 0 0;
   color: var(--muted);
-  font-size: 0.88rem;
-  line-height: 1.5;
+  font-size: 0.84rem;
+  line-height: 1.45;
 }
 
 .stand-card-link {
+  width: 100%;
   display: inline-flex;
   align-items: center;
+  justify-content: space-between;
   gap: 7px;
-  margin-top: auto;
+  margin-top: 16px;
+  padding-top: 13px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
   color: var(--green);
-  font-size: 0.86rem;
+  font-size: 0.82rem;
   font-weight: 750;
 }
 
@@ -604,7 +611,6 @@
   .public-brand img { width: 48px; }
   .public-brand small { display: none; }
   .stand-grid { grid-template-columns: 1fr; }
-  .stand-card { min-height: 300px; }
   .public-section-heading { align-items: start; }
   .stand-count { text-align: right; }
   .request-panel { grid-template-columns: 1fr; }

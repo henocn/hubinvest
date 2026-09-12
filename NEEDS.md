@@ -41,9 +41,9 @@ Ne pas déduire l'état actuel de `.env` de ce document : vérifier uniquement l
 
 ## Pour les occupants et les contacts
 
-- [ ] Liste des occupants avec un identifiant stable.
-- [ ] Pour chaque occupant : nom, numero de preuve, activite et statut actif.
-- [ ] Comptes initiaux : nom, e-mail ou telephone de connexion, role et occupant rattache.
+- [x] Les occupants sont créés dans le backoffice avec un identifiant stable généré par la plateforme.
+- [x] Une fiche occupant contient le nom, l’emplacement, l’activité, le statut et une image de couverture. Aucun numéro de preuve distinct.
+- [x] Les comptes occupants sont créés dans le backoffice et rattachés à leur occupant ; seul le premier compte administrateur dépend des variables `ADMIN_*`.
 - [ ] Les cinq champs obligatoires exacts du formulaire de contact.
 - [ ] Confirmation de la possibilite ou non de noter une vente : produit, quantite et montant.
 - [ ] Texte de consentement a afficher avant l'enregistrement d'un contact, en francais et en anglais si necessaire.

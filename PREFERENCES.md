@@ -10,6 +10,7 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 - Employer des bordures horizontales et verticales légèrement noires pour structurer les tableaux sans les alourdir.
 - Un défaut visible d’alignement, de proportion, de centrage, de hauteur ou d’espacement bloque la livraison, même si l’écran fonctionne.
 - Conserver les accents dans tous les textes français.
+- Sur une carte de stand, séparer nettement l’image de couverture et les informations. Ne jamais poser le nom, l’activité ou l’action directement sur la photo.
 
 ## UX et formulaires
 

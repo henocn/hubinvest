@@ -176,6 +176,16 @@ test('une fiche active garde son adresse quand son nom change', async (context) 
   );
 });
 
+test('une couverture de stand stocke un chemin public et non une URL saisie', async (context) => {
+  const occupant = { id: 'stand-a', coverImageUrl: null };
+  context.mock.method(occupantRepository, 'findById', async () => occupant);
+  context.mock.method(occupantRepository, 'update', async (_occupant, values) => values);
+
+  const changed = await occupantService.updateCover(occupant.id, { filename: 'couverture.webp' });
+
+  assert.equal(changed.coverImageUrl, '/uploads/covers/couverture.webp');
+});
+
 test('une demande publique ne peut pas cibler un stand indisponible', async (context) => {
   context.mock.method(occupantRepository, 'findBySlug', async () => null);
   context.mock.method(contactRepository, 'create', async () => {
