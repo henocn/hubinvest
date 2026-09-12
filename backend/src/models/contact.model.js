@@ -14,7 +14,7 @@ module.exports = (sequelize, DataTypes) =>
       },
       createdByUserId: {
         type: DataTypes.UUID,
-        allowNull: false,
+        allowNull: true,
         field: 'created_by_user_id',
       },
       fullName: {
@@ -36,7 +36,7 @@ module.exports = (sequelize, DataTypes) =>
       },
       qualification: {
         type: DataTypes.STRING(20),
-        allowNull: false,
+        allowNull: true,
         defaultValue: 'cold',
         validate: { isIn: [['hot', 'warm', 'cold']] },
       },
@@ -61,6 +61,17 @@ module.exports = (sequelize, DataTypes) =>
         allowNull: false,
         defaultValue: false,
         field: 'consent_apizf',
+      },
+      source: {
+        type: DataTypes.STRING(20),
+        allowNull: false,
+        defaultValue: 'stand',
+        validate: { isIn: [['stand', 'public']] },
+      },
+      consentCapturedAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        field: 'consent_captured_at',
       },
     },
     {

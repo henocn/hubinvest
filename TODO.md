@@ -6,7 +6,8 @@ On avance par gestes réels des utilisateurs, pas par une liste de neuf modules 
 
 - [x] Faire valider la lecture des rôles et du noyau produit décrits dans `README.md`.
 - [x] Retenir le prochain usage à montrer : « je scanne le QR code du Hub ou d’un stand, je découvre l’occupant, puis je peux demander à être recontacté ».
-- [ ] Confirmer qui reçoit une demande adressée à l’API-ZF et qui reçoit celle adressée à un occupant.
+- [x] Faire arriver une demande de fiche uniquement dans les contacts de son occupant.
+- [ ] Confirmer qui reçoit une demande adressée directement à l’API-ZF et valider le texte de consentement public avant la production.
 
 ## Déjà engagé
 
@@ -35,12 +36,15 @@ Validation : une personne qui n’a jamais vu HubInvest scanne, comprend où ell
 
 ## Parcours suivant — exprimer puis suivre un intérêt
 
-- [ ] Depuis la fiche d’un occupant, permettre au visiteur de demander à être recontacté avec un formulaire court et un consentement propre à cet occupant.
-- [ ] Confirmer au visiteur que sa demande est enregistrée, sans promettre une réponse automatique non organisée.
-- [ ] Montrer cette demande uniquement à l’occupant concerné, qui la qualifie, lui donne un responsable et note sa prochaine action.
+- [x] Depuis la fiche d’un occupant, permettre au visiteur de demander à être recontacté avec un formulaire court et un consentement propre à cet occupant.
+- [x] Confirmer au visiteur que sa demande est enregistrée, sans promettre une réponse automatique non organisée.
+- [x] Montrer cette demande uniquement à l’occupant concerné, qui peut la qualifier et noter sa prochaine action.
+- [ ] Attribuer explicitement un responsable à une demande si l’équipe du stand compte plusieurs personnes et en a besoin.
 - [ ] Permettre une demande distincte adressée à l’API-ZF ; son contenu et son destinataire sont à confirmer avant codage.
 - [ ] Afficher au responsable d’occupant les contacts et relances utiles ; ajouter l’export demandé lorsque ses colonnes sont connues.
-- [ ] Vérifier les droits, les consentements distincts et l’absence de doublons lors de la synchronisation.
+- [x] Tester côté API le cloisonnement, le consentement obligatoire et l’origine d’une demande publique.
+- [ ] Vérifier sur téléphone le formulaire, puis son arrivée dans l’espace occupant et sa modification.
+- [ ] Avant l’ouverture publique, valider les textes et règles de données, puis protéger l’envoi anonyme contre les abus sans bloquer les visiteurs partageant une connexion.
 
 Validation : une demande va au bon destinataire, et ce destinataire peut réellement la traiter.
 

@@ -8,6 +8,13 @@ const contactController = require('./contact.controller');
 
 const router = express.Router();
 
+router.post(
+  '/public/:slug',
+  validate(contactValidation.publicParams, 'params'),
+  validate(contactValidation.createPublic),
+  asyncHandler(contactController.createPublic),
+);
+
 router.get(
   '/admin/stats',
   asyncHandler(authenticate),

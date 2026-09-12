@@ -10,4 +10,4 @@ Hypothèse de cette étape : une fiche publique correspond à un occupant prése
 
 Contrôle restant dans le parcours du `TODO.md` : ouvrir les pages sur un téléphone et scanner un QR réel. Aucun stand existant n’a été publié automatiquement.
 
-Après ce recadrage, reprendre `TODO.md` au parcours « le visiteur découvre le Hub ». La demande de recontact sera le parcours suivant : elle nécessitera une origine publique, un consentement traçable et un contact sans utilisateur créateur, mais ces attributs ne seront ajoutés qu’avec le formulaire réellement utilisé.
+Après ce recadrage, le parcours « le visiteur découvre le Hub » a été commencé. La demande de recontact a ensuite ajouté une origine publique, la date de capture du consentement et un contact sans utilisateur créateur. Les vérifications manuelles restantes sont suivies dans `TODO.md`.

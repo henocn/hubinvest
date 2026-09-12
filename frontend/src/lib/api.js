@@ -34,9 +34,12 @@ export const api = {
   health: () => request('/health'),
   publicOccupants: () => request('/occupants/public'),
   publicOccupant: (slug) => request(`/occupants/public/${encodeURIComponent(slug)}`),
+  requestContact: (slug, values) => request(`/contacts/public/${encodeURIComponent(slug)}`, { method: 'POST', body: JSON.stringify(values) }),
   login: (values) => request('/auth/login', { method: 'POST', body: JSON.stringify(values) }),
   contacts: (token) => request('/contacts', authorized(token)),
   contactStats: (token) => request('/contacts/stats', authorized(token)),
   createContact: (token, values) =>
     request('/contacts', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
+  updateContact: (token, id, values) =>
+    request(`/contacts/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
 };

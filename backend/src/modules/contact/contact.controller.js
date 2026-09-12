@@ -16,6 +16,14 @@ const create = async (request, response) => {
   });
 };
 
+const createPublic = async (request, response) => {
+  const result = await contactService.createPublic(request.params.slug, request.body);
+  response.status(result.created ? 201 : 200).json({
+    data: { received: true },
+    message: 'Demande enregistrée.',
+  });
+};
+
 const update = async (request, response) => {
   const contact = await contactService.update(request.user, request.params.id, request.body);
   response.json({ data: contact, message: 'Contact modifié.' });
@@ -29,4 +37,4 @@ const adminStats = async (request, response) => {
   response.json({ data: await contactService.adminStats(request.user) });
 };
 
-module.exports = { list, get, create, update, stats, adminStats };
+module.exports = { list, get, create, createPublic, update, stats, adminStats };

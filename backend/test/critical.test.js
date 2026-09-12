@@ -176,3 +176,44 @@ test('une fiche publiée garde son adresse quand son nom change', async (context
     (error) => error.status === 422 && error.code === 'STAND_NOT_READY',
   );
 });
+
+test('une demande publique ne peut pas cibler un stand non publié', async (context) => {
+  context.mock.method(occupantRepository, 'findBySlug', async () => null);
+  context.mock.method(contactRepository, 'create', async () => {
+    throw new Error('La création ne doit pas être appelée.');
+  });
+  await assert.rejects(
+    contactService.createPublic('stand-prive', { id: 'request-a', consentOccupant: true }),
+    (error) => error.status === 404 && error.code === 'STAND_NOT_FOUND',
+  );
+});
+
+test('une demande publique sans accord est refusée avant toute écriture', async (context) => {
+  context.mock.method(contactRepository, 'create', async () => {
+    throw new Error('La création ne doit pas être appelée.');
+  });
+  await assert.rejects(
+    contactService.createPublic('stand-a', { consentOccupant: false }),
+    (error) => error.status === 422 && error.code === 'CONSENT_REQUIRED',
+  );
+});
+
+test('une demande publique est rattachée au stand lu par le serveur, sans qualification ni compte visiteur', async (context) => {
+  let saved;
+  context.mock.method(occupantRepository, 'findBySlug', async () => ({ id: 'stand-a' }));
+  context.mock.method(contactRepository.sequelize, 'transaction', async (callback) => callback({}));
+  context.mock.method(contactRepository, 'findExisting', async () => null);
+  context.mock.method(contactRepository, 'create', async (values) => { saved = values; return values; });
+
+  const result = await contactService.createPublic('stand-a', {
+    id: 'request-a', fullName: 'Visiteur Test', phone: '90000000', need: 'Un renseignement',
+    consentOccupant: true, occupantId: 'stand-b', qualification: 'hot', consentApizf: true,
+  });
+  assert.equal(result.created, true);
+  assert.equal(saved.occupantId, 'stand-a');
+  assert.equal(saved.createdByUserId, null);
+  assert.equal(saved.qualification, null);
+  assert.equal(saved.consentApizf, false);
+  assert.equal(saved.source, 'public');
+  assert.ok(saved.consentCapturedAt instanceof Date);
+});

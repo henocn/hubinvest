@@ -15,6 +15,18 @@ const create = Joi.object({
   consentApizf: Joi.boolean().default(false),
 });
 
+const createPublic = Joi.object({
+  id: uuid.required(),
+  fullName: Joi.string().trim().min(2).max(160).required(),
+  phone: Joi.string().trim().min(6).max(32).required(),
+  need: Joi.string().trim().max(4000).allow('', null),
+  consentOccupant: Joi.boolean().valid(true).required(),
+});
+
+const publicParams = Joi.object({
+  slug: Joi.string().trim().lowercase().pattern(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(180).required(),
+});
+
 const update = Joi.object({
   fullName: Joi.string().trim().min(2).max(160),
   phone: Joi.string().trim().min(6).max(32),
@@ -36,4 +48,4 @@ const query = Joi.object({
   offset: Joi.number().integer().min(0).default(0),
 });
 
-module.exports = { create, update, params, query };
+module.exports = { create, createPublic, publicParams, update, params, query };
