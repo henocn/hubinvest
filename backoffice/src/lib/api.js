@@ -1,10 +1,11 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 const request = async (path, options = {}) => {
+  const hasFormData = options.body instanceof FormData;
   const response = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      ...(!hasFormData && { 'Content-Type': 'application/json' }),
       ...options.headers,
     },
   });
@@ -22,6 +23,11 @@ const request = async (path, options = {}) => {
   return payload.data;
 };
 
+export const resolveAssetUrl = (value) => {
+  if (!value || /^https?:\/\//i.test(value)) return value;
+  return new URL(value, new URL(API_URL, window.location.origin).origin).toString();
+};
+
 const authorized = (token, options = {}) => ({
   ...options,
   headers: {
@@ -37,8 +43,16 @@ export const api = {
     request('/occupants', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   updateOccupant: (token, id, values) =>
     request(`/occupants/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
+  uploadOccupantCover: (token, id, file) => {
+    const body = new FormData();
+    body.append('coverImage', file);
+    return request(`/occupants/${id}/cover`, authorized(token, { method: 'POST', body }));
+  },
   deleteOccupant: (token, id) =>
     request(`/occupants/${id}`, authorized(token, { method: 'DELETE' })),
+  investorRequests: (token) => request('/investor-requests', authorized(token)),
+  updateInvestorRequest: (token, id, values) =>
+    request(`/investor-requests/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
   users: (token) => request('/users', authorized(token)),
   contactStats: (token) => request('/contacts/admin/stats', authorized(token)),
   createUser: (token, values) =>

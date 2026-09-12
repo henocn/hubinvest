@@ -6,6 +6,9 @@ const contactService = require('../src/modules/contact/contact.service');
 const contactRepository = require('../src/modules/contact/contact.repository');
 const occupantService = require('../src/modules/occupant/occupant.service');
 const occupantRepository = require('../src/modules/occupant/occupant.repository');
+const investorRequestService = require('../src/modules/investor-request/investor-request.service');
+const investorRequestRepository = require('../src/modules/investor-request/investor-request.repository');
+const investorRequestValidation = require('../src/modules/investor-request/investor-request.validation');
 const { authenticate } = require('../src/middlewares/auth.middleware');
 const { User, Occupant } = require('../src/models');
 const env = require('../src/config/env');
@@ -151,17 +154,17 @@ test('la route des totaux refuse un jeton occupant et accepte un administrateur'
   });
 });
 
-test('la liste publique ne lit que les stands actifs et publiés', async (context) => {
+test('la liste publique ne lit que les stands actifs', async (context) => {
   context.mock.method(Occupant, 'findAll', async (options) => options);
   const result = await occupantRepository.findPublic();
-  assert.deepEqual(result.where, { status: 'active', isPublished: true });
+  assert.deepEqual(result.where, { status: 'active' });
   assert.ok(!result.attributes.includes('status'));
-  assert.ok(!result.attributes.includes('isPublished'));
   assert.ok(!result.attributes.includes('proofNumber'));
+  assert.ok(result.attributes.includes('coverImageUrl'));
 });
 
-test('une fiche publiée garde son adresse quand son nom change', async (context) => {
-  const saved = { id: 'stand-a', slug: 'ancien-nom', name: 'Ancien nom', status: 'active', activity: 'Industrie', isPublished: true };
+test('une fiche active garde son adresse quand son nom change', async (context) => {
+  const saved = { id: 'stand-a', slug: 'ancien-nom', name: 'Ancien nom', status: 'active', activity: 'Industrie' };
   context.mock.method(occupantRepository, 'findById', async () => saved);
   context.mock.method(occupantRepository, 'update', async (_occupant, values) => values);
 
@@ -171,13 +174,9 @@ test('une fiche publiée garde son adresse quand son nom change', async (context
     occupantService.update(saved.id, { slug: 'nouveau-nom' }),
     (error) => error.status === 409 && error.code === 'PUBLIC_LINK_LOCKED',
   );
-  await assert.rejects(
-    occupantService.update(saved.id, { activity: '' }),
-    (error) => error.status === 422 && error.code === 'STAND_NOT_READY',
-  );
 });
 
-test('une demande publique ne peut pas cibler un stand non publié', async (context) => {
+test('une demande publique ne peut pas cibler un stand indisponible', async (context) => {
   context.mock.method(occupantRepository, 'findBySlug', async () => null);
   context.mock.method(contactRepository, 'create', async () => {
     throw new Error('La création ne doit pas être appelée.');
@@ -216,4 +215,34 @@ test('une demande publique est rattachée au stand lu par le serveur, sans quali
   assert.equal(saved.consentApizf, false);
   assert.equal(saved.source, 'public');
   assert.ok(saved.consentCapturedAt instanceof Date);
+});
+
+test('une demande Investor Desk exige le consentement API-ZF', () => {
+  const { error } = investorRequestValidation.createPublic.validate({
+    fullName: 'Investisseur Test',
+    email: 'investisseur@example.com',
+    projectSummary: 'Projet industriel à présenter.',
+    consentApizf: false,
+  });
+
+  assert.ok(error);
+});
+
+test('le premier suivi Investor Desk attribue la demande à son agent', async (context) => {
+  const investorRequest = { id: 'request-a', assignedToUserId: null };
+  let saved;
+  context.mock.method(investorRequestRepository, 'findById', async () => investorRequest);
+  context.mock.method(investorRequestRepository, 'update', async (_request, values) => {
+    saved = values;
+    return values;
+  });
+
+  await investorRequestService.update(
+    { id: 'agent-a', role: 'investor-desk' },
+    investorRequest.id,
+    { status: 'in_progress', nextAction: 'Rappeler le porteur du projet' },
+  );
+
+  assert.equal(saved.assignedToUserId, 'agent-a');
+  assert.equal(saved.status, 'in_progress');
 });

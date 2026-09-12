@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Building2,
+  BriefcaseBusiness,
   Check,
   Eye,
   EyeOff,
@@ -17,7 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import logo from '../../assets/Logo fond blanc.jpeg';
-import { api } from './lib/api';
+import { api, resolveAssetUrl } from './lib/api';
 
 const roleLabels = {
   'super-admin': 'Super administrateur',
@@ -31,9 +32,11 @@ const roleLabels = {
 };
 
 const adminRoles = new Set(['super-admin', 'admin-apizf']);
+const backofficeRoles = new Set(['super-admin', 'admin-apizf', 'investor-desk']);
 const occupantRoles = new Set(['occupant-responsable', 'occupant-membre']);
-const availableRoles = new Set(['super-admin', 'admin-apizf', 'occupant-responsable', 'occupant-membre']);
+const availableRoles = new Set(['super-admin', 'admin-apizf', 'investor-desk', 'occupant-responsable', 'occupant-membre']);
 const publicBaseUrl = (import.meta.env.VITE_PUBLIC_URL || 'http://localhost:5173').replace(/\/$/, '');
+const investorStatusLabels = { new: 'Nouvelle', in_progress: 'En cours', closed: 'Clôturée' };
 
 function PasswordInput(props) {
   const [visible, setVisible] = useState(false);
@@ -128,12 +131,11 @@ function OccupantForm({ occupant, onClose, onSaved, token }) {
   const isEditing = Boolean(occupant);
   const [form, setForm] = useState(() => ({
     name: occupant?.name || '',
-    proofNumber: occupant?.proofNumber || '',
     standLabel: occupant?.standLabel || '',
     activity: occupant?.activity || '',
     status: occupant?.status || 'active',
-    isPublished: occupant?.isPublished ?? false,
   }));
+  const [coverFile, setCoverFile] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -145,15 +147,14 @@ function OccupantForm({ occupant, onClose, onSaved, token }) {
     try {
       const values = {
         name: form.name,
-        proofNumber: form.proofNumber ? Number(form.proofNumber) : null,
         standLabel: form.standLabel || null,
         activity: form.activity || null,
         status: form.status,
-        isPublished: isEditing ? form.isPublished : false,
       };
-      const saved = isEditing
+      let saved = isEditing
         ? await api.updateOccupant(token, occupant.id, values)
         : await api.createOccupant(token, values);
+      if (coverFile) saved = await api.uploadOccupantCover(token, saved.id, coverFile);
       await onSaved(saved);
     } catch (requestError) {
       setError(requestError.message);
@@ -182,42 +183,23 @@ function OccupantForm({ occupant, onClose, onSaved, token }) {
           </label>
           <label>
             Emplacement du stand
-            <input value={form.standLabel} onChange={(event) => setForm({ ...form, standLabel: event.target.value })} placeholder="Ex. : Pavillon Oti · Stand 12" />
+            <input value={form.standLabel} onChange={(event) => setForm({ ...form, standLabel: event.target.value })} />
           </label>
           <label>
-            Numéro de preuve
-            <input type="number" min="1" value={form.proofNumber} onChange={(event) => setForm({ ...form, proofNumber: event.target.value })} />
+            Image de couverture
+            <input type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" onChange={(event) => setCoverFile(event.target.files?.[0] || null)} required={!occupant?.coverImageUrl} />
           </label>
           <label>
             Activité
             <textarea rows="5" value={form.activity} onChange={(event) => setForm({ ...form, activity: event.target.value })} />
           </label>
-          {isEditing && (
-            <>
-              <label>
-                Accès de l’équipe
-                <select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value, isPublished: event.target.value === 'active' ? form.isPublished : false })}>
-                  <option value="active">Actif</option>
-                  <option value="inactive">Inactif</option>
-                </select>
-              </label>
-              <label>
-                Visibilité publique
-                <select value={form.isPublished ? 'published' : 'draft'} onChange={(event) => setForm({ ...form, isPublished: event.target.value === 'published' })}>
-                  <option value="draft">Non publié</option>
-                  <option value="published">Publié</option>
-                </select>
-                <span className="field-hint">La publication nécessite un stand actif et une activité renseignée.</span>
-              </label>
-              <div className="stand-preview">
-                <span className="eyebrow">Aperçu de la fiche</span>
-                <strong>{form.name || 'Nom de la structure'}</strong>
-                {form.standLabel && <small>{form.standLabel}</small>}
-                <p>{form.activity || 'L’activité apparaîtra ici après sa saisie.'}</p>
-                {occupant.isPublished && <a href={`${publicBaseUrl}/stands/${occupant.slug}`} target="_blank" rel="noreferrer">Voir la fiche publiée <ExternalLink size={15} /></a>}
-              </div>
-            </>
-          )}
+          <label>
+            Statut du stand
+            <select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })}>
+              <option value="active">Actif</option>
+              <option value="inactive">Inactif</option>
+            </select>
+          </label>
           {error && <p className="form-error">{error}</p>}
           <footer className="drawer-actions">
             <button className="button button-secondary" type="button" onClick={onClose}>Annuler</button>
@@ -336,6 +318,73 @@ function UserForm({ user, occupants, onClose, onSaved, token, currentRole, curre
   );
 }
 
+function InvestorRequestDrawer({ investorRequest, onClose, onSaved, token }) {
+  const [form, setForm] = useState({
+    status: investorRequest.status,
+    nextAction: investorRequest.nextAction || '',
+  });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const saved = await api.updateInvestorRequest(token, investorRequest.id, {
+        status: form.status,
+        nextAction: form.nextAction || null,
+      });
+      await onSaved(saved);
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="drawer-backdrop" role="presentation" onMouseDown={onClose}>
+      <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="investor-request-title" onMouseDown={(event) => event.stopPropagation()}>
+        <header className="drawer-header">
+          <div>
+            <span className="eyebrow">Investor Desk</span>
+            <h2 id="investor-request-title">Suivre la demande</h2>
+          </div>
+          <button className="icon-button" type="button" onClick={onClose} aria-label="Fermer"><X size={19} /></button>
+        </header>
+
+        <section className="investor-request-detail">
+          <div><span>Demandeur</span><strong>{investorRequest.fullName}</strong></div>
+          <div><span>Coordonnées</span><a href={`mailto:${investorRequest.email}`}>{investorRequest.email}</a>{investorRequest.phone && <a href={`tel:${investorRequest.phone}`}>{investorRequest.phone}</a>}</div>
+          <div><span>Projet ou besoin</span><p>{investorRequest.projectSummary}</p></div>
+        </section>
+
+        <form onSubmit={submit} className="drawer-form investor-followup-form">
+          <label>
+            Statut
+            <select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })}>
+              <option value="new">Nouvelle</option>
+              <option value="in_progress">En cours</option>
+              <option value="closed">Clôturée</option>
+            </select>
+          </label>
+          <label>
+            Prochaine action
+            <textarea rows="4" value={form.nextAction} onChange={(event) => setForm({ ...form, nextAction: event.target.value })} maxLength={255} placeholder="Ex. : rappeler pour préciser le besoin" />
+          </label>
+          {investorRequest.assignedTo && <p className="assignment-note">Responsable : {investorRequest.assignedTo.firstName} {investorRequest.assignedTo.lastName}</p>}
+          {error && <p className="form-error">{error}</p>}
+          <footer className="drawer-actions">
+            <button className="button button-secondary" type="button" onClick={onClose}>Annuler</button>
+            <button className="button button-primary" type="submit" disabled={loading}>{loading ? 'Enregistrement...' : 'Enregistrer le suivi'}</button>
+          </footer>
+        </form>
+      </aside>
+    </div>
+  );
+}
+
 function ConfirmDelete({ subject, loading, error, onCancel, onConfirm }) {
   return (
     <div className="dialog-backdrop" role="presentation" onMouseDown={onCancel}>
@@ -356,9 +405,11 @@ function ConfirmDelete({ subject, loading, error, onCancel, onConfirm }) {
 }
 
 function AppShell({ session, onLogout }) {
-  const [section, setSection] = useState('occupants');
+  const isAdministrator = adminRoles.has(session.user.role);
+  const [section, setSection] = useState(() => (isAdministrator ? 'occupants' : 'investor-requests'));
   const [occupants, setOccupants] = useState([]);
   const [users, setUsers] = useState([]);
+  const [investorRequests, setInvestorRequests] = useState([]);
   const [contactStats, setContactStats] = useState({ total: 0, byOccupant: {} });
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -372,29 +423,38 @@ function AppShell({ session, onLogout }) {
     setLoading(true);
     setError('');
     try {
-      const [occupantData, userData, statsData] = await Promise.all([
-        api.occupants(session.token),
-        api.users(session.token),
-        api.contactStats(session.token),
-      ]);
-      setOccupants(occupantData);
-      setUsers(userData);
-      setContactStats(statsData);
+      if (isAdministrator) {
+        const [occupantData, userData, statsData, investorData] = await Promise.all([
+          api.occupants(session.token),
+          api.users(session.token),
+          api.contactStats(session.token),
+          api.investorRequests(session.token),
+        ]);
+        setOccupants(occupantData);
+        setUsers(userData);
+        setContactStats(statsData);
+        setInvestorRequests(investorData.items);
+      } else {
+        const investorData = await api.investorRequests(session.token);
+        setInvestorRequests(investorData.items);
+      }
     } catch (requestError) {
       if (requestError.status === 401 || requestError.status === 403) onLogout();
       else setError(requestError.message);
     } finally {
       setLoading(false);
     }
-  }, [onLogout, session.token]);
+  }, [isAdministrator, onLogout, session.token]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
   const query = search.trim().toLowerCase();
   const visibleOccupants = useMemo(() => occupants.filter((occupant) =>
-    !query || [occupant.name, occupant.activity, occupant.standLabel, occupant.proofNumber].some((value) => String(value || '').toLowerCase().includes(query))), [occupants, query]);
+    !query || [occupant.name, occupant.activity, occupant.standLabel].some((value) => String(value || '').toLowerCase().includes(query))), [occupants, query]);
   const visibleUsers = useMemo(() => users.filter((user) =>
     !query || [user.firstName, user.lastName, user.email, user.role, user.occupant?.name].some((value) => String(value || '').toLowerCase().includes(query))), [users, query]);
+  const visibleInvestorRequests = useMemo(() => investorRequests.filter((item) =>
+    !query || [item.fullName, item.email, item.projectSummary, item.nextAction].some((value) => String(value || '').toLowerCase().includes(query))), [investorRequests, query]);
 
   const switchSection = (next) => {
     setSection(next);
@@ -424,6 +484,12 @@ function AppShell({ session, onLogout }) {
     }
   };
 
+  const sectionMeta = {
+    occupants: { title: 'Stands', description: 'Fiches publiques, emplacements et statuts.' },
+    users: { title: 'Accès', description: 'Comptes et niveaux d’accès à la plateforme.' },
+    'investor-requests': { title: 'Investor Desk', description: 'Demandes de professionnels adressées à l’API-ZF.' },
+  }[section];
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -432,11 +498,18 @@ function AppShell({ session, onLogout }) {
           <div><strong>HubInvest</strong><span>Administration</span></div>
         </div>
         <nav aria-label="Navigation principale">
-          <button className={section === 'occupants' ? 'is-active' : ''} onClick={() => switchSection('occupants')}>
-            <Building2 size={18} /> Stands
-          </button>
-          <button className={section === 'users' ? 'is-active' : ''} onClick={() => switchSection('users')}>
-            <Users size={18} /> Accès
+          {isAdministrator && (
+            <>
+              <button className={section === 'occupants' ? 'is-active' : ''} onClick={() => switchSection('occupants')}>
+                <Building2 size={18} /> Stands
+              </button>
+              <button className={section === 'users' ? 'is-active' : ''} onClick={() => switchSection('users')}>
+                <Users size={18} /> Accès
+              </button>
+            </>
+          )}
+          <button className={section === 'investor-requests' ? 'is-active' : ''} onClick={() => switchSection('investor-requests')}>
+            <BriefcaseBusiness size={18} /> Investor Desk
           </button>
         </nav>
         <div className="sidebar-user">
@@ -450,27 +523,37 @@ function AppShell({ session, onLogout }) {
         <header className="workspace-header">
           <div>
             <span className="eyebrow">Gestion</span>
-            <h1>{section === 'occupants' ? 'Stands' : 'Accès'}</h1>
-            <p>{section === 'occupants' ? 'Fiches publiques, emplacements et publication.' : 'Comptes et niveaux d’accès à la plateforme.'}</p>
+            <h1>{sectionMeta.title}</h1>
+            <p>{sectionMeta.description}</p>
           </div>
-          <button className="button button-primary" type="button" onClick={() => setDrawer({ type: section === 'occupants' ? 'occupant' : 'user', item: null })}>
-            <Plus size={18} /> {section === 'occupants' ? 'Nouveau stand' : 'Nouvel utilisateur'}
-          </button>
+          {section !== 'investor-requests' && (
+            <button className="button button-primary" type="button" onClick={() => setDrawer({ type: section === 'occupants' ? 'occupant' : 'user', item: null })}>
+              <Plus size={18} /> {section === 'occupants' ? 'Nouveau stand' : 'Nouvel utilisateur'}
+            </button>
+          )}
         </header>
 
-        <section className="summary-row" aria-label="Résumé">
-          <article><span>Stands</span><strong>{loading || error ? '—' : occupants.length}</strong><small>{!loading && !error && `${occupants.filter((item) => item.isPublished && item.status === 'active').length} publiés`}</small></article>
-          <article><span>Utilisateurs</span><strong>{loading || error ? '—' : users.length}</strong><small>{!loading && !error && `${users.filter((item) => item.isActive).length} actifs`}</small></article>
-          {section === 'occupants' ? (
-            <article><span>Contacts enregistrés</span><strong>{loading || error ? '—' : contactStats.total}</strong><small>tous les occupants</small></article>
-          ) : (
-            <article><span>Administration</span><strong>{loading || error ? '—' : users.filter((item) => adminRoles.has(item.role)).length}</strong><small>comptes internes</small></article>
-          )}
-        </section>
+        {section === 'investor-requests' ? (
+          <section className="summary-row" aria-label="Résumé">
+            <article><span>Nouvelles</span><strong>{loading || error ? '—' : investorRequests.filter((item) => item.status === 'new').length}</strong><small>à examiner</small></article>
+            <article><span>En cours</span><strong>{loading || error ? '—' : investorRequests.filter((item) => item.status === 'in_progress').length}</strong><small>prises en charge</small></article>
+            <article><span>Clôturées</span><strong>{loading || error ? '—' : investorRequests.filter((item) => item.status === 'closed').length}</strong><small>demandes traitées</small></article>
+          </section>
+        ) : (
+          <section className="summary-row" aria-label="Résumé">
+            <article><span>Stands</span><strong>{loading || error ? '—' : occupants.length}</strong><small>{!loading && !error && `${occupants.filter((item) => item.status === 'active').length} actifs`}</small></article>
+            <article><span>Utilisateurs</span><strong>{loading || error ? '—' : users.length}</strong><small>{!loading && !error && `${users.filter((item) => item.isActive).length} actifs`}</small></article>
+            {section === 'occupants' ? (
+              <article><span>Contacts enregistrés</span><strong>{loading || error ? '—' : contactStats.total}</strong><small>tous les occupants</small></article>
+            ) : (
+              <article><span>Administration</span><strong>{loading || error ? '—' : users.filter((item) => adminRoles.has(item.role)).length}</strong><small>comptes internes</small></article>
+            )}
+          </section>
+        )}
 
         <section className="data-panel">
           <header className="data-toolbar">
-            <label className="search-field"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={`Rechercher ${section === 'occupants' ? 'un occupant' : 'un utilisateur'}`} /></label>
+            <label className="search-field"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={section === 'occupants' ? 'Rechercher un occupant' : section === 'users' ? 'Rechercher un utilisateur' : 'Rechercher une demande'} /></label>
             <button className="icon-button" type="button" onClick={loadData} aria-label="Actualiser"><RefreshCw size={18} /></button>
           </header>
 
@@ -480,20 +563,17 @@ function AppShell({ session, onLogout }) {
           {!loading && !error && section === 'occupants' && (visibleOccupants.length ? (
             <div className="table-scroll">
               <table>
-                <thead><tr><th>Structure</th><th>Emplacement</th><th>Activité</th><th>Contacts</th><th>Publication</th><th>Accès</th><th className="actions-heading">Actions</th></tr></thead>
+                <thead><tr><th>Structure</th><th>Emplacement</th><th>Contacts</th><th className="actions-heading">Actions</th></tr></thead>
                 <tbody>{visibleOccupants.map((occupant) => (
-                  <tr key={occupant.id}>
-                    <td><strong>{occupant.name}</strong><small>{occupant.slug}</small></td>
+                  <tr className={`occupant-row ${occupant.status === 'active' ? 'is-active' : 'is-inactive'}`} key={occupant.id}>
+                    <td><div className="structure-cell">{occupant.coverImageUrl ? <img src={resolveAssetUrl(occupant.coverImageUrl)} alt="" /> : <span className="structure-cover-placeholder" aria-hidden="true" />}<strong>{occupant.name}</strong><span className="sr-only">{occupant.status === 'active' ? 'Actif' : 'Inactif'}</span></div></td>
                     <td>{occupant.standLabel || '—'}</td>
-                    <td className="activity-cell">{occupant.activity || 'Non renseignée'}</td>
                     <td className="contact-count">{contactStats.byOccupant[occupant.id] || 0}</td>
-                    <td><span className={`status-pill ${occupant.isPublished && occupant.status === 'active' ? 'is-active' : ''}`}>{occupant.isPublished && occupant.status === 'active' ? 'Publié' : 'Non publié'}</span></td>
-                    <td><span className={`status-pill ${occupant.status === 'active' ? 'is-active' : ''}`}>{occupant.status === 'active' && <Check size={13} />}{occupant.status === 'active' ? 'Actif' : 'Inactif'}</span></td>
                     <td>
                       <div className="row-actions">
-                        {occupant.isPublished && occupant.status === 'active' && <a className="table-action" href={`${publicBaseUrl}/stands/${occupant.slug}`} target="_blank" rel="noreferrer"><ExternalLink size={15} /> Voir</a>}
-                        <button className="table-action" type="button" onClick={() => setDrawer({ type: 'occupant', item: occupant })}><Pencil size={15} /> Modifier</button>
-                        <button className="table-action is-danger" type="button" onClick={() => { setDeleteError(''); setPendingDelete({ type: 'occupant', item: occupant, label: `l'occupant ${occupant.name}` }); }}><Trash2 size={15} /> Supprimer</button>
+                        {occupant.status === 'active' && <a className="table-action is-icon" href={`${publicBaseUrl}/stands/${occupant.slug}`} target="_blank" rel="noreferrer" aria-label={`Voir ${occupant.name}`} title="Voir la fiche"><ExternalLink size={16} /></a>}
+                        <button className="table-action is-icon" type="button" aria-label={`Modifier ${occupant.name}`} title="Modifier" onClick={() => setDrawer({ type: 'occupant', item: occupant })}><Pencil size={16} /></button>
+                        <button className="table-action is-icon is-danger" type="button" aria-label={`Supprimer ${occupant.name}`} title="Supprimer" onClick={() => { setDeleteError(''); setPendingDelete({ type: 'occupant', item: occupant, label: `l'occupant ${occupant.name}` }); }}><Trash2 size={16} /></button>
                       </div>
                     </td>
                   </tr>
@@ -523,11 +603,29 @@ function AppShell({ session, onLogout }) {
               </table>
             </div>
           ) : <EmptyState icon={ShieldCheck} title="Aucun utilisateur" copy={query ? 'Aucun résultat ne correspond à la recherche.' : 'Créez le premier accès à la plateforme.'} />)}
+
+          {!loading && !error && section === 'investor-requests' && (visibleInvestorRequests.length ? (
+            <div className="table-scroll">
+              <table>
+                <thead><tr><th>Demandeur</th><th>Projet ou besoin</th><th>Statut</th><th>Responsable</th><th className="actions-heading">Actions</th></tr></thead>
+                <tbody>{visibleInvestorRequests.map((item) => (
+                  <tr key={item.id}>
+                    <td><strong>{item.fullName}</strong><small>{item.email}</small></td>
+                    <td className="activity-cell">{item.projectSummary}</td>
+                    <td><span className={`status-pill ${item.status === 'in_progress' ? 'is-active' : item.status === 'new' ? 'is-new' : ''}`}>{investorStatusLabels[item.status]}</span></td>
+                    <td>{item.assignedTo ? `${item.assignedTo.firstName} ${item.assignedTo.lastName}` : 'Non attribuée'}</td>
+                    <td><div className="row-actions"><button className="table-action" type="button" onClick={() => setDrawer({ type: 'investor-request', item })}><Pencil size={15} /> Suivre</button></div></td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
+          ) : <EmptyState icon={BriefcaseBusiness} title="Aucune demande" copy={query ? 'Aucun résultat ne correspond à la recherche.' : 'Les demandes envoyées à l’Investor Desk apparaîtront ici.'} />)}
         </section>
       </main>
 
       {drawer?.type === 'occupant' && <OccupantForm occupant={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'user' && <UserForm user={drawer.item} occupants={occupants} token={session.token} currentRole={session.user.role} currentUserId={session.user.id} onClose={() => setDrawer(null)} onSaved={saved} />}
+      {drawer?.type === 'investor-request' && <InvestorRequestDrawer investorRequest={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {pendingDelete && <ConfirmDelete subject={pendingDelete} loading={deleting} error={deleteError} onCancel={() => setPendingDelete(null)} onConfirm={confirmDelete} />}
     </div>
   );
@@ -539,7 +637,7 @@ export default function App() {
   });
   const login = async (values) => {
     const nextSession = await api.login(values);
-    if (!adminRoles.has(nextSession.user.role)) throw new Error("Ce compte n’a pas accès à l’administration.");
+    if (!backofficeRoles.has(nextSession.user.role)) throw new Error("Ce compte n’a pas accès à l’administration.");
     localStorage.setItem('hubinvest-admin-session', JSON.stringify(nextSession));
     setSession(nextSession);
   };

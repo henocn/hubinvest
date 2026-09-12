@@ -16,16 +16,15 @@ module.exports = (sequelize, DataTypes) =>
         allowNull: false,
         unique: true,
       },
-      proofNumber: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-        unique: true,
-        field: 'proof_number',
-      },
       standLabel: {
         type: DataTypes.STRING(80),
         allowNull: true,
         field: 'stand_label',
+      },
+      coverImageUrl: {
+        type: DataTypes.STRING(2048),
+        allowNull: true,
+        field: 'cover_image_url',
       },
       activity: {
         type: DataTypes.TEXT,
@@ -36,12 +35,6 @@ module.exports = (sequelize, DataTypes) =>
         allowNull: false,
         defaultValue: 'active',
         validate: { isIn: [['active', 'inactive']] },
-      },
-      isPublished: {
-        type: DataTypes.BOOLEAN,
-        allowNull: false,
-        defaultValue: false,
-        field: 'is_published',
       },
     },
     {

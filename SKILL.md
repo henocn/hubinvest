@@ -1,6 +1,6 @@
 ---
 name: hubinvest-interface
-description: Concevoir ou modifier un ecran, un composant, un formulaire ou un parcours du frontend mobile ou du backoffice HubInvest. Appliquer une direction sobre inspiree des outils de travail comme Postman, les couleurs API-ZF, une vraie hierarchie visuelle, des interactions completes et une verification dans le navigateur. Ne pas utiliser pour le backend seul.
+description: Concevoir ou modifier un écran, un composant, un formulaire ou un parcours du frontend mobile ou du backoffice HubInvest. Appliquer une direction sobre inspirée des outils de travail comme Postman, avec une hiérarchie, des espacements, des alignements et des contrôles visuellement vérifiés. Ne pas utiliser pour le backend seul.
 ---
 
 # Interface HubInvest
@@ -11,13 +11,47 @@ Le frontend mobile et le backoffice partagent la meme identite, mais pas la meme
 
 ## Avant de toucher au code
 
-1. Relire le parcours concerne dans `README.md` et, si une regle manque, dans le cahier des charges `.docx`.
-2. Verifier `NEEDS.md` avant d'inventer un contenu, une option ou une valeur metier.
-3. Definir l'action principale, les informations necessaires et les etats reellement utiles.
-4. Faire un wireframe court du seul ecran en cours. Ne pas concevoir toute l'application d'avance.
-5. Reutiliser les composants et tokens existants avant d'en creer de nouveaux.
+1. Relire `PREFERENCES.md` et y consigner d’abord toute nouvelle préférence durable donnée par l’utilisateur.
+2. Relire le parcours concerne dans `README.md` et, si une regle manque, dans le cahier des charges `.docx`.
+3. Verifier `NEEDS.md` avant d'inventer un contenu, une option ou une valeur metier.
+4. Definir l'action principale, les informations necessaires et les etats reellement utiles.
+5. Faire un wireframe court du seul ecran en cours. Ne pas concevoir toute l'application d'avance.
+6. Reutiliser les composants et tokens existants avant d'en creer de nouveaux.
 
 Si la direction de l'ecran est encore incertaine, proposer ou produire un seul concept visuel pour cet ecran. Ne pas generer une serie de maquettes non validees.
+
+## Règle de qualité UI/UX : un écran visuellement maladroit n’est pas terminé
+
+Le fonctionnement technique ne suffit pas. Avant de livrer un écran, sa composition, ses proportions et chaque contrôle doivent être examinés dans le navigateur. Une case déplacée, un champ d’une hauteur différente, un bloc non centré, un texte comprimé ou un grand vide inexpliqué sont des défauts bloquants.
+
+### Composition et hiérarchie
+
+- Définir un axe visuel principal. Une tâche unique utilise un bloc centré ; un écran de travail suit la grille et les alignements du shell.
+- Aligner entre eux le titre, le contenu, les champs et les actions. Aucun bloc ne flotte sans relation claire avec les autres.
+- Adapter la largeur du contenu à sa nature : un formulaire court ne doit pas occuper tout l’écran et un texte ne doit pas former une colonne trop étroite.
+- Éliminer les grands espaces vides, les décorations isolées et les marges qui repoussent l’action sous le premier écran visible.
+- Construire une hiérarchie courte. Ne pas répéter la même idée dans le titre, le sous-titre, le panneau et le champ.
+- Vérifier l’équilibre réel de la page à l’œil, pas seulement les valeurs CSS ou la présence des composants.
+
+### Contrôles et formulaires
+
+- Donner la même hauteur, le même rayon et le même alignement aux champs placés au même niveau.
+- Une case à cocher ou un bouton radio garde une taille fixe, ne grandit jamais avec `width: 100%` et reste aligné en haut du texte associé.
+- Le texte d’un consentement reste dans le même bloc que son contrôle, avec une largeur lisible. Toute la ligne doit être cliquable.
+- Exclure explicitement `checkbox`, `radio` et les boutons des sélecteurs CSS génériques destinés aux champs de texte.
+- Tester les libellés longs, les erreurs et les contenus saisis très longs. Ne pas afficher en aperçu un texte libre qui peut contenir des dizaines de lignes ; permettre plutôt de revenir le modifier.
+- Vérifier les états normal, focus, erreur, chargement et désactivé sans variation de taille qui déplace la page.
+
+### Parcours et densité
+
+- Partir du geste que la personne est venue accomplir, pas des colonnes disponibles dans la base de données.
+- Demander le minimum nécessaire au moment utile. Si le parcours commence par une intention et se termine par des coordonnées, révéler les coordonnées seulement au moment de poursuivre ou d’envoyer.
+- Supprimer tout champ, texte ou étape qui ne change ni le traitement, ni la décision, ni la suite donnée par l’équipe.
+- Dans un formulaire progressif, montrer seulement l’étape actuelle, conserver silencieusement les valeurs et fournir un retour simple vers l’étape précédente.
+
+### Contrôle visuel obligatoire
+
+Avant de considérer l’écran prêt, l’ouvrir et l’examiner au minimum à 320 px, 375 px et en largeur de bureau. Contrôler le premier écran visible, les alignements, les espacements, les débordements, la hauteur des champs, les cases à cocher, les textes longs et les boutons. Corriger ce qui paraît étrange avant de présenter le résultat ; un build réussi ne remplace jamais cette vérification visuelle.
 
 ## Direction visuelle
 

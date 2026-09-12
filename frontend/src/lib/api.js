@@ -22,6 +22,11 @@ const request = async (path, options = {}) => {
   return payload.data;
 };
 
+export const resolveAssetUrl = (value) => {
+  if (!value || /^https?:\/\//i.test(value)) return value;
+  return new URL(value, new URL(API_URL, window.location.origin).origin).toString();
+};
+
 const authorized = (token, options = {}) => ({
   ...options,
   headers: {
@@ -35,6 +40,7 @@ export const api = {
   publicOccupants: () => request('/occupants/public'),
   publicOccupant: (slug) => request(`/occupants/public/${encodeURIComponent(slug)}`),
   requestContact: (slug, values) => request(`/contacts/public/${encodeURIComponent(slug)}`, { method: 'POST', body: JSON.stringify(values) }),
+  createInvestorRequest: (values) => request('/investor-requests/public', { method: 'POST', body: JSON.stringify(values) }),
   login: (values) => request('/auth/login', { method: 'POST', body: JSON.stringify(values) }),
   contacts: (token) => request('/contacts', authorized(token)),
   contactStats: (token) => request('/contacts/stats', authorized(token)),

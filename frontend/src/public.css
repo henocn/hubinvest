@@ -166,10 +166,10 @@
 }
 
 .stand-card {
-  min-height: 195px;
-  display: flex;
-  gap: 20px;
-  padding: 24px;
+  min-height: 310px;
+  display: grid;
+  grid-template-rows: 150px 1fr;
+  overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 8px;
   color: inherit;
@@ -183,15 +183,19 @@
   transform: translateY(-2px);
 }
 
-.stand-card-mark {
-  width: 42px;
-  height: 42px;
-  flex: 0 0 auto;
+.stand-card-cover {
+  width: 100%;
+  height: 150px;
   display: grid;
   place-items: center;
-  border-radius: 7px;
   color: var(--green);
-  background: #edf4f1;
+  background: linear-gradient(135deg, #e3eee9, #f2f5f3);
+}
+
+.stand-card-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .stand-card-content {
@@ -199,6 +203,7 @@
   display: flex;
   flex-direction: column;
   align-items: start;
+  padding: 20px 22px 22px;
 }
 
 .stand-location {
@@ -279,6 +284,16 @@
   border: 1px solid var(--border);
   border-radius: 9px;
   background: #fff;
+}
+
+.stand-profile-cover {
+  width: 100%;
+  height: clamp(210px, 38vw, 390px);
+  display: block;
+  margin-bottom: clamp(26px, 4vw, 42px);
+  border-radius: 7px;
+  object-fit: cover;
+  background: #eef0ee;
 }
 
 .stand-profile-top {
@@ -397,6 +412,178 @@
   font-weight: 700;
 }
 
+.investor-desk-page {
+  padding-block: clamp(32px, 5vw, 52px) 90px;
+}
+
+.investor-desk-intro {
+  max-width: 700px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 auto 24px;
+  text-align: center;
+}
+
+.investor-desk-intro h1 {
+  margin: 0 0 8px;
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.08;
+  letter-spacing: -0.05em;
+}
+
+.investor-desk-intro p {
+  margin: 0;
+  color: var(--green);
+  font-size: 0.86rem;
+  font-weight: 750;
+}
+
+.investor-request-panel {
+  max-width: 700px;
+  margin-inline: auto;
+  padding: clamp(24px, 5vw, 42px);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #fff;
+}
+
+.investor-request-form {
+  display: grid;
+  gap: 28px;
+}
+
+.investor-step > label:not(.request-consent),
+.public-field-row label {
+  display: grid;
+  gap: 8px;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.investor-step-progress {
+  display: grid;
+  gap: 10px;
+}
+
+.investor-step-progress > span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.investor-step-progress > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.investor-step-progress i {
+  height: 4px;
+  border-radius: 4px;
+  background: #e4e7e5;
+}
+
+.investor-step-progress i.is-complete {
+  background: var(--green);
+}
+
+.investor-step {
+  display: grid;
+  gap: 20px;
+}
+
+.investor-step > header h2 {
+  margin: 0 0 8px;
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+  letter-spacing: -0.035em;
+}
+
+.investor-step > header p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.public-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.investor-request-form input,
+.investor-request-form textarea {
+  width: 100%;
+}
+
+.investor-request-form input:not([type='checkbox']) {
+  height: 48px;
+}
+
+.public-field-label {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.public-field-label small {
+  color: var(--muted);
+  font-size: 0.77rem;
+  font-weight: 500;
+}
+
+.investor-next-button {
+  justify-self: end;
+}
+
+.investor-consent {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #fafbfa;
+}
+
+.investor-consent input {
+  width: 18px;
+  min-height: 18px;
+  height: 18px;
+  padding: 0;
+}
+
+.investor-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.investor-request-success {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+}
+
+.investor-request-success > span {
+  width: 46px;
+  height: 46px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  color: var(--green);
+  background: #e9f3ef;
+}
+
+.investor-request-success h2 {
+  margin: 0 0 7px;
+  font-size: 1.35rem;
+}
+
+.investor-request-success p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -417,12 +604,17 @@
   .public-brand img { width: 48px; }
   .public-brand small { display: none; }
   .stand-grid { grid-template-columns: 1fr; }
-  .stand-card { min-height: 165px; padding: 20px; }
+  .stand-card { min-height: 300px; }
   .public-section-heading { align-items: start; }
   .stand-count { text-align: right; }
   .request-panel { grid-template-columns: 1fr; }
+  .public-field-row { grid-template-columns: 1fr; }
+  .investor-form-actions { flex-direction: column-reverse; }
+  .investor-form-actions .button, .investor-next-button { width: 100%; }
 }
 
 @media (max-width: 420px) {
   .public-header nav a:first-child { display: none; }
+  .public-header nav { gap: 7px; }
+  .public-header nav .public-login { padding-inline: 8px; }
 }

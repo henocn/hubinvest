@@ -7,7 +7,7 @@ On avance par gestes réels des utilisateurs, pas par une liste de neuf modules 
 - [x] Faire valider la lecture des rôles et du noyau produit décrits dans `README.md`.
 - [x] Retenir le prochain usage à montrer : « je scanne le QR code du Hub ou d’un stand, je découvre l’occupant, puis je peux demander à être recontacté ».
 - [x] Faire arriver une demande de fiche uniquement dans les contacts de son occupant.
-- [ ] Confirmer qui reçoit une demande adressée directement à l’API-ZF et valider le texte de consentement public avant la production.
+- [ ] Valider le texte définitif de consentement public avant la production ; les demandes directes sont reçues par l’Investor Desk.
 
 ## Déjà engagé
 
@@ -25,7 +25,7 @@ On avance par gestes réels des utilisateurs, pas par une liste de neuf modules 
 La découverte est commencée. Le formulaire de recontact attend la confirmation de ses destinataires et de son texte de consentement.
 
 - [x] Ouvrir le frontend public sans connexion obligatoire.
-- [x] Afficher les occupants publiés et une fiche de stand courte, à partir des données administrées.
+- [x] Afficher les stands actifs et une fiche courte avec leur couverture, à partir des données administrées.
 - [ ] Générer et tester les QR codes réels : accueil vers `/stands`, stand vers `/stands/:slug`.
 - [ ] Vérifier les anciennes valeurs de « numéro de preuve » : ce champ était auparavant présenté comme numéro de stand dans le backoffice et n’est pas affiché au public tant qu’il n’est pas clarifié.
 - [ ] Vérifier le parcours sur téléphone, connexion lente et écran étroit.
@@ -40,7 +40,7 @@ Validation : une personne qui n’a jamais vu HubInvest scanne, comprend où ell
 - [x] Confirmer au visiteur que sa demande est enregistrée, sans promettre une réponse automatique non organisée.
 - [x] Montrer cette demande uniquement à l’occupant concerné, qui peut la qualifier et noter sa prochaine action.
 - [ ] Attribuer explicitement un responsable à une demande si l’équipe du stand compte plusieurs personnes et en a besoin.
-- [ ] Permettre une demande distincte adressée à l’API-ZF ; son contenu et son destinataire sont à confirmer avant codage.
+- [x] Permettre une demande distincte adressée à l’API-ZF, reçue et suivie par l’Investor Desk.
 - [ ] Afficher au responsable d’occupant les contacts et relances utiles ; ajouter l’export demandé lorsque ses colonnes sont connues.
 - [x] Tester côté API le cloisonnement, le consentement obligatoire et l’origine d’une demande publique.
 - [ ] Vérifier sur téléphone le formulaire, puis son arrivée dans l’espace occupant et sa modification.
@@ -52,7 +52,7 @@ Validation : une demande va au bon destinataire, et ce destinataire peut réelle
 
 Leur présence dans le CDC ne dit pas encore quelle version est utile en pratique. Pour chacun, confirmer l’équipe qui l’exploitera, puis définir un premier parcours complet avant de coder.
 
-- [ ] **Investor Desk** : un professionnel expose son projet ou demande un échange ; l’équipe API-ZF reçoit, qualifie et suit le dossier sans accès pour les occupants. Réservation de créneau seulement si l’agenda réel est géré.
+- [x] **Investor Desk — première version** : un professionnel expose son projet ou demande un échange ; l’équipe API-ZF reçoit la demande, se l’attribue au premier suivi et note sa prochaine action. La qualification détaillée et les rendez-vous attendent les règles réelles.
 - [ ] **Rencontres B2B** : un occupant publie ce qu’il cherche ; un professionnel propose une rencontre ; les deux acceptent et un responsable organise la suite. Tables et créneaux uniquement si nécessaires sur place.
 - [ ] **Studio** : un invité ouvre son lien personnel et confirme sa venue ; l’équipe de campagne tient un planning. Rappels et livraison vidéo peuvent rester manuels au début.
 - [ ] **Défis du public** : un visiteur choisit de jouer ; les stands valident humainement ses passages ; l’accueil remet une récompense une seule fois. Aucun consentement commercial implicite.

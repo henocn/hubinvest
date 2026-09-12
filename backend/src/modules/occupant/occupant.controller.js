@@ -26,9 +26,14 @@ const update = async (request, response) => {
   response.json({ data: occupant, message: 'Occupant modifié.' });
 };
 
+const updateCover = async (request, response) => {
+  const occupant = await occupantService.updateCover(request.params.id, request.file);
+  response.json({ data: occupant, message: 'Image de couverture modifiée.' });
+};
+
 const remove = async (request, response) => {
   await occupantService.remove(request.params.id);
   response.status(204).send();
 };
 
-module.exports = { list, listPublic, get, getPublic, create, update, remove };
+module.exports = { list, listPublic, get, getPublic, create, update, updateCover, remove };

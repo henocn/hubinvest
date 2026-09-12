@@ -1,5 +1,18 @@
+const fs = require('node:fs/promises');
+const path = require('node:path');
 const AppError = require('../../shared/app-error');
 const occupantRepository = require('./occupant.repository');
+
+const coverDirectory = path.resolve(__dirname, '..', '..', '..', 'uploads', 'covers');
+
+const removeCoverFile = async (coverImageUrl) => {
+  if (!coverImageUrl?.startsWith('/uploads/covers/')) return;
+  try {
+    await fs.unlink(path.join(coverDirectory, path.basename(coverImageUrl)));
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
+};
 
 const slugify = (value) =>
   value
@@ -8,12 +21,6 @@ const slugify = (value) =>
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
-
-const assertPublishable = (values) => {
-  if (values.isPublished && (values.status !== 'active' || !values.activity?.trim())) {
-    throw new AppError(422, 'STAND_NOT_READY', 'Pour publier ce stand, il doit être actif et son activité doit être renseignée.');
-  }
-};
 
 const list = () => occupantRepository.findAll();
 const listPublic = () => occupantRepository.findPublic();
@@ -35,7 +42,6 @@ const getPublic = async (slug) => {
 };
 
 const create = (values) => {
-  assertPublishable(values);
   return occupantRepository.create({
     ...values,
     slug: values.slug || slugify(values.name),
@@ -45,20 +51,35 @@ const create = (values) => {
 const update = async (id, values) => {
   const occupant = await get(id);
   const nextValues = { ...values };
-  if (occupant.isPublished && nextValues.slug && nextValues.slug !== occupant.slug) {
-    throw new AppError(409, 'PUBLIC_LINK_LOCKED', 'L’adresse publique d’un stand publié ne peut pas être modifiée.');
+  if (occupant.status === 'active' && nextValues.slug && nextValues.slug !== occupant.slug) {
+    throw new AppError(409, 'PUBLIC_LINK_LOCKED', 'L’adresse publique d’un stand actif ne peut pas être modifiée.');
   }
-  assertPublishable({
-    status: nextValues.status ?? occupant.status,
-    activity: Object.prototype.hasOwnProperty.call(nextValues, 'activity') ? nextValues.activity : occupant.activity,
-    isPublished: nextValues.isPublished ?? occupant.isPublished,
-  });
   return occupantRepository.update(occupant, nextValues);
+};
+
+const updateCover = async (id, file) => {
+  if (!file) {
+    throw new AppError(422, 'COVER_IMAGE_REQUIRED', 'Choisissez une image de couverture.');
+  }
+
+  const nextCoverImageUrl = `/uploads/covers/${file.filename}`;
+  let occupant;
+  try {
+    occupant = await get(id);
+    const previousCoverImageUrl = occupant.coverImageUrl;
+    const updated = await occupantRepository.update(occupant, { coverImageUrl: nextCoverImageUrl });
+    await removeCoverFile(previousCoverImageUrl);
+    return updated;
+  } catch (error) {
+    await removeCoverFile(nextCoverImageUrl);
+    throw error;
+  }
 };
 
 const remove = async (id) => {
   const occupant = await get(id);
   await occupantRepository.remove(occupant);
+  await removeCoverFile(occupant.coverImageUrl);
 };
 
-module.exports = { list, listPublic, get, getPublic, create, update, remove };
+module.exports = { list, listPublic, get, getPublic, create, update, updateCover, remove };

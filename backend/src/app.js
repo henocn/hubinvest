@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('node:path');
 const cors = require('cors');
 const helmet = require('helmet');
 const env = require('./config/env');
@@ -7,6 +8,7 @@ const authRoutes = require('./modules/auth/auth.route');
 const occupantRoutes = require('./modules/occupant/occupant.route');
 const userRoutes = require('./modules/user/user.route');
 const contactRoutes = require('./modules/contact/contact.route');
+const investorRequestRoutes = require('./modules/investor-request/investor-request.route');
 const httpLogger = require('./middlewares/http-logger.middleware');
 const notFound = require('./middlewares/not-found.middleware');
 const errorHandler = require('./middlewares/error.middleware');
@@ -15,7 +17,7 @@ const app = express();
 
 app.disable('x-powered-by');
 app.use(httpLogger);
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(
   cors({
     origin(origin, callback) {
@@ -29,12 +31,14 @@ app.use(
   }),
 );
 app.use(express.json({ limit: '1mb' }));
+app.use('/uploads', express.static(path.resolve(__dirname, '..', 'uploads')));
 
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/occupants', occupantRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/contacts', contactRoutes);
+app.use('/api/investor-requests', investorRequestRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

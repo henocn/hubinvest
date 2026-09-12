@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, Building2, MapPin, Search } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Building2, BriefcaseBusiness, MapPin, Search } from 'lucide-react';
 import logo from '../../assets/Logo fond blanc.jpeg';
 import { api } from './lib/api';
 import './public.css';
@@ -13,6 +13,7 @@ function PublicHeader() {
       </a>
       <nav aria-label="Navigation publique">
         <a href="/stands">Stands</a>
+        <a href="/investor-desk">Investor Desk</a>
         <a className="public-login" href="/connexion">Espace occupant</a>
       </nav>
     </header>
@@ -22,7 +23,11 @@ function PublicHeader() {
 function StandCard({ stand }) {
   return (
     <a className="stand-card" href={`/stands/${stand.slug}`}>
-      <div className="stand-card-mark" aria-hidden="true"><Building2 size={22} strokeWidth={1.8} /></div>
+      <div className="stand-card-cover">
+        {stand.coverImageUrl
+          ? <img src={stand.coverImageUrl} alt="" loading="lazy" />
+          : <Building2 size={28} strokeWidth={1.6} aria-hidden="true" />}
+      </div>
       <div className="stand-card-content">
         {stand.standLabel && <span className="stand-location"><MapPin size={14} /> {stand.standLabel}</span>}
         <h2>{stand.name}</h2>
@@ -65,7 +70,7 @@ function StandList({ isHome }) {
       <main className="public-container public-main">
         <div className="public-section-heading">
           <div><span className="public-eyebrow">Annuaire</span><h2>Explorer les stands</h2></div>
-          {!loading && !error && <span className="stand-count">{stands.length} stand{stands.length > 1 ? 's' : ''} publié{stands.length > 1 ? 's' : ''}</span>}
+          {!loading && !error && <span className="stand-count">{stands.length} stand{stands.length > 1 ? 's' : ''}</span>}
         </div>
         <label className="public-search">
           <Search size={20} aria-hidden="true" />
@@ -75,7 +80,7 @@ function StandList({ isHome }) {
         {loading && <p className="public-message">Chargement des stands…</p>}
         {error && <div className="public-message is-error"><p>{error}</p><button type="button" onClick={() => window.location.reload()}>Réessayer</button></div>}
         {!loading && !error && filtered.length === 0 && (
-          <p className="public-message">{query ? 'Aucun stand ne correspond à cette recherche.' : 'Les stands seront visibles ici dès leur publication.'}</p>
+          <p className="public-message">{query ? 'Aucun stand ne correspond à cette recherche.' : 'Aucun stand actif pour le moment.'}</p>
         )}
         {!loading && !error && filtered.length > 0 && (
           <div className="stand-grid">{filtered.map((stand) => <StandCard stand={stand} key={stand.id} />)}</div>
@@ -140,7 +145,7 @@ function StandDetail({ slug }) {
   useEffect(() => {
     api.publicOccupant(slug)
       .then(setStand)
-      .catch((requestError) => setError(requestError.status === 404 ? 'Ce stand n’est pas publié ou n’existe plus.' : requestError.message))
+      .catch((requestError) => setError(requestError.status === 404 ? 'Ce stand n’est pas disponible ou n’existe plus.' : requestError.message))
       .finally(() => setLoading(false));
   }, [slug]);
 
@@ -151,6 +156,7 @@ function StandDetail({ slug }) {
       {error && <p className="public-message is-error">{error}</p>}
       {stand && (
         <article className="stand-profile">
+          {stand.coverImageUrl && <img className="stand-profile-cover" src={stand.coverImageUrl} alt="" />}
           <div className="stand-profile-top">
             <span className="public-eyebrow">Stand du Hub</span>
           </div>
@@ -164,6 +170,92 @@ function StandDetail({ slug }) {
   );
 }
 
+function InvestorDeskPage() {
+  const [form, setForm] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    projectSummary: '',
+    consentApizf: false,
+  });
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [received, setReceived] = useState(false);
+
+  const field = (name, value) => setForm((current) => ({ ...current, [name]: value }));
+
+  const submit = async (event) => {
+    event.preventDefault();
+    if (step === 1) {
+      setStep(2);
+      setError('');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    try {
+      await api.createInvestorRequest(form);
+      setReceived(true);
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <main className="public-container investor-desk-page">
+      <section className="investor-desk-intro">
+        <h1>Parlez-nous de votre projet</h1>
+        <p>Investor Desk</p>
+      </section>
+
+      <section className="investor-request-panel">
+        {received ? (
+          <div className="investor-request-success" role="status">
+            <span><BriefcaseBusiness size={23} /></span>
+            <div><h2>Demande transmise</h2><p>L’Investor Desk dispose maintenant de votre projet et de vos coordonnées.</p></div>
+          </div>
+        ) : (
+          <form className="investor-request-form" onSubmit={submit}>
+            <div className="investor-step-progress" aria-label={`Étape ${step} sur 2`}>
+              <span>{step} / 2</span>
+              <div aria-hidden="true"><i className="is-complete" /><i className={step === 2 ? 'is-complete' : ''} /></div>
+            </div>
+
+            {step === 1 ? (
+              <div className="investor-step">
+                <label>Que souhaitez-vous réaliser ?<textarea value={form.projectSummary} onChange={(event) => field('projectSummary', event.target.value)} rows={7} minLength={10} maxLength={6000} autoFocus required /></label>
+                <button className="button button-primary investor-next-button" type="submit">Continuer <ArrowRight size={17} /></button>
+              </div>
+            ) : (
+              <div className="investor-step">
+                <header><h2>Vos coordonnées</h2></header>
+                <label>Nom complet<input value={form.fullName} onChange={(event) => field('fullName', event.target.value)} minLength={2} maxLength={160} autoComplete="name" autoFocus required /></label>
+                <div className="public-field-row">
+                  <label>Adresse e-mail<input type="email" value={form.email} onChange={(event) => field('email', event.target.value)} maxLength={180} autoComplete="email" required /></label>
+                  <label><span className="public-field-label">Téléphone <small>facultatif</small></span><input type="tel" inputMode="tel" value={form.phone} onChange={(event) => field('phone', event.target.value)} maxLength={32} autoComplete="tel" /></label>
+                </div>
+                <label className="request-consent investor-consent">
+                  <input type="checkbox" checked={form.consentApizf} onChange={(event) => field('consentApizf', event.target.checked)} required />
+                  <span>J’accepte que l’API-ZF utilise mes coordonnées pour répondre à cette demande.</span>
+                </label>
+                {error && <p className="request-error" role="alert">{error}</p>}
+                <div className="investor-form-actions">
+                  <button className="button button-secondary" type="button" onClick={() => setStep(1)} disabled={loading}>Retour</button>
+                  <button className="button button-primary" type="submit" disabled={loading}>{loading ? 'Envoi…' : 'Envoyer'}</button>
+                </div>
+              </div>
+            )}
+          </form>
+        )}
+      </section>
+    </main>
+  );
+}
+
 export default function PublicPages({ path }) {
   const detail = path.match(/^\/stands\/([a-z0-9-]+)$/);
   return (
@@ -171,7 +263,8 @@ export default function PublicPages({ path }) {
       <PublicHeader />
       {(path === '/' || path === '/stands') && <StandList isHome={path === '/'} />}
       {detail && <StandDetail slug={detail[1]} />}
-      {path !== '/' && path !== '/stands' && !detail && (
+      {path === '/investor-desk' && <InvestorDeskPage />}
+      {path !== '/' && path !== '/stands' && path !== '/investor-desk' && !detail && (
         <main className="public-container public-detail"><h1>Page introuvable</h1><a className="public-back" href="/stands">Voir les stands <ArrowRight size={18} /></a></main>
       )}
     </div>

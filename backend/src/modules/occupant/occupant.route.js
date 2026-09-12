@@ -5,6 +5,7 @@ const { authenticate, requireRoles } = require('../../middlewares/auth.middlewar
 const roles = require('../../shared/roles');
 const occupantValidation = require('./occupant.validation');
 const occupantController = require('./occupant.controller');
+const uploadCover = require('./occupant-cover.middleware');
 
 const router = express.Router();
 const adminOnly = requireRoles(roles.SUPER_ADMIN, roles.ADMIN_APIZF);
@@ -25,6 +26,12 @@ router.patch(
   validate(occupantValidation.params, 'params'),
   validate(occupantValidation.update),
   asyncHandler(occupantController.update),
+);
+router.post(
+  '/:id/cover',
+  validate(occupantValidation.params, 'params'),
+  uploadCover,
+  asyncHandler(occupantController.updateCover),
 );
 router.delete(
   '/:id',

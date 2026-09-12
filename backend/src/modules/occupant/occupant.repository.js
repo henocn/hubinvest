@@ -4,8 +4,8 @@ const findAll = (where = {}) =>
   Occupant.findAll({ where, order: [['name', 'ASC']] });
 
 const findById = (id) => Occupant.findByPk(id);
-const publicAttributes = ['id', 'name', 'slug', 'standLabel', 'activity'];
-const publicWhere = { status: 'active', isPublished: true };
+const publicAttributes = ['id', 'name', 'slug', 'standLabel', 'coverImageUrl', 'activity'];
+const publicWhere = { status: 'active' };
 const findPublic = () => Occupant.findAll({
   where: publicWhere,
   attributes: publicAttributes,
