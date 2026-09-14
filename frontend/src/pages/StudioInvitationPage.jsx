@@ -1,20 +1,10 @@
 import { useEffect, useState } from 'react';
 import { CalendarDays, CheckCircle2, Clock3, XCircle } from 'lucide-react';
 import { api } from '../lib/api';
-
-const dateFormatter = new Intl.DateTimeFormat('fr-FR', {
-  weekday: 'long',
-  day: 'numeric',
-  month: 'long',
-  year: 'numeric',
-});
-
-const timeFormatter = new Intl.DateTimeFormat('fr-FR', {
-  hour: '2-digit',
-  minute: '2-digit',
-});
+import { useTranslation } from 'react-i18next';
 
 export default function StudioInvitationPage({ token }) {
+  const { t, i18n } = useTranslation();
   const [invitation, setInvitation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -41,32 +31,35 @@ export default function StudioInvitationPage({ token }) {
     }
   };
 
-  if (loading) return <main className="public-container studio-response-page"><p className="public-message">Chargement de l’invitation...</p></main>;
-  if (!invitation) return <main className="public-container studio-response-page"><p className="public-message is-error">{error || 'Invitation introuvable.'}</p></main>;
+  if (loading) return <main className="public-container studio-response-page"><p className="public-message">{t('studio.loading')}</p></main>;
+  if (!invitation) return <main className="public-container studio-response-page"><p className="public-message is-error">{error || t('studio.notFound')}</p></main>;
 
   const scheduledAt = new Date(invitation.scheduledAt);
+  const locale = i18n.resolvedLanguage?.startsWith('en') ? 'en-GB' : 'fr-FR';
+  const date = new Intl.DateTimeFormat(locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(scheduledAt);
+  const time = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(scheduledAt);
   const confirmed = invitation.status === 'confirmed';
   const declined = invitation.status === 'declined';
 
   return (
     <main className="public-container studio-response-page">
       <section className="studio-response-panel">
-        <span className="public-eyebrow">Studio API-ZF</span>
-        <h1>Invitation de {invitation.guestName}</h1>
+        <span className="public-eyebrow">{t('studio.eyebrow')}</span>
+        <h1>{t('studio.invitation', { name: invitation.guestName })}</h1>
         <p className="studio-subject">{invitation.subject}</p>
 
         <div className="studio-schedule">
-          <span><CalendarDays size={20} /><strong>{dateFormatter.format(scheduledAt)}</strong></span>
-          <span><Clock3 size={20} /><strong>{timeFormatter.format(scheduledAt)}</strong></span>
+          <span><CalendarDays size={20} /><strong>{date}</strong></span>
+          <span><Clock3 size={20} /><strong>{time}</strong></span>
         </div>
 
-        {confirmed && <div className="studio-response-status is-confirmed"><CheckCircle2 size={24} /><div><strong>Présence confirmée</strong><span>Votre réponse a bien été enregistrée.</span></div></div>}
-        {declined && <div className="studio-response-status is-declined"><XCircle size={24} /><div><strong>Absence enregistrée</strong><span>Votre réponse a bien été enregistrée.</span></div></div>}
+        {confirmed && <div className="studio-response-status is-confirmed"><CheckCircle2 size={24} /><div><strong>{t('studio.confirmed')}</strong><span>{t('studio.saved')}</span></div></div>}
+        {declined && <div className="studio-response-status is-declined"><XCircle size={24} /><div><strong>{t('studio.declined')}</strong><span>{t('studio.saved')}</span></div></div>}
         {error && <p className="request-error">{error}</p>}
 
         <div className="studio-response-actions">
-          {!confirmed && <button className="button button-primary" type="button" disabled={saving} onClick={() => respond('confirmed')}>{saving ? 'Enregistrement...' : 'Confirmer ma présence'}</button>}
-          {!declined && <button className="button studio-decline-button" type="button" disabled={saving} onClick={() => respond('declined')}>{saving ? 'Enregistrement...' : 'Je ne serai pas disponible'}</button>}
+          {!confirmed && <button className="button button-primary" type="button" disabled={saving} onClick={() => respond('confirmed')}>{saving ? t('studio.saving') : t('studio.confirm')}</button>}
+          {!declined && <button className="button studio-decline-button" type="button" disabled={saving} onClick={() => respond('declined')}>{saving ? t('studio.saving') : t('studio.decline')}</button>}
         </div>
       </section>
     </main>

@@ -1,4 +1,5 @@
 import PublicHeader from './components/PublicHeader';
+import PublicBottomNav from './components/PublicBottomNav';
 import B2bDetailPage from './pages/B2bDetailPage';
 import B2bListPage from './pages/B2bListPage';
 import InvestorDeskPage from './pages/InvestorDeskPage';
@@ -7,6 +8,7 @@ import StandDetailPage from './pages/StandDetailPage';
 import StandListPage from './pages/StandListPage';
 import StudioInvitationPage from './pages/StudioInvitationPage';
 import ChallengePage from './pages/ChallengePage';
+import MeetingsPage from './pages/MeetingsPage';
 import './public.css';
 
 export default function PublicPages({ path }) {
@@ -25,6 +27,8 @@ export default function PublicPages({ path }) {
     page = <InvestorDeskPage />;
   } else if (path === '/b2b') {
     page = <B2bListPage />;
+  } else if (path === '/rencontres') {
+    page = <MeetingsPage />;
   } else if (b2bDetail) {
     page = <B2bDetailPage id={b2bDetail[1]} />;
   } else if (studioInvitation) {
@@ -41,6 +45,7 @@ export default function PublicPages({ path }) {
     <div className="public-app">
       <PublicHeader />
       {page}
+      <PublicBottomNav path={path} />
     </div>
   );
 }

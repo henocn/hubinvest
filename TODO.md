@@ -34,7 +34,9 @@ La découverte est commencée. Le formulaire de recontact attend la confirmation
 - [x] Retirer l’ancien « numéro de preuve » : l’emplacement administré du stand remplit ce besoin.
 - [ ] Vérifier le parcours sur téléphone, connexion lente et écran étroit.
 - [x] Ajouter une recherche simple par structure ou activité.
-- [ ] Ajouter le programme, le plan et l’anglais lorsque leurs contenus sont disponibles ; ne pas bloquer la première fiche utile pour eux.
+- [x] Ajouter une interface publique FR/EN avec détection automatique de la langue du navigateur et choix mémorisé.
+- [x] Placer les cinq actions visiteur principales dans une navigation basse : accueil, exploration, rencontres, défis et espace occupant.
+- [ ] Ajouter le programme et le plan lorsque leurs contenus sont disponibles ; ne pas bloquer la première fiche utile pour eux.
 
 Validation : une personne qui n’a jamais vu HubInvest scanne, comprend où elle est et trouve un occupant, sans bouton mort ni compte imposé.
 

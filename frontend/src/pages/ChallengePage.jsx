@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import ChallengePassportCard from '../components/ChallengePassportCard';
 import ChallengeStartForm from '../components/ChallengeStartForm';
 import { api } from '../lib/api';
+import { useTranslation } from 'react-i18next';
 
 export default function ChallengePage({ token }) {
+  const { t } = useTranslation();
   const [passport, setPassport] = useState(null);
   const [personalToken, setPersonalToken] = useState(token || '');
   const [loading, setLoading] = useState(Boolean(token));
@@ -41,8 +43,8 @@ export default function ChallengePage({ token }) {
 
   return (
     <main className="public-container challenge-page">
-      {!passport && !loading && !error && <section className="challenge-start-panel"><span className="public-eyebrow">Défis du Hub</span><h1>Parcourez le Hub</h1><p>Faites valider votre code dans les stands, puis présentez-le à l’accueil.</p><ChallengeStartForm onCreated={created} /></section>}
-      {loading && <p className="public-message">Chargement du parcours...</p>}
+      {!passport && !loading && !error && <section className="challenge-start-panel"><span className="public-eyebrow">{t('challenge.eyebrow')}</span><h1>{t('challenge.title')}</h1><p>{t('challenge.intro')}</p><ChallengeStartForm onCreated={created} /></section>}
+      {loading && <p className="public-message">{t('challenge.loading')}</p>}
       {error && <p className="public-message is-error">{error}</p>}
       {passport && <ChallengePassportCard passport={passport} refreshing={refreshing} onRefresh={refresh} />}
     </main>

@@ -60,7 +60,8 @@ Format prefere pour les listes : fichier Excel ou CSV avec une ligne par element
 - [ ] Destinations des QR codes d'accueil, de fiche occupant, de l'Investor Desk et des Défis ; n'imprimer que les parcours réellement prêts.
 - [x] Le programme, ses dates et ses heures seront geres depuis le backoffice.
 - [x] Le plan et les numeros de stands seront geres depuis le backoffice.
-- [x] La traduction anglaise sera automatique et appliquee uniquement dans le frontend public.
+- [x] L’interface statique du frontend public est disponible en français et en anglais, avec détection automatique de la langue du navigateur et choix mémorisé.
+- [ ] Si les contenus libres des occupants doivent aussi être traduits automatiquement, choisir le fournisseur et confirmer que ces contenus peuvent lui être transmis.
 
 ## Pour l'Investor Desk
 
