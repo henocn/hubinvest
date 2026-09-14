@@ -12,6 +12,8 @@ const investorRequestRoutes = require('./modules/investor-request/investor-reque
 const b2bNeedRoutes = require('./modules/b2b-need/b2b-need.route');
 const b2bProposalRoutes = require('./modules/b2b-proposal/b2b-proposal.route');
 const studioInvitationRoutes = require('./modules/studio-invitation/studio-invitation.route');
+const challengePassportRoutes = require('./modules/challenge-passport/challenge-passport.route');
+const challengePassageRoutes = require('./modules/challenge-passage/challenge-passage.route');
 const httpLogger = require('./middlewares/http-logger.middleware');
 const notFound = require('./middlewares/not-found.middleware');
 const errorHandler = require('./middlewares/error.middleware');
@@ -45,6 +47,8 @@ app.use('/api/investor-requests', investorRequestRoutes);
 app.use('/api/b2b-needs', b2bNeedRoutes);
 app.use('/api/b2b-proposals', b2bProposalRoutes);
 app.use('/api/studio-invitations', studioInvitationRoutes);
+app.use('/api/challenge-passports', challengePassportRoutes);
+app.use('/api/challenge-passages', challengePassageRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

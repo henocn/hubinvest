@@ -32,4 +32,7 @@ module.exports = {
     expiresIn: process.env.JWT_EXPIRES_IN || '8h',
   },
   corsOrigins: list(process.env.CORS_ORIGINS),
+  challenge: {
+    requiredPassages: integer(process.env.CHALLENGE_REQUIRED_PASSAGES, 3),
+  },
 };

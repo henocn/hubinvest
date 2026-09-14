@@ -1,0 +1,53 @@
+const { UniqueConstraintError } = require('sequelize');
+const AppError = require('../../shared/app-error');
+const env = require('../../config/env');
+const challengePassportRepository = require('../challenge-passport/challenge-passport.repository');
+const challengePassageRepository = require('./challenge-passage.repository');
+
+const requiredPassages = Math.max(1, env.challenge.requiredPassages);
+
+const validate = async (user, code) => {
+  if (!user.occupantId) throw new AppError(403, 'OCCUPANT_REQUIRED', 'Ce compte ne dépend pas d’un occupant.');
+
+  try {
+    return await challengePassageRepository.sequelize.transaction(async (transaction) => {
+      const passport = await challengePassportRepository.findByCodeForUpdate(code, transaction);
+      if (!passport) throw new AppError(404, 'CHALLENGE_PASSPORT_NOT_FOUND', 'Code participant introuvable.');
+      if (passport.status === 'redeemed') throw new AppError(409, 'REWARD_ALREADY_REDEEMED', 'La récompense a déjà été remise.');
+      if (passport.status === 'completed') throw new AppError(409, 'CHALLENGE_ALREADY_COMPLETED', 'Ce parcours est déjà terminé.');
+
+      const existing = await challengePassageRepository.findExisting(passport.id, user.occupantId, transaction);
+      if (existing) throw new AppError(409, 'PASSAGE_ALREADY_VALIDATED', 'Ce stand a déjà validé ce parcours.');
+
+      await challengePassageRepository.create({
+        passportId: passport.id,
+        occupantId: user.occupantId,
+        validatedByUserId: user.id,
+      }, transaction);
+
+      const passageCount = await challengePassageRepository.countByPassport(passport.id, transaction);
+      const completed = passageCount >= requiredPassages;
+      if (completed) {
+        await challengePassportRepository.update(passport, {
+          status: 'completed',
+          completedAt: new Date(),
+        }, transaction);
+      }
+
+      return {
+        displayName: passport.displayName,
+        code: passport.code,
+        passageCount,
+        requiredPassages,
+        status: completed ? 'completed' : 'active',
+      };
+    });
+  } catch (error) {
+    if (error instanceof UniqueConstraintError) {
+      throw new AppError(409, 'PASSAGE_ALREADY_VALIDATED', 'Ce stand a déjà validé ce parcours.');
+    }
+    throw error;
+  }
+};
+
+module.exports = { validate };

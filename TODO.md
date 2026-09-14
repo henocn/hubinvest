@@ -59,7 +59,7 @@ Leur présence dans le CDC ne dit pas encore quelle version est utile en pratiqu
 - [x] **Investor Desk — première version** : un professionnel expose son projet ou demande un échange ; l’équipe API-ZF reçoit la demande, se l’attribue au premier suivi et note sa prochaine action. La qualification détaillée et les rendez-vous attendent les règles réelles.
 - [x] **Rencontres B2B — première version** : un responsable occupant publie et ferme ses besoins ; un professionnel propose une rencontre avec son consentement ; l’équipe du stand consulte les propositions et le responsable les accepte ou les refuse. Les créneaux et tables attendent un usage réel.
 - [x] **Studio — première version** : l’équipe API-ZF crée une invitation datée, copie son lien personnel et suit la réponse dans un planning ; l’invité confirme ou refuse sans compte. Les rappels et la livraison vidéo restent manuels.
-- [ ] **Défis du public** : un visiteur choisit de jouer ; les stands valident humainement ses passages ; l’accueil remet une récompense une seule fois. Aucun consentement commercial implicite.
+- [x] **Défis du public — première version** : le visiteur crée un parcours sans coordonnées, chaque stand valide une seule fois son code et l’accueil enregistre une remise unique après le nombre requis de passages. Le seuil provisoire de trois stands reste configurable et aucun consentement commercial n’est implicite.
 
 ## À faire au fil des parcours
 

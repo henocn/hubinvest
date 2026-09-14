@@ -14,6 +14,7 @@ import {
   RefreshCw,
   Search,
   UserRound,
+  Trophy,
 } from 'lucide-react';
 import logo from '../../assets/Logo fond blanc.jpeg';
 import { api } from './lib/api';
@@ -25,6 +26,7 @@ import {
 } from './lib/contact-store';
 import PublicPages from './PublicPages';
 import OccupantB2bPage from './pages/OccupantB2bPage';
+import OccupantChallengePage from './pages/OccupantChallengePage';
 
 const qualificationLabels = {
   hot: 'Chaud',
@@ -466,7 +468,8 @@ function ContactsScreen({ session, apiOnline, setApiOnline, onLogout }) {
       <header className="app-header">
         <div className="brand-name">HubInvest</div>
         <div className="app-header-actions">
-          <a className="app-header-link" href="/espace-occupant/b2b"><Handshake size={18} /> B2B</a>
+          <a className="app-header-link" href="/espace-occupant/b2b" title="B2B"><Handshake size={18} /> B2B</a>
+          <a className="app-header-link" href="/espace-occupant/defis" title="Défis"><Trophy size={18} /> Défis</a>
           <button className="icon-button" type="button" onClick={onLogout} aria-label="Se déconnecter"><LogOut size={20} /></button>
         </div>
       </header>
@@ -601,7 +604,7 @@ export default function App() {
     return <PublicPages path={path} />;
   }
 
-  if (path !== '/connexion' && path !== '/espace-occupant' && path !== '/espace-occupant/b2b') {
+  if (path !== '/connexion' && path !== '/espace-occupant' && path !== '/espace-occupant/b2b' && path !== '/espace-occupant/defis') {
     return <PublicPages path={path} />;
   }
 
@@ -611,6 +614,10 @@ export default function App() {
 
   if (path === '/espace-occupant/b2b') {
     return session ? <OccupantB2bPage session={session} onLogout={logout} /> : <LoginScreen onLogin={login} />;
+  }
+
+  if (path === '/espace-occupant/defis') {
+    return session ? <OccupantChallengePage session={session} onLogout={logout} /> : <LoginScreen onLogin={login} />;
   }
 
   return session ? (

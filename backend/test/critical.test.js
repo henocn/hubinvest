@@ -14,8 +14,12 @@ const b2bProposalService = require('../src/modules/b2b-proposal/b2b-proposal.ser
 const b2bProposalRepository = require('../src/modules/b2b-proposal/b2b-proposal.repository');
 const studioInvitationService = require('../src/modules/studio-invitation/studio-invitation.service');
 const studioInvitationRepository = require('../src/modules/studio-invitation/studio-invitation.repository');
+const challengePassportService = require('../src/modules/challenge-passport/challenge-passport.service');
+const challengePassportRepository = require('../src/modules/challenge-passport/challenge-passport.repository');
+const challengePassageService = require('../src/modules/challenge-passage/challenge-passage.service');
+const challengePassageRepository = require('../src/modules/challenge-passage/challenge-passage.repository');
 const { authenticate } = require('../src/middlewares/auth.middleware');
-const { User, Occupant, B2bNeed } = require('../src/models');
+const { sequelize, User, Occupant, B2bNeed } = require('../src/models');
 const env = require('../src/config/env');
 const app = require('../src/app');
 
@@ -358,4 +362,60 @@ test('le planning Studio est réservé à l’administration et à l’équipe c
 
   assert.equal((await requestAs('investor')).status, 403);
   assert.equal((await requestAs('campaign')).status, 200);
+});
+
+test('un stand ne peut valider qu’une fois le même parcours', async (context) => {
+  const passport = { id: 'passport-a', code: 'ABCD2345', status: 'active' };
+  context.mock.method(challengePassageRepository.sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));
+  context.mock.method(challengePassportRepository, 'findByCodeForUpdate', async () => passport);
+  context.mock.method(challengePassageRepository, 'findExisting', async () => ({ id: 'passage-a' }));
+  context.mock.method(challengePassageRepository, 'create', async () => {
+    throw new Error('La création ne doit pas être appelée.');
+  });
+
+  await assert.rejects(
+    challengePassageService.validate({ id: 'user-a', occupantId: 'occupant-a' }, passport.code),
+    (error) => error.status === 409 && error.code === 'PASSAGE_ALREADY_VALIDATED',
+  );
+});
+
+test('le passage requis termine le parcours avant la remise', async (context) => {
+  const passport = { id: 'passport-a', code: 'ABCD2345', displayName: 'Visiteur Test', status: 'active' };
+  let saved;
+  context.mock.method(challengePassageRepository.sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));
+  context.mock.method(challengePassportRepository, 'findByCodeForUpdate', async () => passport);
+  context.mock.method(challengePassageRepository, 'findExisting', async () => null);
+  context.mock.method(challengePassageRepository, 'create', async () => ({}));
+  context.mock.method(challengePassageRepository, 'countByPassport', async () => 3);
+  context.mock.method(challengePassportRepository, 'update', async (_passport, values) => {
+    saved = values;
+    return { ...passport, ...values };
+  });
+
+  const result = await challengePassageService.validate(
+    { id: 'user-c', occupantId: 'occupant-c' },
+    passport.code,
+  );
+
+  assert.equal(result.status, 'completed');
+  assert.equal(saved.status, 'completed');
+  assert.ok(saved.completedAt instanceof Date);
+});
+
+test('une récompense Défis ne peut être enregistrée qu’une fois', async (context) => {
+  const passport = { id: 'passport-a', status: 'completed', passages: [] };
+  context.mock.method(sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));
+  context.mock.method(challengePassportRepository, 'findByIdForUpdate', async () => passport);
+  context.mock.method(challengePassportRepository, 'update', async (_passport, values) => {
+    Object.assign(passport, values);
+    return passport;
+  });
+
+  const first = await challengePassportService.redeem({ id: 'animator-a' }, passport.id);
+  assert.equal(first.status, 'redeemed');
+
+  await assert.rejects(
+    challengePassportService.redeem({ id: 'animator-b' }, passport.id),
+    (error) => error.status === 409 && error.code === 'REWARD_ALREADY_REDEEMED',
+  );
 });

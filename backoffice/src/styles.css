@@ -102,6 +102,10 @@ tbody tr:hover { background: #fdfdfc; }
 .studio-row.is-declined { background: rgba(209, 17, 53, .035); }
 .studio-row.is-confirmed:hover { background: rgba(0, 106, 79, .075); }
 .studio-row.is-declined:hover { background: rgba(209, 17, 53, .065); }
+.challenge-row.is-completed { background: rgba(0, 106, 79, .045); }
+.challenge-row.is-redeemed { background: rgba(0, 0, 0, .025); }
+.challenge-row.is-completed:hover { background: rgba(0, 106, 79, .075); }
+.challenge-row.is-redeemed:hover { background: rgba(0, 0, 0, .04); }
 td strong, td small { display: block; }
 td strong { color: var(--ink); }
 td small { margin-top: 4px; color: #85898d; }
@@ -121,6 +125,8 @@ td small { margin-top: 4px; color: #85898d; }
 .table-action.is-copied { color: var(--green); border-color: rgba(0, 106, 79, .35); background: #edf6f2; }
 .studio-date { min-width: 145px; }
 .studio-status { font-weight: 700; }
+.challenge-table-code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 13px; font-weight: 750; letter-spacing: .08em; }
+.challenge-table-status { font-weight: 700; }
 .status-pill { width: fit-content; display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border-radius: 999px; color: #686c70; background: #efefed; font-size: 11px; font-weight: 700; }
 .status-pill.is-active { color: var(--green); background: #e7f3ee; }
 .status-pill.is-new { color: #6f5700; background: #fff6cf; }
@@ -159,6 +165,7 @@ td small { margin-top: 4px; color: #85898d; }
 .qr-dialog a.button { text-decoration: none; }
 .confirm-dialog { width: min(430px, 100%); display: grid; grid-template-columns: 42px 1fr; gap: 15px; padding: 24px; border: 1px solid #e2d7d9; border-radius: 9px; background: #fff; box-shadow: 0 20px 55px rgba(25, 28, 27, .18); }
 .danger-icon { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 8px; color: var(--red); background: #fff0f3; }
+.reward-icon { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 8px; color: var(--green); background: #e9f4f0; }
 .confirm-dialog h2 { margin: 0; font-size: 19px; letter-spacing: -.02em; }
 .confirm-dialog p { margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
 .confirm-dialog .dialog-error { grid-column: 1 / -1; margin: 0; }

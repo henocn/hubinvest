@@ -58,6 +58,9 @@ export const api = {
     request('/studio-invitations', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   updateStudioInvitation: (token, id, values) =>
     request(`/studio-invitations/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
+  challengePassports: (token) => request('/challenge-passports', authorized(token)),
+  redeemChallengePassport: (token, id) =>
+    request(`/challenge-passports/${id}/redeem`, authorized(token, { method: 'PATCH' })),
   users: (token) => request('/users', authorized(token)),
   contactStats: (token) => request('/contacts/admin/stats', authorized(token)),
   createUser: (token, values) =>

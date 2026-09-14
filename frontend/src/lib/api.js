@@ -46,6 +46,8 @@ export const api = {
   createB2bProposal: (needId, values) => request(`/b2b-proposals/public/${encodeURIComponent(needId)}`, { method: 'POST', body: JSON.stringify(values) }),
   publicStudioInvitation: (token) => request(`/studio-invitations/public/${encodeURIComponent(token)}`),
   respondStudioInvitation: (token, status) => request(`/studio-invitations/public/${encodeURIComponent(token)}`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+  createChallengePassport: (values) => request('/challenge-passports/public', { method: 'POST', body: JSON.stringify(values) }),
+  publicChallengePassport: (token) => request(`/challenge-passports/public/${encodeURIComponent(token)}`),
   login: (values) => request('/auth/login', { method: 'POST', body: JSON.stringify(values) }),
   contacts: (token) => request('/contacts', authorized(token)),
   contactStats: (token) => request('/contacts/stats', authorized(token)),
@@ -58,4 +60,5 @@ export const api = {
   updateB2bNeed: (token, id, values) => request(`/b2b-needs/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
   b2bProposals: (token, needId) => request(`/b2b-proposals/need/${needId}`, authorized(token)),
   updateB2bProposal: (token, id, values) => request(`/b2b-proposals/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
+  validateChallengePassage: (token, code) => request('/challenge-passages', authorized(token, { method: 'POST', body: JSON.stringify({ code }) })),
 };

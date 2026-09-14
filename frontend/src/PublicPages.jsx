@@ -6,12 +6,14 @@ import NotFoundPage from './pages/NotFoundPage';
 import StandDetailPage from './pages/StandDetailPage';
 import StandListPage from './pages/StandListPage';
 import StudioInvitationPage from './pages/StudioInvitationPage';
+import ChallengePage from './pages/ChallengePage';
 import './public.css';
 
 export default function PublicPages({ path }) {
   const standDetail = path.match(/^\/stands\/([a-z0-9-]+)$/);
   const b2bDetail = path.match(/^\/b2b\/([a-f0-9-]+)$/i);
   const studioInvitation = path.match(/^\/studio\/([a-f0-9]{64})$/i);
+  const challengePassport = path.match(/^\/defis\/([a-f0-9]{64})$/i);
 
   let page;
 
@@ -27,6 +29,10 @@ export default function PublicPages({ path }) {
     page = <B2bDetailPage id={b2bDetail[1]} />;
   } else if (studioInvitation) {
     page = <StudioInvitationPage token={studioInvitation[1]} />;
+  } else if (path === '/defis') {
+    page = <ChallengePage />;
+  } else if (challengePassport) {
+    page = <ChallengePage token={challengePassport[1]} />;
   } else {
     page = <NotFoundPage />;
   }
