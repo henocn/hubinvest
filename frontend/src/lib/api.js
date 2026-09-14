@@ -64,4 +64,5 @@ export const api = {
   b2bProposals: (token, needId) => request(`/b2b-proposals/need/${needId}`, authorized(token)),
   updateB2bProposal: (token, id, values) => request(`/b2b-proposals/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
   validateChallengePassage: (token, code) => request('/challenge-passages', authorized(token, { method: 'POST', body: JSON.stringify({ code }) })),
+  challengePassageStats: (token) => request('/challenge-passages/stats', authorized(token)),
 };

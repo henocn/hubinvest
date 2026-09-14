@@ -37,8 +37,7 @@ export default function OccupantShell({ session, onLogout, children }) {
     <OccupantProfileContext.Provider value={profile}>
       <div className="occupant-shell">
         <header className="occupant-logo-header">
-          <img className="occupant-apizf-logo" src={apizfLogo} alt="API-ZF" />
-          <strong className="occupant-header-name">{occupantName}</strong>
+          <span className="occupant-apizf-logo-frame"><img className="occupant-apizf-logo" src={apizfLogo} alt="API-ZF" /></span>
           {profile?.occupant?.logoUrl
             ? <img className="occupant-institution-logo" src={resolveAssetUrl(profile.occupant.logoUrl)} alt={`Logo ${occupantName}`} />
             : <span className="occupant-logo-placeholder" aria-label={`Logo ${occupantName}`}>{occupantName.slice(0, 1).toUpperCase()}</span>}

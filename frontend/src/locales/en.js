@@ -124,11 +124,10 @@ export default {
     participant: "{{name}}’s journey",
     progress: "{{count}} visits out of {{total}}",
     code: "Participant code",
+    qrAlt: "QR for participant code {{code}}",
     active: "Show this code at every stand you visit.",
     completed: "Journey completed. Show this code at reception.",
     redeemed: "Your reward has been given to you.",
-    refreshing: "Refreshing…",
-    refresh: "Refresh",
     validated: "Validated visits",
   },
 };

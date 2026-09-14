@@ -124,11 +124,10 @@ export default {
     participant: "Parcours de {{name}}",
     progress: "{{count}} passages sur {{total}}",
     code: "Code participant",
+    qrAlt: "QR du code participant {{code}}",
     active: "Présentez ce code dans chaque stand visité.",
     completed: "Parcours terminé. Présentez ce code à l’accueil.",
     redeemed: "Votre récompense a été remise.",
-    refreshing: "Actualisation…",
-    refresh: "Actualiser",
     validated: "Passages validés",
   },
 };

@@ -130,6 +130,7 @@ td small { margin-top: 4px; color: #85898d; }
 .challenge-table-contact:hover { text-decoration: underline; }
 .challenge-table-empty { color: var(--muted); }
 .challenge-table-status { font-weight: 700; }
+.challenge-table-occupants { display: block; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .status-pill { width: fit-content; display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border-radius: 999px; color: #686c70; background: #efefed; font-size: 11px; font-weight: 700; }
 .status-pill.is-active { color: var(--green); background: #e7f3ee; }
 .status-pill.is-new { color: #6f5700; background: #fff6cf; }

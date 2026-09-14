@@ -6,6 +6,11 @@ const challengePassageRepository = require('./challenge-passage.repository');
 
 const requiredPassages = Math.max(1, env.challenge.requiredPassages);
 
+const stats = async (user) => {
+  if (!user.occupantId) throw new AppError(403, 'OCCUPANT_REQUIRED', 'Ce compte ne dépend pas d’un occupant.');
+  return { scannedPlayers: await challengePassageRepository.countByOccupant(user.occupantId) };
+};
+
 const validate = async (user, code) => {
   if (!user.occupantId) throw new AppError(403, 'OCCUPANT_REQUIRED', 'Ce compte ne dépend pas d’un occupant.');
 
@@ -50,4 +55,4 @@ const validate = async (user, code) => {
   }
 };
 
-module.exports = { validate };
+module.exports = { validate, stats };

@@ -65,6 +65,7 @@ Leur présence dans le CDC ne dit pas encore quelle version est utile en pratiqu
 - [x] **Défis du public — première version** : le visiteur crée un parcours avec son nom et un contact, puis retrouve automatiquement ce parcours pendant 20 jours sur le même navigateur. Chaque stand valide une seule fois son code et l’accueil enregistre une remise unique après le nombre requis de passages. L’administration et l’animateur retrouvent les participants dans un tableau. Le seuil provisoire de trois stands reste configurable et aucun consentement commercial n’est implicite.
 - [x] **Accès occupant** : les routes de l’espace renvoient vers la connexion sans session ; une session active quitte automatiquement la page de connexion. L’en-tête porte le logo API-ZF et celui du stand, tandis que Profil regroupe les informations du compte, le changement de mot de passe et la déconnexion.
 - [x] **Liens participants** : un jeton Défis inexistant affiche une page 404 et ne révèle aucun autre parcours.
+- [x] **Lecture des codes Défis** : le participant montre un QR contenant seulement son code, affiché aussi en clair dessous ; l’occupant voit son compteur de joueurs scannés, ouvre la caméra dans un dialogue ou saisit le code directement sur la page. Chaque validation est rattachée à l’occupant et visible dans le tableau du backoffice.
 
 ## À faire au fil des parcours
 

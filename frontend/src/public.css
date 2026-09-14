@@ -1091,12 +1091,21 @@
 
 .challenge-code {
   display: grid;
-  gap: 8px;
-  padding: 24px;
+  justify-items: center;
+  gap: 7px;
+  padding: 20px 16px 22px;
   border: 1px solid var(--border);
   border-radius: 7px;
   text-align: center;
-  background: #fafbfa;
+  background: #fff;
+}
+
+.challenge-qr {
+  width: min(216px, 100%);
+  height: auto;
+  display: block;
+  margin-bottom: 8px;
+  image-rendering: pixelated;
 }
 
 .challenge-code span {
@@ -1110,6 +1119,7 @@
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   font-size: clamp(1.65rem, 8vw, 2.35rem);
   letter-spacing: 0.12em;
+  overflow-wrap: anywhere;
 }
 
 .challenge-next-step {
@@ -1125,14 +1135,6 @@
   flex: 0 0 auto;
   margin-top: 2px;
   color: var(--green);
-}
-
-.challenge-refresh-button {
-  min-height: 42px;
-  margin-top: 18px;
-  color: #3f4843;
-  border-color: var(--border);
-  background: #fff;
 }
 
 .challenge-passages {

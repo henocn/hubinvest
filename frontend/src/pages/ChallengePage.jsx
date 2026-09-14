@@ -12,7 +12,6 @@ export default function ChallengePage({ token }) {
   const [passport, setPassport] = useState(null);
   const [personalToken, setPersonalToken] = useState(initialToken);
   const [loading, setLoading] = useState(Boolean(initialToken));
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [notFound, setNotFound] = useState(false);
 
@@ -51,17 +50,30 @@ export default function ChallengePage({ token }) {
     setPassport(publicPassport);
   };
 
-  const refresh = async () => {
-    setRefreshing(true);
-    setError('');
-    try {
-      setPassport(await api.publicChallengePassport(personalToken));
-    } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setRefreshing(false);
-    }
-  };
+  useEffect(() => {
+    if (!passport?.code || !personalToken) return undefined;
+    let active = true;
+    let updating = false;
+
+    const refresh = () => {
+      if (!active || updating || document.visibilityState !== 'visible') return;
+      updating = true;
+      api.publicChallengePassport(personalToken)
+        .then((data) => { if (active) setPassport(data); })
+        .catch((requestError) => { if (active && requestError.status === 404) setNotFound(true); })
+        .finally(() => { updating = false; });
+    };
+
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    const interval = window.setInterval(refresh, 30_000);
+    return () => {
+      active = false;
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+      window.clearInterval(interval);
+    };
+  }, [passport?.code, personalToken]);
 
   if (notFound) return <NotFoundPage />;
 
@@ -70,7 +82,7 @@ export default function ChallengePage({ token }) {
       {!passport && !loading && !error && <section className="challenge-start-panel"><span className="public-eyebrow">{t('challenge.eyebrow')}</span><h1>{t('challenge.title')}</h1><p>{t('challenge.intro')}</p><ChallengeStartForm onCreated={created} /></section>}
       {loading && <p className="public-message">{t('challenge.loading')}</p>}
       {error && <p className="public-message is-error">{error}</p>}
-      {passport && <ChallengePassportCard passport={passport} refreshing={refreshing} onRefresh={refresh} />}
+      {passport && <ChallengePassportCard passport={passport} />}
     </main>
   );
 }

@@ -10,6 +10,7 @@ const router = express.Router();
 const occupantTeamOnly = requireRoles(roles.OCCUPANT_MANAGER, roles.OCCUPANT_MEMBER);
 
 router.use(asyncHandler(authenticate), occupantTeamOnly);
+router.get('/stats', asyncHandler(challengePassageController.stats));
 router.post('/', validate(challengePassageValidation.create), asyncHandler(challengePassageController.create));
 
 module.exports = router;

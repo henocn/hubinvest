@@ -5,4 +5,8 @@ const create = async (request, response) => response.status(201).json({
   message: 'Passage validé.',
 });
 
-module.exports = { create };
+const stats = async (request, response) => response.json({
+  data: await challengePassageService.stats(request.user),
+});
+
+module.exports = { create, stats };

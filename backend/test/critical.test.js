@@ -419,6 +419,23 @@ test('un stand ne peut valider qu’une fois le même parcours', async (context)
   );
 });
 
+test('le compteur des joueurs scannés reste limité à l’occupant connecté', async (context) => {
+  let requestedOccupantId;
+  context.mock.method(challengePassageRepository, 'countByOccupant', async (occupantId) => {
+    requestedOccupantId = occupantId;
+    return 4;
+  });
+
+  const result = await challengePassageService.stats({ id: 'user-a', occupantId: 'occupant-a' });
+  assert.deepEqual(result, { scannedPlayers: 4 });
+  assert.equal(requestedOccupantId, 'occupant-a');
+
+  await assert.rejects(
+    challengePassageService.stats({ id: 'user-b' }),
+    (error) => error.status === 403 && error.code === 'OCCUPANT_REQUIRED',
+  );
+});
+
 test('le passage requis termine le parcours avant la remise', async (context) => {
   const passport = { id: 'passport-a', code: 'ABCD2345', displayName: 'Visiteur Test', status: 'active' };
   let saved;
