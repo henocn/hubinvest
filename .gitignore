@@ -1,0 +1,10 @@
+backend/.env
+frontend/.env
+backoffice/.env
+
+backend/node_modules/
+frontend/node_modules/
+backoffice/node_modules/
+backend/uploads/
+frontend/dist/
+backoffice/dist/

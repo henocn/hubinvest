@@ -1,121 +1,53 @@
-# HubInvest — Cadrage projet (pour l'agent Claude Code)
+# HubInvest
 
-> Plateforme digitale du **Hub de l'Investissement**, 21e Foire internationale de Lomé (FIL 2026).
-> Commanditaire : **API-ZF** (Agence de Promotion des Investissements et de la Zone Franche).
-> Réalisation : **DEKA Éditions** (conception, contenus, UX) + **LIKSOFT** (développement, hébergement, support).
+HubInvest est le site mobile du **Hub de l’Investissement de l’API-ZF**. Son rôle est simple : faire découvrir les acteurs présents au Hub, transformer une rencontre en contact consenti, puis aider les personnes concernées à donner une suite à ce contact. Ce n’est ni la plateforme de toute la Foire, ni une boutique, ni un réseau social.
 
-Ce dépôt est cadré par 4 fichiers. **Lis-les dans cet ordre avant de coder :**
-1. `README.md` — ce fichier : quoi, pour qui, avec quelles règles.
-2. `TODO.md` — les grandes phases (tu décides toi-même des sous-étapes).
-3. `SKILL.md` — les règles UX/UI à appliquer sur tout le frontend.
-4. `NEEDS.md` — ce que le client fournit au fur et à mesure (identité, contenus, accès).
+Ce cadrage est une **interprétation de travail à valider**, issue du cahier des charges propre à HubInvest (`Volume2_HubInvest_Cahier_des_charges_API-ZF_V1.docx`) et du document plus large de campagne (`APIZF - FIL2026 - DK.pdf`). Les deux sont des documents de travail rédigés avec l’aide de l’IA : leurs scénarios, chiffres et automatisations ne valent pas décision métier. Le cahier des charges annonce d’ailleurs six modules indispensables, alors que son tableau en étiquette huit ainsi. On retient donc d’abord l’intention et les gestes des personnes, pas la liste brute des modules.
 
----
+## Qui fait quoi
 
-## 1. Ce qu'on construit, en une phrase
+| Personne | Ce qu’elle fait elle-même dans HubInvest | Ce qu’elle doit obtenir |
+| --- | --- | --- |
+| Visiteur | Scanne un QR code, découvre le Hub et les occupants, consulte une fiche. S’il le souhaite, laisse une demande de contact. | Une information compréhensible sur téléphone, sans compte obligatoire. |
+| Visiteur professionnel, acheteur ou investisseur | Cherche une entreprise ou une information, expose son besoin, demande à rencontrer un occupant ou l’API-ZF. | Un interlocuteur identifié et une suite claire, pas une simple collecte de coordonnées. |
+| Membre d’un stand | Enregistre avec accord les personnes réellement rencontrées, précise leur besoin et prévoit une relance. | Son propre carnet de contacts et ses actions à faire. |
+| Responsable d’un occupant | Tient la fiche de son stand à jour, suit les contacts de son équipe et leurs suites. | Une vue limitée à son occupant, avec des résultats utiles et exportables. |
+| Équipe API-ZF | Reçoit les demandes qui lui sont adressées, qualifie les projets d’investissement, attribue un responsable et suit les prochaines actions. | Une vue d’ensemble fiable, sans exposer les contacts privés d’un stand aux autres. |
+| Administrateur API-ZF | Crée les occupants et les accès, publie ou corrige les informations, ouvre seulement les parcours réellement utilisés. | Un backoffice sobre qui permet de garder la main sans développeur. |
 
-Un **site mobile (PWA) qui s'ouvre par QR code, sans téléchargement**, qui relie en un seul outil : visiteurs, entreprises exposantes (« occupants »), investisseurs, invités du Studio et l'équipe API-ZF, pendant les 17 jours de la Foire.
+L’invité du Studio et l’animateur des Défis sont des profils supplémentaires **si ces opérations sont confirmées**. Le public n’a pas à se connecter pour simplement consulter. Un formulaire ponctuel n’équivaut pas automatiquement à un compte utilisateur.
 
-**Philosophie non négociable : fiabilité avant sophistication.** 6 modules indispensables parfaitement exécutés valent mieux que 30 fonctions bancales. Tout ce qui n'est pas prêt et **testé le 20 novembre** est reporté.
+## Les parcours à rendre vrais en premier
 
----
+1. **Découvrir.** Depuis un QR code ou un lien, le visiteur arrive sur une page publique du Hub, voit les occupants et ouvre leur fiche. Un QR code de stand mène directement à la bonne fiche. Une action n’apparaît que si sa destination fonctionne.
+2. **Exprimer un intérêt.** Le visiteur choisit de demander à être recontacté par un occupant ou de s’adresser à l’API-ZF. Il indique seulement les informations nécessaires et donne un accord explicite pour l’usage annoncé. Il voit une confirmation et sait qui doit reprendre contact.
+3. **Saisir une rencontre.** Un membre de stand peut lui-même créer un contact après un échange réel, le qualifier simplement et noter la prochaine action. Le responsable retrouve les contacts de son stand, y compris ceux saisis sans réseau puis synchronisés.
+4. **Faire le suivi.** La personne responsable consulte ses demandes, effectue la relance et met à jour l’avancement. L’API-ZF suit séparément ses dossiers investisseurs. Les chiffres affichés proviennent des actions enregistrées, pas de prévisions.
 
-## 2. Contraintes dures (elles pilotent l'architecture)
+Le QR code est une **porte d’entrée**, pas la promesse d’un parcours complexe. Scanner pour consulter, scanner pour laisser ses coordonnées et scanner pour jouer sont trois intentions différentes. Participer à un jeu ne doit pas inscrire quelqu’un automatiquement comme prospect commercial.
 
-Ces contraintes priment sur toute élégance technique.
+## Ce que les documents envisagent au-delà de ce noyau
 
-| Contrainte | Conséquence directe |
-|---|---|
-| **Hors-ligne qui se synchronise** | La saisie de contacts (M2) et les scans (M6) doivent fonctionner **sans réseau** et se synchroniser au retour. IndexedDB = source de vérité locale + file d'attente d'écritures. C'est le point le plus risqué du projet. |
-| **iPhone + Android d'entrée de gamme** | ⚠️ La **Background Sync API n'est pas supportée par Safari** (début 2026). Ne pas en dépendre : vider la file à l'ouverture de l'app, sur l'événement `online`, et via un **bouton « Synchroniser » manuel**. |
-| **Réseau faible (3G)** | Pages légères, peu d'images lourdes, app-shell en cache, chargement progressif. |
-| **Aucun téléchargement obligatoire** | PWA installable (manifest + service worker), mais 100 % utilisable dans le navigateur sans installation. |
-| **Cloisonnement strict des données** | Un occupant ne voit **jamais** les données d'un autre. À imposer **côté serveur** (ex. PostgreSQL Row-Level Security), jamais seulement côté client. |
-| **Bilingue FR/EN** | Vitrine, Investor Desk et invitations en français **et** anglais dès le départ (i18n, pas un ajout tardif). |
-| **Lisible en plein soleil** | Fort contraste, gros boutons, testé en extérieur (voir `SKILL.md`). |
-| **L'IA ne décide jamais seule** | Toute sortie d'IA (rapport du soir, rapprochements B2B, questions d'interview) passe par une validation humaine avant diffusion. Aucune coordonnée personnelle de visiteur n'est envoyée au service d'IA. |
-| **Chiffres mesurés uniquement** | Jamais d'estimations de fréquentation ou de chiffres invérifiables affichés. |
+Le cahier des charges propose aussi une bourse de besoins et des rendez-vous B2B, une réservation d’entretiens avec l’API-ZF, un planning du Studio avec lien personnel pour les invités, un jeu de visite entre plusieurs stands, ainsi que des rapports. Ces parcours ont un sens pour l’événement, mais chacun dépend d’une organisation réelle : qui accepte les rendez-vous, qui anime le Studio, qui valide les étapes du jeu, qui remet les récompenses et qui exploite les rapports. Ils seront développés **un par un après validation de leur usage**, avec une solution manuelle possible lorsque cela suffit.
 
----
+Le document de campagne décrit également la presse, les vidéos, la scénographie, les invitations et les objectifs de communication. Ce sont des activités humaines autour du Hub, pas automatiquement des fonctionnalités à coder. Le mur d’écran, les suggestions par IA, les messages automatiques, les badges partageables et les tableaux de bord élaborés sont des améliorations possibles, non le point de départ.
 
-## 3. Stack recommandée
+## Règles de produit
 
-Choix guidé par le hors-ligne et par un délai court — pile éprouvée, un seul serveur, zéro sur-ingénierie.
+- Chaque occupant ne voit que ses contacts et ses résultats. L’API-ZF voit les chiffres globaux ; elle n’accède au détail d’un contact de stand que si la personne l’a accepté. Les dossiers investisseurs restent réservés à l’équipe API-ZF autorisée.
+- Le consentement est demandé pour chaque finalité utile ; rien n’est précoché. Les règles et textes définitifs doivent être validés par l’API-ZF compétente.
+- Le suivi d’un contact appartient à une personne identifiable : une demande reçue sans responsable ni prochaine action ne résout pas le problème initial.
+- La saisie essentielle doit rester utilisable sur un téléphone modeste et avec une connexion faible. La synchronisation hors ligne est vérifiée sur appareil avant d’être annoncée comme fiable.
+- Le français est la langue de base. Les parcours publics ou investisseurs nécessitant l’anglais sont traduits et vérifiés avant publication.
+- Aucun chiffre fictif, aucune estimation présentée comme un résultat, aucune décision ou communication de l’IA sans validation humaine.
+- Aucun paiement, vente en ligne, classement public des occupants ou extension automatique à toute la Foire.
 
-**Frontend (la PWA)**
-- **React + Vite** (mobile-first), PWA via **vite-plugin-pwa / Workbox**.
-- **Dexie.js** (IndexedDB) pour le stockage local + une **file de synchronisation** maison.
-- **Tailwind CSS** (voir tokens dans `SKILL.md`), **i18next** (FR/EN).
-- Scan QR : `BarcodeDetector` natif avec repli `html5-qrcode`.
+## Où en est le projet
 
-**Backend (l'API)**
-- **NestJS (Node)** si l'équipe est JavaScript, **sinon Laravel (PHP)**. Un seul vrai arbitrage : **choisir selon ce que LIKSOFT maîtrise déjà** — le délai interdit d'apprendre une techno.
-- API REST, auth par rôles, files d'attente (messages, IA), génération PDF, exports.
+L’accès occupant n’est pas proposé dans l’interface publique : son lien est transmis directement aux équipes. Sans session, toute route de cet espace renvoie à la connexion ; avec une session active, la connexion renvoie à l’espace. Le responsable retrouve dans Profil ses informations et peut changer son mot de passe ou se déconnecter. L’en-tête affiche le logo API-ZF à gauche et le logo du stand à droite, ce dernier étant chargé depuis le backoffice avec une limite de 2 Mo et 1200 × 1200 pixels. Un lien personnel de participant inexistant aboutit à une page 404.
 
-**Base de données**
-- **PostgreSQL.** Row-Level Security pour le cloisonnement par occupant, vérifié côté serveur.
+Dans les Défis, le participant présente un QR contenant uniquement son code, également lisible dessous. L’espace occupant affiche le nombre de joueurs scannés : le bouton « Scanner » ouvre seulement la caméra, tandis que la saisie manuelle du code et « OK » restent sur la page. Chaque passage est lié à l’occupant qui le valide ; les occupants validés sont visibles dans le tableau « Participants » du backoffice.
 
-**Intégrations (des services, pas de la pile)**
-- **WhatsApp Business Platform** via un BSP agréé (repli SMS + e-mail).
-- **LLM** appelé côté serveur, sur données agrégées/professionnelles, sortie mise en file pour validation humaine.
-- **PDF** aux couleurs API-ZF (Puppeteer ou DomPDF) ; **exports** Excel/CSV.
+Le socle Node.js, PostgreSQL/Sequelize, le frontend React et le backoffice existent. Le public peut ouvrir `/stands` et une fiche `/stands/:slug` sans compte ; seules les fiches dont le statut est actif sont visibles. Chaque stand peut avoir un emplacement, une activité et une image de couverture. Depuis cette fiche, une personne peut envoyer une demande de recontact au stand. L’équipe de ce stand la retrouve sans qualification imposée, puis peut modifier sa qualification et sa prochaine action. Un professionnel peut aussi ouvrir `/investor-desk`, présenter son projet à l’API-ZF et laisser ses coordonnées. L’Investor Desk retrouve cette demande dans le backoffice, la prend en charge et note sa prochaine action. Le premier parcours B2B est également disponible : un responsable occupant publie un besoin, un professionnel propose une rencontre depuis `/b2b`, puis le responsable accepte ou refuse cette proposition dans son espace. Pour le Studio, l’équipe API-ZF crée une invitation datée dans le backoffice et partage son lien personnel ; l’invité confirme ou refuse sans compte et la réponse apparaît dans le planning. Le parcours `/defis` permet enfin au visiteur de s’inscrire avec son nom et un contact, d’obtenir un code, puis aux stands de valider un passage unique et à l’accueil d’enregistrer une seule remise de récompense. Le navigateur conserve uniquement le jeton de ce parcours pendant 20 jours afin que le participant le retrouve sans se réinscrire. Les participants et leurs contacts sont consultables par l’administration et l’animateur autorisé dans le tableau « Participants ». L’interface publique détecte le français ou l’anglais, mémorise le choix manuel et rassemble ses quatre destinations principales dans une navigation basse. L’espace occupant utilise également une navigation basse pour Contacts, B2B, Défis et Profil. **Les textes de consentement public doivent être validés avant la production, et les parcours doivent encore être vérifiés sur téléphone.**
 
-**Hébergement**
-- Un **VPS unique** suffit (charge modeste : quelques milliers de visiteurs / 17 jours). **Docker**, HTTPS, mots de passe hachés, **sauvegarde quotidienne chiffrée**. Vérifier le lieu d'hébergement avec le juridique (loi n° 2019-014).
-
-**À éviter absolument :** microservices, Kubernetes, plusieurs bases. Un monolithe bien structuré + Postgres + un serveur avec sauvegardes = livrable à temps.
-
----
-
-## 4. Les 9 modules
-
-Priorité : **I** = indispensable (prêt le 20 nov.), **S** = souhaitable (livré si les I sont prêts, sinon repli manuel).
-
-| # | Module | Rôle | Prio |
-|---|---|---|---|
-| M1 | Vitrine du Hub | Site public : occupants, programme, recherche « Que recherchez-vous ? », plan, FR/EN | I |
-| M2 | Contacts des occupants | CRM par stand : saisie < 1 min, scan passeport, qualification chaud/tiède/froid, export Excel, **hors-ligne** | I |
-| M3 | Investor Desk | Réservé API-ZF : qualification en 9 infos, classement A/B/C, alertes de relance, export vers INVEST TRACK | I |
-| M4 | Bourse des besoins + RDV B2B | Publier besoins/offres, demander une rencontre (double accord), réserver un créneau/table | I |
-| M5 | Studio et invités | Invitation personnelle (sans compte), réservation de créneau, rappels, livraison vidéo | I |
-| M6 | Défis de la preuve | Jeu : passeport QR, parcours 3 preuves/3 stands, validation humaine par scan, badge, retrait de récompense à usage unique | I |
-| M7 | Mur du Hub | Grand écran : occupant du jour, compteurs mesurés, capsules. Repli : boucle vidéo | S |
-| M8 | Tableau de bord + rapports | Chiffres du jour, rapport du soir (19 h, IA + relecture), rapport final PDF par occupant | I (rapports finaux en déc.) |
-| M9 | Administration | Gérer occupants, contenus, agendas, comptes/rôles ; import/export ; journal d'accès | I |
-
----
-
-## 5. Les 6 rôles et ce qu'ils voient
-
-Chaque rôle ne voit **que ce qui le concerne**. Rôles techniques : `super-admin`, `admin-apizf`, `investor-desk`, `equipe-campagne`, `animateur`, `occupant-responsable`, `occupant-membre`, `visiteur`.
-
-- **Visiteur** — compte facultatif (prénom + tél). Joue aux Défis, retire ses récompenses.
-- **Visiteur professionnel** — compte léger. Consulte les besoins, demande une mise en relation, réserve un RDV.
-- **Occupant** — compte créé par l'API-ZF. Tient sa fiche, saisit/qualifie ses contacts (les siens seulement), publie ses besoins, suit ses résultats.
-- **Invité du Studio** — aucun compte, lien personnel. Réserve son créneau, reçoit rappels puis vidéo.
-- **Équipe API-ZF** — compte admin. Qualifie les investisseurs, valide les rencontres/rapports, distribue les récompenses, pilote.
-- **Équipe de campagne** — compte admin. Planning Studio, publication des vidéos, alimentation du mur du Hub.
-
-Le détail des parcours utilisateur est dans le cahier des charges (section 07) ; ne pas ajouter d'écran hors périmètre.
-
----
-
-## 6. Objets de données principaux
-
-`occupant`, `utilisateur`, `visiteur`, `contact`, `dossier_investisseur`, `besoin`, `offre`, `mise_en_relation`, `creneau`, `reservation`, `invite`, `contenu`, `passeport`, `etape`, `recompense`, `scan`, `rapport`.
-
-QR codes : identifiants **uniques et typés** (`occupant`, `action`, `invitation`, `passeport`, `recompense`) avec suivi des scans ; codes de récompense **à usage unique**.
-
----
-
-## 7. Jalons clés (voir cahier des charges §10)
-
-`16 oct.` gel du périmètre (aucune fonction ajoutée après) · `12 nov.` vitrine en ligne · `9–18 nov.` tests de réception · `20 nov.` **gel total** · `27 nov.–13 déc.` exploitation · `14–18 déc.` rapports finaux.
-
-**Critères de réception à garder en tête pendant tout le dev** (§13) : contact saisi en < 1 min par une personne non formée ; saisie qui marche en mode avion puis se synchronise ; un occupant ne voit jamais les contacts d'un autre ; pas de chevauchement de réservations ; récompense non retirable deux fois ; vitrine correcte FR/EN sur Android d'entrée de gamme et iPhone ; rapport du soir produit à 19 h.
-
----
-
-## 8. Ce que le projet n'est PAS (hors périmètre 2026)
-
-Pas de vente / paiement / commission. Pas de classement public d'occupants ou de visiteurs. Pas de matching B2B automatique sans validation. Pas de messagerie instantanée entre participants. Pas d'assistant conversationnel. Pas de score de probabilité d'achat par l'IA. Pas de comptage de fréquentation par capteurs. Ces pistes sont documentées pour 2027 (§15) — ne pas les commencer.
+Le travail continue par petits parcours complets : données, API, écran, vérification des clics et des droits, puis retour utilisateur. `TODO.md` distingue le travail déjà fait, la prochaine étape et les parcours à confirmer. `NEEDS.md` ne demande les données externes qu’au moment où elles sont nécessaires au code. `SKILL.md` fixe la direction visuelle du frontend et du backoffice : sobre, claire, facile à utiliser, fondée sur les couleurs et logos de `assets/`.

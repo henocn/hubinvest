@@ -1,58 +1,81 @@
-# TODO — Grandes phases HubInvest
+# TODO — parcours HubInvest
 
-> Ce fichier fixe **les phases et leur ordre**, pas les sous-étapes.
-> L'agent découpe librement chaque phase en tâches et coche au fur et à mesure.
-> Règle d'or : ne jamais entamer un module « souhaitable » (M7, et les briques IA de M4/M5) tant que les indispensables ne sont pas prêts et testés.
+On avance par gestes réels des utilisateurs, pas par une liste de neuf modules à remplir. Les dates et objectifs chiffrés des documents de travail ne fixent pas l’ordre du code. Chaque parcours doit être visible et utilisable de bout en bout avant d’ajouter le suivant.
 
----
+Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence durable sur l’UI, l’UX, le code ou la stratégie d’affichage doit y être consignée avant l’implémentation.
 
-## Phase 0 — Fondations
-- [ ] Squelette PWA (React + Vite, manifest, service worker, installable, app-shell en cache).
-- [ ] i18n FR/EN branché dès le départ.
-- [ ] Système de design appliqué (tokens de `SKILL.md` : couleurs, type, tailles de boutons).
-- [ ] Backend + PostgreSQL + Docker qui tournent en local et en préprod.
-- [ ] Auth, rôles, et **cloisonnement des données côté serveur** (à écrire et tester en premier — c'est structurant).
-- [ ] Brique **hors-ligne** transverse : IndexedDB (Dexie) + file de synchronisation + indicateur d'état réseau + bouton « Synchroniser ». À valider avant tout module de saisie.
+## Cadrage à valider avant la suite
 
-## Phase 1 — Socle QR & administration
-- [ ] Génération et routage des **QR codes typés** (occupant, action, invitation, passeport, récompense) avec suivi des scans.
-- [ ] **M9 Administration** : gérer occupants, comptes/rôles, contenus, agendas, import Excel, journal d'accès.
-  *(Priorité haute : l'admin conditionne le remplissage de tous les autres modules.)*
+- [x] Faire valider la lecture des rôles et du noyau produit décrits dans `README.md`.
+- [x] Retenir le prochain usage à montrer : « je scanne le QR code du Hub ou d’un stand, je découvre l’occupant, puis je peux demander à être recontacté ».
+- [x] Faire arriver une demande de fiche uniquement dans les contacts de son occupant.
+- [ ] Valider le texte définitif de consentement public avant la production ; les demandes directes sont reçues par l’Investor Desk.
 
-## Phase 2 — Modules indispensables « avant la Foire »
-*(Ce sont ceux qui doivent vivre dès le 12 nov. pour le pré-lancement et les réservations.)*
-- [ ] **M1 Vitrine du Hub** : fiches occupants, recherche « Que recherchez-vous ? », programme, plan, 3 boutons d'action, versions avant/pendant/après.
-- [ ] **M4 Bourse des besoins + RDV B2B** : publier besoins/offres, consulter, demander (double accord), réserver un créneau **sans chevauchement**, retour post-rencontre.
-- [ ] **M3 Investor Desk** : formulaire bilingue, réservation, qualification 9 infos, classement A/B/C, alertes de relance.
+## Déjà engagé
 
-## Phase 3 — Modules indispensables « pendant la Foire »
-- [ ] **M2 Contacts des occupants** : saisie < 1 min, auto-inscription visiteur par QR, scan passeport, qualification, prochaine action, export Excel, tableau de résultats — **le tout hors-ligne**.
-- [ ] **M6 Défis de la preuve** : ouverture de passeport, parcours 3 preuves, validation humaine par scan, quiz, badge, **retrait de récompense à usage unique** avec suivi de stock.
-- [ ] **M5 Studio et invités** : invitation personnelle sans compte, choix de créneau, confirmation + rappels, planning avec statuts.
+- [x] Initialiser le backend Node.js/Express avec nodemon, Sequelize, migrations et variables `DB_*`.
+- [x] Créer le socle React/Vite et une première interface de marque.
+- [x] Répartir les deux interfaces React entre pages, composants, tiroirs et tableaux réutilisables.
+- [x] Créer occupants, utilisateurs, contacts et authentification nécessaires à la saisie par un stand.
+- [x] Limiter côté API la lecture des contacts à l’occupant concerné.
+- [x] Saisir un contact localement, afficher son état de synchronisation, puis le retrouver dans « Mes contacts ».
+- [x] Créer la première vue backoffice API-ZF avec des comptes de contacts réels.
+- [ ] Vérifier sur un vrai téléphone la saisie en mode avion puis la synchronisation sans doublon.
+- [ ] Vérifier visuellement sur mobile l’ouverture d’une fiche contact depuis la liste.
 
-## Phase 4 — Mesure & rapports
-- [ ] **M8 Tableau de bord** : écran du jour pour l'API-ZF, écran de résultats par occupant (cloisonné).
-- [ ] **Rapport du soir** : synthèse rédigée par l'IA à partir des chiffres, **soumise à relecture** avant diffusion (19 h).
-- [ ] Génération **PDF** aux couleurs API-ZF (rapport final par occupant) + **exports** Excel/CSV.
-- [ ] Micro-enquêtes de satisfaction (occupants + visiteurs).
+## Prochain parcours — le visiteur découvre le Hub
 
-## Phase 5 — Intégrations & IA (avec garde-fou humain partout)
-- [ ] Envoi **WhatsApp** (BSP agréé) + repli SMS + e-mail, avec modèles validés en amont.
-- [ ] Export des dossiers investisseurs vers **INVEST TRACK**.
-- [ ] Briques IA **souhaitables** : rapprochements B2B (M4), suggestions de sujets & questions d'interview (M5) — chacune avec validation avant envoi.
+La découverte est commencée. Le formulaire de recontact attend la confirmation de ses destinataires et de son texte de consentement.
 
-## Phase 6 — Souhaitable si le temps le permet
-- [ ] **M7 Mur du Hub** (grand écran temps réel) + sa boucle vidéo de repli.
-- [ ] Livraison automatique des vidéos aux invités (M5).
+- [x] Ouvrir le frontend public sans connexion obligatoire.
+- [x] Afficher les stands actifs et une fiche courte avec leur couverture, à partir des données administrées.
+- [x] Générer depuis le backoffice les QR codes du Hub vers `/stands` et de chaque stand vers `/stands/:slug`.
+- [ ] Scanner les QR codes avec l’URL publique de production avant leur impression.
+- [x] Retirer l’ancien « numéro de preuve » : l’emplacement administré du stand remplit ce besoin.
+- [ ] Vérifier le parcours sur téléphone, connexion lente et écran étroit.
+- [x] Ajouter une recherche simple par structure ou activité.
+- [x] Ajouter une interface publique FR/EN avec détection automatique de la langue du navigateur et choix mémorisé.
+- [x] Placer les quatre actions visiteur principales dans une navigation basse : accueil, exploration, rencontres et défis.
+- [x] Retirer l’accès occupant de l’interface publique ; son lien est communiqué directement aux équipes concernées.
+- [ ] Ajouter le programme et le plan lorsque leurs contenus sont disponibles ; ne pas bloquer la première fiche utile pour eux.
 
-## Phase 7 — Durcissement & réception
-- [ ] Passer **chaque critère de réception** du cahier des charges (§13) comme une checklist de tests.
-- [ ] Tests réels : mode avion + synchro, réseau 3G, Android d'entrée de gamme **et** iPhone, plein soleil.
-- [ ] Sécurité : droits par profil testés, journal d'accès, limitation des tentatives, sauvegarde quotidienne chiffrée, procédure papier de secours.
-- [ ] Performance (Lighthouse PWA), accessibilité (cibles tactiles, contraste, focus clavier).
-- [ ] Contenus finaux chargés, 100 % des fiches occupants publiées, textes FR/EN complets.
+Validation : une personne qui n’a jamais vu HubInvest scanne, comprend où elle est et trouve un occupant, sans bouton mort ni compte imposé.
 
-## Phase 8 — Gel & exploitation
-- [ ] **Gel le 20 nov.** : plus que des corrections d'anomalie.
-- [ ] Support quotidien pendant la Foire, rapport chaque soir.
-- [ ] Après : rapports finaux, transfert des dossiers, bilan et notes pour 2027.
+## Parcours suivant — exprimer puis suivre un intérêt
+
+- [x] Depuis la fiche d’un occupant, permettre au visiteur de demander à être recontacté avec un formulaire court et un consentement propre à cet occupant.
+- [x] Confirmer au visiteur que sa demande est enregistrée, sans promettre une réponse automatique non organisée.
+- [x] Montrer cette demande uniquement à l’occupant concerné, qui peut la qualifier et noter sa prochaine action.
+- [ ] Attribuer explicitement un responsable à une demande si l’équipe du stand compte plusieurs personnes et en a besoin.
+- [x] Permettre une demande distincte adressée à l’API-ZF, reçue et suivie par l’Investor Desk.
+- [ ] Afficher au responsable d’occupant les contacts et relances utiles ; ajouter l’export demandé lorsque ses colonnes sont connues.
+- [x] Tester côté API le cloisonnement, le consentement obligatoire et l’origine d’une demande publique.
+- [ ] Vérifier sur téléphone le formulaire, puis son arrivée dans l’espace occupant et sa modification.
+- [ ] Avant l’ouverture publique, valider les textes et règles de données, puis protéger l’envoi anonyme contre les abus sans bloquer les visiteurs partageant une connexion.
+
+Validation : une demande va au bon destinataire, et ce destinataire peut réellement la traiter.
+
+## Parcours explicitement prévus par le CDC, à arbitrer un par un
+
+Leur présence dans le CDC ne dit pas encore quelle version est utile en pratique. Pour chacun, confirmer l’équipe qui l’exploitera, puis définir un premier parcours complet avant de coder.
+
+- [x] **Investor Desk — première version** : un professionnel expose son projet ou demande un échange ; l’équipe API-ZF reçoit la demande, se l’attribue au premier suivi et note sa prochaine action. La qualification détaillée et les rendez-vous attendent les règles réelles.
+- [x] **Rencontres B2B — première version** : un responsable occupant publie et ferme ses besoins ; un professionnel propose une rencontre avec son consentement ; l’équipe du stand consulte les propositions et le responsable les accepte ou les refuse. Les créneaux et tables attendent un usage réel.
+- [x] **Studio — première version** : l’équipe API-ZF crée une invitation datée, copie son lien personnel et suit la réponse dans un planning ; l’invité confirme ou refuse sans compte. Les rappels et la livraison vidéo restent manuels.
+- [x] **Défis du public — première version** : le visiteur crée un parcours avec son nom et un contact, puis retrouve automatiquement ce parcours pendant 20 jours sur le même navigateur. Chaque stand valide une seule fois son code et l’accueil enregistre une remise unique après le nombre requis de passages. L’administration et l’animateur retrouvent les participants dans un tableau. Le seuil provisoire de trois stands reste configurable et aucun consentement commercial n’est implicite.
+- [x] **Accès occupant** : les routes de l’espace renvoient vers la connexion sans session ; une session active quitte automatiquement la page de connexion. L’en-tête porte le logo API-ZF et celui du stand, tandis que Profil regroupe les informations du compte, le changement de mot de passe et la déconnexion.
+- [x] **Liens participants** : un jeton Défis inexistant affiche une page 404 et ne révèle aucun autre parcours.
+- [x] **Lecture des codes Défis** : le participant montre un QR contenant seulement son code, affiché aussi en clair dessous ; l’occupant voit son compteur de joueurs scannés, ouvre la caméra dans un dialogue ou saisit le code directement sur la page. Chaque validation est rattachée à l’occupant et visible dans le tableau du backoffice.
+
+## À faire au fil des parcours
+
+- [ ] Donner à l’administrateur uniquement les écrans nécessaires pour gérer les données et accès des parcours ouverts.
+- [ ] Afficher des totaux et rapports fondés sur des événements réellement enregistrés, avec périmètre et source compréhensibles.
+- [ ] Respecter le cloisonnement des occupants et la confidentialité des dossiers investisseurs sur chaque nouvelle route et chaque nouvel écran.
+- [ ] Vérifier le français, l’anglais quand requis, les erreurs, les états vides et la connexion faible.
+- [ ] Garder les tests automatisés sur les risques essentiels : droits d’accès, synchronisation, réservations concurrentes si elles existent, retrait unique si le jeu existe.
+- [ ] Traiter les vulnérabilités des dépendances pertinentes lors de la stabilisation finale.
+
+## Pas au départ
+
+Mur d’écran en direct, matching ou rédaction par IA, messagerie entre participants, automatisation des vidéos, notifications multicanales, chiffres de campagne non collectés par HubInvest et extension à toute la Foire. Une solution humaine simple reste possible tant que le besoin n’est pas observé et validé.
