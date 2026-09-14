@@ -265,6 +265,30 @@ select:focus {
   letter-spacing: -0.02em;
 }
 
+.app-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.app-header-link {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 11px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.app-header-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
 .icon-button {
   width: 44px;
   height: 44px;
@@ -641,6 +665,153 @@ select:focus {
   margin-top: 8px;
 }
 
+.b2b-workspace-form,
+.b2b-workspace-detail {
+  max-width: 720px;
+}
+
+.b2b-workspace-form .form-stack {
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #fff;
+}
+
+.b2b-workspace-list {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #fff;
+}
+
+.b2b-workspace-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  padding: 17px 18px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  color: inherit;
+  background: #fff;
+  text-align: left;
+}
+
+.b2b-workspace-row:last-child {
+  border-bottom: 0;
+}
+
+.b2b-workspace-row.is-open {
+  background: rgba(0, 106, 79, 0.04);
+}
+
+.b2b-workspace-row.is-closed {
+  background: rgba(209, 17, 53, 0.035);
+}
+
+.b2b-workspace-row > span {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.b2b-workspace-row strong,
+.b2b-workspace-row small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.b2b-workspace-row small {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.b2b-workspace-row b {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.b2b-workspace-description {
+  margin: 0 0 32px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #fff;
+  line-height: 1.65;
+  white-space: pre-line;
+}
+
+.b2b-proposals-title {
+  margin: 0 0 15px;
+  font-size: 1.25rem;
+}
+
+.b2b-proposal-list {
+  display: grid;
+  gap: 12px;
+}
+
+.b2b-proposal-item {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #fff;
+}
+
+.b2b-proposal-item.is-accepted {
+  border-left: 3px solid var(--green);
+}
+
+.b2b-proposal-item.is-declined {
+  border-left: 3px solid var(--red);
+}
+
+.b2b-proposal-item > header div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.b2b-proposal-item > header span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.b2b-proposal-item > p {
+  margin: 16px 0;
+  color: #414743;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.b2b-proposal-contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+}
+
+.b2b-proposal-contact a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--green-dark);
+  font-size: 0.82rem;
+  text-decoration: none;
+}
+
+.b2b-proposal-item > footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
 @media (max-width: 640px) {
   .app-header {
     padding-inline: 14px;
@@ -696,6 +867,11 @@ select:focus {
 
   .form-actions .button-primary {
     grid-row: 1;
+  }
+
+  .b2b-proposal-item > footer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
   }
 }
 

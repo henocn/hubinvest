@@ -1,4 +1,6 @@
 import PublicHeader from './components/PublicHeader';
+import B2bDetailPage from './pages/B2bDetailPage';
+import B2bListPage from './pages/B2bListPage';
 import InvestorDeskPage from './pages/InvestorDeskPage';
 import NotFoundPage from './pages/NotFoundPage';
 import StandDetailPage from './pages/StandDetailPage';
@@ -7,6 +9,7 @@ import './public.css';
 
 export default function PublicPages({ path }) {
   const standDetail = path.match(/^\/stands\/([a-z0-9-]+)$/);
+  const b2bDetail = path.match(/^\/b2b\/([a-f0-9-]+)$/i);
 
   let page;
 
@@ -16,6 +19,10 @@ export default function PublicPages({ path }) {
     page = <StandDetailPage slug={standDetail[1]} />;
   } else if (path === '/investor-desk') {
     page = <InvestorDeskPage />;
+  } else if (path === '/b2b') {
+    page = <B2bListPage />;
+  } else if (b2bDetail) {
+    page = <B2bDetailPage id={b2bDetail[1]} />;
   } else {
     page = <NotFoundPage />;
   }

@@ -41,6 +41,9 @@ export const api = {
   publicOccupant: (slug) => request(`/occupants/public/${encodeURIComponent(slug)}`),
   requestContact: (slug, values) => request(`/contacts/public/${encodeURIComponent(slug)}`, { method: 'POST', body: JSON.stringify(values) }),
   createInvestorRequest: (values) => request('/investor-requests/public', { method: 'POST', body: JSON.stringify(values) }),
+  publicB2bNeeds: () => request('/b2b-needs/public'),
+  publicB2bNeed: (id) => request(`/b2b-needs/public/${encodeURIComponent(id)}`),
+  createB2bProposal: (needId, values) => request(`/b2b-proposals/public/${encodeURIComponent(needId)}`, { method: 'POST', body: JSON.stringify(values) }),
   login: (values) => request('/auth/login', { method: 'POST', body: JSON.stringify(values) }),
   contacts: (token) => request('/contacts', authorized(token)),
   contactStats: (token) => request('/contacts/stats', authorized(token)),
@@ -48,4 +51,9 @@ export const api = {
     request('/contacts', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   updateContact: (token, id, values) =>
     request(`/contacts/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
+  b2bNeeds: (token) => request('/b2b-needs', authorized(token)),
+  createB2bNeed: (token, values) => request('/b2b-needs', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
+  updateB2bNeed: (token, id, values) => request(`/b2b-needs/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
+  b2bProposals: (token, needId) => request(`/b2b-proposals/need/${needId}`, authorized(token)),
+  updateB2bProposal: (token, id, values) => request(`/b2b-proposals/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
 };

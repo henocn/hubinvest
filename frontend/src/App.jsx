@@ -6,6 +6,7 @@ import {
   Cloud,
   Eye,
   EyeOff,
+  Handshake,
   LogOut,
   Pencil,
   Phone,
@@ -23,6 +24,7 @@ import {
   syncPendingContacts,
 } from './lib/contact-store';
 import PublicPages from './PublicPages';
+import OccupantB2bPage from './pages/OccupantB2bPage';
 
 const qualificationLabels = {
   hot: 'Chaud',
@@ -463,9 +465,10 @@ function ContactsScreen({ session, apiOnline, setApiOnline, onLogout }) {
     <>
       <header className="app-header">
         <div className="brand-name">HubInvest</div>
-        <button className="icon-button" type="button" onClick={onLogout} aria-label="Se déconnecter">
-          <LogOut size={20} />
-        </button>
+        <div className="app-header-actions">
+          <a className="app-header-link" href="/espace-occupant/b2b"><Handshake size={18} /> B2B</a>
+          <button className="icon-button" type="button" onClick={onLogout} aria-label="Se déconnecter"><LogOut size={20} /></button>
+        </div>
       </header>
 
       <main className="workspace">
@@ -560,7 +563,7 @@ export default function App() {
   const [apiOnline, setApiOnline] = useState(false);
 
   useEffect(() => {
-    if (path !== '/espace-occupant') return undefined;
+    if (!path.startsWith('/espace-occupant')) return undefined;
     const checkApi = () => {
       if (!navigator.onLine) {
         setApiOnline(false);
@@ -598,12 +601,16 @@ export default function App() {
     return <PublicPages path={path} />;
   }
 
-  if (path !== '/connexion' && path !== '/espace-occupant') {
+  if (path !== '/connexion' && path !== '/espace-occupant' && path !== '/espace-occupant/b2b') {
     return <PublicPages path={path} />;
   }
 
   if (path === '/connexion') {
     return <LoginScreen onLogin={login} />;
+  }
+
+  if (path === '/espace-occupant/b2b') {
+    return session ? <OccupantB2bPage session={session} onLogout={logout} /> : <LoginScreen onLogin={login} />;
   }
 
   return session ? (

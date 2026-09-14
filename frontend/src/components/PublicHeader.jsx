@@ -9,6 +9,7 @@ export default function PublicHeader() {
       </a>
       <nav aria-label="Navigation publique">
         <a href="/stands">Stands</a>
+        <a href="/b2b">B2B</a>
         <a href="/investor-desk">Investor Desk</a>
         <a className="public-login" href="/connexion">Espace occupant</a>
       </nav>

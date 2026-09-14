@@ -57,7 +57,7 @@ Validation : une demande va au bon destinataire, et ce destinataire peut réelle
 Leur présence dans le CDC ne dit pas encore quelle version est utile en pratique. Pour chacun, confirmer l’équipe qui l’exploitera, puis définir un premier parcours complet avant de coder.
 
 - [x] **Investor Desk — première version** : un professionnel expose son projet ou demande un échange ; l’équipe API-ZF reçoit la demande, se l’attribue au premier suivi et note sa prochaine action. La qualification détaillée et les rendez-vous attendent les règles réelles.
-- [ ] **Rencontres B2B** : un occupant publie ce qu’il cherche ; un professionnel propose une rencontre ; les deux acceptent et un responsable organise la suite. Tables et créneaux uniquement si nécessaires sur place.
+- [x] **Rencontres B2B — première version** : un responsable occupant publie et ferme ses besoins ; un professionnel propose une rencontre avec son consentement ; l’équipe du stand consulte les propositions et le responsable les accepte ou les refuse. Les créneaux et tables attendent un usage réel.
 - [ ] **Studio** : un invité ouvre son lien personnel et confirme sa venue ; l’équipe de campagne tient un planning. Rappels et livraison vidéo peuvent rester manuels au début.
 - [ ] **Défis du public** : un visiteur choisit de jouer ; les stands valident humainement ses passages ; l’accueil remet une récompense une seule fois. Aucun consentement commercial implicite.
 

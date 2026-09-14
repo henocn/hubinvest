@@ -9,8 +9,11 @@ const occupantRepository = require('../src/modules/occupant/occupant.repository'
 const investorRequestService = require('../src/modules/investor-request/investor-request.service');
 const investorRequestRepository = require('../src/modules/investor-request/investor-request.repository');
 const investorRequestValidation = require('../src/modules/investor-request/investor-request.validation');
+const b2bNeedRepository = require('../src/modules/b2b-need/b2b-need.repository');
+const b2bProposalService = require('../src/modules/b2b-proposal/b2b-proposal.service');
+const b2bProposalRepository = require('../src/modules/b2b-proposal/b2b-proposal.repository');
 const { authenticate } = require('../src/middlewares/auth.middleware');
-const { User, Occupant } = require('../src/models');
+const { User, Occupant, B2bNeed } = require('../src/models');
 const env = require('../src/config/env');
 const app = require('../src/app');
 
@@ -255,4 +258,37 @@ test('le premier suivi Investor Desk attribue la demande à son agent', async (c
 
   assert.equal(saved.assignedToUserId, 'agent-a');
   assert.equal(saved.status, 'in_progress');
+});
+
+test('la liste publique B2B ne contient que les besoins ouverts de stands actifs', async (context) => {
+  context.mock.method(B2bNeed, 'findAll', async (options) => options);
+
+  const result = await b2bNeedRepository.findPublic();
+
+  assert.deepEqual(result.where, { status: 'open' });
+  assert.deepEqual(result.include[0].where, { status: 'active' });
+  assert.equal(result.include[0].required, true);
+});
+
+test('une proposition B2B sans consentement est refusée avant toute écriture', async (context) => {
+  context.mock.method(b2bProposalRepository, 'create', async () => {
+    throw new Error('La création ne doit pas être appelée.');
+  });
+
+  await assert.rejects(
+    b2bProposalService.createPublic('need-a', { consentOccupant: false }),
+    (error) => error.status === 422 && error.code === 'CONSENT_REQUIRED',
+  );
+});
+
+test('un occupant ne peut pas lire les propositions B2B d’un autre stand', async (context) => {
+  context.mock.method(b2bNeedRepository, 'findByIdForOccupant', async () => null);
+  context.mock.method(b2bProposalRepository, 'findAllByNeed', async () => {
+    throw new Error('La lecture ne doit pas être appelée.');
+  });
+
+  await assert.rejects(
+    b2bProposalService.list({ occupantId: 'occupant-a' }, 'need-b'),
+    (error) => error.status === 404 && error.code === 'B2B_NEED_NOT_FOUND',
+  );
 });
