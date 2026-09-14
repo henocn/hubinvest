@@ -1,4 +1,4 @@
-import { Handshake, Home, Search, Star, UserRound } from 'lucide-react';
+import { Handshake, Home, Search, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 const links = [
@@ -6,7 +6,6 @@ const links = [
   { key: 'explore', href: '/stands', Icon: Search, matches: (path) => path.startsWith('/stands') },
   { key: 'meetings', href: '/rencontres', Icon: Handshake, matches: (path) => ['/rencontres', '/b2b', '/investor-desk', '/studio'].some((prefix) => path.startsWith(prefix)) },
   { key: 'play', href: '/defis', Icon: Star, matches: (path) => path.startsWith('/defis') },
-  { key: 'account', href: '/connexion', Icon: UserRound, matches: (path) => path.startsWith('/connexion') || path.startsWith('/espace-occupant') },
 ];
 
 export default function PublicBottomNav({ path }) {

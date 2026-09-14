@@ -6,6 +6,7 @@ const roles = require('../../shared/roles');
 const occupantValidation = require('./occupant.validation');
 const occupantController = require('./occupant.controller');
 const uploadCover = require('./occupant-cover.middleware');
+const uploadLogo = require('./occupant-logo.middleware');
 
 const router = express.Router();
 const adminOnly = requireRoles(roles.SUPER_ADMIN, roles.ADMIN_APIZF);
@@ -32,6 +33,12 @@ router.post(
   validate(occupantValidation.params, 'params'),
   uploadCover,
   asyncHandler(occupantController.updateCover),
+);
+router.post(
+  '/:id/logo',
+  validate(occupantValidation.params, 'params'),
+  uploadLogo,
+  asyncHandler(occupantController.updateLogo),
 );
 router.delete(
   '/:id',

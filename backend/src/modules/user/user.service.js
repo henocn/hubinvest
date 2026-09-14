@@ -40,6 +40,22 @@ const get = async (id) => {
   return user;
 };
 
+const getProfile = async (actor) => serialize(await get(actor.id));
+
+const changePassword = async (actor, values) => {
+  const user = await userRepository.findByIdWithPassword(actor.id);
+  if (!user) {
+    throw new AppError(404, 'USER_NOT_FOUND', 'Utilisateur introuvable.');
+  }
+
+  const validPassword = await bcrypt.compare(values.currentPassword, user.passwordHash);
+  if (!validPassword) {
+    throw new AppError(422, 'INVALID_CURRENT_PASSWORD', 'Le mot de passe actuel est incorrect.');
+  }
+
+  await userRepository.update(user, { passwordHash: await bcrypt.hash(values.newPassword, 12) });
+};
+
 const create = async (actor, values) => {
   protectSuperAdmin(actor, values.role);
   const normalized = { ...values, email: values.email.toLowerCase() };
@@ -96,4 +112,4 @@ const remove = async (actor, id) => {
   await userRepository.remove(user);
 };
 
-module.exports = { list, get, create, update, remove };
+module.exports = { list, get, getProfile, changePassword, create, update, remove };

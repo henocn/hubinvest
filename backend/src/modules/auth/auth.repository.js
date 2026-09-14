@@ -3,7 +3,7 @@ const { User, Occupant } = require('../../models');
 const findUserByEmail = (email) =>
   User.unscoped().findOne({
     where: { email },
-    include: [{ model: Occupant, as: 'occupant', attributes: ['id', 'name', 'slug', 'status'] }],
+    include: [{ model: Occupant, as: 'occupant', attributes: ['id', 'name', 'slug', 'standLabel', 'activity', 'logoUrl', 'status'] }],
   });
 
 module.exports = { findUserByEmail };

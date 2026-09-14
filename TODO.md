@@ -35,7 +35,8 @@ La découverte est commencée. Le formulaire de recontact attend la confirmation
 - [ ] Vérifier le parcours sur téléphone, connexion lente et écran étroit.
 - [x] Ajouter une recherche simple par structure ou activité.
 - [x] Ajouter une interface publique FR/EN avec détection automatique de la langue du navigateur et choix mémorisé.
-- [x] Placer les cinq actions visiteur principales dans une navigation basse : accueil, exploration, rencontres, défis et espace occupant.
+- [x] Placer les quatre actions visiteur principales dans une navigation basse : accueil, exploration, rencontres et défis.
+- [x] Retirer l’accès occupant de l’interface publique ; son lien est communiqué directement aux équipes concernées.
 - [ ] Ajouter le programme et le plan lorsque leurs contenus sont disponibles ; ne pas bloquer la première fiche utile pour eux.
 
 Validation : une personne qui n’a jamais vu HubInvest scanne, comprend où elle est et trouve un occupant, sans bouton mort ni compte imposé.
@@ -62,6 +63,8 @@ Leur présence dans le CDC ne dit pas encore quelle version est utile en pratiqu
 - [x] **Rencontres B2B — première version** : un responsable occupant publie et ferme ses besoins ; un professionnel propose une rencontre avec son consentement ; l’équipe du stand consulte les propositions et le responsable les accepte ou les refuse. Les créneaux et tables attendent un usage réel.
 - [x] **Studio — première version** : l’équipe API-ZF crée une invitation datée, copie son lien personnel et suit la réponse dans un planning ; l’invité confirme ou refuse sans compte. Les rappels et la livraison vidéo restent manuels.
 - [x] **Défis du public — première version** : le visiteur crée un parcours avec son nom et un contact, puis retrouve automatiquement ce parcours pendant 20 jours sur le même navigateur. Chaque stand valide une seule fois son code et l’accueil enregistre une remise unique après le nombre requis de passages. L’administration et l’animateur retrouvent les participants dans un tableau. Le seuil provisoire de trois stands reste configurable et aucun consentement commercial n’est implicite.
+- [x] **Accès occupant** : les routes de l’espace renvoient vers la connexion sans session ; une session active quitte automatiquement la page de connexion. L’en-tête porte le logo API-ZF et celui du stand, tandis que Profil regroupe les informations du compte, le changement de mot de passe et la déconnexion.
+- [x] **Liens participants** : un jeton Défis inexistant affiche une page 404 et ne révèle aucun autre parcours.
 
 ## À faire au fil des parcours
 

@@ -43,6 +43,7 @@ Ne pas déduire l'état actuel de `.env` de ce document : vérifier uniquement l
 
 - [x] Les occupants sont créés dans le backoffice avec un identifiant stable généré par la plateforme.
 - [x] Une fiche occupant contient le nom, l’emplacement, l’activité, le statut et une image de couverture. Aucun numéro de preuve distinct.
+- [x] Chaque stand peut recevoir un logo JPG, PNG ou WebP dans le backoffice, limité à 2 Mo et 1200 × 1200 pixels.
 - [x] Les comptes occupants sont créés dans le backoffice et rattachés à leur occupant ; seul le premier compte administrateur dépend des variables `ADMIN_*`.
 - [ ] Les cinq champs obligatoires exacts du formulaire de contact.
 - [ ] Confirmation de la possibilite ou non de noter une vente : produit, quantite et montant.

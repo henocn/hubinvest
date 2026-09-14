@@ -26,6 +26,11 @@ module.exports = (sequelize, DataTypes) =>
         allowNull: true,
         field: 'cover_image_url',
       },
+      logoUrl: {
+        type: DataTypes.STRING(2048),
+        allowNull: true,
+        field: 'logo_url',
+      },
       activity: {
         type: DataTypes.TEXT,
         allowNull: true,

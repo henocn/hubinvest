@@ -4,8 +4,6 @@ import {
   Check,
   Clock3,
   Cloud,
-  Eye,
-  EyeOff,
   Pencil,
   Phone,
   Plus,
@@ -25,6 +23,8 @@ import PublicPages from './PublicPages';
 import OccupantB2bPage from './pages/OccupantB2bPage';
 import OccupantChallengePage from './pages/OccupantChallengePage';
 import OccupantShell from './components/occupant/OccupantShell';
+import PasswordField from './components/PasswordField';
+import OccupantProfilePage from './pages/OccupantProfilePage';
 
 const qualificationLabels = {
   hot: 'Chaud',
@@ -40,19 +40,6 @@ const toLocalDateTime = (value) => {
   if (Number.isNaN(date.getTime())) return '';
   return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 };
-
-function PasswordInput(props) {
-  const [visible, setVisible] = useState(false);
-
-  return (
-    <div className="password-field">
-      <input {...props} type={visible ? 'text' : 'password'} />
-      <button type="button" onClick={() => setVisible((current) => !current)} aria-label={visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}>
-        {visible ? <EyeOff size={20} /> : <Eye size={20} />}
-      </button>
-    </div>
-  );
-}
 
 function LoginScreen({ onLogin }) {
   const [form, setForm] = useState({ email: '', password: '' });
@@ -102,7 +89,7 @@ function LoginScreen({ onLogin }) {
           </label>
           <label>
             Mot de passe
-            <PasswordInput
+            <PasswordField
               autoComplete="current-password"
               minLength={8}
               value={form.password}
@@ -542,6 +529,11 @@ function ContactsScreen({ session, apiOnline, setApiOnline, onLogout }) {
   );
 }
 
+function Redirect({ to }) {
+  useEffect(() => { window.location.replace(to); }, [to]);
+  return null;
+}
+
 export default function App() {
   const path = window.location.pathname.replace(/\/$/, '') || '/';
   const [session, setSession] = useState(() => {
@@ -593,25 +585,30 @@ export default function App() {
     return <PublicPages path={path} />;
   }
 
-  if (path !== '/connexion' && path !== '/espace-occupant' && path !== '/espace-occupant/b2b' && path !== '/espace-occupant/defis') {
+  if (path !== '/connexion' && path !== '/espace-occupant' && path !== '/espace-occupant/b2b' && path !== '/espace-occupant/defis' && path !== '/espace-occupant/profil') {
     return <PublicPages path={path} />;
   }
 
   if (path === '/connexion') {
+    if (session) return <Redirect to="/espace-occupant" />;
     return <LoginScreen onLogin={login} />;
   }
 
   if (path === '/espace-occupant/b2b') {
-    return session ? <OccupantShell session={session} onLogout={logout}><OccupantB2bPage session={session} onLogout={logout} /></OccupantShell> : <LoginScreen onLogin={login} />;
+    return session ? <OccupantShell session={session} onLogout={logout}><OccupantB2bPage session={session} onLogout={logout} /></OccupantShell> : <Redirect to="/connexion" />;
   }
 
   if (path === '/espace-occupant/defis') {
-    return session ? <OccupantShell session={session} onLogout={logout}><OccupantChallengePage session={session} onLogout={logout} /></OccupantShell> : <LoginScreen onLogin={login} />;
+    return session ? <OccupantShell session={session} onLogout={logout}><OccupantChallengePage session={session} onLogout={logout} /></OccupantShell> : <Redirect to="/connexion" />;
+  }
+
+  if (path === '/espace-occupant/profil') {
+    return session ? <OccupantShell session={session} onLogout={logout}><OccupantProfilePage session={session} onLogout={logout} /></OccupantShell> : <Redirect to="/connexion" />;
   }
 
   return session ? (
     <OccupantShell session={session} onLogout={logout}><ContactsScreen session={session} apiOnline={apiOnline} setApiOnline={setApiOnline} onLogout={logout} /></OccupantShell>
   ) : (
-    <LoginScreen onLogin={login} />
+    <Redirect to="/connexion" />
   );
 }

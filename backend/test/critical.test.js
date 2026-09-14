@@ -1,11 +1,14 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const { UniqueConstraintError } = require('sequelize');
 const contactService = require('../src/modules/contact/contact.service');
 const contactRepository = require('../src/modules/contact/contact.repository');
 const occupantService = require('../src/modules/occupant/occupant.service');
 const occupantRepository = require('../src/modules/occupant/occupant.repository');
+const userService = require('../src/modules/user/user.service');
+const userRepository = require('../src/modules/user/user.repository');
 const investorRequestService = require('../src/modules/investor-request/investor-request.service');
 const investorRequestRepository = require('../src/modules/investor-request/investor-request.repository');
 const investorRequestValidation = require('../src/modules/investor-request/investor-request.validation');
@@ -22,6 +25,27 @@ const { authenticate } = require('../src/middlewares/auth.middleware');
 const { sequelize, User, Occupant, B2bNeed } = require('../src/models');
 const env = require('../src/config/env');
 const app = require('../src/app');
+
+test('un occupant doit connaître son mot de passe actuel pour le remplacer', async (context) => {
+  const user = {
+    passwordHash: await bcrypt.hash('ancien-secret', 4),
+    update: async (values) => Object.assign(user, values),
+  };
+  context.mock.method(userRepository, 'findByIdWithPassword', async () => user);
+  context.mock.method(userRepository, 'update', async (target, values) => target.update(values));
+
+  await assert.rejects(
+    userService.changePassword({ id: 'user-a' }, { currentPassword: 'incorrect', newPassword: 'nouveau-secret' }),
+    (error) => error.status === 422 && error.code === 'INVALID_CURRENT_PASSWORD',
+  );
+
+  await userService.changePassword(
+    { id: 'user-a' },
+    { currentPassword: 'ancien-secret', newPassword: 'nouveau-secret' },
+  );
+
+  assert.equal(await bcrypt.compare('nouveau-secret', user.passwordHash), true);
+});
 
 test('les listes et les details restent limites a l’occupant authentifie', async (context) => {
   const calls = [];
@@ -433,5 +457,14 @@ test('une récompense Défis ne peut être enregistrée qu’une fois', async (c
   await assert.rejects(
     challengePassportService.redeem({ id: 'animator-b' }, passport.id),
     (error) => error.status === 409 && error.code === 'REWARD_ALREADY_REDEEMED',
+  );
+});
+
+test('un lien participant inventé reste introuvable', async (context) => {
+  context.mock.method(challengePassportRepository, 'findPublicByToken', async () => null);
+
+  await assert.rejects(
+    challengePassportService.getPublic('a'.repeat(64)),
+    (error) => error.status === 404 && error.code === 'CHALLENGE_PASSPORT_NOT_FOUND',
   );
 });

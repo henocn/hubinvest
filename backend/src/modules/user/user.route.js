@@ -9,7 +9,11 @@ const userController = require('./user.controller');
 const router = express.Router();
 const adminOnly = requireRoles(roles.SUPER_ADMIN, roles.ADMIN_APIZF);
 
-router.use(asyncHandler(authenticate), adminOnly);
+router.use(asyncHandler(authenticate));
+router.get('/me', asyncHandler(userController.getProfile));
+router.patch('/me/password', validate(userValidation.changePassword), asyncHandler(userController.changePassword));
+
+router.use(adminOnly);
 router.get('/', asyncHandler(userController.list));
 router.post('/', validate(userValidation.create), asyncHandler(userController.create));
 router.get('/:id', validate(userValidation.params, 'params'), asyncHandler(userController.get));

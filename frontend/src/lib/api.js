@@ -49,6 +49,9 @@ export const api = {
   createChallengePassport: (values) => request('/challenge-passports/public', { method: 'POST', body: JSON.stringify(values) }),
   publicChallengePassport: (token) => request(`/challenge-passports/public/${encodeURIComponent(token)}`),
   login: (values) => request('/auth/login', { method: 'POST', body: JSON.stringify(values) }),
+  profile: (token) => request('/users/me', authorized(token)),
+  changeOwnPassword: (token, values) =>
+    request('/users/me/password', authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
   contacts: (token) => request('/contacts', authorized(token)),
   contactStats: (token) => request('/contacts/stats', authorized(token)),
   createContact: (token, values) =>

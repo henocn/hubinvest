@@ -26,5 +26,9 @@ const update = Joi.object({
 }).min(1);
 
 const params = Joi.object({ id: uuid.required() });
+const changePassword = Joi.object({
+  currentPassword: Joi.string().min(8).max(128).required(),
+  newPassword: Joi.string().min(8).max(128).required(),
+});
 
-module.exports = { create, update, params };
+module.exports = { create, update, params, changePassword };

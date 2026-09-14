@@ -264,27 +264,51 @@ select:focus {
   padding-bottom: calc(72px + env(safe-area-inset-bottom));
 }
 
-.occupant-header-brand {
-  min-width: 0;
+.occupant-logo-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  min-height: 70px;
   display: grid;
-  gap: 2px;
+  grid-template-columns: 64px minmax(0, 1fr) 64px;
+  align-items: center;
+  gap: 16px;
+  padding: 8px max(18px, calc((100vw - 920px) / 2));
+  color: #171717;
+  background: #fff;
+  border-top: 4px solid var(--green);
+  border-bottom: 1px solid var(--border);
 }
 
-.occupant-header-brand strong,
-.occupant-header-brand span {
+.occupant-apizf-logo,
+.occupant-institution-logo {
+  width: 64px;
+  height: 46px;
+  display: block;
+  object-fit: contain;
+}
+
+.occupant-header-name {
+  min-width: 0;
   overflow: hidden;
+  text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
 }
 
-.occupant-header-brand strong {
-  font-size: 1.06rem;
-  letter-spacing: -0.02em;
-}
-
-.occupant-header-brand span {
-  color: rgba(255, 255, 255, 0.74);
-  font-size: 0.72rem;
+.occupant-logo-placeholder {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  justify-self: end;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--green-dark);
+  background: #edf5f2;
+  font-weight: 800;
 }
 
 .occupant-bottom-nav {
@@ -300,7 +324,7 @@ select:focus {
 .occupant-bottom-nav > div {
   width: min(100%, 520px);
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-inline: auto;
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -957,9 +981,77 @@ select:focus {
   font-size: 0.84rem;
 }
 
+.occupant-profile-workspace {
+  max-width: 680px;
+}
+
+.occupant-profile-details,
+.occupant-password-panel {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #fff;
+}
+
+.occupant-password-panel {
+  margin-top: 22px;
+  padding: 22px;
+}
+
+.occupant-password-panel h2 {
+  margin: 0 0 22px;
+  font-size: 1.2rem;
+}
+
+.occupant-password-panel .form-stack {
+  max-width: 480px;
+}
+
+.occupant-password-panel .button {
+  justify-self: start;
+}
+
+.profile-success {
+  margin: 0;
+  padding: 12px 14px;
+  border-left: 3px solid var(--green);
+  color: var(--green-dark);
+  background: #edf6f1;
+  font-size: 0.9rem;
+}
+
+.profile-logout {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 22px;
+  padding: 0;
+  border: 0;
+  color: #a20f2b;
+  background: transparent;
+  font-weight: 700;
+}
+
+.profile-logout:hover {
+  color: var(--red);
+}
+
 @media (max-width: 640px) {
   .app-header {
     padding-inline: 14px;
+  }
+
+  .occupant-logo-header {
+    grid-template-columns: 52px minmax(0, 1fr) 52px;
+    gap: 10px;
+    padding-inline: 14px;
+  }
+
+  .occupant-apizf-logo,
+  .occupant-institution-logo {
+    width: 52px;
+    height: 40px;
   }
 
   .heading-with-action {
@@ -1020,6 +1112,10 @@ select:focus {
   }
 
   .challenge-validation-form .button {
+    width: 100%;
+  }
+
+  .occupant-password-panel .button {
     width: 100%;
   }
 }

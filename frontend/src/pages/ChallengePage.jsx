@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import ChallengePassportCard from '../components/ChallengePassportCard';
 import ChallengeStartForm from '../components/ChallengeStartForm';
+import NotFoundPage from './NotFoundPage';
 import { api } from '../lib/api';
 import { clearChallengePassportToken, readChallengePassportToken, saveChallengePassportToken } from '../lib/challenge-passport-store';
 import { useTranslation } from 'react-i18next';
@@ -13,6 +14,7 @@ export default function ChallengePage({ token }) {
   const [loading, setLoading] = useState(Boolean(initialToken));
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     if (!personalToken || passport) return undefined;
@@ -29,6 +31,10 @@ export default function ChallengePage({ token }) {
           clearChallengePassportToken();
           setPersonalToken('');
           setError('');
+          return;
+        }
+        if (requestError.status === 404) {
+          setNotFound(true);
           return;
         }
         setError(requestError.message);
@@ -56,6 +62,8 @@ export default function ChallengePage({ token }) {
       setRefreshing(false);
     }
   };
+
+  if (notFound) return <NotFoundPage />;
 
   return (
     <main className="public-container challenge-page">
