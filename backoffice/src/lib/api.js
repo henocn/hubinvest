@@ -53,6 +53,11 @@ export const api = {
   investorRequests: (token) => request('/investor-requests', authorized(token)),
   updateInvestorRequest: (token, id, values) =>
     request(`/investor-requests/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
+  studioInvitations: (token) => request('/studio-invitations', authorized(token)),
+  createStudioInvitation: (token, values) =>
+    request('/studio-invitations', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
+  updateStudioInvitation: (token, id, values) =>
+    request(`/studio-invitations/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
   users: (token) => request('/users', authorized(token)),
   contactStats: (token) => request('/contacts/admin/stats', authorized(token)),
   createUser: (token, values) =>

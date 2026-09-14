@@ -5,11 +5,13 @@ import InvestorDeskPage from './pages/InvestorDeskPage';
 import NotFoundPage from './pages/NotFoundPage';
 import StandDetailPage from './pages/StandDetailPage';
 import StandListPage from './pages/StandListPage';
+import StudioInvitationPage from './pages/StudioInvitationPage';
 import './public.css';
 
 export default function PublicPages({ path }) {
   const standDetail = path.match(/^\/stands\/([a-z0-9-]+)$/);
   const b2bDetail = path.match(/^\/b2b\/([a-f0-9-]+)$/i);
+  const studioInvitation = path.match(/^\/studio\/([a-f0-9]{64})$/i);
 
   let page;
 
@@ -23,6 +25,8 @@ export default function PublicPages({ path }) {
     page = <B2bListPage />;
   } else if (b2bDetail) {
     page = <B2bDetailPage id={b2bDetail[1]} />;
+  } else if (studioInvitation) {
+    page = <StudioInvitationPage token={studioInvitation[1]} />;
   } else {
     page = <NotFoundPage />;
   }

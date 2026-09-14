@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Building2, BriefcaseBusiness, LogOut, Plus, QrCode, RefreshCw, Search, UserRound, Users } from 'lucide-react';
+import { Building2, BriefcaseBusiness, LogOut, Plus, QrCode, RefreshCw, Search, UserRound, Users, Video } from 'lucide-react';
 import logo from '../../../assets/Logo fond blanc.jpeg';
 import ConfirmDelete from '../components/ConfirmDelete';
 import QrCodeDialog from '../components/QrCodeDialog';
 import InvestorRequestDrawer from '../components/drawers/InvestorRequestDrawer';
 import OccupantDrawer from '../components/drawers/OccupantDrawer';
+import StudioInvitationDrawer from '../components/drawers/StudioInvitationDrawer';
 import UserDrawer from '../components/drawers/UserDrawer';
 import InvestorRequestsTable from '../components/tables/InvestorRequestsTable';
 import OccupantsTable from '../components/tables/OccupantsTable';
+import StudioInvitationsTable from '../components/tables/StudioInvitationsTable';
 import UsersTable from '../components/tables/UsersTable';
 import { adminRoles, publicBaseUrl, roleLabels } from '../constants/access';
 import { api } from '../lib/api';
@@ -16,14 +18,19 @@ const sectionMeta = {
   occupants: { title: 'Stands', description: 'Fiches publiques, emplacements et statuts.' },
   users: { title: 'Accès', description: 'Comptes et niveaux d’accès à la plateforme.' },
   'investor-requests': { title: 'Investor Desk', description: 'Demandes de professionnels adressées à l’API-ZF.' },
+  studio: { title: 'Studio', description: 'Invitations et planning des invités.' },
 };
 
 export default function BackofficePage({ session, onLogout }) {
   const isAdministrator = adminRoles.has(session.user.role);
-  const [section, setSection] = useState(() => (isAdministrator ? 'occupants' : 'investor-requests'));
+  const isCampaignTeam = session.user.role === 'equipe-campagne';
+  const canAccessInvestorDesk = isAdministrator || session.user.role === 'investor-desk';
+  const canAccessStudio = isAdministrator || isCampaignTeam;
+  const [section, setSection] = useState(() => (isAdministrator ? 'occupants' : isCampaignTeam ? 'studio' : 'investor-requests'));
   const [occupants, setOccupants] = useState([]);
   const [users, setUsers] = useState([]);
   const [investorRequests, setInvestorRequests] = useState([]);
+  const [studioInvitations, setStudioInvitations] = useState([]);
   const [contactStats, setContactStats] = useState({ total: 0, byOccupant: {} });
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -33,22 +40,27 @@ export default function BackofficePage({ session, onLogout }) {
   const [deleteError, setDeleteError] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [qrCode, setQrCode] = useState(null);
+  const [copiedInvitationId, setCopiedInvitationId] = useState(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
       if (isAdministrator) {
-        const [occupantData, userData, statsData, investorData] = await Promise.all([
+        const [occupantData, userData, statsData, investorData, studioData] = await Promise.all([
           api.occupants(session.token),
           api.users(session.token),
           api.contactStats(session.token),
           api.investorRequests(session.token),
+          api.studioInvitations(session.token),
         ]);
         setOccupants(occupantData);
         setUsers(userData);
         setContactStats(statsData);
         setInvestorRequests(investorData.items);
+        setStudioInvitations(studioData);
+      } else if (isCampaignTeam) {
+        setStudioInvitations(await api.studioInvitations(session.token));
       } else {
         const investorData = await api.investorRequests(session.token);
         setInvestorRequests(investorData.items);
@@ -59,7 +71,7 @@ export default function BackofficePage({ session, onLogout }) {
     } finally {
       setLoading(false);
     }
-  }, [isAdministrator, onLogout, session.token]);
+  }, [isAdministrator, isCampaignTeam, onLogout, session.token]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -67,6 +79,7 @@ export default function BackofficePage({ session, onLogout }) {
   const visibleOccupants = useMemo(() => occupants.filter((occupant) => !query || [occupant.name, occupant.activity, occupant.standLabel].some((value) => String(value || '').toLowerCase().includes(query))), [occupants, query]);
   const visibleUsers = useMemo(() => users.filter((user) => !query || [user.firstName, user.lastName, user.email, user.role, user.occupant?.name].some((value) => String(value || '').toLowerCase().includes(query))), [users, query]);
   const visibleInvestorRequests = useMemo(() => investorRequests.filter((item) => !query || [item.fullName, item.email, item.projectSummary, item.nextAction].some((value) => String(value || '').toLowerCase().includes(query))), [investorRequests, query]);
+  const visibleStudioInvitations = useMemo(() => studioInvitations.filter((item) => !query || [item.guestName, item.subject].some((value) => String(value || '').toLowerCase().includes(query))), [studioInvitations, query]);
 
   const switchSection = (next) => {
     setSection(next);
@@ -76,6 +89,12 @@ export default function BackofficePage({ session, onLogout }) {
   const saved = async () => {
     setDrawer(null);
     await loadData();
+  };
+
+  const copyInvitationLink = async (id, link) => {
+    await navigator.clipboard.writeText(link);
+    setCopiedInvitationId(id);
+    window.setTimeout(() => setCopiedInvitationId(null), 1800);
   };
 
   const requestOccupantDelete = (occupant) => {
@@ -108,8 +127,9 @@ export default function BackofficePage({ session, onLogout }) {
       <aside className="sidebar">
         <div className="brand-lockup"><img src={logo} alt="API-ZF" /><div><strong>HubInvest</strong><span>Administration</span></div></div>
         <nav aria-label="Navigation principale">
-          {isAdministrator && <><button className={section === 'occupants' ? 'is-active' : ''} onClick={() => switchSection('occupants')}><Building2 size={18} /> Stands</button><button className={section === 'users' ? 'is-active' : ''} onClick={() => switchSection('users')}><Users size={18} /> Accès</button></>}
-          <button className={section === 'investor-requests' ? 'is-active' : ''} onClick={() => switchSection('investor-requests')}><BriefcaseBusiness size={18} /> Investor Desk</button>
+          {isAdministrator && <><button className={section === 'occupants' ? 'is-active' : ''} onClick={() => switchSection('occupants')} title="Stands"><Building2 size={18} /><span>Stands</span></button><button className={section === 'users' ? 'is-active' : ''} onClick={() => switchSection('users')} title="Accès"><Users size={18} /><span>Accès</span></button></>}
+          {canAccessInvestorDesk && <button className={section === 'investor-requests' ? 'is-active' : ''} onClick={() => switchSection('investor-requests')} title="Investor Desk"><BriefcaseBusiness size={18} /><span>Investor Desk</span></button>}
+          {canAccessStudio && <button className={section === 'studio' ? 'is-active' : ''} onClick={() => switchSection('studio')} title="Studio"><Video size={18} /><span>Studio</span></button>}
         </nav>
         <div className="sidebar-user">
           <span className="user-avatar"><UserRound size={18} /></span>
@@ -121,13 +141,19 @@ export default function BackofficePage({ session, onLogout }) {
       <main className="workspace">
         <header className="workspace-header">
           <div><span className="eyebrow">Gestion</span><h1>{sectionMeta[section].title}</h1><p>{sectionMeta[section].description}</p></div>
-          {section !== 'investor-requests' && <div className="workspace-actions">
+          {(section === 'occupants' || section === 'users' || section === 'studio') && <div className="workspace-actions">
             {section === 'occupants' && <button className="button button-secondary" type="button" onClick={() => setQrCode({ title: 'QR du Hub', url: `${publicBaseUrl}/stands`, fileName: 'hubinvest-hub' })}><QrCode size={18} /> QR du Hub</button>}
-            <button className="button button-primary" type="button" onClick={() => setDrawer({ type: section === 'occupants' ? 'occupant' : 'user', item: null })}><Plus size={18} /> {section === 'occupants' ? 'Nouveau stand' : 'Nouvel utilisateur'}</button>
+            <button className="button button-primary" type="button" onClick={() => setDrawer({ type: section === 'occupants' ? 'occupant' : section === 'users' ? 'user' : 'studio', item: null })}><Plus size={18} /> {section === 'occupants' ? 'Nouveau stand' : section === 'users' ? 'Nouvel utilisateur' : 'Nouvelle invitation'}</button>
           </div>}
         </header>
 
-        {section === 'investor-requests' ? (
+        {section === 'studio' ? (
+          <section className="summary-row" aria-label="Résumé">
+            <article><span>En attente</span><strong>{loading || error ? '—' : studioInvitations.filter((item) => item.status === 'pending').length}</strong><small>sans réponse</small></article>
+            <article><span>Confirmées</span><strong>{loading || error ? '—' : studioInvitations.filter((item) => item.status === 'confirmed').length}</strong><small>invités attendus</small></article>
+            <article><span>Refusées</span><strong>{loading || error ? '—' : studioInvitations.filter((item) => item.status === 'declined').length}</strong><small>indisponibles</small></article>
+          </section>
+        ) : section === 'investor-requests' ? (
           <section className="summary-row" aria-label="Résumé">
             <article><span>Nouvelles</span><strong>{loading || error ? '—' : investorRequests.filter((item) => item.status === 'new').length}</strong><small>à examiner</small></article>
             <article><span>En cours</span><strong>{loading || error ? '—' : investorRequests.filter((item) => item.status === 'in_progress').length}</strong><small>prises en charge</small></article>
@@ -143,7 +169,7 @@ export default function BackofficePage({ session, onLogout }) {
 
         <section className="data-panel">
           <header className="data-toolbar">
-            <label className="search-field"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={section === 'occupants' ? 'Rechercher un occupant' : section === 'users' ? 'Rechercher un utilisateur' : 'Rechercher une demande'} /></label>
+            <label className="search-field"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={section === 'occupants' ? 'Rechercher un occupant' : section === 'users' ? 'Rechercher un utilisateur' : section === 'studio' ? 'Rechercher une invitation' : 'Rechercher une demande'} /></label>
             <button className="icon-button" type="button" onClick={loadData} aria-label="Actualiser"><RefreshCw size={18} /></button>
           </header>
           {error && <p className="panel-message is-error">{error}</p>}
@@ -151,12 +177,14 @@ export default function BackofficePage({ session, onLogout }) {
           {!loading && !error && section === 'occupants' && <OccupantsTable occupants={visibleOccupants} contactStats={contactStats} query={query} onQrCode={setQrCode} onEdit={(item) => setDrawer({ type: 'occupant', item })} onDelete={requestOccupantDelete} />}
           {!loading && !error && section === 'users' && <UsersTable users={visibleUsers} query={query} currentUserId={session.user.id} onEdit={(item) => setDrawer({ type: 'user', item })} onDelete={requestUserDelete} />}
           {!loading && !error && section === 'investor-requests' && <InvestorRequestsTable requests={visibleInvestorRequests} query={query} onEdit={(item) => setDrawer({ type: 'investor-request', item })} />}
+          {!loading && !error && section === 'studio' && <StudioInvitationsTable invitations={visibleStudioInvitations} query={query} copiedId={copiedInvitationId} onCopy={copyInvitationLink} onEdit={(item) => setDrawer({ type: 'studio', item })} />}
         </section>
       </main>
 
       {drawer?.type === 'occupant' && <OccupantDrawer occupant={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'user' && <UserDrawer user={drawer.item} occupants={occupants} token={session.token} currentRole={session.user.role} currentUserId={session.user.id} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'investor-request' && <InvestorRequestDrawer investorRequest={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
+      {drawer?.type === 'studio' && <StudioInvitationDrawer invitation={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {pendingDelete && <ConfirmDelete subject={pendingDelete} loading={deleting} error={deleteError} onCancel={() => setPendingDelete(null)} onConfirm={confirmDelete} />}
       {qrCode && <QrCodeDialog {...qrCode} onClose={() => setQrCode(null)} />}
     </div>

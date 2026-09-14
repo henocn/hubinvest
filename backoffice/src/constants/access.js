@@ -10,8 +10,9 @@ export const roleLabels = {
 };
 
 export const adminRoles = new Set(['super-admin', 'admin-apizf']);
-export const backofficeRoles = new Set(['super-admin', 'admin-apizf', 'investor-desk']);
+export const backofficeRoles = new Set(['super-admin', 'admin-apizf', 'investor-desk', 'equipe-campagne']);
 export const occupantRoles = new Set(['occupant-responsable', 'occupant-membre']);
-export const availableRoles = new Set(['super-admin', 'admin-apizf', 'investor-desk', 'occupant-responsable', 'occupant-membre']);
+export const availableRoles = new Set(['super-admin', 'admin-apizf', 'investor-desk', 'equipe-campagne', 'occupant-responsable', 'occupant-membre']);
 export const investorStatusLabels = { new: 'Nouvelle', in_progress: 'En cours', closed: 'Clôturée' };
+export const studioStatusLabels = { pending: 'En attente', confirmed: 'Confirmée', declined: 'Refusée' };
 export const publicBaseUrl = (import.meta.env.VITE_PUBLIC_URL || 'http://localhost:5173').replace(/\/$/, '');

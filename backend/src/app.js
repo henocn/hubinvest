@@ -11,6 +11,7 @@ const contactRoutes = require('./modules/contact/contact.route');
 const investorRequestRoutes = require('./modules/investor-request/investor-request.route');
 const b2bNeedRoutes = require('./modules/b2b-need/b2b-need.route');
 const b2bProposalRoutes = require('./modules/b2b-proposal/b2b-proposal.route');
+const studioInvitationRoutes = require('./modules/studio-invitation/studio-invitation.route');
 const httpLogger = require('./middlewares/http-logger.middleware');
 const notFound = require('./middlewares/not-found.middleware');
 const errorHandler = require('./middlewares/error.middleware');
@@ -43,6 +44,7 @@ app.use('/api/contacts', contactRoutes);
 app.use('/api/investor-requests', investorRequestRoutes);
 app.use('/api/b2b-needs', b2bNeedRoutes);
 app.use('/api/b2b-proposals', b2bProposalRoutes);
+app.use('/api/studio-invitations', studioInvitationRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

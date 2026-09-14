@@ -12,6 +12,8 @@ const investorRequestValidation = require('../src/modules/investor-request/inves
 const b2bNeedRepository = require('../src/modules/b2b-need/b2b-need.repository');
 const b2bProposalService = require('../src/modules/b2b-proposal/b2b-proposal.service');
 const b2bProposalRepository = require('../src/modules/b2b-proposal/b2b-proposal.repository');
+const studioInvitationService = require('../src/modules/studio-invitation/studio-invitation.service');
+const studioInvitationRepository = require('../src/modules/studio-invitation/studio-invitation.repository');
 const { authenticate } = require('../src/middlewares/auth.middleware');
 const { User, Occupant, B2bNeed } = require('../src/models');
 const env = require('../src/config/env');
@@ -291,4 +293,69 @@ test('un occupant ne peut pas lire les propositions B2B d’un autre stand', asy
     b2bProposalService.list({ occupantId: 'occupant-a' }, 'need-b'),
     (error) => error.status === 404 && error.code === 'B2B_NEED_NOT_FOUND',
   );
+});
+
+test('une invitation Studio utilise un lien personnel imprévisible', async (context) => {
+  let saved;
+  context.mock.method(studioInvitationRepository, 'create', async (values) => {
+    saved = values;
+    return values;
+  });
+
+  await studioInvitationService.create(
+    { id: 'campaign-user' },
+    { guestName: 'Invité Test', subject: 'Entretien Studio', scheduledAt: new Date().toISOString() },
+  );
+
+  assert.match(saved.token, /^[a-f0-9]{64}$/);
+  assert.equal(saved.createdByUserId, 'campaign-user');
+  assert.equal(saved.status, 'pending');
+});
+
+test('la réponse publique Studio ne révèle pas le lien interne et enregistre sa date', async (context) => {
+  const invitation = {
+    id: 'invitation-a',
+    token: 'a'.repeat(64),
+    guestName: 'Invité Test',
+    subject: 'Entretien Studio',
+    scheduledAt: new Date().toISOString(),
+    status: 'pending',
+    respondedAt: null,
+  };
+  context.mock.method(studioInvitationRepository, 'findByToken', async () => invitation);
+  context.mock.method(studioInvitationRepository, 'update', async (_invitation, values) => ({ ...invitation, ...values }));
+
+  const result = await studioInvitationService.respond(invitation.token, 'confirmed');
+
+  assert.equal(result.status, 'confirmed');
+  assert.ok(result.respondedAt instanceof Date);
+  assert.equal(result.token, undefined);
+  assert.equal(result.id, undefined);
+});
+
+test('le planning Studio est réservé à l’administration et à l’équipe campagne', async (context) => {
+  const originalSecret = env.auth.secret;
+  env.auth.secret = 'hubinvest-studio-test-secret';
+  context.after(() => { env.auth.secret = originalSecret; });
+  context.mock.method(User, 'findOne', async ({ where }) => ({
+    occupantId: null,
+    occupant: null,
+    toJSON: () => ({
+      id: where.id,
+      occupantId: null,
+      role: where.id === 'campaign' ? 'equipe-campagne' : 'investor-desk',
+    }),
+  }));
+  context.mock.method(studioInvitationRepository, 'findAll', async () => []);
+
+  const server = app.listen(0, '127.0.0.1');
+  context.after(() => server.close());
+  await new Promise((resolve) => server.once('listening', resolve));
+  const url = `http://127.0.0.1:${server.address().port}/api/studio-invitations`;
+  const requestAs = (subject) => fetch(url, {
+    headers: { Authorization: `Bearer ${jwt.sign({}, env.auth.secret, { subject })}` },
+  });
+
+  assert.equal((await requestAs('investor')).status, 403);
+  assert.equal((await requestAs('campaign')).status, 200);
 });

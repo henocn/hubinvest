@@ -98,6 +98,10 @@ tbody tr:hover { background: #fdfdfc; }
 .occupant-row.is-inactive { background: rgba(209, 17, 53, .035); }
 .occupant-row.is-active:hover { background: rgba(0, 106, 79, .075); }
 .occupant-row.is-inactive:hover { background: rgba(209, 17, 53, .065); }
+.studio-row.is-confirmed { background: rgba(0, 106, 79, .045); }
+.studio-row.is-declined { background: rgba(209, 17, 53, .035); }
+.studio-row.is-confirmed:hover { background: rgba(0, 106, 79, .075); }
+.studio-row.is-declined:hover { background: rgba(209, 17, 53, .065); }
 td strong, td small { display: block; }
 td strong { color: var(--ink); }
 td small { margin-top: 4px; color: #85898d; }
@@ -114,6 +118,9 @@ td small { margin-top: 4px; color: #85898d; }
 .table-action:hover { color: var(--ink); background: #f5f5f4; }
 .table-action.is-danger { color: #a62039; }
 .table-action.is-danger:hover { border-color: #efc6ce; background: #fff3f5; }
+.table-action.is-copied { color: var(--green); border-color: rgba(0, 106, 79, .35); background: #edf6f2; }
+.studio-date { min-width: 145px; }
+.studio-status { font-weight: 700; }
 .status-pill { width: fit-content; display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border-radius: 999px; color: #686c70; background: #efefed; font-size: 11px; font-weight: 700; }
 .status-pill.is-active { color: var(--green); background: #e7f3ee; }
 .status-pill.is-new { color: #6f5700; background: #fff6cf; }
@@ -177,6 +184,7 @@ td small { margin-top: 4px; color: #85898d; }
   .sidebar { grid-template-columns: 38px 1fr 36px; gap: 8px; }
   .sidebar nav button { justify-content: center; }
   .sidebar nav button svg { flex: 0 0 auto; }
+  .sidebar nav button span { display: none; }
   .workspace-header { align-items: flex-start; flex-direction: column; }
   .workspace-actions { width: 100%; flex-direction: column; }
   .workspace-actions .button { width: 100%; }

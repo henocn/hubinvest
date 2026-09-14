@@ -6,6 +6,7 @@ const defineContact = require('./contact.model');
 const defineInvestorRequest = require('./investor-request.model');
 const defineB2bNeed = require('./b2b-need.model');
 const defineB2bProposal = require('./b2b-proposal.model');
+const defineStudioInvitation = require('./studio-invitation.model');
 
 const Occupant = defineOccupant(sequelize, DataTypes);
 const User = defineUser(sequelize, DataTypes);
@@ -13,6 +14,7 @@ const Contact = defineContact(sequelize, DataTypes);
 const InvestorRequest = defineInvestorRequest(sequelize, DataTypes);
 const B2bNeed = defineB2bNeed(sequelize, DataTypes);
 const B2bProposal = defineB2bProposal(sequelize, DataTypes);
+const StudioInvitation = defineStudioInvitation(sequelize, DataTypes);
 
 Occupant.hasMany(User, { foreignKey: 'occupantId', as: 'users' });
 User.belongsTo(Occupant, { foreignKey: 'occupantId', as: 'occupant' });
@@ -38,4 +40,7 @@ B2bProposal.belongsTo(B2bNeed, { foreignKey: 'b2bNeedId', as: 'need' });
 User.hasMany(B2bProposal, { foreignKey: 'handledByUserId', as: 'handledB2bProposals' });
 B2bProposal.belongsTo(User, { foreignKey: 'handledByUserId', as: 'handledBy' });
 
-module.exports = { sequelize, Occupant, User, Contact, InvestorRequest, B2bNeed, B2bProposal };
+User.hasMany(StudioInvitation, { foreignKey: 'createdByUserId', as: 'createdStudioInvitations' });
+StudioInvitation.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
+
+module.exports = { sequelize, Occupant, User, Contact, InvestorRequest, B2bNeed, B2bProposal, StudioInvitation };

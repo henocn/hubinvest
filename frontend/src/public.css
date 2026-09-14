@@ -745,6 +745,106 @@
   margin: 0;
 }
 
+.studio-response-page {
+  min-height: calc(100vh - 82px);
+  display: grid;
+  place-items: center;
+  padding-block: 42px;
+}
+
+.studio-response-panel {
+  width: min(100%, 620px);
+  padding: clamp(26px, 6vw, 48px);
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  border-radius: 9px;
+  background: #fff;
+}
+
+.studio-response-panel h1 {
+  margin: 12px 0 9px;
+  font-size: clamp(1.8rem, 5vw, 2.7rem);
+  line-height: 1.12;
+  letter-spacing: -0.045em;
+}
+
+.studio-subject {
+  margin: 0;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.studio-schedule {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 30px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+}
+
+.studio-schedule span {
+  min-height: 74px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 16px;
+  color: var(--green);
+}
+
+.studio-schedule span + span {
+  border-left: 1px solid var(--border);
+}
+
+.studio-schedule strong {
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+
+.studio-response-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 22px;
+  padding: 15px;
+  border: 1px solid;
+  border-radius: 7px;
+}
+
+.studio-response-status div {
+  display: grid;
+  gap: 4px;
+}
+
+.studio-response-status span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.studio-response-status.is-confirmed {
+  color: var(--green);
+  border-color: #bcd8ca;
+  background: #edf6f1;
+}
+
+.studio-response-status.is-declined {
+  color: #9c1a32;
+  border-color: #ecc5cd;
+  background: #fff4f6;
+}
+
+.studio-response-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.studio-decline-button {
+  color: #5e6260;
+  border-color: var(--border);
+  background: #fff;
+}
+
 .b2b-success h2 {
   font-size: 1.2rem;
 }
@@ -781,6 +881,11 @@
   .public-field-row { grid-template-columns: 1fr; }
   .investor-form-actions { flex-direction: column-reverse; }
   .investor-form-actions .button, .investor-next-button { width: 100%; }
+  .studio-response-page { min-height: calc(100vh - 74px); padding-block: 24px; }
+  .studio-schedule { grid-template-columns: 1fr; }
+  .studio-schedule span + span { border-top: 1px solid var(--border); border-left: 0; }
+  .studio-response-actions { align-items: stretch; flex-direction: column; }
+  .studio-response-actions .button { width: 100%; min-height: 48px; }
 }
 
 @media (max-width: 420px) {
