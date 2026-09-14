@@ -90,6 +90,8 @@ Les types de contenus, durees, informations invite et statuts ne sont pas des en
 
 La première version utilise provisoirement trois passages dans des stands distincts. Ce seuil est configurable avec `CHALLENGE_REQUIRED_PASSAGES` et devra être confirmé avant l’ouverture publique.
 
+- [x] Un nouveau participant renseigne son prénom ou nom et un contact sous la forme d’un téléphone ou d’une adresse e-mail.
+
 - [ ] Regles exactes d'ouverture d'un passeport.
 - [ ] Liste des preuves et occupant associe.
 - [ ] Regles de composition des parcours de trois preuves.

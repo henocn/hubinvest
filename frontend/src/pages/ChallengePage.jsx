@@ -2,29 +2,45 @@ import { useEffect, useState } from 'react';
 import ChallengePassportCard from '../components/ChallengePassportCard';
 import ChallengeStartForm from '../components/ChallengeStartForm';
 import { api } from '../lib/api';
+import { clearChallengePassportToken, readChallengePassportToken, saveChallengePassportToken } from '../lib/challenge-passport-store';
 import { useTranslation } from 'react-i18next';
 
 export default function ChallengePage({ token }) {
   const { t } = useTranslation();
+  const [initialToken] = useState(() => token || readChallengePassportToken());
   const [passport, setPassport] = useState(null);
-  const [personalToken, setPersonalToken] = useState(token || '');
-  const [loading, setLoading] = useState(Boolean(token));
+  const [personalToken, setPersonalToken] = useState(initialToken);
+  const [loading, setLoading] = useState(Boolean(initialToken));
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!token) return undefined;
+    if (!personalToken || passport) return undefined;
     let active = true;
-    api.publicChallengePassport(token)
-      .then((data) => { if (active) setPassport(data); })
-      .catch((requestError) => { if (active) setError(requestError.message); })
+    api.publicChallengePassport(personalToken)
+      .then((data) => {
+        if (!active) return;
+        saveChallengePassportToken(personalToken);
+        setPassport(data);
+      })
+      .catch((requestError) => {
+        if (!active) return;
+        if (!token && requestError.status === 404) {
+          clearChallengePassportToken();
+          setPersonalToken('');
+          setError('');
+          return;
+        }
+        setError(requestError.message);
+      })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [token]);
+  }, [passport, personalToken, token]);
 
   const created = (data) => {
     window.history.replaceState({}, '', `/defis/${data.token}`);
     const { token: newToken, ...publicPassport } = data;
+    saveChallengePassportToken(newToken);
     setPersonalToken(newToken);
     setPassport(publicPassport);
   };

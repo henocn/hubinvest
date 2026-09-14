@@ -118,6 +118,7 @@ export default {
     intro: "Have your code validated at the stands, then present it at reception.",
     loading: "Loading your journey…",
     name: "Your first or full name",
+    contact: "Phone or email",
     creating: "Creating…",
     start: "Start",
     participant: "{{name}}’s journey",

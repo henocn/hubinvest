@@ -10,6 +10,7 @@ const idParams = Joi.object({
 
 const createPublic = Joi.object({
   displayName: Joi.string().trim().min(2).max(120).required(),
+  contact: Joi.string().trim().min(5).max(180).required(),
 });
 
 module.exports = { tokenParams, idParams, createPublic };

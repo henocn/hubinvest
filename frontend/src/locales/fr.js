@@ -118,6 +118,7 @@ export default {
     intro: "Faites valider votre code dans les stands, puis présentez-le à l’accueil.",
     loading: "Chargement du parcours…",
     name: "Votre prénom ou nom",
+    contact: "Téléphone ou e-mail",
     creating: "Création…",
     start: "Commencer",
     participant: "Parcours de {{name}}",

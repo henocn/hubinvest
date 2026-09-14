@@ -259,6 +259,88 @@ select:focus {
   border-bottom: 1px solid var(--green-dark);
 }
 
+.occupant-shell {
+  min-height: 100vh;
+  padding-bottom: calc(72px + env(safe-area-inset-bottom));
+}
+
+.occupant-header-brand {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.occupant-header-brand strong,
+.occupant-header-brand span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.occupant-header-brand strong {
+  font-size: 1.06rem;
+  letter-spacing: -0.02em;
+}
+
+.occupant-header-brand span {
+  color: rgba(255, 255, 255, 0.74);
+  font-size: 0.72rem;
+}
+
+.occupant-bottom-nav {
+  position: fixed;
+  z-index: 30;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.17);
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.occupant-bottom-nav > div {
+  width: min(100%, 520px);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-inline: auto;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.occupant-bottom-nav a {
+  position: relative;
+  min-height: 71px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  color: #69716d;
+  text-decoration: none;
+}
+
+.occupant-bottom-nav a::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 30%;
+  width: 40%;
+  height: 2px;
+  background: transparent;
+}
+
+.occupant-bottom-nav a span {
+  font-size: 0.7rem;
+  font-weight: 650;
+}
+
+.occupant-bottom-nav a:hover,
+.occupant-bottom-nav a.is-active {
+  color: var(--green);
+}
+
+.occupant-bottom-nav a.is-active::before {
+  background: var(--green);
+}
+
 .brand-name {
   font-size: 1.06rem;
   font-weight: 800;

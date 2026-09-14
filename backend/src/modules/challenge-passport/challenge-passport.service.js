@@ -41,6 +41,7 @@ const createPublic = async (values) => publicPayload(await challengePassportRepo
   token: crypto.randomBytes(32).toString('hex'),
   code: createCode(),
   displayName: values.displayName,
+  contact: values.contact,
   status: 'active',
   completedAt: null,
   redeemedAt: null,

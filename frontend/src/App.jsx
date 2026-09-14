@@ -6,15 +6,12 @@ import {
   Cloud,
   Eye,
   EyeOff,
-  Handshake,
-  LogOut,
   Pencil,
   Phone,
   Plus,
   RefreshCw,
   Search,
   UserRound,
-  Trophy,
 } from 'lucide-react';
 import logo from '../../assets/Logo fond blanc.jpeg';
 import { api } from './lib/api';
@@ -27,6 +24,7 @@ import {
 import PublicPages from './PublicPages';
 import OccupantB2bPage from './pages/OccupantB2bPage';
 import OccupantChallengePage from './pages/OccupantChallengePage';
+import OccupantShell from './components/occupant/OccupantShell';
 
 const qualificationLabels = {
   hot: 'Chaud',
@@ -465,15 +463,6 @@ function ContactsScreen({ session, apiOnline, setApiOnline, onLogout }) {
 
   return (
     <>
-      <header className="app-header">
-        <div className="brand-name">HubInvest</div>
-        <div className="app-header-actions">
-          <a className="app-header-link" href="/espace-occupant/b2b" title="B2B"><Handshake size={18} /> B2B</a>
-          <a className="app-header-link" href="/espace-occupant/defis" title="Défis"><Trophy size={18} /> Défis</a>
-          <button className="icon-button" type="button" onClick={onLogout} aria-label="Se déconnecter"><LogOut size={20} /></button>
-        </div>
-      </header>
-
       <main className="workspace">
         <div className="page-heading heading-with-action">
           <div>
@@ -613,15 +602,15 @@ export default function App() {
   }
 
   if (path === '/espace-occupant/b2b') {
-    return session ? <OccupantB2bPage session={session} onLogout={logout} /> : <LoginScreen onLogin={login} />;
+    return session ? <OccupantShell session={session} onLogout={logout}><OccupantB2bPage session={session} onLogout={logout} /></OccupantShell> : <LoginScreen onLogin={login} />;
   }
 
   if (path === '/espace-occupant/defis') {
-    return session ? <OccupantChallengePage session={session} onLogout={logout} /> : <LoginScreen onLogin={login} />;
+    return session ? <OccupantShell session={session} onLogout={logout}><OccupantChallengePage session={session} onLogout={logout} /></OccupantShell> : <LoginScreen onLogin={login} />;
   }
 
   return session ? (
-    <ContactsScreen session={session} apiOnline={apiOnline} setApiOnline={setApiOnline} onLogout={logout} />
+    <OccupantShell session={session} onLogout={logout}><ContactsScreen session={session} apiOnline={apiOnline} setApiOnline={setApiOnline} onLogout={logout} /></OccupantShell>
   ) : (
     <LoginScreen onLogin={login} />
   );

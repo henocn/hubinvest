@@ -364,6 +364,22 @@ test('le planning Studio est réservé à l’administration et à l’équipe c
   assert.equal((await requestAs('campaign')).status, 200);
 });
 
+test('le contact d’un participant est conservé sans être exposé sur son passeport public', async (context) => {
+  let saved;
+  context.mock.method(challengePassportRepository, 'create', async (values) => {
+    saved = values;
+    return { ...values, passages: [] };
+  });
+
+  const result = await challengePassportService.createPublic({
+    displayName: 'Visiteur Test',
+    contact: 'visiteur@example.com',
+  });
+
+  assert.equal(saved.contact, 'visiteur@example.com');
+  assert.equal(result.contact, undefined);
+});
+
 test('un stand ne peut valider qu’une fois le même parcours', async (context) => {
   const passport = { id: 'passport-a', code: 'ABCD2345', status: 'active' };
   context.mock.method(challengePassageRepository.sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));

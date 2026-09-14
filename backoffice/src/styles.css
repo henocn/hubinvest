@@ -126,6 +126,9 @@ td small { margin-top: 4px; color: #85898d; }
 .studio-date { min-width: 145px; }
 .studio-status { font-weight: 700; }
 .challenge-table-code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 13px; font-weight: 750; letter-spacing: .08em; }
+.challenge-table-contact { color: var(--green); font-weight: 650; text-decoration: none; white-space: nowrap; }
+.challenge-table-contact:hover { text-decoration: underline; }
+.challenge-table-empty { color: var(--muted); }
 .challenge-table-status { font-weight: 700; }
 .status-pill { width: fit-content; display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border-radius: 999px; color: #686c70; background: #efefed; font-size: 11px; font-weight: 700; }
 .status-pill.is-active { color: var(--green); background: #e7f3ee; }

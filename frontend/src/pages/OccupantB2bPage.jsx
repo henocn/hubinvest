@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ArrowLeft, Handshake, LogOut, Pencil, Plus, Trophy, Users } from 'lucide-react';
+import { ArrowLeft, Handshake, Pencil, Plus } from 'lucide-react';
 import B2bNeedForm from '../components/occupant/B2bNeedForm';
 import B2bProposalList from '../components/occupant/B2bProposalList';
 import { api } from '../lib/api';
@@ -66,11 +66,6 @@ export default function OccupantB2bPage({ session, onLogout }) {
 
   return (
     <>
-      <header className="app-header">
-        <div className="brand-name">HubInvest</div>
-        <div className="app-header-actions"><a className="app-header-link" href="/espace-occupant" title="Contacts"><Users size={18} /> Contacts</a><a className="app-header-link" href="/espace-occupant/defis" title="Défis"><Trophy size={18} /> Défis</a><button className="icon-button" type="button" onClick={onLogout} aria-label="Se déconnecter"><LogOut size={20} /></button></div>
-      </header>
-
       {view === 'detail' && selectedNeed ? (
         <main className="workspace b2b-workspace-detail">
           <button type="button" className="back-button" onClick={() => { setView('list'); setSelectedNeed(null); }}><ArrowLeft size={18} /> Besoins B2B</button>

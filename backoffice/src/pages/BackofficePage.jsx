@@ -21,7 +21,7 @@ const sectionMeta = {
   users: { title: 'Accès', description: 'Comptes et niveaux d’accès à la plateforme.' },
   'investor-requests': { title: 'Investor Desk', description: 'Demandes de professionnels adressées à l’API-ZF.' },
   studio: { title: 'Studio', description: 'Invitations et planning des invités.' },
-  challenges: { title: 'Défis du public', description: 'Parcours terminés et remise des récompenses.' },
+  challenges: { title: 'Participants aux défis', description: 'Contacts, progression et remise des récompenses.' },
 };
 
 export default function BackofficePage({ session, onLogout }) {
@@ -93,7 +93,7 @@ export default function BackofficePage({ session, onLogout }) {
   const visibleUsers = useMemo(() => users.filter((user) => !query || [user.firstName, user.lastName, user.email, user.role, user.occupant?.name].some((value) => String(value || '').toLowerCase().includes(query))), [users, query]);
   const visibleInvestorRequests = useMemo(() => investorRequests.filter((item) => !query || [item.fullName, item.email, item.projectSummary, item.nextAction].some((value) => String(value || '').toLowerCase().includes(query))), [investorRequests, query]);
   const visibleStudioInvitations = useMemo(() => studioInvitations.filter((item) => !query || [item.guestName, item.subject].some((value) => String(value || '').toLowerCase().includes(query))), [studioInvitations, query]);
-  const visibleChallengePassports = useMemo(() => challengePassports.filter((item) => !query || [item.displayName, item.code].some((value) => String(value || '').toLowerCase().includes(query))), [challengePassports, query]);
+  const visibleChallengePassports = useMemo(() => challengePassports.filter((item) => !query || [item.displayName, item.contact, item.code].some((value) => String(value || '').toLowerCase().includes(query))), [challengePassports, query]);
 
   const switchSection = (next) => {
     setSection(next);
@@ -158,7 +158,7 @@ export default function BackofficePage({ session, onLogout }) {
           {isAdministrator && <><button className={section === 'occupants' ? 'is-active' : ''} onClick={() => switchSection('occupants')} title="Stands"><Building2 size={18} /><span>Stands</span></button><button className={section === 'users' ? 'is-active' : ''} onClick={() => switchSection('users')} title="Accès"><Users size={18} /><span>Accès</span></button></>}
           {canAccessInvestorDesk && <button className={section === 'investor-requests' ? 'is-active' : ''} onClick={() => switchSection('investor-requests')} title="Investor Desk"><BriefcaseBusiness size={18} /><span>Investor Desk</span></button>}
           {canAccessStudio && <button className={section === 'studio' ? 'is-active' : ''} onClick={() => switchSection('studio')} title="Studio"><Video size={18} /><span>Studio</span></button>}
-          {canAccessChallenges && <button className={section === 'challenges' ? 'is-active' : ''} onClick={() => switchSection('challenges')} title="Défis du public"><Trophy size={18} /><span>Défis</span></button>}
+          {canAccessChallenges && <button className={section === 'challenges' ? 'is-active' : ''} onClick={() => switchSection('challenges')} title="Participants aux défis"><Trophy size={18} /><span>Participants</span></button>}
         </nav>
         <div className="sidebar-user">
           <span className="user-avatar"><UserRound size={18} /></span>

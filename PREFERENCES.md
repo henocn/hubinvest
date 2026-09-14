@@ -50,4 +50,8 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 - Le texte principal reste court. L’information détaillée apparaît seulement à l’endroit où elle est utile.
 - Sur l’interface visiteur, réserver l’en-tête à l’identité et aux réglages globaux. Placer les actions principales dans une navigation basse fixe, adaptée en priorité au mobile.
 - L’interface visiteur est disponible en français et en anglais. Détecter automatiquement la langue du navigateur, mémoriser le choix manuel et ne pas transmettre les contenus à un service tiers sans validation explicite.
+- Présenter le choix de langue dans un sélecteur compact avec le nom de la langue puis son drapeau, plutôt que deux boutons séparés.
+- Dans l’espace occupant, placer également les destinations principales dans une navigation basse ; conserver en haut uniquement l’identité et les actions de session.
+- Toute donnée collectée dans un parcours public doit être consultable dans l’espace de travail de l’équipe qui doit réellement l’utiliser.
+- Un participant déjà inscrit aux défis doit retrouver automatiquement son parcours pendant 20 jours sur le même navigateur. Stocker localement uniquement le jeton et son expiration, jamais son nom ni son contact.
 - Vérifier chaque interface à 320 px, 375 px et sur ordinateur avant de la considérer terminée.

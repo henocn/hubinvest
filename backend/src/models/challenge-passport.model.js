@@ -27,6 +27,10 @@ module.exports = (sequelize, DataTypes) =>
         allowNull: false,
         field: 'display_name',
       },
+      contact: {
+        type: DataTypes.STRING(180),
+        allowNull: true,
+      },
       status: {
         type: DataTypes.STRING(24),
         allowNull: false,
