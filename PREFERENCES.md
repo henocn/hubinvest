@@ -45,6 +45,7 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 - Backend JavaScript avec Node.js, Express, nodemon, Sequelize et migrations.
 - Un module backend lié à un modèle contient ses routes, validations, repository, service et controller.
 - Les paramètres sensibles et la connexion à la base utilisent les variables d’environnement.
+- En production, un push ou merge sur `main` déclenche le déploiement automatique sur le VPS Hostinger par SSH. Le workflow installe séparément le backend, le frontend et le backoffice, exécute les migrations Sequelize, compile les interfaces puis recharge le backend avec PM2 et `--update-env`.
 - Avancer par petits parcours complets. Ne pas construire tous les cas futurs avant leur usage réel.
 - Écrire uniquement les tests protégeant les risques essentiels.
 - Les alertes de vulnérabilités des dépendances sont tolérées pendant la construction et traitées pendant la stabilisation finale.
