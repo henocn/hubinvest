@@ -18,13 +18,13 @@ router.post(
 router.get(
   '/admin/stats',
   asyncHandler(authenticate),
-  requireRoles(roles.SUPER_ADMIN, roles.ADMIN_APIZF),
+  requireRoles(roles.SUPER_ADMIN),
   asyncHandler(contactController.adminStats),
 );
 
 router.use(
   asyncHandler(authenticate),
-  requireRoles(roles.OCCUPANT_MANAGER, roles.OCCUPANT_MEMBER),
+  requireRoles(roles.OCCUPANT),
 );
 router.get('/', validate(contactValidation.query, 'query'), asyncHandler(contactController.list));
 router.post('/', validate(contactValidation.create), asyncHandler(contactController.create));

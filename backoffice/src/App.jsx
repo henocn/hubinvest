@@ -9,7 +9,12 @@ export default function App() {
   const path = window.location.pathname.replace(/\/$/, '') || '/';
   const [session, setSession] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem('hubinvest-admin-session'));
+      const stored = JSON.parse(localStorage.getItem('hubinvest-admin-session'));
+      if (!backofficeRoles.has(stored?.user?.role)) {
+        localStorage.removeItem('hubinvest-admin-session');
+        return null;
+      }
+      return stored;
     } catch {
       return null;
     }

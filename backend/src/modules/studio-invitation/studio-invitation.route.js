@@ -1,13 +1,13 @@
 const express = require('express');
 const asyncHandler = require('../../shared/async-handler');
 const validate = require('../../middlewares/validate.middleware');
-const { authenticate, requireRoles } = require('../../middlewares/auth.middleware');
-const roles = require('../../shared/roles');
+const { authenticate, requireAdminScope } = require('../../middlewares/auth.middleware');
+const adminScopes = require('../../shared/admin-scopes');
 const studioInvitationValidation = require('./studio-invitation.validation');
 const studioInvitationController = require('./studio-invitation.controller');
 
 const router = express.Router();
-const studioTeamOnly = requireRoles(roles.SUPER_ADMIN, roles.ADMIN_APIZF, roles.CAMPAIGN_TEAM);
+const studioTeamOnly = requireAdminScope(adminScopes.CAMPAIGN);
 
 router.get(
   '/public/:token',

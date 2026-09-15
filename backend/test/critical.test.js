@@ -25,7 +25,9 @@ const challengePassageRepository = require('../src/modules/challenge-passage/cha
 const authService = require('../src/modules/auth/auth.service');
 const authRepository = require('../src/modules/auth/auth.repository');
 const authMailer = require('../src/modules/auth/auth.mailer');
-const { authenticate } = require('../src/middlewares/auth.middleware');
+const { authenticate, requireAdminScope } = require('../src/middlewares/auth.middleware');
+const roles = require('../src/shared/roles');
+const adminScopes = require('../src/shared/admin-scopes');
 const { sequelize, User, Occupant, B2bNeed } = require('../src/models');
 const env = require('../src/config/env');
 const app = require('../src/app');
@@ -51,13 +53,29 @@ test('un occupant doit connaître son mot de passe actuel pour le remplacer', as
   assert.equal(await bcrypt.compare('nouveau-secret', user.passwordHash), true);
 });
 
+test('les comptes utilisent seulement les quatre rôles retenus', () => {
+  assert.deepEqual(Object.values(roles).sort(), ['admin', 'animateur', 'occupant', 'super-admin']);
+});
+
+test('un administrateur accède uniquement à son périmètre', () => {
+  const check = (user, scope) => new Promise((resolve) => {
+    requireAdminScope(scope)({ user }, {}, (error) => resolve(error));
+  });
+
+  return Promise.all([
+    check({ role: 'admin', adminScope: 'b2b' }, adminScopes.B2B).then((error) => assert.equal(error, undefined)),
+    check({ role: 'admin', adminScope: 'b2b' }, adminScopes.CAMPAIGN).then((error) => assert.equal(error?.status, 403)),
+    check({ role: 'super-admin' }, adminScopes.CAMPAIGN).then((error) => assert.equal(error, undefined)),
+  ]);
+});
+
 test('la récupération envoie cinq chiffres et ne stocke jamais le code en clair', async (context) => {
   const previousSecret = env.auth.secret;
   env.auth.secret = 'secret-de-test';
   context.after(() => { env.auth.secret = previousSecret; });
   const users = {
-    'occupant@example.com': { id: 'occupant-user', firstName: 'Afi', email: 'occupant@example.com', role: 'occupant-responsable', occupantId: 'occupant-a', occupant: { status: 'active' }, isActive: true },
-    'admin@example.com': { id: 'admin-user', firstName: 'Koffi', email: 'admin@example.com', role: 'admin-apizf', occupantId: null, isActive: true },
+    'occupant@example.com': { id: 'occupant-user', firstName: 'Afi', email: 'occupant@example.com', role: 'occupant', occupantId: 'occupant-a', occupant: { status: 'active' }, isActive: true },
+    'admin@example.com': { id: 'admin-user', firstName: 'Koffi', email: 'admin@example.com', role: 'admin', adminScope: 'investor-desk', occupantId: null, isActive: true },
   };
   const storedHashes = [];
   const sentCodes = [];
@@ -191,25 +209,25 @@ test('un occupant desactive perd acces meme avec un jeton encore valide', async 
   assert.equal(result.code, 'OCCUPANT_INACTIVE');
 });
 
-test('les totaux administrateur proviennent des groupes et restent interdits aux occupants', async (context) => {
+test('les totaux globaux proviennent des groupes et restent réservés au super administrateur', async (context) => {
   context.mock.method(contactRepository, 'countByOccupant', async () => [
     { occupantId: 'occupant-a', count: '2' },
     { occupantId: 'occupant-b', count: '3' },
   ]);
 
   await assert.rejects(
-    contactService.adminStats({ role: 'occupant-responsable', occupantId: 'occupant-a' }),
+    contactService.adminStats({ role: 'occupant', occupantId: 'occupant-a' }),
     (error) => error.status === 403 && error.code === 'FORBIDDEN',
   );
 
-  const result = await contactService.adminStats({ role: 'admin-apizf' });
+  const result = await contactService.adminStats({ role: 'super-admin' });
   assert.deepEqual(result, {
     total: 5,
     byOccupant: { 'occupant-a': 2, 'occupant-b': 3 },
   });
 });
 
-test('la route des totaux refuse un jeton occupant et accepte un administrateur', async (context) => {
+test('la route des totaux refuse un occupant et accepte le super administrateur', async (context) => {
   const originalSecret = env.auth.secret;
   env.auth.secret = 'hubinvest-critical-test-secret';
   context.after(() => { env.auth.secret = originalSecret; });
@@ -221,7 +239,7 @@ test('la route des totaux refuse un jeton occupant et accepte un administrateur'
       toJSON: () => ({
         id: where.id,
         occupantId: isAdmin ? null : 'occupant-a',
-        role: isAdmin ? 'admin-apizf' : 'occupant-responsable',
+        role: isAdmin ? 'super-admin' : 'occupant',
       }),
     };
   });
@@ -342,7 +360,7 @@ test('le premier suivi Investor Desk attribue la demande à son agent', async (c
   });
 
   await investorRequestService.update(
-    { id: 'agent-a', role: 'investor-desk' },
+    { id: 'agent-a', role: 'admin', adminScope: 'investor-desk' },
     investorRequest.id,
     { status: 'in_progress', nextAction: 'Rappeler le porteur du projet' },
   );
@@ -372,16 +390,12 @@ test('une proposition B2B sans consentement est refusée avant toute écriture',
   );
 });
 
-test('un occupant ne peut pas lire les propositions B2B d’un autre stand', async (context) => {
-  context.mock.method(b2bNeedRepository, 'findByIdForOccupant', async () => null);
-  context.mock.method(b2bProposalRepository, 'findAllByNeed', async () => {
-    throw new Error('La lecture ne doit pas être appelée.');
-  });
+test('le backoffice B2B peut lire les propositions d’un besoin existant', async (context) => {
+  context.mock.method(b2bNeedRepository, 'findById', async () => ({ id: 'need-b', occupantId: 'occupant-b' }));
+  context.mock.method(b2bProposalRepository, 'findAllByNeed', async (needId) => [{ id: 'proposal-a', b2bNeedId: needId }]);
 
-  await assert.rejects(
-    b2bProposalService.list({ occupantId: 'occupant-a' }, 'need-b'),
-    (error) => error.status === 404 && error.code === 'B2B_NEED_NOT_FOUND',
-  );
+  const result = await b2bProposalService.list({ role: 'admin', adminScope: 'b2b' }, 'need-b');
+  assert.deepEqual(result, [{ id: 'proposal-a', b2bNeedId: 'need-b' }]);
 });
 
 test('une invitation Studio utilise un lien personnel imprévisible', async (context) => {
@@ -422,7 +436,7 @@ test('la réponse publique Studio ne révèle pas le lien interne et enregistre 
   assert.equal(result.id, undefined);
 });
 
-test('le planning Studio est réservé à l’administration et à l’équipe campagne', async (context) => {
+test('le planning Studio est réservé à l’administrateur du périmètre campagne', async (context) => {
   const originalSecret = env.auth.secret;
   env.auth.secret = 'hubinvest-studio-test-secret';
   context.after(() => { env.auth.secret = originalSecret; });
@@ -432,7 +446,8 @@ test('le planning Studio est réservé à l’administration et à l’équipe c
     toJSON: () => ({
       id: where.id,
       occupantId: null,
-      role: where.id === 'campaign' ? 'equipe-campagne' : 'investor-desk',
+      role: 'admin',
+      adminScope: where.id === 'campaign' ? 'campagne' : 'investor-desk',
     }),
   }));
   context.mock.method(studioInvitationRepository, 'findAll', async () => []);
@@ -480,6 +495,24 @@ test('la liste des joueurs conserve le validateur et son stand pour chaque scan'
   assert.equal(result.passageCount, 1);
   assert.deepEqual(result.passages[0].validatedBy, passage.validatedBy);
   assert.deepEqual(result.passages[0].occupant, passage.occupant);
+});
+
+test('le contrôle animateur par code ne révèle pas le contact du participant', async (context) => {
+  context.mock.method(challengePassportRepository, 'findByCode', async () => ({
+    toJSON: () => ({
+      id: 'passport-a',
+      displayName: 'Visiteur Test',
+      contact: 'visiteur@example.com',
+      code: 'ABCD2345',
+      status: 'completed',
+      passages: [{ id: 'passage-a' }],
+    }),
+  }));
+
+  const result = await challengePassportService.getByCode('ABCD2345');
+  assert.equal(result.displayName, 'Visiteur Test');
+  assert.equal(result.status, 'completed');
+  assert.equal(result.contact, undefined);
 });
 
 test('un stand ne peut valider qu’une fois le même parcours', async (context) => {
@@ -537,20 +570,20 @@ test('le passage requis termine le parcours avant la remise', async (context) =>
   assert.ok(saved.completedAt instanceof Date);
 });
 
-test('une récompense Défis ne peut être enregistrée qu’une fois', async (context) => {
-  const passport = { id: 'passport-a', status: 'completed', passages: [] };
+test('un animateur remet par code une récompense Défis une seule fois', async (context) => {
+  const passport = { id: 'passport-a', code: 'ABCD2345', status: 'completed', passages: [] };
   context.mock.method(sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));
-  context.mock.method(challengePassportRepository, 'findByIdForUpdate', async () => passport);
+  context.mock.method(challengePassportRepository, 'findByCodeForUpdate', async () => passport);
   context.mock.method(challengePassportRepository, 'update', async (_passport, values) => {
     Object.assign(passport, values);
     return passport;
   });
 
-  const first = await challengePassportService.redeem({ id: 'animator-a' }, passport.id);
+  const first = await challengePassportService.redeemByCode({ id: 'animator-a', role: 'animateur' }, passport.code);
   assert.equal(first.status, 'redeemed');
 
   await assert.rejects(
-    challengePassportService.redeem({ id: 'animator-b' }, passport.id),
+    challengePassportService.redeemByCode({ id: 'animator-b', role: 'animateur' }, passport.code),
     (error) => error.status === 409 && error.code === 'REWARD_ALREADY_REDEEMED',
   );
 });

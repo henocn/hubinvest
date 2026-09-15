@@ -56,8 +56,21 @@ const getPublic = async (token) => {
 
 const list = async () => (await challengePassportRepository.findAll()).map(managerPayload);
 
-const redeem = (user, id) => sequelize.transaction(async (transaction) => {
-  const passport = await challengePassportRepository.findByIdForUpdate(id, transaction);
+const getByCode = async (code) => {
+  const passport = await challengePassportRepository.findByCode(code);
+  if (!passport) throw new AppError(404, 'CHALLENGE_PASSPORT_NOT_FOUND', 'Participant introuvable.');
+  const values = managerPayload(passport);
+  return {
+    id: values.id,
+    displayName: values.displayName,
+    code: values.code,
+    status: values.status,
+    passageCount: values.passageCount,
+    requiredPassages: values.requiredPassages,
+  };
+};
+
+const redeemPassport = async (user, passport, transaction) => {
   if (!passport) throw new AppError(404, 'CHALLENGE_PASSPORT_NOT_FOUND', 'Parcours introuvable.');
   if (passport.status === 'active') throw new AppError(409, 'CHALLENGE_NOT_COMPLETED', 'Le parcours n’est pas encore terminé.');
   if (passport.status === 'redeemed') throw new AppError(409, 'REWARD_ALREADY_REDEEMED', 'La récompense a déjà été remise.');
@@ -68,6 +81,16 @@ const redeem = (user, id) => sequelize.transaction(async (transaction) => {
     redeemedByUserId: user.id,
   }, transaction);
   return managerPayload(updated);
+};
+
+const redeem = (user, id) => sequelize.transaction(async (transaction) => {
+  const passport = await challengePassportRepository.findByIdForUpdate(id, transaction);
+  return redeemPassport(user, passport, transaction);
 });
 
-module.exports = { createPublic, getPublic, list, redeem, publicPayload };
+const redeemByCode = (user, code) => sequelize.transaction(async (transaction) => {
+  const passport = await challengePassportRepository.findByCodeForUpdate(code, transaction);
+  return redeemPassport(user, passport, transaction);
+});
+
+module.exports = { createPublic, getPublic, list, getByCode, redeem, redeemByCode, publicPayload };

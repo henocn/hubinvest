@@ -60,6 +60,14 @@ export const api = {
   investorRequests: (token) => request('/investor-requests', authorized(token)),
   updateInvestorRequest: (token, id, values) =>
     request(`/investor-requests/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
+  b2bNeeds: (token) => request('/b2b-needs', authorized(token)),
+  createB2bNeed: (token, values) =>
+    request('/b2b-needs', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
+  updateB2bNeed: (token, id, values) =>
+    request(`/b2b-needs/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
+  b2bProposals: (token, needId) => request(`/b2b-proposals/need/${needId}`, authorized(token)),
+  updateB2bProposal: (token, id, values) =>
+    request(`/b2b-proposals/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
   studioInvitations: (token) => request('/studio-invitations', authorized(token)),
   createStudioInvitation: (token, values) =>
     request('/studio-invitations', authorized(token, { method: 'POST', body: JSON.stringify(values) })),

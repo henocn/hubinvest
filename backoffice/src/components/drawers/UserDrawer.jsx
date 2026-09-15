@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
-import { availableRoles, occupantRoles, roleLabels } from '../../constants/access';
+import { adminScopeLabels, availableRoles, roleLabels } from '../../constants/access';
 import { api } from '../../lib/api';
 import PasswordInput from '../PasswordInput';
 
@@ -13,13 +13,15 @@ export default function UserDrawer({ user, occupants, onClose, onSaved, token, c
     email: user?.email || '',
     phone: user?.phone || '',
     password: '',
-    role: user?.role || 'occupant-responsable',
+    role: user?.role || 'occupant',
     occupantId: user?.occupantId || '',
+    adminScope: user?.adminScope || '',
     isActive: user?.isActive ?? true,
   }));
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const needsOccupant = occupantRoles.has(form.role);
+  const needsOccupant = form.role === 'occupant';
+  const needsAdminScope = form.role === 'admin';
 
   const submit = async (event) => {
     event.preventDefault();
@@ -34,6 +36,7 @@ export default function UserDrawer({ user, occupants, onClose, onSaved, token, c
         phone: form.phone || null,
         role: form.role,
         occupantId: needsOccupant ? form.occupantId : null,
+        adminScope: needsAdminScope ? form.adminScope : null,
         isActive: form.isActive,
       };
       if (!isEditing || form.password) values.password = form.password;
@@ -62,8 +65,9 @@ export default function UserDrawer({ user, occupants, onClose, onSaved, token, c
           </div>
           <label>Adresse e-mail<input type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} required /></label>
           <label>Téléphone<input type="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} /></label>
-          <label>Rôle<select value={form.role} disabled={isCurrentUser} onChange={(event) => setForm({ ...form, role: event.target.value, occupantId: '' })}>{Object.entries(roleLabels).filter(([value]) => availableRoles.has(value) && (currentRole === 'super-admin' || value !== 'super-admin')).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+          <label>Rôle<select value={form.role} disabled={isCurrentUser} onChange={(event) => setForm({ ...form, role: event.target.value, occupantId: '', adminScope: '' })}>{Object.entries(roleLabels).filter(([value]) => availableRoles.has(value) && (currentRole === 'super-admin' || value !== 'super-admin')).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
           {needsOccupant && <label>Occupant rattaché<select value={form.occupantId} onChange={(event) => setForm({ ...form, occupantId: event.target.value })} required><option value="">Sélectionner un occupant</option>{occupants.map((occupant) => <option key={occupant.id} value={occupant.id}>{occupant.name}</option>)}</select></label>}
+          {needsAdminScope && <label>Périmètre<select value={form.adminScope} onChange={(event) => setForm({ ...form, adminScope: event.target.value })} required><option value="">Sélectionner un périmètre</option>{Object.entries(adminScopeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>}
           {isEditing && <label>Statut<select value={form.isActive ? 'active' : 'inactive'} disabled={isCurrentUser} onChange={(event) => setForm({ ...form, isActive: event.target.value === 'active' })}><option value="active">Actif</option><option value="inactive">Inactif</option></select></label>}
           <label>{isEditing ? 'Nouveau mot de passe' : 'Mot de passe temporaire'}<PasswordInput minLength={8} autoComplete="new-password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required={!isEditing} />{isEditing && <small className="field-hint">Laisser vide pour conserver le mot de passe actuel.</small>}</label>
           {error && <p className="form-error">{error}</p>}

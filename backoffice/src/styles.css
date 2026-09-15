@@ -149,6 +149,20 @@ td small { margin-top: 4px; color: #85898d; }
 .challenge-reward-action.is-ready:hover { color: #b70f2c; border-color: rgba(207, 23, 55, .45); background: rgba(207, 23, 55, .1); }
 .challenge-reward-action.is-redeemed { color: #007c5c; border-color: rgba(0, 124, 92, .28); background: rgba(0, 124, 92, .07); }
 .challenge-reward-action.is-redeemed:disabled { opacity: .72; }
+.b2b-admin-title { display: block; max-width: 520px; overflow: hidden; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.b2b-admin-row.is-closed { background: rgba(0, 0, 0, .025); }
+.drawer-wide { width: min(620px, 100%); }
+.b2b-admin-proposals { margin-top: 34px; padding-top: 26px; border-top: 1px solid var(--line); }
+.b2b-admin-proposals > h3 { margin: 0 0 16px; font-size: 17px; }
+.b2b-admin-proposals > p { margin: 0; color: var(--muted); font-size: 13px; }
+.b2b-admin-proposal { padding: 16px 0; border-bottom: 1px solid var(--line); }
+.b2b-admin-proposal > header, .b2b-admin-proposal > div, .b2b-admin-proposal > footer { display: flex; align-items: center; gap: 10px; }
+.b2b-admin-proposal > header { justify-content: space-between; }
+.b2b-admin-proposal > header span { color: var(--muted); font-size: 11px; font-weight: 750; }
+.b2b-admin-proposal > p { margin: 12px 0; color: #565b5f; font-size: 13px; line-height: 1.55; white-space: pre-line; }
+.b2b-admin-proposal > div { flex-wrap: wrap; }
+.b2b-admin-proposal a { display: inline-flex; align-items: center; gap: 5px; color: var(--green); font-size: 12px; text-decoration: none; }
+.b2b-admin-proposal > footer { justify-content: flex-end; margin-top: 14px; }
 .status-pill { width: fit-content; display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border-radius: 999px; color: #686c70; background: #efefed; font-size: 11px; font-weight: 700; }
 .status-pill.is-active { color: var(--green); background: #e7f3ee; }
 .status-pill.is-new { color: #6f5700; background: #fff6cf; }

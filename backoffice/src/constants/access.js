@@ -1,18 +1,18 @@
 export const roleLabels = {
   'super-admin': 'Super administrateur',
-  'admin-apizf': 'Administrateur API-ZF',
-  'investor-desk': 'Investor Desk',
-  'equipe-campagne': 'Équipe campagne',
+  admin: 'Administrateur',
+  occupant: 'Occupant',
   animateur: 'Animateur',
-  'occupant-responsable': 'Responsable occupant',
-  'occupant-membre': 'Membre occupant',
-  visiteur: 'Visiteur',
 };
 
-export const adminRoles = new Set(['super-admin', 'admin-apizf']);
-export const backofficeRoles = new Set(['super-admin', 'admin-apizf', 'investor-desk', 'equipe-campagne', 'animateur']);
-export const occupantRoles = new Set(['occupant-responsable', 'occupant-membre']);
-export const availableRoles = new Set(['super-admin', 'admin-apizf', 'investor-desk', 'equipe-campagne', 'animateur', 'occupant-responsable', 'occupant-membre']);
+export const adminScopeLabels = {
+  'investor-desk': 'Investor Desk',
+  campagne: 'Campagne',
+  b2b: 'B2B',
+};
+
+export const backofficeRoles = new Set(['super-admin', 'admin']);
+export const availableRoles = new Set(['super-admin', 'admin', 'occupant', 'animateur']);
 export const investorStatusLabels = { new: 'Nouvelle', in_progress: 'En cours', closed: 'Clôturée' };
 export const studioStatusLabels = { pending: 'En attente', confirmed: 'Confirmée', declined: 'Refusée' };
 export const challengeStatusLabels = { active: 'En cours', completed: 'Terminé', redeemed: 'Récompensé(e)' };

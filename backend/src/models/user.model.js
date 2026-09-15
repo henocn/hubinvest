@@ -1,4 +1,5 @@
 const roles = require('../shared/roles');
+const adminScopes = require('../shared/admin-scopes');
 
 module.exports = (sequelize, DataTypes) =>
   sequelize.define(
@@ -59,6 +60,12 @@ module.exports = (sequelize, DataTypes) =>
         type: DataTypes.STRING(40),
         allowNull: false,
         validate: { isIn: [Object.values(roles)] },
+      },
+      adminScope: {
+        type: DataTypes.STRING(40),
+        allowNull: true,
+        field: 'admin_scope',
+        validate: { isIn: [Object.values(adminScopes)] },
       },
       isActive: {
         type: DataTypes.BOOLEAN,

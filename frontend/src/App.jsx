@@ -19,9 +19,10 @@ import {
   syncPendingContacts,
 } from './lib/contact-store';
 import PublicPages from './PublicPages';
-import OccupantB2bPage from './pages/OccupantB2bPage';
 import OccupantChallengePage from './pages/OccupantChallengePage';
 import OccupantShell from './components/occupant/OccupantShell';
+import AnimatorShell from './components/animator/AnimatorShell';
+import AnimatorScanPage from './pages/AnimatorScanPage';
 import PasswordField from './components/PasswordField';
 import OccupantProfilePage from './pages/OccupantProfilePage';
 import AuthLayout from './components/AuthLayout';
@@ -34,6 +35,7 @@ const qualificationLabels = {
 };
 
 const qualificationLabel = (value) => qualificationLabels[value] || 'À qualifier';
+const homeForRole = (role) => role === 'occupant' ? '/espace-occupant' : role === 'animateur' ? '/espace-animateur' : null;
 
 const toLocalDateTime = (value) => {
   if (!value) return '';
@@ -65,7 +67,7 @@ function LoginScreen({ onLogin }) {
     <AuthLayout>
         <div className="login-copy">
           <h1>Connexion</h1>
-          <p>Accédez aux contacts de votre stand.</p>
+          <p>Accédez à votre espace HubInvest.</p>
         </div>
 
         <form onSubmit={submit} className="form-stack">
@@ -530,12 +532,18 @@ export default function App() {
   const [session, setSession] = useState(() => {
     try {
       const stored = localStorage.getItem('hubinvest-session');
-      return stored ? JSON.parse(stored) : null;
+      const parsed = stored ? JSON.parse(stored) : null;
+      if (parsed && !homeForRole(parsed.user?.role)) {
+        localStorage.removeItem('hubinvest-session');
+        return null;
+      }
+      return parsed;
     } catch {
       return null;
     }
   });
   const [apiOnline, setApiOnline] = useState(false);
+  const sessionHome = homeForRole(session?.user?.role) || '/connexion';
 
   useEffect(() => {
     if (!path.startsWith('/espace-occupant')) return undefined;
@@ -558,12 +566,11 @@ export default function App() {
 
   const login = async (values) => {
     const result = await api.login(values);
-    if (!result.user.occupantId) {
-      throw new Error("Ce compte n’est pas rattaché à un occupant.");
-    }
+    const home = homeForRole(result.user.role);
+    if (!home) throw new Error("Ce compte utilise l’accès au backoffice.");
     localStorage.setItem('hubinvest-session', JSON.stringify(result));
     setSession(result);
-    window.location.assign('/espace-occupant');
+    window.location.assign(home);
   };
 
   const logout = useCallback(() => {
@@ -578,30 +585,34 @@ export default function App() {
     return <PublicPages path={path} />;
   }
 
-  if (path !== '/connexion' && path !== '/espace-occupant' && path !== '/espace-occupant/b2b' && path !== '/espace-occupant/defis' && path !== '/espace-occupant/profil') {
+  if (path !== '/connexion' && path !== '/espace-occupant' && path !== '/espace-occupant/defis' && path !== '/espace-occupant/profil' && path !== '/espace-animateur' && path !== '/espace-animateur/profil') {
     return <PublicPages path={path} />;
   }
 
   if (path === '/connexion') {
-    if (session) return <Redirect to="/espace-occupant" />;
+    if (session && homeForRole(session.user.role)) return <Redirect to={sessionHome} />;
     return <LoginScreen onLogin={login} />;
   }
 
-  if (path === '/espace-occupant/b2b') {
-    return session ? <OccupantShell session={session} onLogout={logout}><OccupantB2bPage session={session} onLogout={logout} /></OccupantShell> : <Redirect to="/connexion" />;
-  }
-
   if (path === '/espace-occupant/defis') {
-    return session ? <OccupantShell session={session} onLogout={logout}><OccupantChallengePage session={session} onLogout={logout} /></OccupantShell> : <Redirect to="/connexion" />;
+    return session?.user.role === 'occupant' ? <OccupantShell session={session} onLogout={logout}><OccupantChallengePage session={session} onLogout={logout} /></OccupantShell> : <Redirect to={sessionHome} />;
   }
 
   if (path === '/espace-occupant/profil') {
-    return session ? <OccupantShell session={session} onLogout={logout}><OccupantProfilePage session={session} onLogout={logout} /></OccupantShell> : <Redirect to="/connexion" />;
+    return session?.user.role === 'occupant' ? <OccupantShell session={session} onLogout={logout}><OccupantProfilePage session={session} onLogout={logout} /></OccupantShell> : <Redirect to={sessionHome} />;
   }
 
-  return session ? (
+  if (path === '/espace-animateur') {
+    return session?.user.role === 'animateur' ? <AnimatorShell><AnimatorScanPage session={session} onLogout={logout} /></AnimatorShell> : <Redirect to={sessionHome} />;
+  }
+
+  if (path === '/espace-animateur/profil') {
+    return session?.user.role === 'animateur' ? <AnimatorShell><OccupantProfilePage session={session} onLogout={logout} /></AnimatorShell> : <Redirect to={sessionHome} />;
+  }
+
+  return session?.user.role === 'occupant' ? (
     <OccupantShell session={session} onLogout={logout}><ContactsScreen session={session} apiOnline={apiOnline} setApiOnline={setApiOnline} onLogout={logout} /></OccupantShell>
   ) : (
-    <Redirect to="/connexion" />
+    <Redirect to={sessionHome} />
   );
 }

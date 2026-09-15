@@ -1,5 +1,6 @@
 const Joi = require('joi');
 const roles = require('../../shared/roles');
+const adminScopes = require('../../shared/admin-scopes');
 
 const uuid = Joi.string().guid({ version: ['uuidv4'] });
 
@@ -11,6 +12,7 @@ const create = Joi.object({
   phone: Joi.string().trim().max(32).allow('', null),
   password: Joi.string().min(8).max(128).required(),
   role: Joi.string().valid(...Object.values(roles)).required(),
+  adminScope: Joi.string().valid(...Object.values(adminScopes)).allow(null),
   isActive: Joi.boolean().default(true),
 });
 
@@ -22,6 +24,7 @@ const update = Joi.object({
   phone: Joi.string().trim().max(32).allow('', null),
   password: Joi.string().min(8).max(128),
   role: Joi.string().valid(...Object.values(roles)),
+  adminScope: Joi.string().valid(...Object.values(adminScopes)).allow(null),
   isActive: Joi.boolean(),
 }).min(1);
 

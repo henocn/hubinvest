@@ -31,6 +31,11 @@ const findAll = () => ChallengePassport.findAll({
   order: [['createdAt', 'DESC']],
 });
 
+const findByCode = (code) => ChallengePassport.findOne({
+  where: { code },
+  include: managerPassageInclude,
+});
+
 const findByCodeForUpdate = (code, transaction) => ChallengePassport.findOne({
   where: { code },
   transaction,
@@ -45,4 +50,4 @@ const findByIdForUpdate = (id, transaction) => ChallengePassport.findByPk(id, {
 const create = (values) => ChallengePassport.create(values);
 const update = (passport, values, transaction) => passport.update(values, { transaction });
 
-module.exports = { findPublicByToken, findAll, findByCodeForUpdate, findByIdForUpdate, create, update };
+module.exports = { findPublicByToken, findAll, findByCode, findByCodeForUpdate, findByIdForUpdate, create, update };

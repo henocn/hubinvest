@@ -1,11 +1,10 @@
-import { CircleUserRound, Handshake, Trophy, Users } from 'lucide-react';
+import { CircleUserRound, Trophy, Users } from 'lucide-react';
 import { createContext, useContext, useEffect, useState } from 'react';
 import apizfLogo from '../../../../assets/Logo sans fond.png';
 import { api, resolveAssetUrl } from '../../lib/api';
 
 const links = [
   { href: '/espace-occupant', label: 'Contacts', Icon: Users },
-  { href: '/espace-occupant/b2b', label: 'B2B', Icon: Handshake },
   { href: '/espace-occupant/defis', label: 'Défis', Icon: Trophy },
   { href: '/espace-occupant/profil', label: 'Profil', Icon: CircleUserRound },
 ];

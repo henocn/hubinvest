@@ -132,7 +132,7 @@ const stats = async (user) => {
 };
 
 const adminStats = async (user) => {
-  if (![roles.SUPER_ADMIN, roles.ADMIN_APIZF].includes(user.role)) {
+  if (user.role !== roles.SUPER_ADMIN) {
     throw new AppError(403, 'FORBIDDEN', "Vous n’avez pas accès à cette action.");
   }
 

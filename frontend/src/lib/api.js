@@ -60,11 +60,8 @@ export const api = {
     request('/contacts', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   updateContact: (token, id, values) =>
     request(`/contacts/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
-  b2bNeeds: (token) => request('/b2b-needs', authorized(token)),
-  createB2bNeed: (token, values) => request('/b2b-needs', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
-  updateB2bNeed: (token, id, values) => request(`/b2b-needs/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
-  b2bProposals: (token, needId) => request(`/b2b-proposals/need/${needId}`, authorized(token)),
-  updateB2bProposal: (token, id, values) => request(`/b2b-proposals/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
   validateChallengePassage: (token, code) => request('/challenge-passages', authorized(token, { method: 'POST', body: JSON.stringify({ code }) })),
   challengePassageStats: (token) => request('/challenge-passages/stats', authorized(token)),
+  challengeRewardByCode: (token, code) => request(`/challenge-passports/code/${encodeURIComponent(code)}`, authorized(token)),
+  redeemChallengeReward: (token, code) => request('/challenge-passports/redeem-by-code', authorized(token, { method: 'POST', body: JSON.stringify({ code }) })),
 };
