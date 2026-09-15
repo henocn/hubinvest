@@ -54,6 +54,7 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 - Dans l’espace occupant, placer également les destinations principales dans une navigation basse ; conserver en haut uniquement l’identité visuelle.
 - Ne pas afficher l’accès occupant dans la navigation publique : les occupants reçoivent leur lien directement et toute route protégée les envoie vers la connexion si leur session est absente.
 - Dans l’espace occupant, afficher uniquement le logo API-ZF à gauche et le logo de l’institution à droite, assez grands pour être lisibles, sans nom répété au centre. La navigation basse contient Contacts, B2B, Défis et Profil ; la déconnexion appartient à la page Profil.
+- Sur la page « Besoins B2B » de l’espace occupant, ne pas répéter le nom de l’entreprise sous le titre.
 - Un lien public personnel inexistant ou deviné doit aboutir à un véritable état 404, sans révéler d’information sur les autres participants.
 - Toute donnée collectée dans un parcours public doit être consultable dans l’espace de travail de l’équipe qui doit réellement l’utiliser.
 - Un participant déjà inscrit aux défis doit retrouver automatiquement son parcours pendant 20 jours sur le même navigateur. Stocker localement uniquement le jeton et son expiration, jamais son nom ni son contact.

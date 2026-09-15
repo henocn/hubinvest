@@ -77,7 +77,7 @@ export default function OccupantB2bPage({ session, onLogout }) {
         </main>
       ) : (
         <main className="workspace">
-          <div className="page-heading heading-with-action"><div><h1>Besoins B2B</h1><p>{session.user.occupant?.name}</p></div>{canManage && <button className="button button-primary" type="button" onClick={() => { setSelectedNeed(null); setView('form'); }}><Plus size={19} /> Nouveau besoin</button>}</div>
+          <div className="page-heading heading-with-action"><h1>Besoins B2B</h1>{canManage && <button className="button button-primary" type="button" onClick={() => { setSelectedNeed(null); setView('form'); }}><Plus size={19} /> Nouveau besoin</button>}</div>
           {error && <p className="panel-error">{error}</p>}
           {loading && <p className="empty-state">Chargement…</p>}
           {!loading && !error && needs.length === 0 && <div className="empty-state"><Handshake size={28} /><strong>Aucun besoin publié</strong>{canManage && <span>Publiez le premier besoin de votre stand.</span>}</div>}
