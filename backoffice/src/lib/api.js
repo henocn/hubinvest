@@ -38,6 +38,8 @@ const authorized = (token, options = {}) => ({
 
 export const api = {
   login: (values) => request('/auth/login', { method: 'POST', body: JSON.stringify(values) }),
+  forgotPassword: (email) => request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
+  resetPassword: (email, code, password) => request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ email, code, password }) }),
   occupants: (token) => request('/occupants', authorized(token)),
   createOccupant: (token, values) =>
     request('/occupants', authorized(token, { method: 'POST', body: JSON.stringify(values) })),

@@ -23,6 +23,7 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 - Les cases à cocher gardent une taille fixe et restent correctement alignées avec leur texte.
 - Les champs d’un même niveau ont la même hauteur.
 - Tous les champs de mot de passe disposent d’une action pour afficher ou masquer la valeur. La modification du mot de passe ne demande pas de confirmation et un champ vide ne le modifie pas.
+- La récupération d’un mot de passe reste un parcours court : adresse e-mail, code numérique à 5 chiffres reçu par e-mail, puis nouveau mot de passe avec l’action afficher/masquer. Ne pas envoyer de lien contenant un jeton de réinitialisation.
 
 ## Tableaux et listes du backoffice
 

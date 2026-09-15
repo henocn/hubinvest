@@ -16,6 +16,13 @@ const list = (value) =>
         .filter(Boolean)
     : [];
 
+const duration = (value, fallback) => {
+  const match = String(value || '').trim().match(/^(\d+)(ms|s|m|h|d)?$/i);
+  if (!match) return fallback;
+  const units = { ms: 1, s: 1000, m: 60000, h: 3600000, d: 86400000 };
+  return Number.parseInt(match[1], 10) * units[(match[2] || 'ms').toLowerCase()];
+};
+
 module.exports = {
   nodeEnv: process.env.NODE_ENV || 'development',
   port: integer(process.env.PORT, 3000),
@@ -30,6 +37,16 @@ module.exports = {
   auth: {
     secret: process.env.JWT_SECRET || '',
     expiresIn: process.env.JWT_EXPIRES_IN || '8h',
+    passwordResetExpiresIn: duration(process.env.PASSWORD_RESET_EXPIRES_IN, 30 * 60 * 1000),
+  },
+  smtp: {
+    host: process.env.SMTP_HOST || '',
+    port: integer(process.env.SMTP_PORT, 587),
+    user: process.env.SMTP_USER || '',
+    password: process.env.SMTP_PASSWORD || '',
+    secure: process.env.SMTP_SECURE === 'true',
+    fromName: process.env.SMTP_FROM_NAME || 'HubInvest',
+    fromEmail: process.env.SMTP_FROM_EMAIL || '',
   },
   corsOrigins: list(process.env.CORS_ORIGINS),
   challenge: {

@@ -3,8 +3,10 @@ import { backofficeRoles } from './constants/access';
 import { api } from './lib/api';
 import BackofficePage from './pages/BackofficePage';
 import LoginPage from './pages/LoginPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
 
 export default function App() {
+  const path = window.location.pathname.replace(/\/$/, '') || '/';
   const [session, setSession] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('hubinvest-admin-session'));
@@ -26,6 +28,8 @@ export default function App() {
     localStorage.removeItem('hubinvest-admin-session');
     setSession(null);
   }, []);
+
+  if (path === '/mot-de-passe-oublie') return <ForgotPasswordPage />;
 
   if (!session) return <LoginPage onLogin={login} />;
   return <BackofficePage session={session} onLogout={logout} />;

@@ -39,6 +39,22 @@ module.exports = (sequelize, DataTypes) =>
         allowNull: false,
         field: 'password_hash',
       },
+      passwordResetCodeHash: {
+        type: DataTypes.STRING(64),
+        allowNull: true,
+        field: 'password_reset_code_hash',
+      },
+      passwordResetExpiresAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        field: 'password_reset_expires_at',
+      },
+      passwordResetAttempts: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        field: 'password_reset_attempts',
+      },
       role: {
         type: DataTypes.STRING(40),
         allowNull: false,
@@ -55,7 +71,7 @@ module.exports = (sequelize, DataTypes) =>
       tableName: 'users',
       underscored: true,
       defaultScope: {
-        attributes: { exclude: ['passwordHash'] },
+        attributes: { exclude: ['passwordHash', 'passwordResetCodeHash', 'passwordResetExpiresAt', 'passwordResetAttempts'] },
       },
       scopes: {
         withPassword: { attributes: { include: ['passwordHash'] } },

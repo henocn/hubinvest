@@ -107,7 +107,7 @@ Ces informations ne sont necessaires qu'au branchement du canal concerne.
 
 - [ ] WhatsApp : fournisseur, identifiants, numero et modeles approuves.
 - [ ] SMS : fournisseur, identifiants et nom d'expediteur.
-- [ ] E-mail : fournisseur, domaine d'envoi, identifiants et adresse expediteur.
+- [ ] E-mail et récupération de mot de passe : renseigner `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_SECURE`, `SMTP_FROM_NAME` et `SMTP_FROM_EMAIL`.
 - [ ] Pour chaque message : evenement declencheur, destinataire, langue et texte valide.
 
 Tous les secrets passent par des variables d'environnement et ne sont jamais ajoutes au depot.
@@ -132,6 +132,7 @@ Aucune coordonnee personnelle de visiteur ne doit etre envoyee au fournisseur d'
 - [ ] Valeurs de connexion PostgreSQL de production.
 - [ ] Secret de signature des sessions ou jetons.
 - [ ] Emplacement de stockage des fichiers envoyes ou generes.
+- [ ] Accès FTP si le déploiement l’utilise : `FTP_HOST`, `FTP_PORT`, `FTP_USER`, `FTP_PASSWORD`, `FTP_SECURE` et `FTP_BASE_PATH`.
 - [ ] Adresse et identifiants du service de sauvegarde.
 
 ## Hors de ce fichier

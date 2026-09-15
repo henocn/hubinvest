@@ -11,7 +11,6 @@ import {
   Search,
   UserRound,
 } from 'lucide-react';
-import logo from '../../assets/Logo fond blanc.jpeg';
 import { api } from './lib/api';
 import {
   listStoredContacts,
@@ -25,6 +24,8 @@ import OccupantChallengePage from './pages/OccupantChallengePage';
 import OccupantShell from './components/occupant/OccupantShell';
 import PasswordField from './components/PasswordField';
 import OccupantProfilePage from './pages/OccupantProfilePage';
+import AuthLayout from './components/AuthLayout';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
 
 const qualificationLabels = {
   hot: 'Chaud',
@@ -61,16 +62,7 @@ function LoginScreen({ onLogin }) {
   };
 
   return (
-    <main className="login-page">
-      <section className="login-brand">
-        <img src={logo} alt="API-ZF" />
-        <div>
-          <strong>HubInvest</strong>
-          <span>Espace occupant</span>
-        </div>
-      </section>
-
-      <section className="login-panel">
+    <AuthLayout>
         <div className="login-copy">
           <h1>Connexion</h1>
           <p>Accédez aux contacts de votre stand.</p>
@@ -97,6 +89,7 @@ function LoginScreen({ onLogin }) {
               required
             />
           </label>
+          <a className="auth-form-link" href="/mot-de-passe-oublie">Mot de passe oublié ?</a>
 
           {error && <p className="form-error">{error}</p>}
 
@@ -105,8 +98,7 @@ function LoginScreen({ onLogin }) {
           </button>
         </form>
         <a className="login-public-link" href="/stands">Découvrir les stands</a>
-      </section>
-    </main>
+    </AuthLayout>
   );
 }
 
@@ -454,11 +446,10 @@ function ContactsScreen({ session, apiOnline, setApiOnline, onLogout }) {
         <div className="page-heading heading-with-action">
           <div>
             <h1>Mes contacts</h1>
-            <p>{session.user.occupant?.name || `${session.user.firstName} ${session.user.lastName}`}</p>
           </div>
           <button className="button button-primary" type="button" onClick={() => setView('new')}>
             <Plus size={20} />
-            Nouveau contact
+            Nouveau
           </button>
         </div>
 
@@ -580,6 +571,8 @@ export default function App() {
     setSession(null);
     window.location.assign('/connexion');
   }, []);
+
+  if (path === '/mot-de-passe-oublie') return <ForgotPasswordPage />;
 
   if (path === '/' || path === '/stands' || path.startsWith('/stands/')) {
     return <PublicPages path={path} />;

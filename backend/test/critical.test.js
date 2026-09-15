@@ -1,5 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const crypto = require('node:crypto');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { UniqueConstraintError } = require('sequelize');
@@ -21,6 +22,9 @@ const challengePassportService = require('../src/modules/challenge-passport/chal
 const challengePassportRepository = require('../src/modules/challenge-passport/challenge-passport.repository');
 const challengePassageService = require('../src/modules/challenge-passage/challenge-passage.service');
 const challengePassageRepository = require('../src/modules/challenge-passage/challenge-passage.repository');
+const authService = require('../src/modules/auth/auth.service');
+const authRepository = require('../src/modules/auth/auth.repository');
+const authMailer = require('../src/modules/auth/auth.mailer');
 const { authenticate } = require('../src/middlewares/auth.middleware');
 const { sequelize, User, Occupant, B2bNeed } = require('../src/models');
 const env = require('../src/config/env');
@@ -45,6 +49,63 @@ test('un occupant doit connaître son mot de passe actuel pour le remplacer', as
   );
 
   assert.equal(await bcrypt.compare('nouveau-secret', user.passwordHash), true);
+});
+
+test('la récupération envoie cinq chiffres et ne stocke jamais le code en clair', async (context) => {
+  const previousSecret = env.auth.secret;
+  env.auth.secret = 'secret-de-test';
+  context.after(() => { env.auth.secret = previousSecret; });
+  const users = {
+    'occupant@example.com': { id: 'occupant-user', firstName: 'Afi', email: 'occupant@example.com', role: 'occupant-responsable', occupantId: 'occupant-a', occupant: { status: 'active' }, isActive: true },
+    'admin@example.com': { id: 'admin-user', firstName: 'Koffi', email: 'admin@example.com', role: 'admin-apizf', occupantId: null, isActive: true },
+  };
+  const storedHashes = [];
+  const sentCodes = [];
+  context.mock.method(authMailer, 'isConfigured', () => true);
+  context.mock.method(authRepository, 'findUserByEmail', async (email) => users[email]);
+  context.mock.method(authRepository, 'savePasswordReset', async (_user, hash, expiresAt) => {
+    storedHashes.push({ hash, expiresAt });
+  });
+  context.mock.method(authMailer, 'sendPasswordReset', async (user, code) => { sentCodes.push({ email: user.email, code }); });
+
+  await authService.forgotPassword({ email: 'occupant@example.com' });
+  await authService.forgotPassword({ email: 'admin@example.com' });
+  await authService.forgotPassword({ email: 'inconnu@example.com' });
+
+  assert.equal(sentCodes.length, 2);
+  assert.equal(storedHashes.length, 2);
+  sentCodes.forEach(({ email, code }, index) => {
+    assert.match(code, /^\d{5}$/);
+    assert.equal(storedHashes[index].hash, crypto.createHmac('sha256', env.auth.secret).update(`${email}:${code}`).digest('hex'));
+    assert.notEqual(storedHashes[index].hash, code);
+    assert.ok(storedHashes[index].expiresAt > new Date());
+  });
+});
+
+test('un code de récupération est utilisable une seule fois avant son expiration', async (context) => {
+  const previousSecret = env.auth.secret;
+  env.auth.secret = 'secret-de-test';
+  context.after(() => { env.auth.secret = previousSecret; });
+  const email = 'occupant@example.com';
+  const code = '12345';
+  let savedPasswordHash;
+  let failedAttempts = 0;
+  context.mock.method(authRepository, 'resetPassword', async (requestedEmail, codeHash, passwordHash) => {
+    assert.equal(requestedEmail, email);
+    assert.equal(codeHash, crypto.createHmac('sha256', env.auth.secret).update(`${email}:${code}`).digest('hex'));
+    if (savedPasswordHash) return false;
+    savedPasswordHash = passwordHash;
+    return true;
+  });
+  context.mock.method(authRepository, 'recordFailedReset', async () => { failedAttempts += 1; });
+
+  await authService.resetPassword({ email, code, password: 'nouveau-secret' });
+  assert.equal(await bcrypt.compare('nouveau-secret', savedPasswordHash), true);
+  await assert.rejects(
+    authService.resetPassword({ email, code, password: 'autre-secret' }),
+    (error) => error.status === 422 && error.code === 'PASSWORD_RESET_INVALID',
+  );
+  assert.equal(failedAttempts, 1);
 });
 
 test('les listes et les details restent limites a l’occupant authentifie', async (context) => {
