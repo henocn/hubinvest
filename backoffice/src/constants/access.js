@@ -5,12 +5,6 @@ export const roleLabels = {
   animateur: 'Animateur',
 };
 
-export const adminScopeLabels = {
-  'investor-desk': 'Investor Desk',
-  campagne: 'Campagne',
-  b2b: 'B2B',
-};
-
 export const backofficeRoles = new Set(['super-admin', 'admin']);
 export const availableRoles = new Set(['super-admin', 'admin', 'occupant', 'animateur']);
 export const investorStatusLabels = { new: 'Nouvelle', in_progress: 'En cours', closed: 'Clôturée' };

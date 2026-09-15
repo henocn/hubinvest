@@ -19,13 +19,16 @@ const createPublic = async (needId, values) => {
 };
 
 const list = async (user, needId) => {
-  await b2bNeedService.getManaged(needId);
+  await b2bNeedService.getManaged(user, needId);
   return b2bProposalRepository.findAllByNeed(needId);
 };
 
 const update = async (user, id, values) => {
   const proposal = await b2bProposalRepository.findById(id);
   if (!proposal) throw new AppError(404, 'B2B_PROPOSAL_NOT_FOUND', 'Proposition B2B introuvable.');
+  if (user.role === 'admin' && proposal.need.occupantId !== user.occupantId) {
+    throw new AppError(404, 'B2B_PROPOSAL_NOT_FOUND', 'Proposition B2B introuvable.');
+  }
   return b2bProposalRepository.update(proposal, { ...values, handledByUserId: user.id });
 };
 

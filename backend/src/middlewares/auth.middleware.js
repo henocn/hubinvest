@@ -1,8 +1,6 @@
 const jwt = require('jsonwebtoken');
 const env = require('../config/env');
 const AppError = require('../shared/app-error');
-const roles = require('../shared/roles');
-const adminScopes = require('../shared/admin-scopes');
 const { User, Occupant } = require('../models');
 
 const authenticate = async (request, response, next) => {
@@ -26,7 +24,7 @@ const authenticate = async (request, response, next) => {
 
   const user = await User.findOne({
     where: { id: payload.sub, isActive: true },
-    attributes: ['id', 'occupantId', 'email', 'firstName', 'lastName', 'role', 'adminScope'],
+    attributes: ['id', 'occupantId', 'email', 'firstName', 'lastName', 'role'],
     include: [{ model: Occupant, as: 'occupant', attributes: ['status'], required: false }],
   });
 
@@ -50,16 +48,4 @@ const requireRoles = (...allowedRoles) => (request, response, next) => {
   return next();
 };
 
-const requireAdminScope = (scope) => (request, response, next) => {
-  const user = request.user;
-  const allowed = user?.role === roles.SUPER_ADMIN
-    || (user?.role === roles.ADMIN && [adminScopes.ALL, scope].includes(user.adminScope));
-
-  if (!allowed) {
-    return next(new AppError(403, 'FORBIDDEN', "Vous n’avez pas accès à cette action."));
-  }
-
-  return next();
-};
-
-module.exports = { authenticate, requireRoles, requireAdminScope };
+module.exports = { authenticate, requireRoles };

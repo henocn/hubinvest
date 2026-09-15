@@ -1,6 +1,7 @@
 const crypto = require('node:crypto');
 const AppError = require('../../shared/app-error');
 const env = require('../../config/env');
+const roles = require('../../shared/roles');
 const { sequelize } = require('../../models');
 const challengePassportRepository = require('./challenge-passport.repository');
 
@@ -54,7 +55,13 @@ const getPublic = async (token) => {
   return publicPayload(passport);
 };
 
-const list = async () => (await challengePassportRepository.findAll()).map(managerPayload);
+const list = async (user) => {
+  const occupantId = user.role === roles.ADMIN ? user.occupantId : null;
+  if (user.role === roles.ADMIN && !occupantId) {
+    throw new AppError(403, 'STAND_REQUIRED', 'Cet administrateur n’est rattaché à aucun stand.');
+  }
+  return (await challengePassportRepository.findAll(occupantId)).map(managerPayload);
+};
 
 const getByCode = async (code) => {
   const passport = await challengePassportRepository.findByCode(code);

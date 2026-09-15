@@ -1,7 +1,7 @@
 const investorRequestService = require('./investor-request.service');
 
 const list = async (request, response) => {
-  response.json({ data: await investorRequestService.list(request.query) });
+  response.json({ data: await investorRequestService.list(request.user, request.query) });
 };
 
 const createPublic = async (request, response) => {

@@ -1,13 +1,13 @@
 const express = require('express');
 const asyncHandler = require('../../shared/async-handler');
 const validate = require('../../middlewares/validate.middleware');
-const { authenticate, requireAdminScope } = require('../../middlewares/auth.middleware');
-const adminScopes = require('../../shared/admin-scopes');
+const { authenticate, requireRoles } = require('../../middlewares/auth.middleware');
+const roles = require('../../shared/roles');
 const validation = require('./b2b-proposal.validation');
 const controller = require('./b2b-proposal.controller');
 
 const router = express.Router();
-const b2bAdminOnly = requireAdminScope(adminScopes.B2B);
+const b2bAdminOnly = requireRoles(roles.SUPER_ADMIN, roles.ADMIN);
 
 router.post('/public/:needId', validate(validation.needParams, 'params'), validate(validation.createPublic), asyncHandler(controller.createPublic));
 router.use(asyncHandler(authenticate), b2bAdminOnly);

@@ -678,11 +678,13 @@
 }
 
 .investor-request-form input,
+.investor-request-form select,
 .investor-request-form textarea {
   width: 100%;
 }
 
-.investor-request-form input:not([type='checkbox']) {
+.investor-request-form input:not([type='checkbox']),
+.investor-request-form select {
   height: 48px;
 }
 

@@ -25,12 +25,16 @@ const findPublicById = (id) => B2bNeed.findOne({
   include: [{ ...occupantInclude[0], where: { status: 'active' }, required: true }],
 });
 
-const findAll = () => B2bNeed.findAll({
+const findAll = (occupantId = null) => B2bNeed.findAll({
+  where: occupantId ? { occupantId } : {},
   include: [...occupantInclude, ...creatorInclude],
   order: [['createdAt', 'DESC']],
 });
 
-const findById = (id) => B2bNeed.findByPk(id, { include: [...occupantInclude, ...creatorInclude] });
+const findById = (id, occupantId = null) => B2bNeed.findOne({
+  where: { id, ...(occupantId && { occupantId }) },
+  include: [...occupantInclude, ...creatorInclude],
+});
 const findOccupantById = (id) => Occupant.findByPk(id, { attributes: ['id', 'name', 'status'] });
 const create = (values) => B2bNeed.create(values);
 const update = (need, values) => need.update(values);

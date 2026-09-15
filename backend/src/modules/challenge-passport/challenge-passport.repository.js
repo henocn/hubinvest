@@ -23,9 +23,12 @@ const findPublicByToken = (token) => ChallengePassport.findOne({
   order: [[{ model: ChallengePassage, as: 'passages' }, 'createdAt', 'ASC']],
 });
 
-const findAll = () => ChallengePassport.findAll({
+const findAll = (occupantId = null) => ChallengePassport.findAll({
   include: [
-    ...managerPassageInclude,
+    {
+      ...managerPassageInclude[0],
+      ...(occupantId && { where: { occupantId }, required: true }),
+    },
     { model: User, as: 'redeemedBy', attributes: ['id', 'firstName', 'lastName'] },
   ],
   order: [['createdAt', 'DESC']],

@@ -37,8 +37,9 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 
 ## Organisation du code
 
-- Limiter les comptes à quatre rôles : super administrateur, administrateur, occupant et animateur. Investor Desk, Campagne et B2B sont des périmètres d’un administrateur, pas des rôles supplémentaires.
-- Le super administrateur et les administrateurs utilisent le même backoffice ; ses modules sont filtrés selon leur périmètre. L’occupant utilise seulement Contacts, Défis et Profil. L’animateur utilise seulement Scan et Profil pour contrôler puis remettre les récompenses.
+- Limiter les comptes à quatre rôles : super administrateur, administrateur, occupant et animateur.
+- Un administrateur est rattaché à un stand, jamais à un « périmètre ». Dans le backoffice, il accède à Investor Desk, B2B, Studio et Participants, avec des données strictement filtrées sur son stand. Le super administrateur conserve la vue globale et la gestion des stands et des accès.
+- L’occupant utilise seulement Contacts, Défis et Profil. L’animateur utilise seulement Scan et Profil pour contrôler puis remettre les récompenses.
 - Le B2B se gère dans le backoffice et non dans l’espace occupant.
 - Frontend React réparti dans des dossiers `components/` et `pages/`. Une page ne doit pas contenir tous les composants du parcours.
 - Backend JavaScript avec Node.js, Express, nodemon, Sequelize et migrations.

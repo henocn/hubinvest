@@ -29,13 +29,9 @@ const sectionMeta = {
 
 export default function BackofficePage({ session, onLogout }) {
   const isSuperAdmin = session.user.role === 'super-admin';
-  const adminScope = session.user.adminScope;
-  const hasAdminScope = (scope) => isSuperAdmin || (session.user.role === 'admin' && (adminScope === 'all' || adminScope === scope));
-  const canAccessInvestorDesk = hasAdminScope('investor-desk');
-  const canAccessStudio = hasAdminScope('campagne');
-  const canAccessB2b = hasAdminScope('b2b');
-  const canAccessChallenges = isSuperAdmin;
-  const [section, setSection] = useState(() => (isSuperAdmin ? 'occupants' : canAccessInvestorDesk ? 'investor-requests' : canAccessStudio ? 'studio' : 'b2b'));
+  const isAdmin = session.user.role === 'admin';
+  const canAccessBusinessModules = isSuperAdmin || isAdmin;
+  const [section, setSection] = useState(() => (isSuperAdmin ? 'occupants' : 'investor-requests'));
   const [occupants, setOccupants] = useState([]);
   const [users, setUsers] = useState([]);
   const [investorRequests, setInvestorRequests] = useState([]);
@@ -78,16 +74,16 @@ export default function BackofficePage({ session, onLogout }) {
         setStudioInvitations(studioData);
         setChallengePassports(challengeData);
       } else {
-        if (canAccessInvestorDesk) {
-          const investorData = await api.investorRequests(session.token);
-          setInvestorRequests(investorData.items);
-        }
-        if (canAccessStudio) setStudioInvitations(await api.studioInvitations(session.token));
-        if (canAccessB2b) {
-          const [needData, occupantData] = await Promise.all([api.b2bNeeds(session.token), api.occupants(session.token)]);
-          setB2bNeeds(needData);
-          setOccupants(occupantData);
-        }
+        const [investorData, needData, studioData, challengeData] = await Promise.all([
+          api.investorRequests(session.token),
+          api.b2bNeeds(session.token),
+          api.studioInvitations(session.token),
+          api.challengePassports(session.token),
+        ]);
+        setInvestorRequests(investorData.items);
+        setB2bNeeds(needData);
+        setStudioInvitations(studioData);
+        setChallengePassports(challengeData);
       }
     } catch (requestError) {
       if (requestError.status === 401 || requestError.status === 403) onLogout();
@@ -95,7 +91,7 @@ export default function BackofficePage({ session, onLogout }) {
     } finally {
       setLoading(false);
     }
-  }, [canAccessB2b, canAccessInvestorDesk, canAccessStudio, isSuperAdmin, onLogout, session.token]);
+  }, [isSuperAdmin, onLogout, session.token]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -168,10 +164,10 @@ export default function BackofficePage({ session, onLogout }) {
         <div className="brand-lockup"><img src={logo} alt="API-ZF" /><div><strong>HubInvest</strong><span>Administration</span></div></div>
         <nav aria-label="Navigation principale">
           {isSuperAdmin && <><button className={section === 'occupants' ? 'is-active' : ''} onClick={() => switchSection('occupants')} title="Stands"><Building2 size={18} /><span>Stands</span></button><button className={section === 'users' ? 'is-active' : ''} onClick={() => switchSection('users')} title="Accès"><Users size={18} /><span>Accès</span></button></>}
-          {canAccessInvestorDesk && <button className={section === 'investor-requests' ? 'is-active' : ''} onClick={() => switchSection('investor-requests')} title="Investor Desk"><BriefcaseBusiness size={18} /><span>Investor Desk</span></button>}
-          {canAccessB2b && <button className={section === 'b2b' ? 'is-active' : ''} onClick={() => switchSection('b2b')} title="B2B"><Handshake size={18} /><span>B2B</span></button>}
-          {canAccessStudio && <button className={section === 'studio' ? 'is-active' : ''} onClick={() => switchSection('studio')} title="Studio"><Video size={18} /><span>Studio</span></button>}
-          {canAccessChallenges && <button className={section === 'challenges' ? 'is-active' : ''} onClick={() => switchSection('challenges')} title="Participants aux défis"><Trophy size={18} /><span>Participants</span></button>}
+          {canAccessBusinessModules && <button className={section === 'investor-requests' ? 'is-active' : ''} onClick={() => switchSection('investor-requests')} title="Investor Desk"><BriefcaseBusiness size={18} /><span>Investor Desk</span></button>}
+          {canAccessBusinessModules && <button className={section === 'b2b' ? 'is-active' : ''} onClick={() => switchSection('b2b')} title="B2B"><Handshake size={18} /><span>B2B</span></button>}
+          {canAccessBusinessModules && <button className={section === 'studio' ? 'is-active' : ''} onClick={() => switchSection('studio')} title="Studio"><Video size={18} /><span>Studio</span></button>}
+          {canAccessBusinessModules && <button className={section === 'challenges' ? 'is-active' : ''} onClick={() => switchSection('challenges')} title="Participants aux défis"><Trophy size={18} /><span>Participants</span></button>}
         </nav>
         <div className="sidebar-user">
           <span className="user-avatar"><UserRound size={18} /></span>
@@ -200,7 +196,7 @@ export default function BackofficePage({ session, onLogout }) {
           <section className="summary-row" aria-label="Résumé">
             <article><span>Ouverts</span><strong>{loading || error ? '—' : b2bNeeds.filter((item) => item.status === 'open').length}</strong><small>besoins publiés</small></article>
             <article><span>Fermés</span><strong>{loading || error ? '—' : b2bNeeds.filter((item) => item.status === 'closed').length}</strong><small>besoins retirés</small></article>
-            <article><span>Stands</span><strong>{loading || error ? '—' : new Set(b2bNeeds.map((item) => item.occupantId)).size}</strong><small>représentés</small></article>
+            <article><span>Total</span><strong>{loading || error ? '—' : b2bNeeds.length}</strong><small>besoins enregistrés</small></article>
           </section>
         ) : section === 'studio' ? (
           <section className="summary-row" aria-label="Résumé">
@@ -231,18 +227,18 @@ export default function BackofficePage({ session, onLogout }) {
           {loading && <p className="panel-message">Chargement des données...</p>}
           {!loading && !error && section === 'occupants' && <OccupantsTable occupants={visibleOccupants} contactStats={contactStats} query={query} onQrCode={setQrCode} onEdit={(item) => setDrawer({ type: 'occupant', item })} onDelete={requestOccupantDelete} />}
           {!loading && !error && section === 'users' && <UsersTable users={visibleUsers} query={query} currentUserId={session.user.id} onEdit={(item) => setDrawer({ type: 'user', item })} onDelete={requestUserDelete} />}
-          {!loading && !error && section === 'investor-requests' && <InvestorRequestsTable requests={visibleInvestorRequests} query={query} onEdit={(item) => setDrawer({ type: 'investor-request', item })} />}
-          {!loading && !error && section === 'b2b' && <B2bNeedsTable needs={visibleB2bNeeds} query={query} onEdit={(item) => setDrawer({ type: 'b2b', item })} />}
-          {!loading && !error && section === 'studio' && <StudioInvitationsTable invitations={visibleStudioInvitations} query={query} copiedId={copiedInvitationId} onCopy={copyInvitationLink} onEdit={(item) => setDrawer({ type: 'studio', item })} />}
-          {!loading && !error && section === 'challenges' && <ChallengePassportsTable passports={visibleChallengePassports} query={query} onRedeem={(passport) => { setRewardError(''); setPendingReward(passport); }} />}
+          {!loading && !error && section === 'investor-requests' && <InvestorRequestsTable requests={visibleInvestorRequests} query={query} showStand={isSuperAdmin} onEdit={(item) => setDrawer({ type: 'investor-request', item })} />}
+          {!loading && !error && section === 'b2b' && <B2bNeedsTable needs={visibleB2bNeeds} query={query} showStand={isSuperAdmin} onEdit={(item) => setDrawer({ type: 'b2b', item })} />}
+          {!loading && !error && section === 'studio' && <StudioInvitationsTable invitations={visibleStudioInvitations} query={query} showStand={isSuperAdmin} copiedId={copiedInvitationId} onCopy={copyInvitationLink} onEdit={(item) => setDrawer({ type: 'studio', item })} />}
+          {!loading && !error && section === 'challenges' && <ChallengePassportsTable passports={visibleChallengePassports} query={query} allowReward={isSuperAdmin} onRedeem={(passport) => { setRewardError(''); setPendingReward(passport); }} />}
         </section>
       </main>
 
       {drawer?.type === 'occupant' && <OccupantDrawer occupant={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'user' && <UserDrawer user={drawer.item} occupants={occupants} token={session.token} currentRole={session.user.role} currentUserId={session.user.id} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'investor-request' && <InvestorRequestDrawer investorRequest={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
-      {drawer?.type === 'b2b' && <B2bNeedDrawer need={drawer.item} occupants={occupants} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
-      {drawer?.type === 'studio' && <StudioInvitationDrawer invitation={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
+      {drawer?.type === 'b2b' && <B2bNeedDrawer need={drawer.item} occupants={occupants} fixedOccupant={isAdmin ? session.user.occupant : null} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
+      {drawer?.type === 'studio' && <StudioInvitationDrawer invitation={drawer.item} occupants={occupants} fixedOccupant={isAdmin ? session.user.occupant : null} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {pendingDelete && <ConfirmDelete subject={pendingDelete} loading={deleting} error={deleteError} onCancel={() => setPendingDelete(null)} onConfirm={confirmDelete} />}
       {pendingReward && <ConfirmReward passport={pendingReward} loading={rewarding} error={rewardError} onCancel={() => setPendingReward(null)} onConfirm={confirmReward} />}
       {qrCode && <QrCodeDialog {...qrCode} onClose={() => setQrCode(null)} />}

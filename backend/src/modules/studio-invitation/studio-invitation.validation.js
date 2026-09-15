@@ -9,12 +9,14 @@ const idParams = Joi.object({
 });
 
 const create = Joi.object({
+  occupantId: Joi.string().guid({ version: ['uuidv4'] }),
   guestName: Joi.string().trim().min(2).max(160).required(),
   subject: Joi.string().trim().min(3).max(180).required(),
   scheduledAt: Joi.date().iso().required(),
 });
 
 const update = Joi.object({
+  occupantId: Joi.string().guid({ version: ['uuidv4'] }),
   guestName: Joi.string().trim().min(2).max(160),
   subject: Joi.string().trim().min(3).max(180),
   scheduledAt: Joi.date().iso(),

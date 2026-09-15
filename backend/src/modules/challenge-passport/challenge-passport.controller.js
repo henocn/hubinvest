@@ -10,7 +10,7 @@ const getPublic = async (request, response) => response.json({
 });
 
 const list = async (request, response) => response.json({
-  data: await challengePassportService.list(),
+  data: await challengePassportService.list(request.user),
 });
 
 const getByCode = async (request, response) => response.json({

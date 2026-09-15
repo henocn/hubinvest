@@ -13,6 +13,7 @@ const userRepository = require('../src/modules/user/user.repository');
 const investorRequestService = require('../src/modules/investor-request/investor-request.service');
 const investorRequestRepository = require('../src/modules/investor-request/investor-request.repository');
 const investorRequestValidation = require('../src/modules/investor-request/investor-request.validation');
+const b2bNeedService = require('../src/modules/b2b-need/b2b-need.service');
 const b2bNeedRepository = require('../src/modules/b2b-need/b2b-need.repository');
 const b2bProposalService = require('../src/modules/b2b-proposal/b2b-proposal.service');
 const b2bProposalRepository = require('../src/modules/b2b-proposal/b2b-proposal.repository');
@@ -25,9 +26,8 @@ const challengePassageRepository = require('../src/modules/challenge-passage/cha
 const authService = require('../src/modules/auth/auth.service');
 const authRepository = require('../src/modules/auth/auth.repository');
 const authMailer = require('../src/modules/auth/auth.mailer');
-const { authenticate, requireAdminScope } = require('../src/middlewares/auth.middleware');
+const { authenticate } = require('../src/middlewares/auth.middleware');
 const roles = require('../src/shared/roles');
-const adminScopes = require('../src/shared/admin-scopes');
 const { sequelize, User, Occupant, B2bNeed } = require('../src/models');
 const env = require('../src/config/env');
 const app = require('../src/app');
@@ -57,16 +57,21 @@ test('les comptes utilisent seulement les quatre rôles retenus', () => {
   assert.deepEqual(Object.values(roles).sort(), ['admin', 'animateur', 'occupant', 'super-admin']);
 });
 
-test('un administrateur accède uniquement à son périmètre', () => {
-  const check = (user, scope) => new Promise((resolve) => {
-    requireAdminScope(scope)({ user }, {}, (error) => resolve(error));
-  });
+test('un administrateur doit être rattaché à un stand', async (context) => {
+  context.mock.method(userRepository, 'findOccupantById', async (id) => (id === 'occupant-a' ? { id } : null));
+  context.mock.method(userRepository, 'create', async (values) => ({ toJSON: () => values }));
 
-  return Promise.all([
-    check({ role: 'admin', adminScope: 'b2b' }, adminScopes.B2B).then((error) => assert.equal(error, undefined)),
-    check({ role: 'admin', adminScope: 'b2b' }, adminScopes.CAMPAIGN).then((error) => assert.equal(error?.status, 403)),
-    check({ role: 'super-admin' }, adminScopes.CAMPAIGN).then((error) => assert.equal(error, undefined)),
-  ]);
+  await assert.rejects(
+    userService.create({ role: 'super-admin' }, {
+      firstName: 'Koffi', lastName: 'Mensah', email: 'admin@example.com', password: 'secret-test', role: 'admin',
+    }),
+    (error) => error.status === 422 && error.code === 'OCCUPANT_REQUIRED',
+  );
+
+  const created = await userService.create({ role: 'super-admin' }, {
+    firstName: 'Koffi', lastName: 'Mensah', email: 'admin@example.com', password: 'secret-test', role: 'admin', occupantId: 'occupant-a',
+  });
+  assert.equal(created.occupantId, 'occupant-a');
 });
 
 test('la récupération envoie cinq chiffres et ne stocke jamais le code en clair', async (context) => {
@@ -75,7 +80,7 @@ test('la récupération envoie cinq chiffres et ne stocke jamais le code en clai
   context.after(() => { env.auth.secret = previousSecret; });
   const users = {
     'occupant@example.com': { id: 'occupant-user', firstName: 'Afi', email: 'occupant@example.com', role: 'occupant', occupantId: 'occupant-a', occupant: { status: 'active' }, isActive: true },
-    'admin@example.com': { id: 'admin-user', firstName: 'Koffi', email: 'admin@example.com', role: 'admin', adminScope: 'investor-desk', occupantId: null, isActive: true },
+    'admin@example.com': { id: 'admin-user', firstName: 'Koffi', email: 'admin@example.com', role: 'admin', occupantId: 'occupant-b', occupant: { status: 'active' }, isActive: true },
   };
   const storedHashes = [];
   const sentCodes = [];
@@ -341,6 +346,7 @@ test('une demande publique est rattachée au stand lu par le serveur, sans quali
 
 test('une demande Investor Desk exige le consentement API-ZF', () => {
   const { error } = investorRequestValidation.createPublic.validate({
+    occupantId: '4eb8be9e-7ee3-4c57-9043-19e41b77df9d',
     fullName: 'Investisseur Test',
     email: 'investisseur@example.com',
     projectSummary: 'Projet industriel à présenter.',
@@ -353,20 +359,37 @@ test('une demande Investor Desk exige le consentement API-ZF', () => {
 test('le premier suivi Investor Desk attribue la demande à son agent', async (context) => {
   const investorRequest = { id: 'request-a', assignedToUserId: null };
   let saved;
-  context.mock.method(investorRequestRepository, 'findById', async () => investorRequest);
+  context.mock.method(investorRequestRepository, 'findById', async (_id, occupantId) => {
+    assert.equal(occupantId, 'occupant-a');
+    return investorRequest;
+  });
   context.mock.method(investorRequestRepository, 'update', async (_request, values) => {
     saved = values;
     return values;
   });
 
   await investorRequestService.update(
-    { id: 'agent-a', role: 'admin', adminScope: 'investor-desk' },
+    { id: 'agent-a', role: 'admin', occupantId: 'occupant-a' },
     investorRequest.id,
     { status: 'in_progress', nextAction: 'Rappeler le porteur du projet' },
   );
 
   assert.equal(saved.assignedToUserId, 'agent-a');
   assert.equal(saved.status, 'in_progress');
+});
+
+test('la liste Investor Desk d’un administrateur utilise uniquement son stand', async (context) => {
+  let requestedStand;
+  context.mock.method(investorRequestRepository, 'findAll', async (query) => {
+    requestedStand = query.occupantId;
+    return { rows: [], count: 0 };
+  });
+
+  await investorRequestService.list(
+    { role: 'admin', occupantId: 'occupant-a' },
+    { limit: 50, offset: 0 },
+  );
+  assert.equal(requestedStand, 'occupant-a');
 });
 
 test('la liste publique B2B ne contient que les besoins ouverts de stands actifs', async (context) => {
@@ -377,6 +400,18 @@ test('la liste publique B2B ne contient que les besoins ouverts de stands actifs
   assert.deepEqual(result.where, { status: 'open' });
   assert.deepEqual(result.include[0].where, { status: 'active' });
   assert.equal(result.include[0].required, true);
+});
+
+test('un administrateur publie un besoin B2B uniquement pour son stand', async (context) => {
+  let saved;
+  context.mock.method(b2bNeedRepository, 'findOccupantById', async (id) => ({ id }));
+  context.mock.method(b2bNeedRepository, 'create', async (values) => { saved = values; return values; });
+
+  await b2bNeedService.create(
+    { id: 'admin-a', role: 'admin', occupantId: 'occupant-a' },
+    { occupantId: 'occupant-b', title: 'Besoin test', description: 'Description du besoin test.' },
+  );
+  assert.equal(saved.occupantId, 'occupant-a');
 });
 
 test('une proposition B2B sans consentement est refusée avant toute écriture', async (context) => {
@@ -394,7 +429,7 @@ test('le backoffice B2B peut lire les propositions d’un besoin existant', asyn
   context.mock.method(b2bNeedRepository, 'findById', async () => ({ id: 'need-b', occupantId: 'occupant-b' }));
   context.mock.method(b2bProposalRepository, 'findAllByNeed', async (needId) => [{ id: 'proposal-a', b2bNeedId: needId }]);
 
-  const result = await b2bProposalService.list({ role: 'admin', adminScope: 'b2b' }, 'need-b');
+  const result = await b2bProposalService.list({ role: 'admin', occupantId: 'occupant-b' }, 'need-b');
   assert.deepEqual(result, [{ id: 'proposal-a', b2bNeedId: 'need-b' }]);
 });
 
@@ -404,14 +439,16 @@ test('une invitation Studio utilise un lien personnel imprévisible', async (con
     saved = values;
     return values;
   });
+  context.mock.method(studioInvitationRepository, 'findOccupantById', async (id) => ({ id }));
 
   await studioInvitationService.create(
-    { id: 'campaign-user' },
+    { id: 'campaign-user', role: 'admin', occupantId: 'occupant-a' },
     { guestName: 'Invité Test', subject: 'Entretien Studio', scheduledAt: new Date().toISOString() },
   );
 
   assert.match(saved.token, /^[a-f0-9]{64}$/);
   assert.equal(saved.createdByUserId, 'campaign-user');
+  assert.equal(saved.occupantId, 'occupant-a');
   assert.equal(saved.status, 'pending');
 });
 
@@ -436,21 +473,24 @@ test('la réponse publique Studio ne révèle pas le lien interne et enregistre 
   assert.equal(result.id, undefined);
 });
 
-test('le planning Studio est réservé à l’administrateur du périmètre campagne', async (context) => {
+test('le planning Studio d’un administrateur est filtré sur son stand', async (context) => {
   const originalSecret = env.auth.secret;
   env.auth.secret = 'hubinvest-studio-test-secret';
   context.after(() => { env.auth.secret = originalSecret; });
   context.mock.method(User, 'findOne', async ({ where }) => ({
-    occupantId: null,
-    occupant: null,
+    occupantId: `occupant-${where.id}`,
+    occupant: { status: 'active' },
     toJSON: () => ({
       id: where.id,
-      occupantId: null,
+      occupantId: `occupant-${where.id}`,
       role: 'admin',
-      adminScope: where.id === 'campaign' ? 'campagne' : 'investor-desk',
     }),
   }));
-  context.mock.method(studioInvitationRepository, 'findAll', async () => []);
+  const requestedStands = [];
+  context.mock.method(studioInvitationRepository, 'findAll', async (occupantId) => {
+    requestedStands.push(occupantId);
+    return [];
+  });
 
   const server = app.listen(0, '127.0.0.1');
   context.after(() => server.close());
@@ -460,8 +500,8 @@ test('le planning Studio est réservé à l’administrateur du périmètre camp
     headers: { Authorization: `Bearer ${jwt.sign({}, env.auth.secret, { subject })}` },
   });
 
-  assert.equal((await requestAs('investor')).status, 403);
-  assert.equal((await requestAs('campaign')).status, 200);
+  assert.equal((await requestAs('pia')).status, 200);
+  assert.deepEqual(requestedStands, ['occupant-pia']);
 });
 
 test('le contact d’un participant est conservé sans être exposé sur son passeport public', async (context) => {
@@ -491,10 +531,21 @@ test('la liste des joueurs conserve le validateur et son stand pour chaque scan'
     toJSON: () => ({ id: 'passport-a', displayName: 'Visiteur Test', passages: [passage] }),
   }]);
 
-  const [result] = await challengePassportService.list();
+  const [result] = await challengePassportService.list({ role: 'super-admin' });
   assert.equal(result.passageCount, 1);
   assert.deepEqual(result.passages[0].validatedBy, passage.validatedBy);
   assert.deepEqual(result.passages[0].occupant, passage.occupant);
+});
+
+test('la liste des joueurs d’un administrateur est limitée aux scans de son stand', async (context) => {
+  let requestedStand;
+  context.mock.method(challengePassportRepository, 'findAll', async (occupantId) => {
+    requestedStand = occupantId;
+    return [];
+  });
+
+  await challengePassportService.list({ role: 'admin', occupantId: 'occupant-a' });
+  assert.equal(requestedStand, 'occupant-a');
 });
 
 test('le contrôle animateur par code ne révèle pas le contact du participant', async (context) => {

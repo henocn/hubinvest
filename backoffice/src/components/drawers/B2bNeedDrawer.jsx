@@ -4,9 +4,9 @@ import { api } from '../../lib/api';
 
 const proposalLabels = { pending: 'À examiner', accepted: 'Acceptée', declined: 'Refusée' };
 
-export default function B2bNeedDrawer({ need, occupants, token, onClose, onSaved }) {
+export default function B2bNeedDrawer({ need, occupants, fixedOccupant, token, onClose, onSaved }) {
   const isEditing = Boolean(need);
-  const [form, setForm] = useState({ occupantId: need?.occupantId || '', title: need?.title || '', description: need?.description || '', status: need?.status || 'open' });
+  const [form, setForm] = useState({ occupantId: need?.occupantId || fixedOccupant?.id || '', title: need?.title || '', description: need?.description || '', status: need?.status || 'open' });
   const [proposals, setProposals] = useState([]);
   const [loadingProposalId, setLoadingProposalId] = useState('');
   const [loading, setLoading] = useState(false);
@@ -50,7 +50,7 @@ export default function B2bNeedDrawer({ need, occupants, token, onClose, onSaved
       <aside className="drawer drawer-wide" role="dialog" aria-modal="true" aria-labelledby="b2b-need-title" onMouseDown={(event) => event.stopPropagation()}>
         <header className="drawer-header"><h2 id="b2b-need-title">{isEditing ? 'Modifier le besoin' : 'Nouveau besoin B2B'}</h2><button className="icon-button" type="button" onClick={onClose} aria-label="Fermer"><X size={19} /></button></header>
         <form onSubmit={submit} className="drawer-form">
-          <label>Stand<select value={form.occupantId} onChange={(event) => setForm({ ...form, occupantId: event.target.value })} required><option value="">Sélectionner un stand</option>{occupants.map((occupant) => <option key={occupant.id} value={occupant.id}>{occupant.name}</option>)}</select></label>
+          {!fixedOccupant && <label>Stand<select value={form.occupantId} onChange={(event) => setForm({ ...form, occupantId: event.target.value })} required><option value="">Sélectionner un stand</option>{occupants.map((occupant) => <option key={occupant.id} value={occupant.id}>{occupant.name}</option>)}</select></label>}
           <label>Titre<input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} minLength={3} maxLength={180} required /></label>
           <label>Description<textarea rows="6" value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} minLength={10} maxLength={6000} required /></label>
           {isEditing && <label>Statut<select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })}><option value="open">Ouvert</option><option value="closed">Fermé</option></select></label>}

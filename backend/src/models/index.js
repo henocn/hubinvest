@@ -31,6 +31,8 @@ Contact.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
 
 User.hasMany(InvestorRequest, { foreignKey: 'assignedToUserId', as: 'assignedInvestorRequests' });
 InvestorRequest.belongsTo(User, { foreignKey: 'assignedToUserId', as: 'assignedTo' });
+Occupant.hasMany(InvestorRequest, { foreignKey: 'occupantId', as: 'investorRequests' });
+InvestorRequest.belongsTo(Occupant, { foreignKey: 'occupantId', as: 'occupant' });
 
 Occupant.hasMany(B2bNeed, { foreignKey: 'occupantId', as: 'b2bNeeds' });
 B2bNeed.belongsTo(Occupant, { foreignKey: 'occupantId', as: 'occupant' });
@@ -46,6 +48,8 @@ B2bProposal.belongsTo(User, { foreignKey: 'handledByUserId', as: 'handledBy' });
 
 User.hasMany(StudioInvitation, { foreignKey: 'createdByUserId', as: 'createdStudioInvitations' });
 StudioInvitation.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
+Occupant.hasMany(StudioInvitation, { foreignKey: 'occupantId', as: 'studioInvitations' });
+StudioInvitation.belongsTo(Occupant, { foreignKey: 'occupantId', as: 'occupant' });
 
 ChallengePassport.hasMany(ChallengePassage, { foreignKey: 'passportId', as: 'passages' });
 ChallengePassage.belongsTo(ChallengePassport, { foreignKey: 'passportId', as: 'passport' });

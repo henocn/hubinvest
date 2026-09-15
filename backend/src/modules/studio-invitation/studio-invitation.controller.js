@@ -10,7 +10,7 @@ const respond = async (request, response) => response.json({
 });
 
 const list = async (request, response) => response.json({
-  data: await studioInvitationService.list(),
+  data: await studioInvitationService.list(request.user),
 });
 
 const create = async (request, response) => response.status(201).json({
@@ -19,7 +19,7 @@ const create = async (request, response) => response.status(201).json({
 });
 
 const update = async (request, response) => response.json({
-  data: await studioInvitationService.update(request.params.id, request.body),
+  data: await studioInvitationService.update(request.user, request.params.id, request.body),
   message: 'Invitation mise à jour.',
 });
 
