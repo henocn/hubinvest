@@ -9,7 +9,7 @@ const uploadCover = require('./occupant-cover.middleware');
 const uploadLogo = require('./occupant-logo.middleware');
 
 const router = express.Router();
-const adminOnly = requireRoles(roles.SUPER_ADMIN, roles.ADMIN_APIZF);
+const adminOnly = requireRoles(roles.SUPER_ADMIN);
 
 router.get('/public', asyncHandler(occupantController.listPublic));
 router.get(
@@ -18,8 +18,9 @@ router.get(
   asyncHandler(occupantController.getPublic),
 );
 
-router.use(asyncHandler(authenticate), adminOnly);
-router.get('/', asyncHandler(occupantController.list));
+router.use(asyncHandler(authenticate));
+router.get('/', adminOnly, asyncHandler(occupantController.list));
+router.use(adminOnly);
 router.post('/', validate(occupantValidation.create), asyncHandler(occupantController.create));
 router.get('/:id', validate(occupantValidation.params, 'params'), asyncHandler(occupantController.get));
 router.patch(

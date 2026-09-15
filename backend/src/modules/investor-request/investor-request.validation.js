@@ -3,6 +3,7 @@ const Joi = require('joi');
 const uuid = Joi.string().guid({ version: ['uuidv4'] });
 
 const createPublic = Joi.object({
+  occupantId: uuid.required(),
   fullName: Joi.string().trim().min(2).max(160).required(),
   email: Joi.string().trim().email().max(180).required(),
   phone: Joi.string().trim().min(6).max(32).allow('', null),

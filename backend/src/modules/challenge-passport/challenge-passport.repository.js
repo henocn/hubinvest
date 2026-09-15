@@ -1,24 +1,42 @@
 const { ChallengePassport, ChallengePassage, Occupant, User } = require('../../models');
 
-const passageInclude = [{
+const publicPassageInclude = [{
   model: ChallengePassage,
   as: 'passages',
   attributes: ['id', 'createdAt'],
   include: [{ model: Occupant, as: 'occupant', attributes: ['id', 'name', 'standLabel'] }],
 }];
 
+const managerPassageInclude = [{
+  model: ChallengePassage,
+  as: 'passages',
+  attributes: ['id', 'createdAt'],
+  include: [
+    { model: Occupant, as: 'occupant', attributes: ['id', 'name', 'standLabel'] },
+    { model: User, as: 'validatedBy', attributes: ['id', 'firstName', 'lastName'] },
+  ],
+}];
+
 const findPublicByToken = (token) => ChallengePassport.findOne({
   where: { token },
-  include: passageInclude,
+  include: publicPassageInclude,
   order: [[{ model: ChallengePassage, as: 'passages' }, 'createdAt', 'ASC']],
 });
 
-const findAll = () => ChallengePassport.findAll({
+const findAll = (occupantId = null) => ChallengePassport.findAll({
   include: [
-    ...passageInclude,
+    {
+      ...managerPassageInclude[0],
+      ...(occupantId && { where: { occupantId }, required: true }),
+    },
     { model: User, as: 'redeemedBy', attributes: ['id', 'firstName', 'lastName'] },
   ],
   order: [['createdAt', 'DESC']],
+});
+
+const findByCode = (code) => ChallengePassport.findOne({
+  where: { code },
+  include: managerPassageInclude,
 });
 
 const findByCodeForUpdate = (code, transaction) => ChallengePassport.findOne({
@@ -35,4 +53,4 @@ const findByIdForUpdate = (id, transaction) => ChallengePassport.findByPk(id, {
 const create = (values) => ChallengePassport.create(values);
 const update = (passport, values, transaction) => passport.update(values, { transaction });
 
-module.exports = { findPublicByToken, findAll, findByCodeForUpdate, findByIdForUpdate, create, update };
+module.exports = { findPublicByToken, findAll, findByCode, findByCodeForUpdate, findByIdForUpdate, create, update };

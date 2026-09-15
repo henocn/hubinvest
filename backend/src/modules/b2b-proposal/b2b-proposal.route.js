@@ -7,12 +7,11 @@ const validation = require('./b2b-proposal.validation');
 const controller = require('./b2b-proposal.controller');
 
 const router = express.Router();
-const occupantTeam = requireRoles(roles.OCCUPANT_MANAGER, roles.OCCUPANT_MEMBER);
-const managerOnly = requireRoles(roles.OCCUPANT_MANAGER);
+const b2bAdminOnly = requireRoles(roles.SUPER_ADMIN, roles.ADMIN);
 
 router.post('/public/:needId', validate(validation.needParams, 'params'), validate(validation.createPublic), asyncHandler(controller.createPublic));
-router.use(asyncHandler(authenticate), occupantTeam);
+router.use(asyncHandler(authenticate), b2bAdminOnly);
 router.get('/need/:needId', validate(validation.needParams, 'params'), asyncHandler(controller.list));
-router.patch('/:id', managerOnly, validate(validation.params, 'params'), validate(validation.update), asyncHandler(controller.update));
+router.patch('/:id', validate(validation.params, 'params'), validate(validation.update), asyncHandler(controller.update));
 
 module.exports = router;

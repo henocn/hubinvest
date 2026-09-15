@@ -9,9 +9,10 @@ const toLocalInput = (value) => {
   return local.toISOString().slice(0, 16);
 };
 
-export default function StudioInvitationDrawer({ invitation, onClose, onSaved, token }) {
+export default function StudioInvitationDrawer({ invitation, occupants, fixedOccupant, onClose, onSaved, token }) {
   const isEditing = Boolean(invitation);
   const [form, setForm] = useState({
+    occupantId: invitation?.occupantId || fixedOccupant?.id || '',
     guestName: invitation?.guestName || '',
     subject: invitation?.subject || '',
     scheduledAt: toLocalInput(invitation?.scheduledAt),
@@ -25,6 +26,7 @@ export default function StudioInvitationDrawer({ invitation, onClose, onSaved, t
     setError('');
     try {
       const values = {
+        occupantId: form.occupantId,
         guestName: form.guestName,
         subject: form.subject,
         scheduledAt: new Date(form.scheduledAt).toISOString(),
@@ -48,6 +50,7 @@ export default function StudioInvitationDrawer({ invitation, onClose, onSaved, t
           <button className="icon-button" type="button" onClick={onClose} aria-label="Fermer"><X size={19} /></button>
         </header>
         <form onSubmit={submit} className="drawer-form">
+          {!fixedOccupant && <label>Stand<select value={form.occupantId} onChange={(event) => setForm({ ...form, occupantId: event.target.value })} required><option value="">Sélectionner un stand</option>{occupants.map((occupant) => <option key={occupant.id} value={occupant.id}>{occupant.name}</option>)}</select></label>}
           <label>Nom de l’invité<input value={form.guestName} onChange={(event) => setForm({ ...form, guestName: event.target.value })} minLength={2} maxLength={160} required autoFocus /></label>
           <label>Sujet<input value={form.subject} onChange={(event) => setForm({ ...form, subject: event.target.value })} minLength={3} maxLength={180} required /></label>
           <label>Date et heure<input type="datetime-local" value={form.scheduledAt} onChange={(event) => setForm({ ...form, scheduledAt: event.target.value })} required /></label>

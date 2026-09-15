@@ -1,0 +1,81 @@
+import { CheckCircle2, ScanLine } from 'lucide-react';
+import { useCallback, useRef, useState } from 'react';
+import ChallengeScannerDialog from '../components/occupant/ChallengeScannerDialog';
+import { api } from '../lib/api';
+
+const participantCode = /^[A-HJ-NP-Z2-9]{8}$/;
+
+export default function AnimatorScanPage({ session, onLogout }) {
+  const submitting = useRef(false);
+  const [code, setCode] = useState('');
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [participant, setParticipant] = useState(null);
+  const [result, setResult] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const findParticipant = useCallback(async (value) => {
+    if (submitting.current) return;
+    const normalized = value.trim().toUpperCase();
+    if (!participantCode.test(normalized)) {
+      setError('Saisissez les 8 caractères du code participant.');
+      setParticipant(null);
+      setResult('');
+      return;
+    }
+
+    submitting.current = true;
+    setLoading(true);
+    setError('');
+    setParticipant(null);
+    setResult('');
+    try {
+      setParticipant(await api.challengeRewardByCode(session.token, normalized));
+      setCode('');
+    } catch (requestError) {
+      if (requestError.status === 401 || requestError.status === 403) onLogout();
+      else setError(requestError.message);
+    } finally {
+      submitting.current = false;
+      setLoading(false);
+    }
+  }, [onLogout, session.token]);
+
+  const redeem = async () => {
+    if (!participant || participant.status !== 'completed') return;
+    setLoading(true);
+    setError('');
+    try {
+      const passport = await api.redeemChallengeReward(session.token, participant.code);
+      setParticipant(null);
+      setResult(`Récompense remise à ${passport.displayName}`);
+    } catch (requestError) {
+      if (requestError.status === 401 || requestError.status === 403) onLogout();
+      else setError(requestError.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const scanned = useCallback((value) => {
+    setCameraOpen(false);
+    void findParticipant(value);
+  }, [findParticipant]);
+
+  return (
+    <main className="workspace challenge-validation-workspace animator-scan-workspace">
+      <section className="challenge-validation-content">
+        <h1>Remettre une récompense</h1>
+        <button className="button button-primary challenge-open-scanner" type="button" onClick={() => setCameraOpen(true)} disabled={loading}><ScanLine size={20} /> Scanner</button>
+        <form className="challenge-manual-form" onSubmit={(event) => { event.preventDefault(); void findParticipant(code); }}>
+          <label htmlFor="reward-participant-code">Code participant</label>
+          <div className="challenge-manual-row"><input id="reward-participant-code" className="challenge-code-input" value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} minLength={8} maxLength={8} autoCapitalize="characters" autoComplete="off" required /><button className="button button-secondary" type="submit" disabled={loading}>OK</button></div>
+        </form>
+        {participant && <section className={`animator-participant is-${participant.status}`}><strong>{participant.displayName}</strong><span>{participant.passageCount} / {participant.requiredPassages} passages</span>{participant.status === 'completed' && <button className="button button-primary" type="button" onClick={redeem} disabled={loading}>Remettre la récompense</button>}{participant.status === 'active' && <p>Parcours non terminé.</p>}{participant.status === 'redeemed' && <p>Récompense déjà remise.</p>}</section>}
+        {error && <p className="panel-error" role="alert">{error}</p>}
+        {result && <p className="challenge-validation-success" role="status"><CheckCircle2 size={20} /> {result}</p>}
+      </section>
+      {cameraOpen && <ChallengeScannerDialog onCode={scanned} onClose={() => setCameraOpen(false)} />}
+    </main>
+  );
+}

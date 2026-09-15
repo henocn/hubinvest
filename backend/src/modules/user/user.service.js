@@ -3,8 +3,6 @@ const AppError = require('../../shared/app-error');
 const roles = require('../../shared/roles');
 const userRepository = require('./user.repository');
 
-const occupantRoles = [roles.OCCUPANT_MANAGER, roles.OCCUPANT_MEMBER];
-
 const protectSuperAdmin = (actor, targetRole) => {
   if (actor.role !== roles.SUPER_ADMIN && targetRole === roles.SUPER_ADMIN) {
     throw new AppError(403, 'FORBIDDEN_ROLE', 'Seul un super administrateur peut gérer ce rôle.');
@@ -18,8 +16,13 @@ const serialize = (user) => {
 };
 
 const validateOccupant = async (values) => {
-  if (occupantRoles.includes(values.role) && !values.occupantId) {
-    throw new AppError(422, 'OCCUPANT_REQUIRED', 'Un utilisateur occupant doit être rattaché à un occupant.');
+  const requiresStand = [roles.ADMIN, roles.OCCUPANT].includes(values.role);
+  if (requiresStand && !values.occupantId) {
+    throw new AppError(422, 'OCCUPANT_REQUIRED', 'Ce compte doit être rattaché à un stand.');
+  }
+
+  if (!requiresStand && values.occupantId) {
+    throw new AppError(422, 'OCCUPANT_FORBIDDEN', 'Ce rôle ne peut pas être rattaché à un stand.');
   }
 
   if (values.occupantId) {
@@ -59,6 +62,7 @@ const changePassword = async (actor, values) => {
 const create = async (actor, values) => {
   protectSuperAdmin(actor, values.role);
   const normalized = { ...values, email: values.email.toLowerCase() };
+  normalized.occupantId = [roles.ADMIN, roles.OCCUPANT].includes(normalized.role) ? normalized.occupantId : null;
   await validateOccupant(normalized);
   normalized.passwordHash = await bcrypt.hash(normalized.password, 12);
   delete normalized.password;
@@ -87,7 +91,11 @@ const update = async (actor, id, values) => {
       : user.occupantId,
   };
 
+  if (![roles.ADMIN, roles.OCCUPANT].includes(resultingValues.role)) resultingValues.occupantId = null;
+
   await validateOccupant(resultingValues);
+
+  nextValues.occupantId = resultingValues.occupantId;
 
   if (nextValues.email) {
     nextValues.email = nextValues.email.toLowerCase();

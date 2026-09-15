@@ -89,6 +89,8 @@ export default {
     title: "Tell us about your project",
     subtitle: "Investor Desk",
     question: "What would you like to achieve?",
+    institution: "Relevant organisation",
+    chooseInstitution: "Choose an organisation",
     details: "Your contact details",
     successTitle: "Request sent",
     successText: "The Investor Desk now has your project and contact details.",

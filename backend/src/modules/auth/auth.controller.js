@@ -5,8 +5,21 @@ const login = async (request, response) => {
   response.json({ data: result, message: 'Connexion réussie.' });
 };
 
+const forgotPassword = async (request, response) => {
+  await authService.forgotPassword(request.body);
+  response.json({
+    data: null,
+    message: 'Si cette adresse correspond à un compte, un code de réinitialisation a été envoyé.',
+  });
+};
+
+const resetPassword = async (request, response) => {
+  await authService.resetPassword(request.body);
+  response.json({ data: null, message: 'Mot de passe modifié.' });
+};
+
 const me = (request, response) => {
   response.json({ data: request.user });
 };
 
-module.exports = { login, me };
+module.exports = { login, forgotPassword, resetPassword, me };

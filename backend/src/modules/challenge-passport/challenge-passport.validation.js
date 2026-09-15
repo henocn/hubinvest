@@ -13,4 +13,11 @@ const createPublic = Joi.object({
   contact: Joi.string().trim().min(5).max(180).required(),
 });
 
-module.exports = { tokenParams, idParams, createPublic };
+const rewardCode = Joi.object({
+  code: Joi.string().trim().uppercase().pattern(/^[A-HJ-NP-Z2-9]{8}$/).required(),
+});
+const rewardCodeParams = Joi.object({
+  code: Joi.string().trim().uppercase().pattern(/^[A-HJ-NP-Z2-9]{8}$/).required(),
+});
+
+module.exports = { tokenParams, idParams, createPublic, rewardCode, rewardCodeParams };

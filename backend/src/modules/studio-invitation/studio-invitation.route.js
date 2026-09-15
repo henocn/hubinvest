@@ -7,7 +7,7 @@ const studioInvitationValidation = require('./studio-invitation.validation');
 const studioInvitationController = require('./studio-invitation.controller');
 
 const router = express.Router();
-const studioTeamOnly = requireRoles(roles.SUPER_ADMIN, roles.ADMIN_APIZF, roles.CAMPAIGN_TEAM);
+const studioTeamOnly = requireRoles(roles.SUPER_ADMIN, roles.ADMIN);
 
 router.get(
   '/public/:token',

@@ -12,6 +12,11 @@ module.exports = (sequelize, DataTypes) =>
         allowNull: true,
         field: 'created_by_user_id',
       },
+      occupantId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        field: 'occupant_id',
+      },
       token: {
         type: DataTypes.STRING(64),
         allowNull: false,

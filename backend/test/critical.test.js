@@ -1,5 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const crypto = require('node:crypto');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { UniqueConstraintError } = require('sequelize');
@@ -12,6 +13,7 @@ const userRepository = require('../src/modules/user/user.repository');
 const investorRequestService = require('../src/modules/investor-request/investor-request.service');
 const investorRequestRepository = require('../src/modules/investor-request/investor-request.repository');
 const investorRequestValidation = require('../src/modules/investor-request/investor-request.validation');
+const b2bNeedService = require('../src/modules/b2b-need/b2b-need.service');
 const b2bNeedRepository = require('../src/modules/b2b-need/b2b-need.repository');
 const b2bProposalService = require('../src/modules/b2b-proposal/b2b-proposal.service');
 const b2bProposalRepository = require('../src/modules/b2b-proposal/b2b-proposal.repository');
@@ -21,7 +23,11 @@ const challengePassportService = require('../src/modules/challenge-passport/chal
 const challengePassportRepository = require('../src/modules/challenge-passport/challenge-passport.repository');
 const challengePassageService = require('../src/modules/challenge-passage/challenge-passage.service');
 const challengePassageRepository = require('../src/modules/challenge-passage/challenge-passage.repository');
+const authService = require('../src/modules/auth/auth.service');
+const authRepository = require('../src/modules/auth/auth.repository');
+const authMailer = require('../src/modules/auth/auth.mailer');
 const { authenticate } = require('../src/middlewares/auth.middleware');
+const roles = require('../src/shared/roles');
 const { sequelize, User, Occupant, B2bNeed } = require('../src/models');
 const env = require('../src/config/env');
 const app = require('../src/app');
@@ -45,6 +51,84 @@ test('un occupant doit connaître son mot de passe actuel pour le remplacer', as
   );
 
   assert.equal(await bcrypt.compare('nouveau-secret', user.passwordHash), true);
+});
+
+test('les comptes utilisent seulement les quatre rôles retenus', () => {
+  assert.deepEqual(Object.values(roles).sort(), ['admin', 'animateur', 'occupant', 'super-admin']);
+});
+
+test('un administrateur doit être rattaché à un stand', async (context) => {
+  context.mock.method(userRepository, 'findOccupantById', async (id) => (id === 'occupant-a' ? { id } : null));
+  context.mock.method(userRepository, 'create', async (values) => ({ toJSON: () => values }));
+
+  await assert.rejects(
+    userService.create({ role: 'super-admin' }, {
+      firstName: 'Koffi', lastName: 'Mensah', email: 'admin@example.com', password: 'secret-test', role: 'admin',
+    }),
+    (error) => error.status === 422 && error.code === 'OCCUPANT_REQUIRED',
+  );
+
+  const created = await userService.create({ role: 'super-admin' }, {
+    firstName: 'Koffi', lastName: 'Mensah', email: 'admin@example.com', password: 'secret-test', role: 'admin', occupantId: 'occupant-a',
+  });
+  assert.equal(created.occupantId, 'occupant-a');
+});
+
+test('la récupération envoie cinq chiffres et ne stocke jamais le code en clair', async (context) => {
+  const previousSecret = env.auth.secret;
+  env.auth.secret = 'secret-de-test';
+  context.after(() => { env.auth.secret = previousSecret; });
+  const users = {
+    'occupant@example.com': { id: 'occupant-user', firstName: 'Afi', email: 'occupant@example.com', role: 'occupant', occupantId: 'occupant-a', occupant: { status: 'active' }, isActive: true },
+    'admin@example.com': { id: 'admin-user', firstName: 'Koffi', email: 'admin@example.com', role: 'admin', occupantId: 'occupant-b', occupant: { status: 'active' }, isActive: true },
+  };
+  const storedHashes = [];
+  const sentCodes = [];
+  context.mock.method(authMailer, 'isConfigured', () => true);
+  context.mock.method(authRepository, 'findUserByEmail', async (email) => users[email]);
+  context.mock.method(authRepository, 'savePasswordReset', async (_user, hash, expiresAt) => {
+    storedHashes.push({ hash, expiresAt });
+  });
+  context.mock.method(authMailer, 'sendPasswordReset', async (user, code) => { sentCodes.push({ email: user.email, code }); });
+
+  await authService.forgotPassword({ email: 'occupant@example.com' });
+  await authService.forgotPassword({ email: 'admin@example.com' });
+  await authService.forgotPassword({ email: 'inconnu@example.com' });
+
+  assert.equal(sentCodes.length, 2);
+  assert.equal(storedHashes.length, 2);
+  sentCodes.forEach(({ email, code }, index) => {
+    assert.match(code, /^\d{5}$/);
+    assert.equal(storedHashes[index].hash, crypto.createHmac('sha256', env.auth.secret).update(`${email}:${code}`).digest('hex'));
+    assert.notEqual(storedHashes[index].hash, code);
+    assert.ok(storedHashes[index].expiresAt > new Date());
+  });
+});
+
+test('un code de récupération est utilisable une seule fois avant son expiration', async (context) => {
+  const previousSecret = env.auth.secret;
+  env.auth.secret = 'secret-de-test';
+  context.after(() => { env.auth.secret = previousSecret; });
+  const email = 'occupant@example.com';
+  const code = '12345';
+  let savedPasswordHash;
+  let failedAttempts = 0;
+  context.mock.method(authRepository, 'resetPassword', async (requestedEmail, codeHash, passwordHash) => {
+    assert.equal(requestedEmail, email);
+    assert.equal(codeHash, crypto.createHmac('sha256', env.auth.secret).update(`${email}:${code}`).digest('hex'));
+    if (savedPasswordHash) return false;
+    savedPasswordHash = passwordHash;
+    return true;
+  });
+  context.mock.method(authRepository, 'recordFailedReset', async () => { failedAttempts += 1; });
+
+  await authService.resetPassword({ email, code, password: 'nouveau-secret' });
+  assert.equal(await bcrypt.compare('nouveau-secret', savedPasswordHash), true);
+  await assert.rejects(
+    authService.resetPassword({ email, code, password: 'autre-secret' }),
+    (error) => error.status === 422 && error.code === 'PASSWORD_RESET_INVALID',
+  );
+  assert.equal(failedAttempts, 1);
 });
 
 test('les listes et les details restent limites a l’occupant authentifie', async (context) => {
@@ -130,25 +214,25 @@ test('un occupant desactive perd acces meme avec un jeton encore valide', async 
   assert.equal(result.code, 'OCCUPANT_INACTIVE');
 });
 
-test('les totaux administrateur proviennent des groupes et restent interdits aux occupants', async (context) => {
+test('les totaux globaux proviennent des groupes et restent réservés au super administrateur', async (context) => {
   context.mock.method(contactRepository, 'countByOccupant', async () => [
     { occupantId: 'occupant-a', count: '2' },
     { occupantId: 'occupant-b', count: '3' },
   ]);
 
   await assert.rejects(
-    contactService.adminStats({ role: 'occupant-responsable', occupantId: 'occupant-a' }),
+    contactService.adminStats({ role: 'occupant', occupantId: 'occupant-a' }),
     (error) => error.status === 403 && error.code === 'FORBIDDEN',
   );
 
-  const result = await contactService.adminStats({ role: 'admin-apizf' });
+  const result = await contactService.adminStats({ role: 'super-admin' });
   assert.deepEqual(result, {
     total: 5,
     byOccupant: { 'occupant-a': 2, 'occupant-b': 3 },
   });
 });
 
-test('la route des totaux refuse un jeton occupant et accepte un administrateur', async (context) => {
+test('la route des totaux refuse un occupant et accepte le super administrateur', async (context) => {
   const originalSecret = env.auth.secret;
   env.auth.secret = 'hubinvest-critical-test-secret';
   context.after(() => { env.auth.secret = originalSecret; });
@@ -160,7 +244,7 @@ test('la route des totaux refuse un jeton occupant et accepte un administrateur'
       toJSON: () => ({
         id: where.id,
         occupantId: isAdmin ? null : 'occupant-a',
-        role: isAdmin ? 'admin-apizf' : 'occupant-responsable',
+        role: isAdmin ? 'super-admin' : 'occupant',
       }),
     };
   });
@@ -262,6 +346,7 @@ test('une demande publique est rattachée au stand lu par le serveur, sans quali
 
 test('une demande Investor Desk exige le consentement API-ZF', () => {
   const { error } = investorRequestValidation.createPublic.validate({
+    occupantId: '4eb8be9e-7ee3-4c57-9043-19e41b77df9d',
     fullName: 'Investisseur Test',
     email: 'investisseur@example.com',
     projectSummary: 'Projet industriel à présenter.',
@@ -274,20 +359,37 @@ test('une demande Investor Desk exige le consentement API-ZF', () => {
 test('le premier suivi Investor Desk attribue la demande à son agent', async (context) => {
   const investorRequest = { id: 'request-a', assignedToUserId: null };
   let saved;
-  context.mock.method(investorRequestRepository, 'findById', async () => investorRequest);
+  context.mock.method(investorRequestRepository, 'findById', async (_id, occupantId) => {
+    assert.equal(occupantId, 'occupant-a');
+    return investorRequest;
+  });
   context.mock.method(investorRequestRepository, 'update', async (_request, values) => {
     saved = values;
     return values;
   });
 
   await investorRequestService.update(
-    { id: 'agent-a', role: 'investor-desk' },
+    { id: 'agent-a', role: 'admin', occupantId: 'occupant-a' },
     investorRequest.id,
     { status: 'in_progress', nextAction: 'Rappeler le porteur du projet' },
   );
 
   assert.equal(saved.assignedToUserId, 'agent-a');
   assert.equal(saved.status, 'in_progress');
+});
+
+test('la liste Investor Desk d’un administrateur utilise uniquement son stand', async (context) => {
+  let requestedStand;
+  context.mock.method(investorRequestRepository, 'findAll', async (query) => {
+    requestedStand = query.occupantId;
+    return { rows: [], count: 0 };
+  });
+
+  await investorRequestService.list(
+    { role: 'admin', occupantId: 'occupant-a' },
+    { limit: 50, offset: 0 },
+  );
+  assert.equal(requestedStand, 'occupant-a');
 });
 
 test('la liste publique B2B ne contient que les besoins ouverts de stands actifs', async (context) => {
@@ -298,6 +400,18 @@ test('la liste publique B2B ne contient que les besoins ouverts de stands actifs
   assert.deepEqual(result.where, { status: 'open' });
   assert.deepEqual(result.include[0].where, { status: 'active' });
   assert.equal(result.include[0].required, true);
+});
+
+test('un administrateur publie un besoin B2B uniquement pour son stand', async (context) => {
+  let saved;
+  context.mock.method(b2bNeedRepository, 'findOccupantById', async (id) => ({ id }));
+  context.mock.method(b2bNeedRepository, 'create', async (values) => { saved = values; return values; });
+
+  await b2bNeedService.create(
+    { id: 'admin-a', role: 'admin', occupantId: 'occupant-a' },
+    { occupantId: 'occupant-b', title: 'Besoin test', description: 'Description du besoin test.' },
+  );
+  assert.equal(saved.occupantId, 'occupant-a');
 });
 
 test('une proposition B2B sans consentement est refusée avant toute écriture', async (context) => {
@@ -311,16 +425,12 @@ test('une proposition B2B sans consentement est refusée avant toute écriture',
   );
 });
 
-test('un occupant ne peut pas lire les propositions B2B d’un autre stand', async (context) => {
-  context.mock.method(b2bNeedRepository, 'findByIdForOccupant', async () => null);
-  context.mock.method(b2bProposalRepository, 'findAllByNeed', async () => {
-    throw new Error('La lecture ne doit pas être appelée.');
-  });
+test('le backoffice B2B peut lire les propositions d’un besoin existant', async (context) => {
+  context.mock.method(b2bNeedRepository, 'findById', async () => ({ id: 'need-b', occupantId: 'occupant-b' }));
+  context.mock.method(b2bProposalRepository, 'findAllByNeed', async (needId) => [{ id: 'proposal-a', b2bNeedId: needId }]);
 
-  await assert.rejects(
-    b2bProposalService.list({ occupantId: 'occupant-a' }, 'need-b'),
-    (error) => error.status === 404 && error.code === 'B2B_NEED_NOT_FOUND',
-  );
+  const result = await b2bProposalService.list({ role: 'admin', occupantId: 'occupant-b' }, 'need-b');
+  assert.deepEqual(result, [{ id: 'proposal-a', b2bNeedId: 'need-b' }]);
 });
 
 test('une invitation Studio utilise un lien personnel imprévisible', async (context) => {
@@ -329,14 +439,16 @@ test('une invitation Studio utilise un lien personnel imprévisible', async (con
     saved = values;
     return values;
   });
+  context.mock.method(studioInvitationRepository, 'findOccupantById', async (id) => ({ id }));
 
   await studioInvitationService.create(
-    { id: 'campaign-user' },
+    { id: 'campaign-user', role: 'admin', occupantId: 'occupant-a' },
     { guestName: 'Invité Test', subject: 'Entretien Studio', scheduledAt: new Date().toISOString() },
   );
 
   assert.match(saved.token, /^[a-f0-9]{64}$/);
   assert.equal(saved.createdByUserId, 'campaign-user');
+  assert.equal(saved.occupantId, 'occupant-a');
   assert.equal(saved.status, 'pending');
 });
 
@@ -361,20 +473,24 @@ test('la réponse publique Studio ne révèle pas le lien interne et enregistre 
   assert.equal(result.id, undefined);
 });
 
-test('le planning Studio est réservé à l’administration et à l’équipe campagne', async (context) => {
+test('le planning Studio d’un administrateur est filtré sur son stand', async (context) => {
   const originalSecret = env.auth.secret;
   env.auth.secret = 'hubinvest-studio-test-secret';
   context.after(() => { env.auth.secret = originalSecret; });
   context.mock.method(User, 'findOne', async ({ where }) => ({
-    occupantId: null,
-    occupant: null,
+    occupantId: `occupant-${where.id}`,
+    occupant: { status: 'active' },
     toJSON: () => ({
       id: where.id,
-      occupantId: null,
-      role: where.id === 'campaign' ? 'equipe-campagne' : 'investor-desk',
+      occupantId: `occupant-${where.id}`,
+      role: 'admin',
     }),
   }));
-  context.mock.method(studioInvitationRepository, 'findAll', async () => []);
+  const requestedStands = [];
+  context.mock.method(studioInvitationRepository, 'findAll', async (occupantId) => {
+    requestedStands.push(occupantId);
+    return [];
+  });
 
   const server = app.listen(0, '127.0.0.1');
   context.after(() => server.close());
@@ -384,8 +500,8 @@ test('le planning Studio est réservé à l’administration et à l’équipe c
     headers: { Authorization: `Bearer ${jwt.sign({}, env.auth.secret, { subject })}` },
   });
 
-  assert.equal((await requestAs('investor')).status, 403);
-  assert.equal((await requestAs('campaign')).status, 200);
+  assert.equal((await requestAs('pia')).status, 200);
+  assert.deepEqual(requestedStands, ['occupant-pia']);
 });
 
 test('le contact d’un participant est conservé sans être exposé sur son passeport public', async (context) => {
@@ -401,6 +517,52 @@ test('le contact d’un participant est conservé sans être exposé sur son pas
   });
 
   assert.equal(saved.contact, 'visiteur@example.com');
+  assert.equal(result.contact, undefined);
+});
+
+test('la liste des joueurs conserve le validateur et son stand pour chaque scan', async (context) => {
+  const passage = {
+    id: 'passage-a',
+    createdAt: new Date(),
+    validatedBy: { id: 'user-a', firstName: 'Afi', lastName: 'Mensah' },
+    occupant: { id: 'occupant-a', name: 'PIA', standLabel: 'Pavillon 2' },
+  };
+  context.mock.method(challengePassportRepository, 'findAll', async () => [{
+    toJSON: () => ({ id: 'passport-a', displayName: 'Visiteur Test', passages: [passage] }),
+  }]);
+
+  const [result] = await challengePassportService.list({ role: 'super-admin' });
+  assert.equal(result.passageCount, 1);
+  assert.deepEqual(result.passages[0].validatedBy, passage.validatedBy);
+  assert.deepEqual(result.passages[0].occupant, passage.occupant);
+});
+
+test('la liste des joueurs d’un administrateur est limitée aux scans de son stand', async (context) => {
+  let requestedStand;
+  context.mock.method(challengePassportRepository, 'findAll', async (occupantId) => {
+    requestedStand = occupantId;
+    return [];
+  });
+
+  await challengePassportService.list({ role: 'admin', occupantId: 'occupant-a' });
+  assert.equal(requestedStand, 'occupant-a');
+});
+
+test('le contrôle animateur par code ne révèle pas le contact du participant', async (context) => {
+  context.mock.method(challengePassportRepository, 'findByCode', async () => ({
+    toJSON: () => ({
+      id: 'passport-a',
+      displayName: 'Visiteur Test',
+      contact: 'visiteur@example.com',
+      code: 'ABCD2345',
+      status: 'completed',
+      passages: [{ id: 'passage-a' }],
+    }),
+  }));
+
+  const result = await challengePassportService.getByCode('ABCD2345');
+  assert.equal(result.displayName, 'Visiteur Test');
+  assert.equal(result.status, 'completed');
   assert.equal(result.contact, undefined);
 });
 
@@ -459,20 +621,20 @@ test('le passage requis termine le parcours avant la remise', async (context) =>
   assert.ok(saved.completedAt instanceof Date);
 });
 
-test('une récompense Défis ne peut être enregistrée qu’une fois', async (context) => {
-  const passport = { id: 'passport-a', status: 'completed', passages: [] };
+test('un animateur remet par code une récompense Défis une seule fois', async (context) => {
+  const passport = { id: 'passport-a', code: 'ABCD2345', status: 'completed', passages: [] };
   context.mock.method(sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));
-  context.mock.method(challengePassportRepository, 'findByIdForUpdate', async () => passport);
+  context.mock.method(challengePassportRepository, 'findByCodeForUpdate', async () => passport);
   context.mock.method(challengePassportRepository, 'update', async (_passport, values) => {
     Object.assign(passport, values);
     return passport;
   });
 
-  const first = await challengePassportService.redeem({ id: 'animator-a' }, passport.id);
+  const first = await challengePassportService.redeemByCode({ id: 'animator-a', role: 'animateur' }, passport.code);
   assert.equal(first.status, 'redeemed');
 
   await assert.rejects(
-    challengePassportService.redeem({ id: 'animator-b' }, passport.id),
+    challengePassportService.redeemByCode({ id: 'animator-b', role: 'animateur' }, passport.code),
     (error) => error.status === 409 && error.code === 'REWARD_ALREADY_REDEEMED',
   );
 });

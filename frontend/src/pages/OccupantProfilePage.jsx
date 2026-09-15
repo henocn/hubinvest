@@ -39,7 +39,7 @@ export default function OccupantProfilePage({ session, onLogout }) {
           <div><dt>Nom</dt><dd>{profile.firstName} {profile.lastName}</dd></div>
           <div><dt>Adresse e-mail</dt><dd>{profile.email}</dd></div>
           {profile.phone && <div><dt>Téléphone</dt><dd>{profile.phone}</dd></div>}
-          <div><dt>Structure</dt><dd>{profile.occupant?.name}</dd></div>
+          {profile.occupant?.name && <div><dt>Structure</dt><dd>{profile.occupant.name}</dd></div>}
           {profile.occupant?.standLabel && <div><dt>Emplacement</dt><dd>{profile.occupant.standLabel}</dd></div>}
         </dl>
       </section>

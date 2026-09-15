@@ -10,12 +10,12 @@ export default function UsersTable({ users, query, currentUserId, onEdit, onDele
   return (
     <div className="table-scroll">
       <table>
-        <thead><tr><th>Utilisateur</th><th>Rôle</th><th>Occupant</th><th>Statut</th><th className="actions-heading">Actions</th></tr></thead>
+        <thead><tr><th>Utilisateur</th><th>Rôle</th><th>Stand</th><th>Statut</th><th className="actions-heading">Actions</th></tr></thead>
         <tbody>{users.map((user) => (
           <tr key={user.id}>
             <td><strong>{user.firstName} {user.lastName}</strong><small>{user.email}</small></td>
             <td>{roleLabels[user.role] || user.role}</td>
-            <td>{user.occupant?.name || 'API-ZF'}</td>
+            <td>{['admin', 'occupant'].includes(user.role) ? user.occupant?.name || '—' : '—'}</td>
             <td><span className={`status-pill ${user.isActive ? 'is-active' : ''}`}>{user.isActive && <Check size={13} />}{user.isActive ? 'Actif' : 'Inactif'}</span></td>
             <td><div className="row-actions">
               <button className="table-action is-icon" type="button" aria-label={`Modifier ${user.firstName} ${user.lastName}`} title="Modifier" onClick={() => onEdit(user)}><Pencil size={16} /></button>

@@ -7,7 +7,7 @@ const challengePassageValidation = require('./challenge-passage.validation');
 const challengePassageController = require('./challenge-passage.controller');
 
 const router = express.Router();
-const occupantTeamOnly = requireRoles(roles.OCCUPANT_MANAGER, roles.OCCUPANT_MEMBER);
+const occupantTeamOnly = requireRoles(roles.OCCUPANT);
 
 router.use(asyncHandler(authenticate), occupantTeamOnly);
 router.get('/stats', asyncHandler(challengePassageController.stats));
