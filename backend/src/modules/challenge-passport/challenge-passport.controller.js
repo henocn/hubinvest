@@ -15,7 +15,7 @@ const list = async (request, response) => response.json({
 
 const redeem = async (request, response) => response.json({
   data: await challengePassportService.redeem(request.user, request.params.id),
-  message: 'Récompense remise.',
+  message: 'Récompensé(e)',
 });
 
 module.exports = { createPublic, getPublic, list, redeem };

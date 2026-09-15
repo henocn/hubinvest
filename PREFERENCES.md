@@ -33,6 +33,7 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 - Utiliser l’image de couverture comme repère visuel au début d’une ligne plutôt qu’une icône générique.
 - Lorsque le contexte suffit, les actions courantes utilisent seulement des icônes avec `aria-label` et infobulle.
 - Pour le statut des stands, un fond vert ou rouge très léger sur la ligne suffit ; ne pas ajouter une colonne ou une pastille de statut.
+- Le tableau des joueurs affiche dans cet ordre : Participant, Contact, Code, Scans, Par, Stand, Récompense et Action. « Par » contient le nom complet de la personne ayant scanné et « Stand » l’occupant correspondant. Une récompense déjà remise est signalée par une ligne vert très léger et une icône Oui verte ; un parcours terminé mais non récompensé par une ligne rouge très léger et une icône Non rouge ; les autres lignes restent neutres. Les icônes Oui/Non sont centrées, fortes et sans fond ni bordure pour ne pas ressembler à des boutons. Le fond et la bordure colorés appartiennent au bouton cadeau. L’action reste visible mais désactivée tant que le parcours n’est pas terminé ou lorsque la récompense a déjà été remise.
 
 ## Organisation du code
 

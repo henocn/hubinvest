@@ -1,21 +1,31 @@
 const { ChallengePassport, ChallengePassage, Occupant, User } = require('../../models');
 
-const passageInclude = [{
+const publicPassageInclude = [{
   model: ChallengePassage,
   as: 'passages',
   attributes: ['id', 'createdAt'],
   include: [{ model: Occupant, as: 'occupant', attributes: ['id', 'name', 'standLabel'] }],
 }];
 
+const managerPassageInclude = [{
+  model: ChallengePassage,
+  as: 'passages',
+  attributes: ['id', 'createdAt'],
+  include: [
+    { model: Occupant, as: 'occupant', attributes: ['id', 'name', 'standLabel'] },
+    { model: User, as: 'validatedBy', attributes: ['id', 'firstName', 'lastName'] },
+  ],
+}];
+
 const findPublicByToken = (token) => ChallengePassport.findOne({
   where: { token },
-  include: passageInclude,
+  include: publicPassageInclude,
   order: [[{ model: ChallengePassage, as: 'passages' }, 'createdAt', 'ASC']],
 });
 
 const findAll = () => ChallengePassport.findAll({
   include: [
-    ...passageInclude,
+    ...managerPassageInclude,
     { model: User, as: 'redeemedBy', attributes: ['id', 'firstName', 'lastName'] },
   ],
   order: [['createdAt', 'DESC']],

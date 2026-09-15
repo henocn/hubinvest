@@ -465,6 +465,23 @@ test('le contact d’un participant est conservé sans être exposé sur son pas
   assert.equal(result.contact, undefined);
 });
 
+test('la liste des joueurs conserve le validateur et son stand pour chaque scan', async (context) => {
+  const passage = {
+    id: 'passage-a',
+    createdAt: new Date(),
+    validatedBy: { id: 'user-a', firstName: 'Afi', lastName: 'Mensah' },
+    occupant: { id: 'occupant-a', name: 'PIA', standLabel: 'Pavillon 2' },
+  };
+  context.mock.method(challengePassportRepository, 'findAll', async () => [{
+    toJSON: () => ({ id: 'passport-a', displayName: 'Visiteur Test', passages: [passage] }),
+  }]);
+
+  const [result] = await challengePassportService.list();
+  assert.equal(result.passageCount, 1);
+  assert.deepEqual(result.passages[0].validatedBy, passage.validatedBy);
+  assert.deepEqual(result.passages[0].occupant, passage.occupant);
+});
+
 test('un stand ne peut valider qu’une fois le même parcours', async (context) => {
   const passport = { id: 'passport-a', code: 'ABCD2345', status: 'active' };
   context.mock.method(challengePassageRepository.sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));

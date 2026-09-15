@@ -112,10 +112,10 @@ tbody tr:hover { background: #fdfdfc; }
 .studio-row.is-declined { background: rgba(209, 17, 53, .035); }
 .studio-row.is-confirmed:hover { background: rgba(0, 106, 79, .075); }
 .studio-row.is-declined:hover { background: rgba(209, 17, 53, .065); }
-.challenge-row.is-completed { background: rgba(0, 106, 79, .045); }
-.challenge-row.is-redeemed { background: rgba(0, 0, 0, .025); }
-.challenge-row.is-completed:hover { background: rgba(0, 106, 79, .075); }
-.challenge-row.is-redeemed:hover { background: rgba(0, 0, 0, .04); }
+.challenge-row.is-completed { background: rgba(209, 17, 53, .035); }
+.challenge-row.is-redeemed { background: rgba(0, 106, 79, .045); }
+.challenge-row.is-completed:hover { background: rgba(209, 17, 53, .06); }
+.challenge-row.is-redeemed:hover { background: rgba(0, 106, 79, .075); }
 td strong, td small { display: block; }
 td strong { color: var(--ink); }
 td small { margin-top: 4px; color: #85898d; }
@@ -139,8 +139,16 @@ td small { margin-top: 4px; color: #85898d; }
 .challenge-table-contact { color: var(--green); font-weight: 650; text-decoration: none; white-space: nowrap; }
 .challenge-table-contact:hover { text-decoration: underline; }
 .challenge-table-empty { color: var(--muted); }
-.challenge-table-status { font-weight: 700; }
-.challenge-table-occupants { display: block; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.challenge-table-scans { font-variant-numeric: tabular-nums; font-weight: 750; text-align: center; }
+.challenge-table-people, .challenge-table-stands { display: block; max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reward-heading, .challenge-table-reward { text-align: center; }
+.challenge-reward-status { width: 32px; height: 32px; margin: 0 auto; display: grid; place-items: center; }
+.challenge-reward-status.is-received { color: #007c5c; }
+.challenge-reward-status.is-not-received { color: #cf1737; }
+.challenge-reward-action.is-ready { color: #cf1737; border-color: rgba(207, 23, 55, .28); background: rgba(207, 23, 55, .055); }
+.challenge-reward-action.is-ready:hover { color: #b70f2c; border-color: rgba(207, 23, 55, .45); background: rgba(207, 23, 55, .1); }
+.challenge-reward-action.is-redeemed { color: #007c5c; border-color: rgba(0, 124, 92, .28); background: rgba(0, 124, 92, .07); }
+.challenge-reward-action.is-redeemed:disabled { opacity: .72; }
 .status-pill { width: fit-content; display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border-radius: 999px; color: #686c70; background: #efefed; font-size: 11px; font-weight: 700; }
 .status-pill.is-active { color: var(--green); background: #e7f3ee; }
 .status-pill.is-new { color: #6f5700; background: #fff6cf; }

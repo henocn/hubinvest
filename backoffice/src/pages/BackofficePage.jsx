@@ -93,7 +93,7 @@ export default function BackofficePage({ session, onLogout }) {
   const visibleUsers = useMemo(() => users.filter((user) => !query || [user.firstName, user.lastName, user.email, user.role, user.occupant?.name].some((value) => String(value || '').toLowerCase().includes(query))), [users, query]);
   const visibleInvestorRequests = useMemo(() => investorRequests.filter((item) => !query || [item.fullName, item.email, item.projectSummary, item.nextAction].some((value) => String(value || '').toLowerCase().includes(query))), [investorRequests, query]);
   const visibleStudioInvitations = useMemo(() => studioInvitations.filter((item) => !query || [item.guestName, item.subject].some((value) => String(value || '').toLowerCase().includes(query))), [studioInvitations, query]);
-  const visibleChallengePassports = useMemo(() => challengePassports.filter((item) => !query || [item.displayName, item.contact, item.code, ...(item.passages || []).map((passage) => passage.occupant?.name)].some((value) => String(value || '').toLowerCase().includes(query))), [challengePassports, query]);
+  const visibleChallengePassports = useMemo(() => challengePassports.filter((item) => !query || [item.displayName, item.contact, item.code, ...(item.passages || []).flatMap((passage) => [passage.occupant?.name, passage.validatedBy?.firstName, passage.validatedBy?.lastName])].some((value) => String(value || '').toLowerCase().includes(query))), [challengePassports, query]);
 
   const switchSection = (next) => {
     setSection(next);
