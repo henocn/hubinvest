@@ -1,4 +1,5 @@
 const challengePassportService = require('./challenge-passport.service');
+const publicLanguage = require('../../shared/public-language');
 
 const createPublic = async (request, response) => response.status(201).json({
   data: await challengePassportService.createPublic(request.body),
@@ -6,7 +7,7 @@ const createPublic = async (request, response) => response.status(201).json({
 });
 
 const getPublic = async (request, response) => response.json({
-  data: await challengePassportService.getPublic(request.params.token),
+  data: await challengePassportService.getPublic(request.params.token, publicLanguage(request)),
 });
 
 const list = async (request, response) => response.json({

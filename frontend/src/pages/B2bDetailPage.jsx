@@ -3,6 +3,7 @@ import { ArrowLeft, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import B2bProposalForm from '../components/B2bProposalForm';
 import { api } from '../lib/api';
+import { publicErrorMessage } from '../lib/public-error';
 
 export default function B2bDetailPage({ id }) {
   const { t } = useTranslation();
@@ -11,7 +12,7 @@ export default function B2bDetailPage({ id }) {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    api.publicB2bNeed(id).then(setNeed).catch((requestError) => setError(requestError.status === 404 ? t('b2b.unavailable') : requestError.message)).finally(() => setLoading(false));
+    api.publicB2bNeed(id).then(setNeed).catch((requestError) => setError(requestError.status === 404 ? t('b2b.unavailable') : publicErrorMessage(t, requestError))).finally(() => setLoading(false));
   }, [id, t]);
 
   return (

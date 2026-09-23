@@ -52,4 +52,7 @@ module.exports = {
   challenge: {
     requiredPassages: integer(process.env.CHALLENGE_REQUIRED_PASSAGES, 3),
   },
+  translation: {
+    deeplAuthKey: process.env.DEEPL_AUTH_KEY || '',
+  },
 };

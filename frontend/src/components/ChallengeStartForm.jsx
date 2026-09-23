@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { api } from '../lib/api';
 import { useTranslation } from 'react-i18next';
+import { publicErrorMessage } from '../lib/public-error';
 
 export default function ChallengeStartForm({ onCreated }) {
   const { t } = useTranslation();
@@ -16,7 +17,7 @@ export default function ChallengeStartForm({ onCreated }) {
     try {
       onCreated(await api.createChallengePassport(form));
     } catch (requestError) {
-      setError(requestError.message);
+      setError(publicErrorMessage(t, requestError));
     } finally {
       setLoading(false);
     }

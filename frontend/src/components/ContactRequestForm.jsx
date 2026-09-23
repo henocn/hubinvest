@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { api } from '../lib/api';
 import { useTranslation } from 'react-i18next';
+import { publicErrorMessage } from '../lib/public-error';
 
 export default function ContactRequestForm({ stand }) {
   const { t } = useTranslation();
@@ -18,7 +19,7 @@ export default function ContactRequestForm({ stand }) {
       await api.requestContact(stand.slug, { ...form, id: requestId.current });
       setReceived(true);
     } catch (requestError) {
-      setError(requestError.message);
+      setError(publicErrorMessage(t, requestError));
     } finally {
       setLoading(false);
     }

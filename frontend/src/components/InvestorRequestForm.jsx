@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ArrowRight, BriefcaseBusiness } from 'lucide-react';
 import { api } from '../lib/api';
 import { useTranslation } from 'react-i18next';
+import { publicErrorMessage } from '../lib/public-error';
 
 export default function InvestorRequestForm() {
   const { t } = useTranslation();
@@ -24,8 +25,8 @@ export default function InvestorRequestForm() {
   useEffect(() => {
     api.publicOccupants()
       .then(setOccupants)
-      .catch((requestError) => setError(requestError.message));
-  }, []);
+      .catch((requestError) => setError(publicErrorMessage(t, requestError)));
+  }, [t]);
 
   const submit = async (event) => {
     event.preventDefault();
@@ -41,7 +42,7 @@ export default function InvestorRequestForm() {
       await api.createInvestorRequest(form);
       setReceived(true);
     } catch (requestError) {
-      setError(requestError.message);
+      setError(publicErrorMessage(t, requestError));
     } finally {
       setLoading(false);
     }

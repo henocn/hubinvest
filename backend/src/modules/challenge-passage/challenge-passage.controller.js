@@ -1,7 +1,7 @@
 const challengePassageService = require('./challenge-passage.service');
 
 const create = async (request, response) => response.status(201).json({
-  data: await challengePassageService.validate(request.user, request.body.code),
+  data: await challengePassageService.validate(request.user, request.body),
   message: 'Passage validé.',
 });
 

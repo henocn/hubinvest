@@ -899,6 +899,45 @@ select:focus {
   gap: 8px;
 }
 
+.challenge-classification {
+  width: 100%;
+  display: grid;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.challenge-classification > strong {
+  font-size: 0.9rem;
+}
+
+.challenge-classification > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.challenge-classification-button {
+  min-height: 52px;
+  border: 1px solid var(--green);
+  border-radius: 7px;
+  color: var(--green);
+  background: #fff;
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 750;
+}
+
+.challenge-classification-button:hover,
+.challenge-classification-button:focus-visible {
+  color: #fff;
+  background: var(--green);
+}
+
+.challenge-classification-button:disabled {
+  cursor: wait;
+  opacity: 0.5;
+}
+
 .challenge-scan-backdrop {
   position: fixed;
   inset: 0;

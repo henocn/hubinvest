@@ -11,8 +11,9 @@ const stats = async (user) => {
   return { scannedPlayers: await challengePassageRepository.countByOccupant(user.occupantId) };
 };
 
-const validate = async (user, code) => {
+const validate = async (user, values) => {
   if (!user.occupantId) throw new AppError(403, 'OCCUPANT_REQUIRED', 'Ce compte ne dépend pas d’un occupant.');
+  const { code, classification } = values;
 
   try {
     return await challengePassageRepository.sequelize.transaction(async (transaction) => {
@@ -28,6 +29,7 @@ const validate = async (user, code) => {
         passportId: passport.id,
         occupantId: user.occupantId,
         validatedByUserId: user.id,
+        classification,
       }, transaction);
 
       const passageCount = await challengePassageRepository.countByPassport(passport.id, transaction);
@@ -42,6 +44,7 @@ const validate = async (user, code) => {
       return {
         displayName: passport.displayName,
         code: passport.code,
+        classification,
         passageCount,
         requiredPassages,
         status: completed ? 'completed' : 'active',

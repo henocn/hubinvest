@@ -1,3 +1,5 @@
+import i18n from '../i18n';
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 const request = async (path, options = {}) => {
@@ -5,6 +7,7 @@ const request = async (path, options = {}) => {
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      'Accept-Language': i18n.resolvedLanguage?.startsWith('en') ? 'en' : 'fr',
       ...options.headers,
     },
   });
@@ -60,7 +63,7 @@ export const api = {
     request('/contacts', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   updateContact: (token, id, values) =>
     request(`/contacts/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
-  validateChallengePassage: (token, code) => request('/challenge-passages', authorized(token, { method: 'POST', body: JSON.stringify({ code }) })),
+  validateChallengePassage: (token, code, classification) => request('/challenge-passages', authorized(token, { method: 'POST', body: JSON.stringify({ code, classification }) })),
   challengePassageStats: (token) => request('/challenge-passages/stats', authorized(token)),
   challengeRewardByCode: (token, code) => request(`/challenge-passports/code/${encodeURIComponent(code)}`, authorized(token)),
   redeemChallengeReward: (token, code) => request('/challenge-passports/redeem-by-code', authorized(token, { method: 'POST', body: JSON.stringify({ code }) })),

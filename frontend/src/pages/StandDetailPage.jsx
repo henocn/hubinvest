@@ -3,6 +3,7 @@ import { ArrowLeft, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import ContactRequestForm from '../components/ContactRequestForm';
 import { api, resolveAssetUrl } from '../lib/api';
+import { publicErrorMessage } from '../lib/public-error';
 
 export default function StandDetailPage({ slug }) {
   const { t } = useTranslation();
@@ -13,7 +14,7 @@ export default function StandDetailPage({ slug }) {
   useEffect(() => {
     api.publicOccupant(slug)
       .then(setStand)
-      .catch((requestError) => setError(requestError.status === 404 ? t('stands.unavailable') : requestError.message))
+      .catch((requestError) => setError(requestError.status === 404 ? t('stands.unavailable') : publicErrorMessage(t, requestError)))
       .finally(() => setLoading(false));
   }, [slug, t]);
 
