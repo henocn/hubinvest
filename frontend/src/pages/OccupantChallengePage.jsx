@@ -10,6 +10,7 @@ export default function OccupantChallengePage({ session, onLogout }) {
   const [scannedPlayers, setScannedPlayers] = useState(null);
   const [statsError, setStatsError] = useState('');
   const [code, setCode] = useState('');
+  const [pendingCode, setPendingCode] = useState('');
   const [open, setOpen] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
@@ -34,23 +35,33 @@ export default function OccupantChallengePage({ session, onLogout }) {
     return () => { window.clearInterval(interval); window.removeEventListener('focus', onFocus); };
   }, [refreshStats]);
 
-  const validateCode = useCallback(async (value) => {
-    if (validatingRef.current) return;
+  const prepareClassification = useCallback((value) => {
     const normalized = value.trim().toUpperCase();
     if (!participantCode.test(normalized)) {
       setError('Saisissez les 8 caractères du code participant.');
+      setPendingCode('');
       setResult(null);
-      return;
+      return false;
     }
+
+    setError('');
+    setResult(null);
+    setPendingCode(normalized);
+    return true;
+  }, []);
+
+  const validateCode = useCallback(async (classification) => {
+    if (validatingRef.current) return;
 
     validatingRef.current = true;
     setLoading(true);
     setError('');
     setResult(null);
     try {
-      const passage = await api.validateChallengePassage(session.token, normalized);
+      const passage = await api.validateChallengePassage(session.token, pendingCode, classification);
       setResult(passage);
       setCode('');
+      setPendingCode('');
       setScannedPlayers((current) => current === null ? current : current + 1);
       void refreshStats();
     } catch (requestError) {
@@ -60,16 +71,16 @@ export default function OccupantChallengePage({ session, onLogout }) {
       validatingRef.current = false;
       setLoading(false);
     }
-  }, [onLogout, refreshStats, session.token]);
+  }, [onLogout, pendingCode, refreshStats, session.token]);
 
   const scanned = useCallback((value) => {
     setOpen(false);
-    void validateCode(value);
-  }, [validateCode]);
+    prepareClassification(value);
+  }, [prepareClassification]);
 
   const submit = (event) => {
     event.preventDefault();
-    void validateCode(code);
+    prepareClassification(code);
   };
 
   return (
@@ -86,7 +97,8 @@ export default function OccupantChallengePage({ session, onLogout }) {
           </div>
         </form>
         {error && <p className="panel-error" role="alert">{error}</p>}
-        {result && <p className="challenge-validation-success" role="status"><CheckCircle2 size={20} /> Passage validé pour {result.displayName}</p>}
+        {pendingCode && <div className="challenge-classification" role="group" aria-label="Classer le participant"><strong>Classer le participant</strong><div>{['A', 'B', 'C'].map((classification) => <button className="challenge-classification-button" type="button" key={classification} onClick={() => { void validateCode(classification); }} disabled={loading} aria-label={`Classer le participant en ${classification}`}>{classification}</button>)}</div></div>}
+        {result && <p className="challenge-validation-success" role="status"><CheckCircle2 size={20} /> Passage validé pour {result.displayName} · Classement {result.classification}</p>}
       </section>
       {open && <ChallengeScannerDialog onCode={scanned} onClose={() => setOpen(false)} />}
     </main>

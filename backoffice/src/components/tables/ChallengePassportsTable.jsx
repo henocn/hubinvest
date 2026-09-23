@@ -18,7 +18,7 @@ export default function ChallengePassportsTable({ passports, query, onRedeem, al
         <thead><tr><th>Participant</th><th>Contact</th><th>Code</th><th>Scans</th><th>Par</th><th>Stand</th><th className="reward-heading">Récompense</th>{allowReward && <th className="actions-heading">Action</th>}</tr></thead>
         <tbody>{passports.map((passport) => {
           const validators = (passport.passages || []).map((passage) => [passage.validatedBy?.firstName, passage.validatedBy?.lastName].filter(Boolean).join(' ')).filter(Boolean).join(', ');
-          const stands = (passport.passages || []).map((passage) => passage.occupant?.name).filter(Boolean).join(', ');
+          const stands = (passport.passages || []).map((passage) => passage.occupant?.name && `${passage.occupant.name}${passage.classification ? ` · ${passage.classification}` : ''}`).filter(Boolean).join(', ');
           const rewardReceived = passport.status === 'redeemed';
           const canRedeem = passport.status === 'completed';
           const actionLabel = passport.status === 'redeemed' ? 'Récompense déjà remise' : canRedeem ? `Remettre la récompense à ${passport.displayName}` : 'Récompense indisponible';

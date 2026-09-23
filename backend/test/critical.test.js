@@ -576,7 +576,7 @@ test('un stand ne peut valider qu’une fois le même parcours', async (context)
   });
 
   await assert.rejects(
-    challengePassageService.validate({ id: 'user-a', occupantId: 'occupant-a' }, passport.code),
+    challengePassageService.validate({ id: 'user-a', occupantId: 'occupant-a' }, { code: passport.code, classification: 'A' }),
     (error) => error.status === 409 && error.code === 'PASSAGE_ALREADY_VALIDATED',
   );
 });
@@ -601,10 +601,14 @@ test('le compteur des joueurs scannés reste limité à l’occupant connecté',
 test('le passage requis termine le parcours avant la remise', async (context) => {
   const passport = { id: 'passport-a', code: 'ABCD2345', displayName: 'Visiteur Test', status: 'active' };
   let saved;
+  let passageValues;
   context.mock.method(challengePassageRepository.sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));
   context.mock.method(challengePassportRepository, 'findByCodeForUpdate', async () => passport);
   context.mock.method(challengePassageRepository, 'findExisting', async () => null);
-  context.mock.method(challengePassageRepository, 'create', async () => ({}));
+  context.mock.method(challengePassageRepository, 'create', async (values) => {
+    passageValues = values;
+    return values;
+  });
   context.mock.method(challengePassageRepository, 'countByPassport', async () => 3);
   context.mock.method(challengePassportRepository, 'update', async (_passport, values) => {
     saved = values;
@@ -613,10 +617,12 @@ test('le passage requis termine le parcours avant la remise', async (context) =>
 
   const result = await challengePassageService.validate(
     { id: 'user-c', occupantId: 'occupant-c' },
-    passport.code,
+    { code: passport.code, classification: 'B' },
   );
 
   assert.equal(result.status, 'completed');
+  assert.equal(result.classification, 'B');
+  assert.equal(passageValues.classification, 'B');
   assert.equal(saved.status, 'completed');
   assert.ok(saved.completedAt instanceof Date);
 });

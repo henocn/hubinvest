@@ -68,5 +68,6 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 - Toute donnée collectée dans un parcours public doit être consultable dans l’espace de travail de l’équipe qui doit réellement l’utiliser.
 - Un participant déjà inscrit aux défis doit retrouver automatiquement son parcours pendant 20 jours sur le même navigateur. Stocker localement uniquement le jeton et son expiration, jamais son nom ni son contact.
 - Pour les Défis, montrer d’abord un QR contenant uniquement le code participant, puis le code lisible en dessous. Côté occupant, centrer le nombre de joueurs scannés, le bouton « Scanner » et, en dessous, la saisie du code avec « OK » juste à côté. Le dialogue de scan ne contient que la caméra. Chaque passage validé est rattaché à l’occupant et ce rattachement est visible au backoffice.
+- Après le scan ou la saisie d’un code participant, afficher en bas trois boutons A, B et C de même importance. Le choix est obligatoire pour enregistrer le passage et reste rattaché à ce passage ; dans le backoffice, la lettre apparaît avec le stand sans ajouter une colonne supplémentaire.
 - Ne pas ajouter de bouton d’actualisation sous le code participant ; le suivi des passages se met à jour sans action dédiée.
 - Vérifier chaque interface à 320 px, 375 px et sur ordinateur avant de la considérer terminée.
