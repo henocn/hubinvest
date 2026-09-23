@@ -1,11 +1,12 @@
 const studioInvitationService = require('./studio-invitation.service');
+const publicLanguage = require('../../shared/public-language');
 
 const getPublic = async (request, response) => response.json({
-  data: await studioInvitationService.getPublic(request.params.token),
+  data: await studioInvitationService.getPublic(request.params.token, publicLanguage(request)),
 });
 
 const respond = async (request, response) => response.json({
-  data: await studioInvitationService.respond(request.params.token, request.body.status),
+  data: await studioInvitationService.respond(request.params.token, request.body.status, publicLanguage(request)),
   message: 'Réponse enregistrée.',
 });
 

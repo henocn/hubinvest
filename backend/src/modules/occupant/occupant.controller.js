@@ -1,11 +1,12 @@
 const occupantService = require('./occupant.service');
+const publicLanguage = require('../../shared/public-language');
 
 const list = async (request, response) => {
   response.json({ data: await occupantService.list() });
 };
 
 const listPublic = async (request, response) => {
-  response.json({ data: await occupantService.listPublic() });
+  response.json({ data: await occupantService.listPublic(publicLanguage(request)) });
 };
 
 const get = async (request, response) => {
@@ -13,7 +14,7 @@ const get = async (request, response) => {
 };
 
 const getPublic = async (request, response) => {
-  response.json({ data: await occupantService.getPublic(request.params.slug) });
+  response.json({ data: await occupantService.getPublic(request.params.slug, publicLanguage(request)) });
 };
 
 const create = async (request, response) => {

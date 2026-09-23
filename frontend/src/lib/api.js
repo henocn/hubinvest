@@ -1,3 +1,5 @@
+import i18n from '../i18n';
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 const request = async (path, options = {}) => {
@@ -5,6 +7,7 @@ const request = async (path, options = {}) => {
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      'Accept-Language': i18n.resolvedLanguage?.startsWith('en') ? 'en' : 'fr',
       ...options.headers,
     },
   });

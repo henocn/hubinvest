@@ -4,11 +4,11 @@ import { ChevronDown } from 'lucide-react';
 
 function LanguageFlag({ language }) {
   if (language === 'fr') {
-    return <svg viewBox="0 0 18 12" role="img" aria-label="France"><path fill="#002395" d="M0 0h6v12H0z" /><path fill="#fff" d="M6 0h6v12H6z" /><path fill="#ED2939" d="M12 0h6v12h-6z" /></svg>;
+    return <svg viewBox="0 0 18 12" aria-hidden="true"><path fill="#002395" d="M0 0h6v12H0z" /><path fill="#fff" d="M6 0h6v12H6z" /><path fill="#ED2939" d="M12 0h6v12h-6z" /></svg>;
   }
 
   return (
-    <svg viewBox="0 0 18 12" role="img" aria-label="United Kingdom">
+    <svg viewBox="0 0 18 12" aria-hidden="true">
       <path fill="#012169" d="M0 0h18v12H0z" />
       <path stroke="#fff" strokeWidth="2.4" d="m0 0 18 12M18 0 0 12" />
       <path stroke="#C8102E" strokeWidth="1.1" d="m0 0 18 12M18 0 0 12" />

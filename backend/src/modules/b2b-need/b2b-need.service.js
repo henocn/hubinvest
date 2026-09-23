@@ -1,5 +1,6 @@
 const AppError = require('../../shared/app-error');
 const roles = require('../../shared/roles');
+const { translatePublicContent } = require('../../shared/translation.service');
 const b2bNeedRepository = require('./b2b-need.repository');
 
 const standFor = (user) => {
@@ -8,12 +9,18 @@ const standFor = (user) => {
   return user.occupantId;
 };
 
-const listPublic = () => b2bNeedRepository.findPublic();
+const publicPaths = ['title', 'description', 'occupant.name', 'occupant.standLabel'];
 
-const getPublic = async (id) => {
+const listPublic = async (language) => translatePublicContent(
+  await b2bNeedRepository.findPublic(),
+  publicPaths,
+  language,
+);
+
+const getPublic = async (id, language) => {
   const need = await b2bNeedRepository.findPublicById(id);
   if (!need) throw new AppError(404, 'B2B_NEED_NOT_FOUND', 'Besoin B2B introuvable.');
-  return need;
+  return translatePublicContent(need, publicPaths, language);
 };
 
 const list = (user) => b2bNeedRepository.findAll(standFor(user));

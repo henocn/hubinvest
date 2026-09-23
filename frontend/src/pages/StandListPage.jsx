@@ -3,6 +3,7 @@ import { Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import StandCard from '../components/StandCard';
 import { api } from '../lib/api';
+import { publicErrorMessage } from '../lib/public-error';
 
 export default function StandListPage({ isHome }) {
   const { t, i18n } = useTranslation();
@@ -14,9 +15,9 @@ export default function StandListPage({ isHome }) {
   useEffect(() => {
     api.publicOccupants()
       .then(setStands)
-      .catch((requestError) => setError(requestError.message))
+      .catch((requestError) => setError(publicErrorMessage(t, requestError)))
       .finally(() => setLoading(false));
-  }, []);
+  }, [t]);
 
   const filtered = useMemo(() => {
     const search = query.trim().toLocaleLowerCase(i18n.resolvedLanguage);

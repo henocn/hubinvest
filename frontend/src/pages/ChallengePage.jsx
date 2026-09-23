@@ -5,6 +5,7 @@ import NotFoundPage from './NotFoundPage';
 import { api } from '../lib/api';
 import { clearChallengePassportToken, readChallengePassportToken, saveChallengePassportToken } from '../lib/challenge-passport-store';
 import { useTranslation } from 'react-i18next';
+import { publicErrorMessage } from '../lib/public-error';
 
 export default function ChallengePage({ token }) {
   const { t } = useTranslation();
@@ -36,11 +37,11 @@ export default function ChallengePage({ token }) {
           setNotFound(true);
           return;
         }
-        setError(requestError.message);
+        setError(publicErrorMessage(t, requestError));
       })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [passport, personalToken, token]);
+  }, [passport, personalToken, t, token]);
 
   const created = (data) => {
     window.history.replaceState({}, '', `/defis/${data.token}`);

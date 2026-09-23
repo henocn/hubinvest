@@ -11,6 +11,7 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 - Un défaut visible d’alignement, de proportion, de centrage, de hauteur ou d’espacement bloque la livraison, même si l’écran fonctionne.
 - Conserver les accents dans tous les textes français.
 - Sur une carte de stand, séparer nettement l’image de couverture et les informations. Ne jamais poser le nom, l’activité ou l’action directement sur la photo.
+- Une carte de stand s’arrête après sa description tronquée. Ne pas ajouter « Voir la fiche », « View profile », une flèche ou une autre action répétant que la carte entière est cliquable.
 
 ## UX et formulaires
 
@@ -57,6 +58,8 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 - Le texte principal reste court. L’information détaillée apparaît seulement à l’endroit où elle est utile.
 - Sur l’interface visiteur, réserver l’en-tête à l’identité et aux réglages globaux. Placer les actions principales dans une navigation basse fixe, adaptée en priorité au mobile.
 - L’interface visiteur est disponible en français et en anglais. Détecter automatiquement la langue du navigateur, mémoriser le choix manuel et ne pas transmettre les contenus à un service tiers sans validation explicite.
+- Toutes les chaînes fixes de l’interface visiteur passent par la traduction FR/EN ; aucun libellé public ne reste codé en dur dans une seule langue.
+- Le choix FR/EN traduit aussi les contenus éditoriaux publics provenant de la base de données, notamment l’activité des stands et les titres ou descriptions B2B. Les noms propres, coordonnées, codes et données personnelles ne sont jamais envoyés au service de traduction.
 - Présenter le choix de langue dans un sélecteur compact avec le nom de la langue puis son drapeau, plutôt que deux boutons séparés.
 - Dans l’espace occupant, placer également les destinations principales dans une navigation basse ; conserver en haut uniquement l’identité visuelle.
 - Ne pas afficher l’accès occupant dans la navigation publique : les occupants reçoivent leur lien directement et toute route protégée les envoie vers la connexion si leur session est absente.

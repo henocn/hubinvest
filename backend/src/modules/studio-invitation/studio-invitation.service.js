@@ -1,6 +1,7 @@
 const crypto = require('node:crypto');
 const AppError = require('../../shared/app-error');
 const roles = require('../../shared/roles');
+const { translatePublicContent } = require('../../shared/translation.service');
 const studioInvitationRepository = require('./studio-invitation.repository');
 
 const standFor = (user) => {
@@ -20,20 +21,20 @@ const publicPayload = (invitation) => {
   };
 };
 
-const getPublic = async (token) => {
+const getPublic = async (token, language) => {
   const invitation = await studioInvitationRepository.findByToken(token);
   if (!invitation) throw new AppError(404, 'STUDIO_INVITATION_NOT_FOUND', 'Invitation introuvable.');
-  return publicPayload(invitation);
+  return translatePublicContent(publicPayload(invitation), ['subject'], language);
 };
 
-const respond = async (token, status) => {
+const respond = async (token, status, language) => {
   const invitation = await studioInvitationRepository.findByToken(token);
   if (!invitation) throw new AppError(404, 'STUDIO_INVITATION_NOT_FOUND', 'Invitation introuvable.');
   const updated = await studioInvitationRepository.update(invitation, {
     status,
     respondedAt: new Date(),
   });
-  return publicPayload(updated);
+  return translatePublicContent(publicPayload(updated), ['subject'], language);
 };
 
 const list = (user) => studioInvitationRepository.findAll(standFor(user));

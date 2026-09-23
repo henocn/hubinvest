@@ -2,6 +2,7 @@ const crypto = require('node:crypto');
 const AppError = require('../../shared/app-error');
 const env = require('../../config/env');
 const roles = require('../../shared/roles');
+const { translatePublicContent } = require('../../shared/translation.service');
 const { sequelize } = require('../../models');
 const challengePassportRepository = require('./challenge-passport.repository');
 
@@ -49,10 +50,16 @@ const createPublic = async (values) => publicPayload(await challengePassportRepo
   redeemedByUserId: null,
 }), true);
 
-const getPublic = async (token) => {
+const getPublic = async (token, language) => {
   const passport = await challengePassportRepository.findPublicByToken(token);
   if (!passport) throw new AppError(404, 'CHALLENGE_PASSPORT_NOT_FOUND', 'Parcours introuvable.');
-  return publicPayload(passport);
+  const payload = publicPayload(passport);
+  payload.passages = await translatePublicContent(
+    payload.passages,
+    ['occupant.name', 'occupant.standLabel'],
+    language,
+  );
+  return payload;
 };
 
 const list = async (user) => {

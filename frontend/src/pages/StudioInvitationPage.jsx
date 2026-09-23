@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { CalendarDays, CheckCircle2, Clock3, XCircle } from 'lucide-react';
 import { api } from '../lib/api';
 import { useTranslation } from 'react-i18next';
+import { publicErrorMessage } from '../lib/public-error';
 
 export default function StudioInvitationPage({ token }) {
   const { t, i18n } = useTranslation();
@@ -14,10 +15,10 @@ export default function StudioInvitationPage({ token }) {
     let active = true;
     api.publicStudioInvitation(token)
       .then((data) => { if (active) setInvitation(data); })
-      .catch((requestError) => { if (active) setError(requestError.message); })
+      .catch((requestError) => { if (active) setError(publicErrorMessage(t, requestError)); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [token]);
+  }, [t, token]);
 
   const respond = async (status) => {
     setSaving(true);
@@ -25,7 +26,7 @@ export default function StudioInvitationPage({ token }) {
     try {
       setInvitation(await api.respondStudioInvitation(token, status));
     } catch (requestError) {
-      setError(requestError.message);
+      setError(publicErrorMessage(t, requestError));
     } finally {
       setSaving(false);
     }

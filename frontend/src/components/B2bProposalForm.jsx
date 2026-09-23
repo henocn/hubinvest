@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ArrowRight, Handshake } from 'lucide-react';
 import { api } from '../lib/api';
 import { useTranslation } from 'react-i18next';
+import { publicErrorMessage } from '../lib/public-error';
 
 export default function B2bProposalForm({ need }) {
   const { t } = useTranslation();
@@ -25,7 +26,7 @@ export default function B2bProposalForm({ need }) {
       await api.createB2bProposal(need.id, form);
       setReceived(true);
     } catch (requestError) {
-      setError(requestError.message);
+      setError(publicErrorMessage(t, requestError));
     } finally {
       setLoading(false);
     }

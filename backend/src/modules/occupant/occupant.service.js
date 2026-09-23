@@ -2,6 +2,7 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const { imageSizeFromFile } = require('image-size/fromFile');
 const AppError = require('../../shared/app-error');
+const { translatePublicContent } = require('../../shared/translation.service');
 const occupantRepository = require('./occupant.repository');
 
 const coverDirectory = path.resolve(__dirname, '..', '..', '..', 'uploads', 'covers');
@@ -34,7 +35,11 @@ const slugify = (value) =>
     .replace(/^-|-$/g, '');
 
 const list = () => occupantRepository.findAll();
-const listPublic = () => occupantRepository.findPublic();
+const listPublic = async (language) => translatePublicContent(
+  await occupantRepository.findPublic(),
+  ['name', 'standLabel', 'activity'],
+  language,
+);
 
 const get = async (id) => {
   const occupant = await occupantRepository.findById(id);
@@ -44,12 +49,12 @@ const get = async (id) => {
   return occupant;
 };
 
-const getPublic = async (slug) => {
+const getPublic = async (slug, language) => {
   const occupant = await occupantRepository.findBySlug(slug);
   if (!occupant) {
     throw new AppError(404, 'OCCUPANT_NOT_FOUND', 'Occupant introuvable.');
   }
-  return occupant;
+  return translatePublicContent(occupant, ['name', 'standLabel', 'activity'], language);
 };
 
 const create = (values) => {
