@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Building2, BriefcaseBusiness, Handshake, LogOut, Plus, QrCode, RefreshCw, Search, Trophy, UserRound, Users, Video } from 'lucide-react';
+import { Building2, BriefcaseBusiness, CalendarDays, Handshake, LogOut, Plus, QrCode, RefreshCw, Search, Trophy, UserRound, Users, Video } from 'lucide-react';
 import logo from '../../../assets/Logo fond blanc.jpeg';
 import ConfirmDelete from '../components/ConfirmDelete';
 import ConfirmReward from '../components/ConfirmReward';
@@ -8,12 +8,14 @@ import PushToggleButton from '../components/PushToggleButton';
 import InvestorRequestDrawer from '../components/drawers/InvestorRequestDrawer';
 import B2bNeedDrawer from '../components/drawers/B2bNeedDrawer';
 import OccupantDrawer from '../components/drawers/OccupantDrawer';
+import ProgramEventDrawer from '../components/drawers/ProgramEventDrawer';
 import StudioInvitationDrawer from '../components/drawers/StudioInvitationDrawer';
 import UserDrawer from '../components/drawers/UserDrawer';
 import InvestorRequestsTable from '../components/tables/InvestorRequestsTable';
 import B2bNeedsTable from '../components/tables/B2bNeedsTable';
 import ChallengePassportsTable from '../components/tables/ChallengePassportsTable';
 import OccupantsTable from '../components/tables/OccupantsTable';
+import ProgramEventsTable from '../components/tables/ProgramEventsTable';
 import StudioInvitationsTable from '../components/tables/StudioInvitationsTable';
 import UsersTable from '../components/tables/UsersTable';
 import { publicBaseUrl, roleLabels } from '../constants/access';
@@ -23,6 +25,7 @@ import { disablePush } from '../lib/push';
 const sectionMeta = {
   occupants: { title: 'Stands', description: 'Fiches publiques, emplacements et statuts.' },
   users: { title: 'Accès', description: 'Comptes et niveaux d’accès à la plateforme.' },
+  program: { title: 'Programme', description: 'Stand à l’affiche, animations et temps forts affichés sur l’accueil.' },
   'investor-requests': { title: 'Investor Desk', description: 'Demandes de professionnels adressées à l’API-ZF.' },
   b2b: { title: 'B2B', description: 'Besoins publiés et propositions reçues.' },
   studio: { title: 'Studio', description: 'Invitations et planning des invités.' },
@@ -39,6 +42,7 @@ export default function BackofficePage({ session, onLogout }) {
   const [investorRequests, setInvestorRequests] = useState([]);
   const [b2bNeeds, setB2bNeeds] = useState([]);
   const [studioInvitations, setStudioInvitations] = useState([]);
+  const [programEvents, setProgramEvents] = useState([]);
   const [challengePassports, setChallengePassports] = useState([]);
   const [contactStats, setContactStats] = useState({ total: 0, byOccupant: {} });
   const [search, setSearch] = useState('');
@@ -59,7 +63,7 @@ export default function BackofficePage({ session, onLogout }) {
     setError('');
     try {
       if (isSuperAdmin) {
-        const [occupantData, userData, statsData, investorData, b2bData, studioData, challengeData] = await Promise.all([
+        const [occupantData, userData, statsData, investorData, b2bData, studioData, challengeData, programData] = await Promise.all([
           api.occupants(session.token),
           api.users(session.token),
           api.contactStats(session.token),
@@ -67,6 +71,7 @@ export default function BackofficePage({ session, onLogout }) {
           api.b2bNeeds(session.token),
           api.studioInvitations(session.token),
           api.challengePassports(session.token),
+          api.programEvents(session.token),
         ]);
         setOccupants(occupantData);
         setUsers(userData);
@@ -75,6 +80,7 @@ export default function BackofficePage({ session, onLogout }) {
         setB2bNeeds(b2bData);
         setStudioInvitations(studioData);
         setChallengePassports(challengeData);
+        setProgramEvents(programData);
       } else {
         const [investorData, needData, studioData, challengeData] = await Promise.all([
           api.investorRequests(session.token),
@@ -103,6 +109,9 @@ export default function BackofficePage({ session, onLogout }) {
   const visibleInvestorRequests = useMemo(() => investorRequests.filter((item) => !query || [item.fullName, item.email, item.projectSummary, item.nextAction].some((value) => String(value || '').toLowerCase().includes(query))), [investorRequests, query]);
   const visibleB2bNeeds = useMemo(() => b2bNeeds.filter((item) => !query || [item.title, item.occupant?.name, item.status].some((value) => String(value || '').toLowerCase().includes(query))), [b2bNeeds, query]);
   const visibleStudioInvitations = useMemo(() => studioInvitations.filter((item) => !query || [item.guestName, item.subject].some((value) => String(value || '').toLowerCase().includes(query))), [studioInvitations, query]);
+  const visibleProgramEvents = useMemo(() => programEvents.filter((item) => !query || [item.title, item.location, item.description, item.occupant?.name].some((value) => String(value || '').toLowerCase().includes(query))), [programEvents, query]);
+  const programTodayStart = new Date().setUTCHours(0, 0, 0, 0);
+  const programTodayEnd = programTodayStart + 86_400_000;
   const visibleChallengePassports = useMemo(() => challengePassports.filter((item) => !query || [item.displayName, item.contact, item.code, ...(item.passages || []).flatMap((passage) => [passage.occupant?.name, passage.validatedBy?.firstName, passage.validatedBy?.lastName])].some((value) => String(value || '').toLowerCase().includes(query))), [challengePassports, query]);
 
   const switchSection = (next) => {
@@ -145,11 +154,18 @@ export default function BackofficePage({ session, onLogout }) {
     setPendingDelete({ type: 'user', item: user, label: `l’utilisateur ${user.firstName} ${user.lastName}` });
   };
 
+  // Demande confirmation avant de retirer un élément du programme.
+  const requestProgramDelete = (programEvent) => {
+    setDeleteError('');
+    setPendingDelete({ type: 'program', item: programEvent, label: programEvent.type === 'spotlight' ? `la mise à l’affiche de ${programEvent.occupant?.name || 'ce stand'}` : `« ${programEvent.title} » du programme` });
+  };
+
   const confirmDelete = async () => {
     setDeleting(true);
     setDeleteError('');
     try {
       if (pendingDelete.type === 'occupant') await api.deleteOccupant(session.token, pendingDelete.item.id);
+      else if (pendingDelete.type === 'program') await api.deleteProgramEvent(session.token, pendingDelete.item.id);
       else await api.deleteUser(session.token, pendingDelete.item.id);
       setPendingDelete(null);
       await loadData();
@@ -174,7 +190,7 @@ export default function BackofficePage({ session, onLogout }) {
       <aside className="sidebar">
         <div className="brand-lockup"><img src={logo} alt="API-ZF" /><div><strong>HubInvest</strong><span>Administration</span></div></div>
         <nav aria-label="Navigation principale">
-          {isSuperAdmin && <><button className={section === 'occupants' ? 'is-active' : ''} onClick={() => switchSection('occupants')} title="Stands"><Building2 size={18} /><span>Stands</span></button><button className={section === 'users' ? 'is-active' : ''} onClick={() => switchSection('users')} title="Accès"><Users size={18} /><span>Accès</span></button></>}
+          {isSuperAdmin && <><button className={section === 'occupants' ? 'is-active' : ''} onClick={() => switchSection('occupants')} title="Stands"><Building2 size={18} /><span>Stands</span></button><button className={section === 'users' ? 'is-active' : ''} onClick={() => switchSection('users')} title="Accès"><Users size={18} /><span>Accès</span></button><button className={section === 'program' ? 'is-active' : ''} onClick={() => switchSection('program')} title="Programme"><CalendarDays size={18} /><span>Programme</span></button></>}
           {canAccessBusinessModules && <button className={section === 'investor-requests' ? 'is-active' : ''} onClick={() => switchSection('investor-requests')} title="Investor Desk"><BriefcaseBusiness size={18} /><span>Investor Desk</span></button>}
           {canAccessBusinessModules && <button className={section === 'b2b' ? 'is-active' : ''} onClick={() => switchSection('b2b')} title="B2B"><Handshake size={18} /><span>B2B</span></button>}
           {canAccessBusinessModules && <button className={section === 'studio' ? 'is-active' : ''} onClick={() => switchSection('studio')} title="Studio"><Video size={18} /><span>Studio</span></button>}
@@ -193,10 +209,11 @@ export default function BackofficePage({ session, onLogout }) {
       <main className="workspace">
         <header className="workspace-header">
           <div><span className="eyebrow">Gestion</span><h1>{sectionMeta[section].title}</h1><p>{sectionMeta[section].description}</p></div>
-          {(section === 'occupants' || section === 'users' || section === 'b2b' || section === 'studio' || section === 'challenges') && <div className="workspace-actions">
+          {(section === 'occupants' || section === 'users' || section === 'program' || section === 'b2b' || section === 'studio' || section === 'challenges') && <div className="workspace-actions">
             {section === 'occupants' && <button className="button button-secondary" type="button" onClick={() => setQrCode({ title: 'QR du Hub', url: `${publicBaseUrl}/stands`, fileName: 'hubinvest-hub' })}><QrCode size={18} /> QR du Hub</button>}
             {section === 'challenges' && <button className="button button-secondary" type="button" onClick={() => setQrCode({ title: 'QR des Défis', url: `${publicBaseUrl}/defis`, fileName: 'hubinvest-defis' })}><QrCode size={18} /> QR des Défis</button>}
-            {section !== 'challenges' && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: section === 'occupants' ? 'occupant' : section === 'users' ? 'user' : section === 'b2b' ? 'b2b' : 'studio', item: null })}><Plus size={18} /> {section === 'occupants' ? 'Nouveau stand' : section === 'users' ? 'Nouvel utilisateur' : section === 'b2b' ? 'Nouveau besoin' : 'Nouvelle invitation'}</button>}
+            {section === 'program' && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: 'program', item: null })}><Plus size={18} /> Ajouter au programme</button>}
+            {section !== 'challenges' && section !== 'program' && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: section === 'occupants' ? 'occupant' : section === 'users' ? 'user' : section === 'b2b' ? 'b2b' : 'studio', item: null })}><Plus size={18} /> {section === 'occupants' ? 'Nouveau stand' : section === 'users' ? 'Nouvel utilisateur' : section === 'b2b' ? 'Nouveau besoin' : 'Nouvelle invitation'}</button>}
           </div>}
         </header>
 
@@ -205,6 +222,12 @@ export default function BackofficePage({ session, onLogout }) {
             <article><span>En cours</span><strong>{loading || error ? '—' : challengePassports.filter((item) => item.status === 'active').length}</strong><small>parcours commencés</small></article>
             <article><span>Terminés</span><strong>{loading || error ? '—' : challengePassports.filter((item) => item.status === 'completed').length}</strong><small>récompenses à remettre</small></article>
             <article><span>Remises</span><strong>{loading || error ? '—' : challengePassports.filter((item) => item.status === 'redeemed').length}</strong><small>récompenses enregistrées</small></article>
+          </section>
+        ) : section === 'program' ? (
+          <section className="summary-row" aria-label="Résumé">
+            <article><span>Aujourd’hui</span><strong>{loading || error ? '—' : programEvents.filter((item) => item.type !== 'spotlight' && new Date(item.startsAt) >= programTodayStart && new Date(item.startsAt) < programTodayEnd).length}</strong><small>rendez-vous du jour</small></article>
+            <article><span>À venir</span><strong>{loading || error ? '—' : programEvents.filter((item) => item.type !== 'spotlight' && new Date(item.startsAt) >= programTodayEnd).length}</strong><small>rendez-vous programmés</small></article>
+            <article><span>À l’affiche</span><strong>{loading || error ? '—' : programEvents.find((item) => item.type === 'spotlight' && new Date(item.startsAt) >= programTodayStart && new Date(item.startsAt) < programTodayEnd)?.occupant?.name || 'Aucun'}</strong><small>stand du jour</small></article>
           </section>
         ) : section === 'b2b' ? (
           <section className="summary-row" aria-label="Résumé">
@@ -234,13 +257,14 @@ export default function BackofficePage({ session, onLogout }) {
 
         <section className="data-panel">
           <header className="data-toolbar">
-            <label className="search-field"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={section === 'occupants' ? 'Rechercher un occupant' : section === 'users' ? 'Rechercher un utilisateur' : section === 'b2b' ? 'Rechercher un besoin' : section === 'studio' ? 'Rechercher une invitation' : section === 'challenges' ? 'Rechercher un participant' : 'Rechercher une demande'} /></label>
+            <label className="search-field"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={section === 'occupants' ? 'Rechercher un occupant' : section === 'users' ? 'Rechercher un utilisateur' : section === 'program' ? 'Rechercher dans le programme' : section === 'b2b' ? 'Rechercher un besoin' : section === 'studio' ? 'Rechercher une invitation' : section === 'challenges' ? 'Rechercher un participant' : 'Rechercher une demande'} /></label>
             <button className="icon-button" type="button" onClick={loadData} aria-label="Actualiser"><RefreshCw size={18} /></button>
           </header>
           {error && <p className="panel-message is-error">{error}</p>}
           {loading && <p className="panel-message">Chargement des données...</p>}
           {!loading && !error && section === 'occupants' && <OccupantsTable occupants={visibleOccupants} contactStats={contactStats} query={query} onQrCode={setQrCode} onEdit={(item) => setDrawer({ type: 'occupant', item })} onDelete={requestOccupantDelete} />}
           {!loading && !error && section === 'users' && <UsersTable users={visibleUsers} query={query} currentUserId={session.user.id} onEdit={(item) => setDrawer({ type: 'user', item })} onDelete={requestUserDelete} />}
+          {!loading && !error && section === 'program' && <ProgramEventsTable events={visibleProgramEvents} query={query} onEdit={(item) => setDrawer({ type: 'program', item })} onDelete={requestProgramDelete} />}
           {!loading && !error && section === 'investor-requests' && <InvestorRequestsTable requests={visibleInvestorRequests} query={query} showStand={isSuperAdmin} onEdit={(item) => setDrawer({ type: 'investor-request', item })} />}
           {!loading && !error && section === 'b2b' && <B2bNeedsTable needs={visibleB2bNeeds} query={query} showStand={isSuperAdmin} onEdit={(item) => setDrawer({ type: 'b2b', item })} />}
           {!loading && !error && section === 'studio' && <StudioInvitationsTable invitations={visibleStudioInvitations} query={query} showStand={isSuperAdmin} copiedId={copiedInvitationId} onCopy={copyInvitationLink} onEdit={(item) => setDrawer({ type: 'studio', item })} />}
@@ -250,6 +274,7 @@ export default function BackofficePage({ session, onLogout }) {
 
       {drawer?.type === 'occupant' && <OccupantDrawer occupant={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'user' && <UserDrawer user={drawer.item} occupants={occupants} token={session.token} currentRole={session.user.role} currentUserId={session.user.id} onClose={() => setDrawer(null)} onSaved={saved} />}
+      {drawer?.type === 'program' && <ProgramEventDrawer programEvent={drawer.item} occupants={occupants} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'investor-request' && <InvestorRequestDrawer investorRequest={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'b2b' && <B2bNeedDrawer need={drawer.item} occupants={occupants} fixedOccupant={isAdmin ? session.user.occupant : null} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'studio' && <StudioInvitationDrawer invitation={drawer.item} occupants={occupants} fixedOccupant={isAdmin ? session.user.occupant : null} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}

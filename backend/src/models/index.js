@@ -11,6 +11,7 @@ const defineChallengePassport = require('./challenge-passport.model');
 const defineChallengePassage = require('./challenge-passage.model');
 const defineNotificationJob = require('./notification-job.model');
 const definePushSubscription = require('./push-subscription.model');
+const defineProgramEvent = require('./program-event.model');
 
 const Occupant = defineOccupant(sequelize, DataTypes);
 const User = defineUser(sequelize, DataTypes);
@@ -23,6 +24,7 @@ const ChallengePassport = defineChallengePassport(sequelize, DataTypes);
 const ChallengePassage = defineChallengePassage(sequelize, DataTypes);
 const NotificationJob = defineNotificationJob(sequelize, DataTypes);
 const PushSubscription = definePushSubscription(sequelize, DataTypes);
+const ProgramEvent = defineProgramEvent(sequelize, DataTypes);
 
 Occupant.hasMany(User, { foreignKey: 'occupantId', as: 'users' });
 User.belongsTo(Occupant, { foreignKey: 'occupantId', as: 'occupant' });
@@ -70,6 +72,9 @@ ChallengePassport.belongsTo(User, { foreignKey: 'redeemedByUserId', as: 'redeeme
 User.hasMany(PushSubscription, { foreignKey: 'userId', as: 'pushSubscriptions' });
 PushSubscription.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
+Occupant.hasMany(ProgramEvent, { foreignKey: 'occupantId', as: 'programEvents' });
+ProgramEvent.belongsTo(Occupant, { foreignKey: 'occupantId', as: 'occupant' });
+
 module.exports = {
   sequelize,
   Occupant,
@@ -83,4 +88,5 @@ module.exports = {
   ChallengePassage,
   NotificationJob,
   PushSubscription,
+  ProgramEvent,
 };

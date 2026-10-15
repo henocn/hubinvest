@@ -45,8 +45,9 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 - [x] Navigation basse : accueil, exploration, rencontres et défis.
 - [ ] Recherche par intérêt « Que recherchez-vous ? » avec pastilles de catégories administrées.
 - [ ] Enrichir la fiche : trois à cinq produits ou services, marchés servis, chiffre clé, success story « Ils avancent avec l’API-ZF ».
-- [ ] Programme administré : temps forts, Journée API-ZF, animations, occupant « À l’affiche » de chaque jour.
-- [ ] Bandeau « Aujourd’hui au Hub » : occupant du jour, animation, prochaine interview, chiffres mesurés.
+- [x] Programme administré : temps forts, Journée API-ZF, animations, occupant « À l’affiche » de chaque jour.
+- [x] Accueil « Aujourd’hui au Hub » distinct d’Explorer : occupant du jour, programme du jour (en cours / terminé), prochains rendez-vous.
+- [ ] Ajouter à l’accueil les chiffres mesurés du Hub, une fois les statistiques disponibles.
 - [ ] Plan simple du Hub au pavillon Oti avec le numéro de chaque stand.
 - [ ] Trois actions permanentes « Être recontacté », « Rencontrer l’API-ZF », « Jouer » ; aucune ne mène à une page vide.
 - [ ] Phases de la vitrine : pré-lancement, complète, pendant la Foire, archive.
@@ -131,7 +132,9 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 ## M9 — L’administration (indispensable)
 
 - [x] Créer occupants et comptes, logos et couvertures, rattacher les administrateurs à leur stand.
-- [ ] Gérer les contenus : programme, bandeau du jour, journées « À l’affiche », questions des Défis, versions de parcours, récompenses.
+- [x] Gérer le programme et les journées « À l’affiche » (section Programme, super administrateur).
+- [ ] Gérer les autres contenus : questions des Défis, versions de parcours, récompenses.
+- [x] Données de démonstration réversibles : `npm run db:demo` / `npm run db:demo:undo` (refusées en production).
 - [ ] Régler les agendas : créneaux Investor Desk, tables B2B, créneaux Studio.
 - [ ] Suspendre un compte sans le supprimer.
 - [ ] Import depuis Excel ; exports Excel et PDF.

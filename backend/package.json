@@ -11,6 +11,8 @@
     "db:migrate:undo": "sequelize-cli db:migrate:undo",
     "db:migrate:status": "sequelize-cli db:migrate:status",
     "db:seed": "sequelize-cli db:seed:all",
+    "db:demo": "sequelize-cli db:seed:all --seeders-path src/database/demo",
+    "db:demo:undo": "sequelize-cli db:seed:undo:all --seeders-path src/database/demo",
     "test:critical": "node --test test/critical.test.js"
   },
   "dependencies": {

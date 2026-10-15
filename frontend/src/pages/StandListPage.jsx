@@ -5,7 +5,8 @@ import StandCard from '../components/StandCard';
 import { api } from '../lib/api';
 import { publicErrorMessage } from '../lib/public-error';
 
-export default function StandListPage({ isHome }) {
+// Affiche l'annuaire des stands avec une recherche par nom, activité ou emplacement.
+export default function StandListPage() {
   const { t, i18n } = useTranslation();
   const [stands, setStands] = useState([]);
   const [query, setQuery] = useState('');
@@ -31,7 +32,7 @@ export default function StandListPage({ isHome }) {
       <section className="public-intro">
         <div className="public-container">
           <span className="public-eyebrow">{t('stands.eyebrow')}</span>
-          <h1>{t(isHome ? 'stands.homeTitle' : 'stands.title')}</h1>
+          <h1>{t('stands.title')}</h1>
           <p>{t('stands.intro')}</p>
         </div>
       </section>

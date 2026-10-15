@@ -73,6 +73,13 @@ export const api = {
     request('/studio-invitations', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   updateStudioInvitation: (token, id, values) =>
     request(`/studio-invitations/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
+  programEvents: (token) => request('/program-events', authorized(token)),
+  createProgramEvent: (token, values) =>
+    request('/program-events', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
+  updateProgramEvent: (token, id, values) =>
+    request(`/program-events/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
+  deleteProgramEvent: (token, id) =>
+    request(`/program-events/${id}`, authorized(token, { method: 'DELETE' })),
   challengePassports: (token) => request('/challenge-passports', authorized(token)),
   redeemChallengePassport: (token, id) =>
     request(`/challenge-passports/${id}/redeem`, authorized(token, { method: 'PATCH' })),
