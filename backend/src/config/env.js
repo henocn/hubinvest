@@ -48,6 +48,22 @@ module.exports = {
     fromName: process.env.SMTP_FROM_NAME || 'HubInvest',
     fromEmail: process.env.SMTP_FROM_EMAIL || '',
   },
+  appUrls: {
+    public: (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, ''),
+    backoffice: (process.env.BACKOFFICE_URL || 'http://localhost:5174').replace(/\/$/, ''),
+  },
+  push: {
+    publicKey: process.env.VAPID_PUBLIC_KEY || '',
+    privateKey: process.env.VAPID_PRIVATE_KEY || '',
+    subject: process.env.VAPID_SUBJECT || (process.env.SMTP_FROM_EMAIL ? `mailto:${process.env.SMTP_FROM_EMAIL}` : ''),
+  },
+  notifications: {
+    enabled: process.env.NOTIFICATIONS_ENABLED !== 'false',
+    workerEnabled: process.env.NOTIFICATIONS_WORKER_ENABLED !== 'false',
+    pollInterval: duration(process.env.NOTIFICATIONS_POLL_INTERVAL, 15 * 1000),
+    maxAttempts: integer(process.env.NOTIFICATIONS_MAX_ATTEMPTS, 5),
+    batchSize: integer(process.env.NOTIFICATIONS_BATCH_SIZE, 20),
+  },
   corsOrigins: list(process.env.CORS_ORIGINS),
   challenge: {
     requiredPassages: integer(process.env.CHALLENGE_REQUIRED_PASSAGES, 3),

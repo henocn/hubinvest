@@ -1086,6 +1086,32 @@ select:focus {
   justify-self: start;
 }
 
+.occupant-notification-panel {
+  margin-top: 22px;
+  padding: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #fff;
+}
+
+.occupant-notification-panel h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.occupant-notification-panel p {
+  margin: 8px 0 0;
+  font-size: 0.9rem;
+}
+
+.occupant-notification-panel .button {
+  flex: 0 0 auto;
+}
+
 .profile-success {
   margin: 0;
   padding: 12px 14px;
@@ -1182,6 +1208,15 @@ select:focus {
   }
 
   .occupant-password-panel .button {
+    width: 100%;
+  }
+
+  .occupant-notification-panel {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .occupant-notification-panel .button {
     width: 100%;
   }
 }

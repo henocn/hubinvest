@@ -3,6 +3,7 @@ const AppError = require('../../shared/app-error');
 const roles = require('../../shared/roles');
 const contactRepository = require('./contact.repository');
 const occupantRepository = require('../occupant/occupant.repository');
+const notificationService = require('../notification/notification.service');
 
 const requireOccupant = (user) => {
   if (!user.occupantId) {
@@ -37,7 +38,7 @@ const create = async (user, values) => {
   const occupantId = requireOccupant(user);
 
   try {
-    return await contactRepository.sequelize.transaction(async (transaction) => {
+    const result = await contactRepository.sequelize.transaction(async (transaction) => {
       if (values.id) {
         const existing = await contactRepository.findExisting(occupantId, values.id, transaction);
         if (existing) {
@@ -58,6 +59,8 @@ const create = async (user, values) => {
 
       return { contact, created: true };
     });
+    if (result.created) notificationService.contactReminderChanged(result.contact);
+    return result;
   } catch (error) {
     if (values.id && error instanceof UniqueConstraintError) {
       const existing = await contactRepository.findExisting(occupantId, values.id);
@@ -79,7 +82,7 @@ const createPublic = async (slug, values) => {
   }
 
   try {
-    return await contactRepository.sequelize.transaction(async (transaction) => {
+    const result = await contactRepository.sequelize.transaction(async (transaction) => {
       const existing = await contactRepository.findExisting(occupant.id, values.id, transaction);
       if (existing) return { created: false };
 
@@ -98,6 +101,8 @@ const createPublic = async (slug, values) => {
       }, transaction);
       return { created: true };
     });
+    if (result.created) notificationService.contactRequested(occupant);
+    return result;
   } catch (error) {
     if (error instanceof UniqueConstraintError) {
       const existing = await contactRepository.findExisting(occupant.id, values.id);
@@ -109,7 +114,9 @@ const createPublic = async (slug, values) => {
 
 const update = async (user, id, values) => {
   const contact = await get(user, id);
-  return contactRepository.update(contact, values);
+  const updated = await contactRepository.update(contact, values);
+  if ('nextActionAt' in values || 'nextAction' in values) notificationService.contactReminderChanged(updated);
+  return updated;
 };
 
 const stats = async (user) => {

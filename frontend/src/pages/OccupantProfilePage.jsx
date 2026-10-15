@@ -2,7 +2,9 @@ import { LogOut } from 'lucide-react';
 import { useState } from 'react';
 import PasswordField from '../components/PasswordField';
 import { useOccupantProfile } from '../components/occupant/OccupantShell';
+import PushNotificationPanel from '../components/occupant/PushNotificationPanel';
 import { api } from '../lib/api';
+import { disablePush } from '../lib/push';
 
 export default function OccupantProfilePage({ session, onLogout }) {
   const profile = useOccupantProfile() || session.user;
@@ -30,6 +32,15 @@ export default function OccupantProfilePage({ session, onLogout }) {
     }
   };
 
+  // Coupe les notifications de cet appareil avant de quitter volontairement la session.
+  const signOut = async () => {
+    await Promise.race([
+      disablePush(session.token).catch(() => {}),
+      new Promise((resolve) => { setTimeout(resolve, 1500); }),
+    ]);
+    onLogout();
+  };
+
   return (
     <main className="workspace occupant-profile-workspace">
       <div className="page-heading"><h1>Profil</h1></div>
@@ -44,6 +55,8 @@ export default function OccupantProfilePage({ session, onLogout }) {
         </dl>
       </section>
 
+      {session.user.role === 'occupant' && <PushNotificationPanel token={session.token} />}
+
       <section className="occupant-password-panel">
         <h2>Modifier le mot de passe</h2>
         <form className="form-stack" onSubmit={changePassword}>
@@ -55,7 +68,7 @@ export default function OccupantProfilePage({ session, onLogout }) {
         </form>
       </section>
 
-      <button className="profile-logout" type="button" onClick={onLogout}><LogOut size={19} /> Se déconnecter</button>
+      <button className="profile-logout" type="button" onClick={signOut}><LogOut size={19} /> Se déconnecter</button>
     </main>
   );
 }

@@ -3,6 +3,7 @@ const AppError = require('../../shared/app-error');
 const roles = require('../../shared/roles');
 const { translatePublicContent } = require('../../shared/translation.service');
 const studioInvitationRepository = require('./studio-invitation.repository');
+const notificationService = require('../notification/notification.service');
 
 const standFor = (user) => {
   if (user.role === roles.SUPER_ADMIN) return null;
@@ -30,10 +31,12 @@ const getPublic = async (token, language) => {
 const respond = async (token, status, language) => {
   const invitation = await studioInvitationRepository.findByToken(token);
   if (!invitation) throw new AppError(404, 'STUDIO_INVITATION_NOT_FOUND', 'Invitation introuvable.');
+  const previousStatus = invitation.status;
   const updated = await studioInvitationRepository.update(invitation, {
     status,
     respondedAt: new Date(),
   });
+  if (updated.status !== previousStatus) notificationService.studioInvitationAnswered(updated);
   return translatePublicContent(publicPayload(updated), ['subject'], language);
 };
 

@@ -75,7 +75,9 @@ input[type='file']::file-selector-button { margin-right: 10px; padding: 7px 10px
 .sidebar nav button { display: flex; align-items: center; gap: 11px; width: 100%; padding: 10px 11px; border: 0; border-radius: 7px; color: #55595e; background: transparent; font-size: 13px; font-weight: 600; text-align: left; }
 .sidebar nav button:hover { background: #f5f5f4; }
 .sidebar nav button.is-active { color: var(--green); background: #e9f4f0; }
-.sidebar-user { margin-top: auto; padding: 13px 4px 0; border-top: 1px solid var(--line); display: grid; grid-template-columns: 34px minmax(0, 1fr) 36px; gap: 9px; align-items: center; }
+.sidebar-user { margin-top: auto; padding: 13px 4px 0; border-top: 1px solid var(--line); display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 9px; align-items: center; }
+.sidebar-user .sidebar-user-actions { display: flex; gap: 6px; overflow: visible; }
+.icon-button.is-active { color: var(--green); border-color: #bcdccf; background: #e9f4f0; }
 .sidebar-user div { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .sidebar-user strong, .sidebar-user span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sidebar-user strong { font-size: 12px; }
@@ -215,7 +217,7 @@ td small { margin-top: 4px; color: #85898d; }
   .sidebar { position: static; height: auto; padding: 14px 18px; display: grid; grid-template-columns: auto 1fr auto; gap: 20px; align-items: center; border-right: 0; border-bottom: 1px solid var(--line); }
   .brand-lockup { padding: 0; }
   .sidebar nav { flex-direction: row; justify-content: center; }
-  .sidebar-user { margin: 0; padding: 0; border: 0; grid-template-columns: 34px 36px; }
+  .sidebar-user { margin: 0; padding: 0; border: 0; grid-template-columns: 34px auto; }
   .sidebar-user div { display: none; }
   .workspace { padding: 32px 22px 48px; }
 }
@@ -225,7 +227,7 @@ td small { margin-top: 4px; color: #85898d; }
   .login-panel { width: calc(100% - 40px); gap: 30px; }
   .login-copy h1 { font-size: 32px; }
   .brand-lockup div, .sidebar-user .user-avatar { display: none; }
-  .sidebar { grid-template-columns: 38px 1fr 36px; gap: 8px; }
+  .sidebar { grid-template-columns: 38px 1fr auto; gap: 8px; }
   .sidebar nav button { justify-content: center; }
   .sidebar nav button svg { flex: 0 0 auto; }
   .sidebar nav button span { display: none; }

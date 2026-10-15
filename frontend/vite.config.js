@@ -28,6 +28,10 @@ export default defineConfig({
       workbox: {
         navigateFallback: '/index.html',
         cleanupOutdatedCaches: true,
+        importScripts: ['push-sw.js'],
+      },
+      devOptions: {
+        enabled: true,
       },
     }),
   ],

@@ -1,6 +1,7 @@
 const AppError = require('../../shared/app-error');
 const roles = require('../../shared/roles');
 const investorRequestRepository = require('./investor-request.repository');
+const notificationService = require('../notification/notification.service');
 
 const standFor = (user) => {
   if (user.role === roles.SUPER_ADMIN) return null;
@@ -20,10 +21,10 @@ const list = async (user, query) => {
   };
 };
 
-const createPublic = async (values) => {
+const createPublic = async (values, language = 'fr') => {
   const occupant = await investorRequestRepository.findActiveOccupantById(values.occupantId);
   if (!occupant) throw new AppError(422, 'OCCUPANT_NOT_FOUND', 'Le stand choisi n’est pas disponible.');
-  return investorRequestRepository.create({
+  const investorRequest = await investorRequestRepository.create({
     occupantId: values.occupantId,
     fullName: values.fullName,
     email: values.email.toLowerCase(),
@@ -32,9 +33,12 @@ const createPublic = async (values) => {
     status: 'new',
     nextAction: null,
     assignedToUserId: null,
+    language,
     consentApizf: true,
     consentCapturedAt: new Date(),
   });
+  notificationService.investorRequestReceived(investorRequest, occupant);
+  return investorRequest;
 };
 
 const update = async (user, id, values) => {

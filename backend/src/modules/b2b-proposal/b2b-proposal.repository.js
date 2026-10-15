@@ -1,4 +1,4 @@
-const { B2bProposal, B2bNeed, User } = require('../../models');
+const { B2bProposal, B2bNeed, Occupant, User } = require('../../models');
 
 const handlerInclude = [{ model: User, as: 'handledBy', attributes: ['id', 'firstName', 'lastName'] }];
 
@@ -12,7 +12,13 @@ const findById = (id) => B2bProposal.findOne({
   where: { id },
   include: [
     ...handlerInclude,
-    { model: B2bNeed, as: 'need', attributes: ['id', 'occupantId'], required: true },
+    {
+      model: B2bNeed,
+      as: 'need',
+      attributes: ['id', 'occupantId', 'title'],
+      required: true,
+      include: [{ model: Occupant, as: 'occupant', attributes: ['id', 'name'] }],
+    },
   ],
 });
 

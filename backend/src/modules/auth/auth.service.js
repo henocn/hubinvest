@@ -58,12 +58,12 @@ const forgotPassword = async ({ email }) => {
     new Date(Date.now() + env.auth.passwordResetExpiresIn),
   );
 
-  try {
-    await authMailer.sendPasswordReset(user, code);
-  } catch (error) {
-    await authRepository.clearPasswordReset(user);
-    if (env.nodeEnv !== 'test') console.error('Échec de l’envoi du code de réinitialisation.', error);
-  }
+  Promise.resolve()
+    .then(() => authMailer.sendPasswordReset(user, code))
+    .catch(async (error) => {
+      if (env.nodeEnv !== 'test') console.error('Échec de l’envoi du code de réinitialisation.', error.message);
+      await authRepository.clearPasswordReset(user).catch(() => {});
+    });
 };
 
 const resetPassword = async ({ email, code, password }) => {

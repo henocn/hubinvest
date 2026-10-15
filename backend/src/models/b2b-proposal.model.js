@@ -10,6 +10,7 @@ module.exports = (sequelize, DataTypes) =>
       phone: { type: DataTypes.STRING(32), allowNull: true },
       message: { type: DataTypes.TEXT, allowNull: false },
       status: { type: DataTypes.STRING(20), allowNull: false, defaultValue: 'pending', validate: { isIn: [['pending', 'accepted', 'declined']] } },
+      language: { type: DataTypes.STRING(2), allowNull: false, defaultValue: 'fr', validate: { isIn: [['fr', 'en']] } },
       consentOccupant: { type: DataTypes.BOOLEAN, allowNull: false, field: 'consent_occupant' },
       consentCapturedAt: { type: DataTypes.DATE, allowNull: false, field: 'consent_captured_at' },
     },

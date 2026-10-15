@@ -1,11 +1,12 @@
 const investorRequestService = require('./investor-request.service');
+const publicLanguage = require('../../shared/public-language');
 
 const list = async (request, response) => {
   response.json({ data: await investorRequestService.list(request.user, request.query) });
 };
 
 const createPublic = async (request, response) => {
-  await investorRequestService.createPublic(request.body);
+  await investorRequestService.createPublic(request.body, publicLanguage(request));
   response.status(201).json({
     data: { received: true },
     message: 'Demande transmise à l’Investor Desk.',
