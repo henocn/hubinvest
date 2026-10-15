@@ -9,6 +9,8 @@ const defineB2bProposal = require('./b2b-proposal.model');
 const defineStudioInvitation = require('./studio-invitation.model');
 const defineChallengePassport = require('./challenge-passport.model');
 const defineChallengePassage = require('./challenge-passage.model');
+const defineNotificationJob = require('./notification-job.model');
+const definePushSubscription = require('./push-subscription.model');
 
 const Occupant = defineOccupant(sequelize, DataTypes);
 const User = defineUser(sequelize, DataTypes);
@@ -19,6 +21,8 @@ const B2bProposal = defineB2bProposal(sequelize, DataTypes);
 const StudioInvitation = defineStudioInvitation(sequelize, DataTypes);
 const ChallengePassport = defineChallengePassport(sequelize, DataTypes);
 const ChallengePassage = defineChallengePassage(sequelize, DataTypes);
+const NotificationJob = defineNotificationJob(sequelize, DataTypes);
+const PushSubscription = definePushSubscription(sequelize, DataTypes);
 
 Occupant.hasMany(User, { foreignKey: 'occupantId', as: 'users' });
 User.belongsTo(Occupant, { foreignKey: 'occupantId', as: 'occupant' });
@@ -63,4 +67,20 @@ ChallengePassage.belongsTo(User, { foreignKey: 'validatedByUserId', as: 'validat
 User.hasMany(ChallengePassport, { foreignKey: 'redeemedByUserId', as: 'redeemedChallengePassports' });
 ChallengePassport.belongsTo(User, { foreignKey: 'redeemedByUserId', as: 'redeemedBy' });
 
-module.exports = { sequelize, Occupant, User, Contact, InvestorRequest, B2bNeed, B2bProposal, StudioInvitation, ChallengePassport, ChallengePassage };
+User.hasMany(PushSubscription, { foreignKey: 'userId', as: 'pushSubscriptions' });
+PushSubscription.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+module.exports = {
+  sequelize,
+  Occupant,
+  User,
+  Contact,
+  InvestorRequest,
+  B2bNeed,
+  B2bProposal,
+  StudioInvitation,
+  ChallengePassport,
+  ChallengePassage,
+  NotificationJob,
+  PushSubscription,
+};

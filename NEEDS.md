@@ -107,7 +107,8 @@ Ces informations ne sont necessaires qu'au branchement du canal concerne.
 
 - [ ] WhatsApp : fournisseur, identifiants, numero et modeles approuves.
 - [ ] SMS : fournisseur, identifiants et nom d'expediteur.
-- [ ] E-mail et récupération de mot de passe : renseigner `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_SECURE`, `SMTP_FROM_NAME` et `SMTP_FROM_EMAIL`.
+- [x] E-mail et récupération de mot de passe : `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_SECURE`, `SMTP_FROM_NAME` et `SMTP_FROM_EMAIL` (SMTP SiteGround).
+- [ ] Notifications push : `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (générées avec `npx web-push generate-vapid-keys`) et `VAPID_SUBJECT` (`mailto:` suivi d’une adresse de contact).
 - [ ] Pour chaque message : evenement declencheur, destinataire, langue et texte valide.
 
 Tous les secrets passent par des variables d'environnement et ne sont jamais ajoutes au depot.

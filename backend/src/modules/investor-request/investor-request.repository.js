@@ -37,7 +37,7 @@ const findById = (id, occupantId = null) => InvestorRequest.findOne({
   where: { id, ...(occupantId && { occupantId }) },
   include: [...assignedToInclude, ...occupantInclude],
 });
-const findActiveOccupantById = (id) => Occupant.findOne({ where: { id, status: 'active' }, attributes: ['id'] });
+const findActiveOccupantById = (id) => Occupant.findOne({ where: { id, status: 'active' }, attributes: ['id', 'name'] });
 const create = (values) => InvestorRequest.create(values);
 const update = (request, values) => request.update(values);
 

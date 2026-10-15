@@ -47,6 +47,11 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 - Un module backend lié à un modèle contient ses routes, validations, repository, service et controller.
 - Les paramètres sensibles et la connexion à la base utilisent les variables d’environnement.
 - En production, un push ou merge sur `main` déclenche le déploiement automatique sur le VPS Hostinger par SSH. Le workflow installe séparément le backend, le frontend et le backoffice, exécute les migrations Sequelize, compile les interfaces puis recharge le backend avec PM2 et `--update-env`.
+- Les envois externes sont asynchrones. Une notification e-mail ou push est d’abord ajoutée à la file `notification_jobs`, puis envoyée en arrière-plan par le worker avec nouvelles tentatives. Une action métier n’attend jamais un envoi et n’échoue jamais à cause d’une notification.
+- Un membre d’équipe est prévenu en push sur ses appareils abonnés, et par e-mail seulement lorsqu’aucun appareil n’est joignable. Un visiteur sans compte reçoit uniquement des e-mails, dans la langue de sa demande.
+- Une notification d’équipe ne contient pas les coordonnées du visiteur : elle indique l’événement et mène à l’écran où la donnée est consultable.
+- Une déconnexion volontaire coupe les notifications de l’appareil ; une session expirée ne les coupe pas.
+- Les dates et jalons des documents de travail ne fixent pas l’ordre du travail.
 - Avancer par petits parcours complets. Ne pas construire tous les cas futurs avant leur usage réel.
 - Écrire uniquement les tests protégeant les risques essentiels.
 - Les alertes de vulnérabilités des dépendances sont tolérées pendant la construction et traitées pendant la stabilisation finale.

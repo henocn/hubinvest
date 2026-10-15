@@ -46,6 +46,12 @@ module.exports = (sequelize, DataTypes) =>
         allowNull: true,
         field: 'next_action',
       },
+      language: {
+        type: DataTypes.STRING(2),
+        allowNull: false,
+        defaultValue: 'fr',
+        validate: { isIn: [['fr', 'en']] },
+      },
       consentApizf: {
         type: DataTypes.BOOLEAN,
         allowNull: false,

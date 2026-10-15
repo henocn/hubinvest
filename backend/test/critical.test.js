@@ -31,6 +31,14 @@ const roles = require('../src/shared/roles');
 const { sequelize, User, Occupant, B2bNeed } = require('../src/models');
 const env = require('../src/config/env');
 const app = require('../src/app');
+const notificationService = require('../src/modules/notification/notification.service');
+const notificationRepository = require('../src/modules/notification/notification.repository');
+const notificationWorker = require('../src/modules/notification/notification.worker');
+const pushSubscriptionRepository = require('../src/modules/push-subscription/push-subscription.repository');
+const mailer = require('../src/shared/mailer');
+const webPush = require('../src/shared/web-push');
+
+env.notifications.enabled = false;
 
 test('un occupant doit connaître son mot de passe actuel pour le remplacer', async (context) => {
   const user = {
@@ -652,4 +660,115 @@ test('un lien participant inventé reste introuvable', async (context) => {
     challengePassportService.getPublic('a'.repeat(64)),
     (error) => error.status === 404 && error.code === 'CHALLENGE_PASSPORT_NOT_FOUND',
   );
+});
+
+// Laisse s'exécuter les notifications planifiées hors du parcours de la requête.
+const flushNotifications = async () => {
+  await new Promise((resolve) => setImmediate(resolve));
+  await new Promise((resolve) => setImmediate(resolve));
+};
+
+// Active la planification des notifications le temps d'un test.
+const enableNotifications = (context) => {
+  env.notifications.enabled = true;
+  context.after(() => { env.notifications.enabled = false; });
+};
+
+test('une notification de compte part en push, puis par e-mail seulement sans appareil joignable', async (context) => {
+  const pushed = [];
+  const emails = [];
+  const removed = [];
+  const sent = [];
+  const subscriptions = {
+    'user-push': [{ endpoint: 'https://push.example/ok' }, { endpoint: 'https://push.example/expired' }],
+    'user-email': [{ endpoint: 'https://push.example/expired' }],
+  };
+  context.mock.method(webPush, 'isConfigured', () => true);
+  context.mock.method(webPush, 'send', async (subscription, message) => {
+    if (subscription.endpoint.endsWith('expired')) throw Object.assign(new Error('Gone'), { statusCode: 410 });
+    pushed.push(message);
+  });
+  context.mock.method(mailer, 'isConfigured', () => true);
+  context.mock.method(mailer, 'send', async (mail) => { emails.push(mail); });
+  context.mock.method(pushSubscriptionRepository, 'findByUser', async (userId) => subscriptions[userId]);
+  context.mock.method(pushSubscriptionRepository, 'remove', async (subscription) => { removed.push(subscription.endpoint); });
+  context.mock.method(notificationRepository, 'findActiveUser', async (id) => ({ id, email: `${id}@example.com` }));
+  context.mock.method(notificationRepository, 'markSent', async (id) => { sent.push(id); });
+
+  const payload = { title: 'Titre', body: 'Message', url: 'https://hubinvest.example', subject: 'Sujet', text: 'Texte' };
+  await notificationWorker.processJob({ id: 'job-push', channel: 'user', recipient: 'user-push', payload, attempts: 1 });
+  await notificationWorker.processJob({ id: 'job-email', channel: 'user', recipient: 'user-email', payload, attempts: 1 });
+
+  assert.equal(pushed.length, 1);
+  assert.deepEqual(emails.map((mail) => mail.to), ['user-email@example.com']);
+  assert.deepEqual(removed, ['https://push.example/expired', 'https://push.example/expired']);
+  assert.deepEqual(sent, ['job-push', 'job-email']);
+});
+
+test('une notification en échec est réessayée puis abandonnée après la dernière tentative', async (context) => {
+  const retries = [];
+  const failures = [];
+  context.mock.method(mailer, 'isConfigured', () => true);
+  context.mock.method(mailer, 'send', async () => { throw new Error('SMTP indisponible'); });
+  context.mock.method(notificationRepository, 'markRetry', async (id, _error, availableAt) => { retries.push({ id, availableAt }); });
+  context.mock.method(notificationRepository, 'markFailed', async (id) => { failures.push(id); });
+  context.mock.method(console, 'error', () => {});
+
+  const job = { id: 'job-a', channel: 'email', recipient: 'visiteur@example.com', payload: { subject: 'Sujet', text: 'Texte' } };
+  await notificationWorker.processJob({ ...job, attempts: 1 });
+  await notificationWorker.processJob({ ...job, attempts: env.notifications.maxAttempts });
+
+  assert.equal(retries.length, 1);
+  assert.ok(retries[0].availableAt > new Date());
+  assert.deepEqual(failures, ['job-a']);
+});
+
+test('une demande de recontact prévient seulement les occupants du stand, sans données du visiteur', async (context) => {
+  enableNotifications(context);
+  const queued = [];
+  context.mock.method(occupantRepository, 'findBySlug', async () => ({ id: 'occupant-a', name: 'Stand A' }));
+  context.mock.method(contactRepository.sequelize, 'transaction', async (callback) => callback({}));
+  context.mock.method(contactRepository, 'findExisting', async () => null);
+  context.mock.method(contactRepository, 'create', async (values) => values);
+  context.mock.method(notificationRepository, 'findStandUsers', async (occupantId, allowedRoles) => {
+    assert.equal(occupantId, 'occupant-a');
+    assert.deepEqual(allowedRoles, ['occupant']);
+    return [{ id: 'occupant-user', firstName: 'Afi', email: 'afi@example.com' }];
+  });
+  context.mock.method(notificationRepository, 'enqueue', async (jobs) => { queued.push(...jobs); });
+
+  await contactService.createPublic('stand-a', {
+    id: crypto.randomUUID(), fullName: 'Visiteur Secret', phone: '+22890000000', need: 'Projet confidentiel', consentOccupant: true,
+  });
+  await flushNotifications();
+
+  assert.equal(queued.length, 1);
+  assert.equal(queued[0].channel, 'user');
+  assert.equal(queued[0].recipient, 'occupant-user');
+  const content = JSON.stringify(queued[0].payload);
+  ['Visiteur Secret', '+22890000000', 'Projet confidentiel'].forEach((value) => assert.equal(content.includes(value), false));
+});
+
+test('une relance modifiée remplace la précédente et une date passée n’est pas planifiée', async (context) => {
+  enableNotifications(context);
+  const cancelled = [];
+  const queued = [];
+  context.mock.method(notificationRepository, 'cancelPending', async (key) => { cancelled.push(key); });
+  context.mock.method(notificationRepository, 'findActiveUser', async (id) => ({ id, firstName: 'Afi', email: 'afi@example.com' }));
+  context.mock.method(notificationRepository, 'enqueue', async (jobs) => { queued.push(...jobs); });
+
+  const dueAt = new Date(Date.now() + 3600000);
+  notificationService.contactReminderChanged({
+    id: 'contact-a', occupantId: 'occupant-a', createdByUserId: 'occupant-user', fullName: 'Ama', nextAction: 'Envoyer le devis', nextActionAt: dueAt,
+  });
+  await flushNotifications();
+  notificationService.contactReminderChanged({
+    id: 'contact-a', occupantId: 'occupant-a', createdByUserId: 'occupant-user', fullName: 'Ama', nextAction: null, nextActionAt: new Date(Date.now() - 1000),
+  });
+  await flushNotifications();
+
+  assert.deepEqual(cancelled, ['contact-reminder:contact-a', 'contact-reminder:contact-a']);
+  assert.equal(queued.length, 1);
+  assert.equal(queued[0].dedupeKey, 'contact-reminder:contact-a');
+  assert.equal(queued[0].availableAt.getTime(), dueAt.getTime());
 });

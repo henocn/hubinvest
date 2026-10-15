@@ -4,6 +4,7 @@ import logo from '../../../assets/Logo fond blanc.jpeg';
 import ConfirmDelete from '../components/ConfirmDelete';
 import ConfirmReward from '../components/ConfirmReward';
 import QrCodeDialog from '../components/QrCodeDialog';
+import PushToggleButton from '../components/PushToggleButton';
 import InvestorRequestDrawer from '../components/drawers/InvestorRequestDrawer';
 import B2bNeedDrawer from '../components/drawers/B2bNeedDrawer';
 import OccupantDrawer from '../components/drawers/OccupantDrawer';
@@ -17,6 +18,7 @@ import StudioInvitationsTable from '../components/tables/StudioInvitationsTable'
 import UsersTable from '../components/tables/UsersTable';
 import { publicBaseUrl, roleLabels } from '../constants/access';
 import { api } from '../lib/api';
+import { disablePush } from '../lib/push';
 
 const sectionMeta = {
   occupants: { title: 'Stands', description: 'Fiches publiques, emplacements et statuts.' },
@@ -158,6 +160,15 @@ export default function BackofficePage({ session, onLogout }) {
     }
   };
 
+  // Coupe les notifications de cet appareil avant de quitter volontairement la session.
+  const signOut = async () => {
+    await Promise.race([
+      disablePush(session.token).catch(() => {}),
+      new Promise((resolve) => { setTimeout(resolve, 1500); }),
+    ]);
+    onLogout();
+  };
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -172,7 +183,10 @@ export default function BackofficePage({ session, onLogout }) {
         <div className="sidebar-user">
           <span className="user-avatar"><UserRound size={18} /></span>
           <div><strong>{session.user.firstName} {session.user.lastName}</strong><span>{roleLabels[session.user.role] || session.user.role}</span></div>
-          <button className="icon-button" type="button" onClick={onLogout} aria-label="Se déconnecter"><LogOut size={18} /></button>
+          <span className="sidebar-user-actions">
+            <PushToggleButton token={session.token} />
+            <button className="icon-button" type="button" onClick={signOut} aria-label="Se déconnecter" title="Se déconnecter"><LogOut size={18} /></button>
+          </span>
         </div>
       </aside>
 

@@ -84,4 +84,9 @@ export const api = {
     request(`/users/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
   deleteUser: (token, id) =>
     request(`/users/${id}`, authorized(token, { method: 'DELETE' })),
+  pushPublicKey: () => request('/push-subscriptions/public-key'),
+  subscribePush: (token, subscription) =>
+    request('/push-subscriptions', authorized(token, { method: 'POST', body: JSON.stringify(subscription) })),
+  unsubscribePush: (token, endpoint) =>
+    request('/push-subscriptions', authorized(token, { method: 'DELETE', body: JSON.stringify({ endpoint }) })),
 };
