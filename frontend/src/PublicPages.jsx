@@ -2,6 +2,7 @@ import PublicHeader from './components/PublicHeader';
 import PublicBottomNav from './components/PublicBottomNav';
 import B2bDetailPage from './pages/B2bDetailPage';
 import B2bListPage from './pages/B2bListPage';
+import HomePage from './pages/HomePage';
 import InvestorDeskPage from './pages/InvestorDeskPage';
 import NotFoundPage from './pages/NotFoundPage';
 import StandDetailPage from './pages/StandDetailPage';
@@ -19,8 +20,10 @@ export default function PublicPages({ path }) {
 
   let page;
 
-  if (path === '/' || path === '/stands') {
-    page = <StandListPage isHome={path === '/'} />;
+  if (path === '/') {
+    page = <HomePage />;
+  } else if (path === '/stands') {
+    page = <StandListPage />;
   } else if (standDetail) {
     page = <StandDetailPage slug={standDetail[1]} />;
   } else if (path === '/investor-desk') {

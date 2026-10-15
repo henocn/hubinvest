@@ -15,6 +15,7 @@ const studioInvitationRoutes = require('./modules/studio-invitation/studio-invit
 const challengePassportRoutes = require('./modules/challenge-passport/challenge-passport.route');
 const challengePassageRoutes = require('./modules/challenge-passage/challenge-passage.route');
 const pushSubscriptionRoutes = require('./modules/push-subscription/push-subscription.route');
+const programEventRoutes = require('./modules/program-event/program-event.route');
 const httpLogger = require('./middlewares/http-logger.middleware');
 const notFound = require('./middlewares/not-found.middleware');
 const errorHandler = require('./middlewares/error.middleware');
@@ -51,6 +52,7 @@ app.use('/api/studio-invitations', studioInvitationRoutes);
 app.use('/api/challenge-passports', challengePassportRoutes);
 app.use('/api/challenge-passages', challengePassageRoutes);
 app.use('/api/push-subscriptions', pushSubscriptionRoutes);
+app.use('/api/program-events', programEventRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

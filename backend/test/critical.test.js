@@ -37,6 +37,8 @@ const notificationWorker = require('../src/modules/notification/notification.wor
 const pushSubscriptionRepository = require('../src/modules/push-subscription/push-subscription.repository');
 const mailer = require('../src/shared/mailer');
 const webPush = require('../src/shared/web-push');
+const programEventService = require('../src/modules/program-event/program-event.service');
+const programEventRepository = require('../src/modules/program-event/program-event.repository');
 
 env.notifications.enabled = false;
 
@@ -771,4 +773,67 @@ test('une relance modifiée remplace la précédente et une date passée n’est
   assert.equal(queued.length, 1);
   assert.equal(queued[0].dedupeKey, 'contact-reminder:contact-a');
   assert.equal(queued[0].availableAt.getTime(), dueAt.getTime());
+});
+
+test('le stand à l’affiche couvre toute la journée et reste unique par jour', async (context) => {
+  const created = [];
+  let spotlightTaken = false;
+  context.mock.method(programEventRepository, 'findOccupantById', async () => ({ id: 'occupant-a' }));
+  context.mock.method(programEventRepository, 'findSpotlightOn', async () => (spotlightTaken ? { id: 'other' } : null));
+  context.mock.method(programEventRepository, 'create', async (values) => {
+    created.push(values);
+    return { id: 'event-a', ...values };
+  });
+  context.mock.method(programEventRepository, 'findById', async (id) => ({ id, ...created.at(-1) }));
+
+  await assert.rejects(
+    programEventService.create({ type: 'spotlight', title: 'À l’affiche', startsAt: new Date('2026-10-15T00:00:00Z') }),
+    (error) => error.status === 422 && error.code === 'OCCUPANT_REQUIRED',
+  );
+
+  await programEventService.create({
+    type: 'spotlight', occupantId: 'occupant-a', title: 'À l’affiche', startsAt: new Date('2026-10-15T14:30:00Z'), endsAt: new Date('2026-10-15T16:00:00Z'),
+  });
+  assert.equal(created[0].startsAt.toISOString(), '2026-10-15T00:00:00.000Z');
+  assert.equal(created[0].endsAt, null);
+
+  spotlightTaken = true;
+  await assert.rejects(
+    programEventService.create({ type: 'spotlight', occupantId: 'occupant-a', title: 'À l’affiche', startsAt: new Date('2026-10-15T09:00:00Z') }),
+    (error) => error.status === 409 && error.code === 'SPOTLIGHT_TAKEN',
+  );
+});
+
+test('un élément du programme ne peut pas finir avant de commencer', async (context) => {
+  context.mock.method(programEventRepository, 'create', async () => assert.fail('aucune création attendue'));
+  await assert.rejects(
+    programEventService.create({
+      type: 'animation', title: 'Démonstration', startsAt: new Date('2026-10-15T15:00:00Z'), endsAt: new Date('2026-10-15T14:00:00Z'),
+    }),
+    (error) => error.status === 422 && error.code === 'INVALID_PERIOD',
+  );
+});
+
+test('l’accueil sépare l’affiche, le programme du jour et les prochains rendez-vous', async (context) => {
+  const now = new Date('2026-10-15T13:00:00Z');
+  const calls = [];
+  context.mock.method(programEventRepository, 'findPublicSpotlight', async (from, to) => {
+    calls.push(['spotlight', from.toISOString(), to.toISOString()]);
+    return { id: 's', type: 'spotlight', title: 'À l’affiche', occupant: { name: 'OTR', slug: 'otr' }, internalNote: 'x' };
+  });
+  context.mock.method(programEventRepository, 'findPublicBetween', async (from, to, limit) => {
+    calls.push(['between', from.toISOString(), to?.toISOString() || null, limit || null]);
+    return [];
+  });
+
+  const data = await programEventService.getToday('fr', now);
+
+  assert.equal(data.date, '2026-10-15T00:00:00.000Z');
+  assert.equal(data.spotlight.occupant.name, 'OTR');
+  assert.equal(data.spotlight.internalNote, undefined);
+  assert.deepEqual(calls, [
+    ['spotlight', '2026-10-15T00:00:00.000Z', '2026-10-16T00:00:00.000Z'],
+    ['between', '2026-10-15T00:00:00.000Z', '2026-10-16T00:00:00.000Z', null],
+    ['between', '2026-10-16T00:00:00.000Z', null, 4],
+  ]);
 });
