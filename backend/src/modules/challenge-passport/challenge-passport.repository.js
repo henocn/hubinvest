@@ -50,7 +50,17 @@ const findByIdForUpdate = (id, transaction) => ChallengePassport.findByPk(id, {
   lock: transaction.LOCK.UPDATE,
 });
 
+// Retrouve seulement l'identifiant d'un parcours à partir de son lien personnel.
+const findIdByToken = (token) => ChallengePassport.findOne({ where: { token }, attributes: ['id'] });
+
+// Liste les stands qui ont validé un passage de ce parcours.
+const findOccupantIds = async (passportId, transaction) => (await ChallengePassage.findAll({
+  where: { passportId },
+  attributes: ['occupantId'],
+  transaction,
+})).map((passage) => passage.occupantId);
+
 const create = (values) => ChallengePassport.create(values);
 const update = (passport, values, transaction) => passport.update(values, { transaction });
 
-module.exports = { findPublicByToken, findAll, findByCode, findByCodeForUpdate, findByIdForUpdate, create, update };
+module.exports = { findPublicByToken, findIdByToken, findOccupantIds, findAll, findByCode, findByCodeForUpdate, findByIdForUpdate, create, update };

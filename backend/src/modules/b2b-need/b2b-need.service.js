@@ -2,6 +2,7 @@ const AppError = require('../../shared/app-error');
 const roles = require('../../shared/roles');
 const { translatePublicContent } = require('../../shared/translation.service');
 const b2bNeedRepository = require('./b2b-need.repository');
+const { events: realtime } = require('../realtime/realtime.service');
 
 const standFor = (user) => {
   if (user.role === roles.SUPER_ADMIN) return null;
@@ -41,21 +42,26 @@ const requireOccupant = async (occupantId) => {
 const create = async (user, values) => {
   const occupantId = standFor(user) || values.occupantId;
   await requireOccupant(occupantId);
-  return b2bNeedRepository.create({
+  const need = await b2bNeedRepository.create({
     occupantId,
     createdByUserId: user.id,
     title: values.title,
     description: values.description,
     status: 'open',
   });
+  realtime.b2bChanged(occupantId);
+  return need;
 };
 
 const update = async (user, id, values) => {
   const need = await getManaged(user, id);
+  const previousOccupantId = need.occupantId;
   const nextValues = { ...values };
   if (user.role === roles.ADMIN) delete nextValues.occupantId;
   if (nextValues.occupantId) await requireOccupant(nextValues.occupantId);
-  return b2bNeedRepository.update(need, nextValues);
+  const updated = await b2bNeedRepository.update(need, nextValues);
+  realtime.b2bChanged([previousOccupantId, updated.occupantId]);
+  return updated;
 };
 
 module.exports = { listPublic, getPublic, list, getManaged, create, update };

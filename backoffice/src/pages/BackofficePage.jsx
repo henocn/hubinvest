@@ -21,6 +21,9 @@ import UsersTable from '../components/tables/UsersTable';
 import { publicBaseUrl, roleLabels } from '../constants/access';
 import { api } from '../lib/api';
 import { disablePush } from '../lib/push';
+import { useRealtimeConnection, useRealtimeEvent } from '../lib/realtime';
+
+const realtimeTopics = ['occupants', 'users', 'program', 'contacts', 'investor-requests', 'b2b', 'studio', 'challenge', 'account'];
 
 const sectionMeta = {
   occupants: { title: 'Stands', description: 'Fiches publiques, emplacements et statuts.' },
@@ -102,6 +105,56 @@ export default function BackofficePage({ session, onLogout }) {
   }, [isSuperAdmin, onLogout, session.token]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  // Rechargements silencieux par sujet, déclenchés par le flux en temps réel : les tableaux se mettent à jour sans « Chargement… ».
+  const silentLoaders = useMemo(() => {
+    const token = session.token;
+    const loaders = {
+      'investor-requests': async () => setInvestorRequests((await api.investorRequests(token)).items),
+      b2b: async () => setB2bNeeds(await api.b2bNeeds(token)),
+      studio: async () => setStudioInvitations(await api.studioInvitations(token)),
+      challenge: async () => setChallengePassports(await api.challengePassports(token)),
+      account: async () => { await api.profile(token); },
+    };
+    if (isSuperAdmin) {
+      Object.assign(loaders, {
+        occupants: async () => {
+          const [occupantData, programData] = await Promise.all([api.occupants(token), api.programEvents(token)]);
+          setOccupants(occupantData);
+          setProgramEvents(programData);
+        },
+        users: async () => setUsers(await api.users(token)),
+        program: async () => setProgramEvents(await api.programEvents(token)),
+        contacts: async () => setContactStats(await api.contactStats(token)),
+      });
+    }
+    return loaders;
+  }, [isSuperAdmin, session.token]);
+
+  const reloadTopic = useCallback(async (topic) => {
+    const loader = silentLoaders[topic];
+    if (!loader) return;
+    try {
+      await loader();
+    } catch (requestError) {
+      if (requestError.status === 401 || requestError.status === 403) onLogout();
+    }
+  }, [onLogout, silentLoaders]);
+
+  useRealtimeConnection(`backoffice:${session.user.id}:${session.token.slice(-16)}`, async () => {
+    const { ticket } = await api.realtimeTicket(session.token);
+    return api.realtimeStreamUrl(ticket);
+  }, { topics: realtimeTopics, onUnauthorized: onLogout });
+
+  useRealtimeEvent('occupants', () => reloadTopic('occupants'));
+  useRealtimeEvent('users', () => reloadTopic('users'));
+  useRealtimeEvent('program', () => reloadTopic('program'));
+  useRealtimeEvent('contacts', () => reloadTopic('contacts'));
+  useRealtimeEvent('investor-requests', () => reloadTopic('investor-requests'));
+  useRealtimeEvent('b2b', () => reloadTopic('b2b'));
+  useRealtimeEvent('studio', () => reloadTopic('studio'));
+  useRealtimeEvent('challenge', () => reloadTopic('challenge'));
+  useRealtimeEvent('account', () => reloadTopic('account'));
 
   const query = search.trim().toLowerCase();
   const visibleOccupants = useMemo(() => occupants.filter((occupant) => !query || [occupant.name, occupant.activity, occupant.standLabel].some((value) => String(value || '').toLowerCase().includes(query))), [occupants, query]);

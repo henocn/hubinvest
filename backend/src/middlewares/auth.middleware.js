@@ -3,6 +3,25 @@ const env = require('../config/env');
 const AppError = require('../shared/app-error');
 const { User, Occupant } = require('../models');
 
+// Retrouve un compte actif dont l'occupant, s'il en a un, est lui aussi actif.
+const findSessionUser = async (userId) => {
+  const user = await User.findOne({
+    where: { id: userId, isActive: true },
+    attributes: ['id', 'occupantId', 'email', 'firstName', 'lastName', 'role'],
+    include: [{ model: Occupant, as: 'occupant', attributes: ['status'], required: false }],
+  });
+
+  if (!user) {
+    throw new AppError(401, 'INVALID_TOKEN', 'Session invalide ou expirée.');
+  }
+
+  if (user.occupantId && user.occupant?.status !== 'active') {
+    throw new AppError(403, 'OCCUPANT_INACTIVE', "Le compte de l’occupant est inactif.");
+  }
+
+  return user.toJSON();
+};
+
 const authenticate = async (request, response, next) => {
   const authorization = request.headers.authorization || '';
   const [scheme, token] = authorization.split(' ');
@@ -22,21 +41,12 @@ const authenticate = async (request, response, next) => {
     return next(new AppError(401, 'INVALID_TOKEN', 'Session invalide ou expirée.'));
   }
 
-  const user = await User.findOne({
-    where: { id: payload.sub, isActive: true },
-    attributes: ['id', 'occupantId', 'email', 'firstName', 'lastName', 'role'],
-    include: [{ model: Occupant, as: 'occupant', attributes: ['status'], required: false }],
-  });
-
-  if (!user) {
-    return next(new AppError(401, 'INVALID_TOKEN', 'Session invalide ou expirée.'));
+  try {
+    request.user = await findSessionUser(payload.sub);
+  } catch (error) {
+    return next(error);
   }
-
-  if (user.occupantId && user.occupant?.status !== 'active') {
-    return next(new AppError(403, 'OCCUPANT_INACTIVE', "Le compte de l’occupant est inactif."));
-  }
-
-  request.user = user.toJSON();
+  request.tokenExpiresAt = payload.exp ? payload.exp * 1000 : null;
   return next();
 };
 
@@ -48,4 +58,4 @@ const requireRoles = (...allowedRoles) => (request, response, next) => {
   return next();
 };
 
-module.exports = { authenticate, requireRoles };
+module.exports = { authenticate, requireRoles, findSessionUser };

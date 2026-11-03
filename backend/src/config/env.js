@@ -64,6 +64,14 @@ module.exports = {
     maxAttempts: integer(process.env.NOTIFICATIONS_MAX_ATTEMPTS, 5),
     batchSize: integer(process.env.NOTIFICATIONS_BATCH_SIZE, 20),
   },
+  realtime: {
+    enabled: process.env.REALTIME_ENABLED !== 'false',
+    heartbeatInterval: duration(process.env.REALTIME_HEARTBEAT_INTERVAL, 25 * 1000),
+    maxStreamDuration: duration(process.env.REALTIME_MAX_STREAM_DURATION, 50 * 60 * 1000),
+    ticketTtl: duration(process.env.REALTIME_TICKET_TTL, 60 * 1000),
+    maxStreamsPerKey: integer(process.env.REALTIME_MAX_STREAMS_PER_KEY, 8),
+    maxStreams: integer(process.env.REALTIME_MAX_STREAMS, 2000),
+  },
   corsOrigins: list(process.env.CORS_ORIGINS),
   challenge: {
     requiredPassages: integer(process.env.CHALLENGE_REQUIRED_PASSAGES, 3),

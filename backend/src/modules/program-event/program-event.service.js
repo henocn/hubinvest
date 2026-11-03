@@ -1,6 +1,7 @@
 const AppError = require('../../shared/app-error');
 const { translatePublicContent } = require('../../shared/translation.service');
 const programEventRepository = require('./program-event.repository');
+const { events: realtime } = require('../realtime/realtime.service');
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const UPCOMING_LIMIT = 4;
@@ -90,6 +91,7 @@ const normalize = async (values, excludedId = null) => {
 // Ajoute un élément au programme.
 const create = async (values) => {
   const created = await programEventRepository.create(await normalize(values));
+  realtime.programChanged();
   return get(created.id);
 };
 
@@ -107,12 +109,14 @@ const update = async (id, values) => {
     ...values,
   };
   await programEventRepository.update(event, await normalize(merged, event.id));
+  realtime.programChanged();
   return get(id);
 };
 
 // Retire un élément du programme.
 const remove = async (id) => {
   await programEventRepository.remove(await get(id));
+  realtime.programChanged();
 };
 
 module.exports = { getToday, list, create, update, remove, startOfHubDay };

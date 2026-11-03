@@ -12,6 +12,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import { api } from './lib/api';
+import { useRealtimeConnection, useRealtimeEvent } from './lib/realtime';
 import {
   listStoredContacts,
   mergeServerContacts,
@@ -35,6 +36,8 @@ const qualificationLabels = {
 };
 
 const qualificationLabel = (value) => qualificationLabels[value] || 'À qualifier';
+const sessionRealtimeTopics = ['contacts', 'challenge', 'occupants', 'account'];
+
 const homeForRole = (role) => role === 'occupant' ? '/espace-occupant' : role === 'animateur' ? '/espace-animateur' : null;
 
 const toLocalDateTime = (value) => {
@@ -402,6 +405,11 @@ function ContactsScreen({ session, apiOnline, setApiOnline, onLogout }) {
     if (apiOnline) sync();
   }, [apiOnline, sync]);
 
+  // Une demande du site ou une saisie depuis un autre téléphone du stand apparaît sans actualiser.
+  useRealtimeEvent('contacts', () => {
+    if (navigator.onLine) void sync();
+  });
+
   const createContact = async (values) => {
     const queued = await queueContact(occupantId, values);
     await readLocal();
@@ -578,6 +586,22 @@ export default function App() {
     setSession(null);
     window.location.assign('/connexion');
   }, []);
+
+  // Un seul flux en temps réel pour les espaces occupant et animateur ; les pages publiques n'en ouvrent pas.
+  const sessionToken = session?.token;
+  const realtimeKey = sessionToken && homeForRole(session.user?.role) && path.startsWith('/espace-') ? `session:${session.user.id}:${sessionToken.slice(-16)}` : null;
+  useRealtimeConnection(realtimeKey, async () => {
+    const { ticket } = await api.realtimeTicket(sessionToken);
+    return api.realtimeStreamUrl(ticket);
+  }, { topics: sessionRealtimeTopics, onUnauthorized: logout });
+
+  // Un compte modifié ou désactivé revérifie sa session aussitôt.
+  useRealtimeEvent('account', () => {
+    if (!sessionToken) return;
+    api.profile(sessionToken).catch((requestError) => {
+      if (requestError.status === 401 || requestError.status === 403) logout();
+    });
+  });
 
   if (path === '/mot-de-passe-oublie') return <ForgotPasswordPage />;
 

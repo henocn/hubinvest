@@ -2,6 +2,7 @@ import { CheckCircle2, ScanLine } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import ChallengeScannerDialog from '../components/occupant/ChallengeScannerDialog';
 import { api } from '../lib/api';
+import { useRealtimeEvent } from '../lib/realtime';
 
 const participantCode = /^[A-HJ-NP-Z2-9]{8}$/;
 
@@ -40,6 +41,17 @@ export default function AnimatorScanPage({ session, onLogout }) {
       setLoading(false);
     }
   }, [onLogout, session.token]);
+
+  // Le participant affiché suit ses passages, ou une remise faite par un autre animateur.
+  useRealtimeEvent('challenge', () => {
+    if (!participant?.code || submitting.current) return;
+    const shownCode = participant.code;
+    api.challengeRewardByCode(session.token, shownCode)
+      .then((updated) => setParticipant((current) => (current?.code === shownCode ? updated : current)))
+      .catch((requestError) => {
+        if (requestError.status === 401 || requestError.status === 403) onLogout();
+      });
+  });
 
   const redeem = async () => {
     if (!participant || participant.status !== 'completed') return;

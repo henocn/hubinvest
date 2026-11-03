@@ -2,6 +2,7 @@ const AppError = require('../../shared/app-error');
 const b2bNeedService = require('../b2b-need/b2b-need.service');
 const b2bProposalRepository = require('./b2b-proposal.repository');
 const notificationService = require('../notification/notification.service');
+const { events: realtime } = require('../realtime/realtime.service');
 
 const createPublic = async (needId, values, language = 'fr') => {
   if (values.consentOccupant !== true) throw new AppError(422, 'CONSENT_REQUIRED', 'Votre accord est nécessaire pour cette proposition.');
@@ -19,6 +20,7 @@ const createPublic = async (needId, values, language = 'fr') => {
     handledByUserId: null,
   });
   notificationService.b2bProposalReceived(proposal, need);
+  realtime.b2bChanged(need.occupantId);
   return proposal;
 };
 
@@ -38,6 +40,7 @@ const update = async (user, id, values) => {
   if (updated.status !== previousStatus) {
     notificationService.b2bProposalDecided(updated, proposal.need);
   }
+  realtime.b2bChanged(proposal.need.occupantId);
   return updated;
 };
 

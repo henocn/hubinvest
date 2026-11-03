@@ -40,6 +40,9 @@ export const api = {
   login: (values) => request('/auth/login', { method: 'POST', body: JSON.stringify(values) }),
   forgotPassword: (email) => request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
   resetPassword: (email, code, password) => request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ email, code, password }) }),
+  profile: (token) => request('/users/me', authorized(token)),
+  realtimeTicket: (token) => request('/realtime/ticket', authorized(token, { method: 'POST' })),
+  realtimeStreamUrl: (ticket) => `${API_URL}/realtime/stream?ticket=${encodeURIComponent(ticket)}`,
   occupants: (token) => request('/occupants', authorized(token)),
   createOccupant: (token, values) =>
     request('/occupants', authorized(token, { method: 'POST', body: JSON.stringify(values) })),

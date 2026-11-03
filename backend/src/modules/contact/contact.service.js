@@ -4,6 +4,7 @@ const roles = require('../../shared/roles');
 const contactRepository = require('./contact.repository');
 const occupantRepository = require('../occupant/occupant.repository');
 const notificationService = require('../notification/notification.service');
+const { events: realtime } = require('../realtime/realtime.service');
 
 const requireOccupant = (user) => {
   if (!user.occupantId) {
@@ -59,7 +60,10 @@ const create = async (user, values) => {
 
       return { contact, created: true };
     });
-    if (result.created) notificationService.contactReminderChanged(result.contact);
+    if (result.created) {
+      notificationService.contactReminderChanged(result.contact);
+      realtime.contactsChanged(occupantId);
+    }
     return result;
   } catch (error) {
     if (values.id && error instanceof UniqueConstraintError) {
@@ -101,7 +105,10 @@ const createPublic = async (slug, values) => {
       }, transaction);
       return { created: true };
     });
-    if (result.created) notificationService.contactRequested(occupant);
+    if (result.created) {
+      notificationService.contactRequested(occupant);
+      realtime.contactsChanged(occupant.id);
+    }
     return result;
   } catch (error) {
     if (error instanceof UniqueConstraintError) {
@@ -116,6 +123,7 @@ const update = async (user, id, values) => {
   const contact = await get(user, id);
   const updated = await contactRepository.update(contact, values);
   if ('nextActionAt' in values || 'nextAction' in values) notificationService.contactReminderChanged(updated);
+  realtime.contactsChanged(user.occupantId);
   return updated;
 };
 

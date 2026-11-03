@@ -4,6 +4,7 @@ const { imageSizeFromFile } = require('image-size/fromFile');
 const AppError = require('../../shared/app-error');
 const { translatePublicContent } = require('../../shared/translation.service');
 const occupantRepository = require('./occupant.repository');
+const { events: realtime } = require('../realtime/realtime.service');
 
 const coverDirectory = path.resolve(__dirname, '..', '..', '..', 'uploads', 'covers');
 const logoDirectory = path.resolve(__dirname, '..', '..', '..', 'uploads', 'logos');
@@ -57,11 +58,13 @@ const getPublic = async (slug, language) => {
   return translatePublicContent(occupant, ['name', 'standLabel', 'activity'], language);
 };
 
-const create = (values) => {
-  return occupantRepository.create({
+const create = async (values) => {
+  const occupant = await occupantRepository.create({
     ...values,
     slug: values.slug || slugify(values.name),
   });
+  realtime.occupantsChanged(occupant.id);
+  return occupant;
 };
 
 const update = async (id, values) => {
@@ -70,7 +73,9 @@ const update = async (id, values) => {
   if (occupant.status === 'active' && nextValues.slug && nextValues.slug !== occupant.slug) {
     throw new AppError(409, 'PUBLIC_LINK_LOCKED', 'L’adresse publique d’un stand actif ne peut pas être modifiée.');
   }
-  return occupantRepository.update(occupant, nextValues);
+  const updated = await occupantRepository.update(occupant, nextValues);
+  realtime.occupantsChanged(id);
+  return updated;
 };
 
 const updateCover = async (id, file) => {
@@ -85,6 +90,7 @@ const updateCover = async (id, file) => {
     const previousCoverImageUrl = occupant.coverImageUrl;
     const updated = await occupantRepository.update(occupant, { coverImageUrl: nextCoverImageUrl });
     await removeCoverFile(previousCoverImageUrl);
+    realtime.occupantsChanged(id);
     return updated;
   } catch (error) {
     await removeCoverFile(nextCoverImageUrl);
@@ -114,6 +120,7 @@ const updateLogo = async (id, file) => {
     const previousLogoUrl = occupant.logoUrl;
     const updated = await occupantRepository.update(occupant, { logoUrl: nextLogoUrl });
     await removeLogoFile(previousLogoUrl);
+    realtime.occupantsChanged(id);
     return updated;
   } catch (error) {
     await removeLogoFile(nextLogoUrl);
@@ -126,6 +133,7 @@ const remove = async (id) => {
   await occupantRepository.remove(occupant);
   await removeCoverFile(occupant.coverImageUrl);
   await removeLogoFile(occupant.logoUrl);
+  realtime.occupantsChanged(id);
 };
 
 module.exports = { list, listPublic, get, getPublic, create, update, updateCover, updateLogo, remove };
