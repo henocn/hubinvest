@@ -89,6 +89,15 @@ const getByCode = async (code) => {
   };
 };
 
+// Liste les récompenses remises ; seul le fait qu'une remise soit la sienne est indiqué, sans révéler les autres comptes.
+const listRewards = async (user) => (await challengePassportRepository.findRedeemed()).map((passport) => ({
+  id: passport.id,
+  displayName: passport.displayName,
+  contact: passport.contact,
+  redeemedAt: passport.redeemedAt,
+  redeemedByMe: passport.redeemedByUserId === user.id,
+}));
+
 const redeemPassport = async (user, passport, transaction) => {
   if (!passport) throw new AppError(404, 'CHALLENGE_PASSPORT_NOT_FOUND', 'Parcours introuvable.');
   if (passport.status === 'active') throw new AppError(409, 'CHALLENGE_NOT_COMPLETED', 'Le parcours n’est pas encore terminé.');
@@ -122,4 +131,4 @@ const redeemByCode = (user, code) => redeemAndPublish(async (transaction) => {
   return redeemPassport(user, passport, transaction);
 });
 
-module.exports = { createPublic, getPublic, list, getByCode, redeem, redeemByCode, publicPayload };
+module.exports = { createPublic, getPublic, list, listRewards, getByCode, redeem, redeemByCode, publicPayload };

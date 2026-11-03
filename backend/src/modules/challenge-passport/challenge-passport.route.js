@@ -15,6 +15,7 @@ router.get('/public/:token', validate(challengePassportValidation.tokenParams, '
 
 router.use(asyncHandler(authenticate));
 router.get('/', challengeManagers, asyncHandler(challengePassportController.list));
+router.get('/rewards', rewardTeamOnly, asyncHandler(challengePassportController.listRewards));
 router.get('/code/:code', rewardTeamOnly, validate(challengePassportValidation.rewardCodeParams, 'params'), asyncHandler(challengePassportController.getByCode));
 router.post('/redeem-by-code', rewardTeamOnly, validate(challengePassportValidation.rewardCode), asyncHandler(challengePassportController.redeemByCode));
 router.patch('/:id/redeem', rewardTeamOnly, validate(challengePassportValidation.idParams, 'params'), asyncHandler(challengePassportController.redeem));

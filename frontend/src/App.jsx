@@ -24,6 +24,7 @@ import OccupantChallengePage from './pages/OccupantChallengePage';
 import OccupantShell from './components/occupant/OccupantShell';
 import AnimatorShell from './components/animator/AnimatorShell';
 import AnimatorScanPage from './pages/AnimatorScanPage';
+import AnimatorRewardsPage from './pages/AnimatorRewardsPage';
 import PasswordField from './components/PasswordField';
 import OccupantProfilePage from './pages/OccupantProfilePage';
 import AuthLayout from './components/AuthLayout';
@@ -609,7 +610,7 @@ export default function App() {
     return <PublicPages path={path} />;
   }
 
-  if (path !== '/connexion' && path !== '/espace-occupant' && path !== '/espace-occupant/defis' && path !== '/espace-occupant/profil' && path !== '/espace-animateur' && path !== '/espace-animateur/profil') {
+  if (path !== '/connexion' && path !== '/espace-occupant' && path !== '/espace-occupant/defis' && path !== '/espace-occupant/profil' && path !== '/espace-animateur' && path !== '/espace-animateur/remises' && path !== '/espace-animateur/profil') {
     return <PublicPages path={path} />;
   }
 
@@ -628,6 +629,10 @@ export default function App() {
 
   if (path === '/espace-animateur') {
     return session?.user.role === 'animateur' ? <AnimatorShell><AnimatorScanPage session={session} onLogout={logout} /></AnimatorShell> : <Redirect to={sessionHome} />;
+  }
+
+  if (path === '/espace-animateur/remises') {
+    return session?.user.role === 'animateur' ? <AnimatorShell><AnimatorRewardsPage session={session} onLogout={logout} /></AnimatorShell> : <Redirect to={sessionHome} />;
   }
 
   if (path === '/espace-animateur/profil') {

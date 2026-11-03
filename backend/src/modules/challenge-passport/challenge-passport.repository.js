@@ -50,6 +50,13 @@ const findByIdForUpdate = (id, transaction) => ChallengePassport.findByPk(id, {
   lock: transaction.LOCK.UPDATE,
 });
 
+// Liste les récompenses remises, la plus récente en premier.
+const findRedeemed = () => ChallengePassport.findAll({
+  where: { status: 'redeemed' },
+  attributes: ['id', 'displayName', 'contact', 'redeemedAt', 'redeemedByUserId'],
+  order: [['redeemedAt', 'DESC']],
+});
+
 // Retrouve seulement l'identifiant d'un parcours à partir de son lien personnel.
 const findIdByToken = (token) => ChallengePassport.findOne({ where: { token }, attributes: ['id'] });
 
@@ -63,4 +70,4 @@ const findOccupantIds = async (passportId, transaction) => (await ChallengePassa
 const create = (values) => ChallengePassport.create(values);
 const update = (passport, values, transaction) => passport.update(values, { transaction });
 
-module.exports = { findPublicByToken, findIdByToken, findOccupantIds, findAll, findByCode, findByCodeForUpdate, findByIdForUpdate, create, update };
+module.exports = { findPublicByToken, findRedeemed, findIdByToken, findOccupantIds, findAll, findByCode, findByCodeForUpdate, findByIdForUpdate, create, update };

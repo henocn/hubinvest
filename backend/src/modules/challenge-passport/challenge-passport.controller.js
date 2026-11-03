@@ -14,6 +14,10 @@ const list = async (request, response) => response.json({
   data: await challengePassportService.list(request.user),
 });
 
+const listRewards = async (request, response) => response.json({
+  data: await challengePassportService.listRewards(request.user),
+});
+
 const getByCode = async (request, response) => response.json({
   data: await challengePassportService.getByCode(request.params.code),
 });
@@ -28,4 +32,4 @@ const redeemByCode = async (request, response) => response.json({
   message: 'Récompense remise.',
 });
 
-module.exports = { createPublic, getPublic, list, getByCode, redeem, redeemByCode };
+module.exports = { createPublic, getPublic, list, listRewards, getByCode, redeem, redeemByCode };
