@@ -9,6 +9,7 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 - Utiliser les couleurs et logos du dossier `assets/`, la police Inter et les icônes Lucide. Aucun emoji.
 - Employer des bordures horizontales et verticales légèrement noires pour structurer les tableaux sans les alourdir.
 - Un défaut visible d’alignement, de proportion, de centrage, de hauteur ou d’espacement bloque la livraison, même si l’écran fonctionne.
+- Ne jamais forcer un retour à la ligne (largeur maximale étroite sur un titre, `<br>`) : le texte occupe la largeur disponible et ne passe à la ligne que lorsque l'écran l'exige, ou quand un design particulier le justifie vraiment.
 - Conserver les accents dans tous les textes français.
 - Sur une carte de stand, séparer nettement l’image de couverture et les informations. Ne jamais poser le nom, l’activité ou l’action directement sur la photo.
 - Une carte de stand s’arrête après sa description tronquée. Ne pas ajouter « Voir la fiche », « View profile », une flèche ou une autre action répétant que la carte entière est cliquable.
@@ -40,7 +41,8 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 
 - Limiter les comptes à quatre rôles : super administrateur, administrateur, occupant et animateur.
 - Un administrateur est rattaché à un stand, jamais à un « périmètre ». Dans le backoffice, il accède à Investor Desk, B2B, Studio et Participants, avec des données strictement filtrées sur son stand. Le super administrateur conserve la vue globale et la gestion des stands et des accès.
-- L’occupant utilise seulement Contacts, Défis et Profil. L’animateur utilise seulement Scan et Profil pour contrôler puis remettre les récompenses.
+- L’occupant utilise seulement Contacts, Défis et Profil. L’animateur utilise seulement Scan, Remises et Profil pour contrôler, remettre puis retrouver les récompenses.
+- Remises de l'animateur : un tableau simple Participant, Contact, Remise le (date et heure), la plus récente en premier, alimenté en temps réel. Les lignes remises par l'animateur connecté ont un fond vert léger, sans colonne ni légende supplémentaire.
 - Le B2B se gère dans le backoffice et non dans l’espace occupant.
 - Frontend React réparti dans des dossiers `components/` et `pages/`. Une page ne doit pas contenir tous les composants du parcours.
 - Backend JavaScript avec Node.js, Express, nodemon, Sequelize et migrations.

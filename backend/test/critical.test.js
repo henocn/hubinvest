@@ -965,3 +965,15 @@ test('une diffusion en échec ne fait jamais échouer l’action métier', (cont
   context.mock.method(console, 'error', () => {});
   assert.equal(realtimeService.events.contactsChanged('stand-a'), 0);
 });
+
+test('la liste des remises signale seulement celles de l’animateur connecté, sans exposer les autres comptes', async (context) => {
+  context.mock.method(challengePassportRepository, 'findRedeemed', async () => [
+    { id: 'p1', displayName: 'Ama Koffi', contact: '90000000', redeemedAt: '2026-11-03T10:00:00.000Z', redeemedByUserId: 'animator-a' },
+    { id: 'p2', displayName: 'Kodjo Mensah', contact: 'kodjo@example.com', redeemedAt: '2026-11-03T09:00:00.000Z', redeemedByUserId: 'animator-b' },
+  ]);
+
+  const rewards = await challengePassportService.listRewards({ id: 'animator-a', role: 'animateur' });
+  assert.deepEqual(rewards.map((reward) => reward.redeemedByMe), [true, false]);
+  assert.ok(rewards.every((reward) => !('redeemedByUserId' in reward)));
+  assert.deepEqual(Object.keys(rewards[0]).sort(), ['contact', 'displayName', 'id', 'redeemedAt', 'redeemedByMe']);
+});

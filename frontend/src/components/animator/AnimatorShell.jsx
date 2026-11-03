@@ -1,8 +1,9 @@
-import { CircleUserRound, ScanLine } from 'lucide-react';
+import { CircleUserRound, Gift, ScanLine } from 'lucide-react';
 import apizfLogo from '../../../../assets/Logo sans fond.png';
 
 const links = [
   { href: '/espace-animateur', label: 'Scan', Icon: ScanLine },
+  { href: '/espace-animateur/remises', label: 'Remises', Icon: Gift },
   { href: '/espace-animateur/profil', label: 'Profil', Icon: CircleUserRound },
 ];
 
