@@ -22,6 +22,7 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 - Ne pas afficher d’aperçu complet d’une fiche dans son formulaire d’édition.
 - Ne pas répéter un contenu libre potentiellement long dans l’étape suivante d’un formulaire.
 - Une image administrée se choisit comme fichier ; ne pas demander à l’utilisateur de saisir son URL.
+- Le téléphone est obligatoire dans tous les formulaires de contact. Sa validité et sa mise en forme sont contrôlées uniquement au frontend avec une bibliothèque dédiée (libphonenumber-js), sans vérification supplémentaire au backend.
 - Les cases à cocher gardent une taille fixe et restent correctement alignées avec leur texte.
 - Les champs d’un même niveau ont la même hauteur.
 - Tous les champs de mot de passe disposent d’une action pour afficher ou masquer la valeur. La modification du mot de passe ne demande pas de confirmation et un champ vide ne le modifie pas.
@@ -44,6 +45,14 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 - L’occupant utilise seulement Contacts, Défis et Profil. L’animateur utilise seulement Scan, Remises et Profil pour contrôler, remettre puis retrouver les récompenses.
 - Remises de l'animateur : un tableau simple Participant, Contact, Remise le (date et heure), la plus récente en premier, alimenté en temps réel. Les lignes remises par l'animateur connecté ont un fond vert léger, sans colonne ni légende supplémentaire.
 - Le B2B se gère dans le backoffice et non dans l’espace occupant.
+- Seule l’API-ZF administre et détient les données : elle seule a des comptes administrateur, et son référent est rattaché à son compte. Les organes rattachés (BRMN, INPIT, HAUQUE) sont traités comme les stands des entreprises. Le super administrateur est l’agence.
+- Les demandes Investor Desk vont uniquement à l’API-ZF. Il n’y a pas de réservation de rendez-vous investisseur en ligne.
+- Les réglages globaux du site (fichier de l’Investor Pack, nombre de stands requis pour les Défis, etc.) se gèrent dans le backoffice par le super administrateur.
+- INVEST TRACK n’existe pas encore : les dossiers investisseurs sont exportés en Excel.
+- Les besoins B2B viennent des entreprises du Hub. Les rencontres express de la Journée API-ZF sont des rencontres B2B plus courtes : la durée des créneaux et les tables sont paramétrables.
+- Le planning du Studio est tenu par l’API-ZF (à confirmer par la direction). L’invité reçoit son lien par copie manuelle et aussi par e-mail.
+- Le classement A, B, C est conservé sur les passages des Défis. Le nombre de stands requis reste un paramètre (3 par défaut) ; les récompenses sont gérées sur le terrain.
+- Le suivi des questions ouvertes pour la direction est tenu dans `QUESTIONS.md`.
 - Frontend React réparti dans des dossiers `components/` et `pages/`. Une page ne doit pas contenir tous les composants du parcours.
 - Backend JavaScript avec Node.js, Express, nodemon, Sequelize et migrations.
 - Un module backend lié à un modèle contient ses routes, validations, repository, service et controller.
