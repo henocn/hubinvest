@@ -4,6 +4,7 @@ const roles = require('../../shared/roles');
 const { translatePublicContent } = require('../../shared/translation.service');
 const studioInvitationRepository = require('./studio-invitation.repository');
 const notificationService = require('../notification/notification.service');
+const { events: realtime } = require('../realtime/realtime.service');
 
 const standFor = (user) => {
   if (user.role === roles.SUPER_ADMIN) return null;
@@ -37,6 +38,7 @@ const respond = async (token, status, language) => {
     respondedAt: new Date(),
   });
   if (updated.status !== previousStatus) notificationService.studioInvitationAnswered(updated);
+  realtime.studioChanged(invitation.occupantId);
   return translatePublicContent(publicPayload(updated), ['subject'], language);
 };
 
@@ -53,7 +55,7 @@ const create = async (user, values) => {
   if (!occupantId || !(await studioInvitationRepository.findOccupantById(occupantId))) {
     throw new AppError(422, 'OCCUPANT_REQUIRED', 'Choisissez un stand.');
   }
-  return studioInvitationRepository.create({
+  const invitation = await studioInvitationRepository.create({
     occupantId,
     createdByUserId: user.id,
     token: crypto.randomBytes(32).toString('hex'),
@@ -63,16 +65,21 @@ const create = async (user, values) => {
     status: 'pending',
     respondedAt: null,
   });
+  realtime.studioChanged(occupantId);
+  return invitation;
 };
 
 const update = async (user, id, values) => {
   const invitation = await get(user, id);
+  const previousOccupantId = invitation.occupantId;
   const nextValues = { ...values };
   if (user.role === roles.ADMIN) delete nextValues.occupantId;
   if (nextValues.occupantId && !(await studioInvitationRepository.findOccupantById(nextValues.occupantId))) {
     throw new AppError(422, 'OCCUPANT_NOT_FOUND', 'Stand introuvable.');
   }
-  return studioInvitationRepository.update(invitation, nextValues);
+  const updated = await studioInvitationRepository.update(invitation, nextValues);
+  realtime.studioChanged([previousOccupantId, updated.occupantId]);
+  return updated;
 };
 
 module.exports = { getPublic, respond, list, create, update };

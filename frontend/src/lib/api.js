@@ -68,6 +68,9 @@ export const api = {
   challengePassageStats: (token) => request('/challenge-passages/stats', authorized(token)),
   challengeRewardByCode: (token, code) => request(`/challenge-passports/code/${encodeURIComponent(code)}`, authorized(token)),
   redeemChallengeReward: (token, code) => request('/challenge-passports/redeem-by-code', authorized(token, { method: 'POST', body: JSON.stringify({ code }) })),
+  realtimeTicket: (token) => request('/realtime/ticket', authorized(token, { method: 'POST' })),
+  realtimeStreamUrl: (ticket) => `${API_URL}/realtime/stream?ticket=${encodeURIComponent(ticket)}`,
+  challengePassportStreamUrl: (personalToken) => `${API_URL}/realtime/passports/${encodeURIComponent(personalToken)}`,
   pushPublicKey: () => request('/push-subscriptions/public-key'),
   subscribePush: (token, subscription) =>
     request('/push-subscriptions', authorized(token, { method: 'POST', body: JSON.stringify(subscription) })),

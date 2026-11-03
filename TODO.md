@@ -37,6 +37,18 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 - [ ] Renseigner les clés VAPID et vérifier la réception sur Android, iPhone (site ajouté à l’écran d’accueil) et ordinateur.
 - [ ] WhatsApp et SMS en canal supplémentaire lorsque le fournisseur et les modèles approuvés sont connus.
 
+## Temps réel (SSE)
+
+- [x] Flux SSE `/api/realtime/stream`, ouvert avec un jeton court à usage unique (`POST /api/realtime/ticket`) car `EventSource` ne transmet pas l'en-tête `Authorization` ; durée limitée à 50 minutes et à celle de la session, signal de maintien toutes les 25 s.
+- [x] Canaux cloisonnés comme l'API : super administrateur, administrateur et occupant de son stand, animateurs, compte, et parcours Défis public (`/api/realtime/passports/:token`).
+- [x] Le serveur n'envoie que le sujet modifié, jamais de données ; chaque écran recharge lui-même ce qu'il a le droit de voir.
+- [x] Branché sur : contacts (dont demandes du site), passages et remises Défis, Investor Desk, B2B et propositions, Studio, stands, comptes, programme.
+- [x] Écrans mis à jour sans actualiser : carnet et en-tête occupant, compteur Défis, fiche participant de l'animateur, passeport public, tous les tableaux du backoffice et les propositions d'un besoin B2B.
+- [x] Reconnexion progressive, pause après 30 s d'onglet caché, resynchronisation complète au retour ; rafraîchissement de 30 s conservé seulement quand le flux est coupé.
+- [x] Nginx : bloc `location /api/realtime/` sans mise en tampon, délai de 1 h, HTTP/2 déclaré sur les deux sites (sauvegardes dans `/root/nginx-backups/` du VPS).
+- [ ] Vérifier après déploiement sur téléphone et au backoffice : un scan, une demande de recontact et une proposition B2B apparaissent sans actualiser.
+- [ ] Si l'API passe un jour en mode cluster PM2, relayer les événements entre processus par PostgreSQL `LISTEN/NOTIFY`.
+
 ## M1 — La vitrine du Hub (indispensable)
 
 - [x] Ouvrir le site public sans compte ; lister les stands actifs et ouvrir une fiche avec couverture et logo.

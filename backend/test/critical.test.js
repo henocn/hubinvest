@@ -837,3 +837,131 @@ test('l’accueil sépare l’affiche, le programme du jour et les prochains ren
     ['between', '2026-10-16T00:00:00.000Z', null, 4],
   ]);
 });
+
+const realtimeService = require('../src/modules/realtime/realtime.service');
+
+// Lit les événements SSE d'une réponse fetch jusqu'à obtenir le nombre demandé.
+const readSseEvents = async (response, count, timeout = 2000) => {
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  const events = [];
+  let buffer = '';
+  const deadline = Date.now() + timeout;
+  while (events.length < count && Date.now() < deadline) {
+    const { value, done } = await Promise.race([
+      reader.read(),
+      new Promise((resolve) => { setTimeout(() => resolve({ value: null, done: false }), Math.max(1, deadline - Date.now())); }),
+    ]);
+    if (done) break;
+    if (!value) continue;
+    buffer += decoder.decode(value, { stream: true });
+    let index = buffer.indexOf('\n\n');
+    while (index !== -1) {
+      const block = buffer.slice(0, index);
+      buffer = buffer.slice(index + 2);
+      const event = block.split('\n').find((line) => line.startsWith('event: '));
+      if (event) events.push(event.slice(7));
+      index = buffer.indexOf('\n\n');
+    }
+  }
+  reader.releaseLock();
+  return events;
+};
+
+test('chaque rôle n’écoute que les canaux de son stand ou de son rôle', () => {
+  assert.deepEqual(realtimeService.channelsFor({ id: 'u1', role: 'super-admin', occupantId: null }), ['user:u1', 'super-admin']);
+  assert.deepEqual(realtimeService.channelsFor({ id: 'u2', role: 'admin', occupantId: 'stand-a' }), ['user:u2', 'admin:stand-a']);
+  assert.deepEqual(realtimeService.channelsFor({ id: 'u3', role: 'occupant', occupantId: 'stand-a' }), ['user:u3', 'occupant:stand-a']);
+  assert.deepEqual(realtimeService.channelsFor({ id: 'u4', role: 'animateur', occupantId: null }), ['user:u4', 'animateur']);
+  assert.deepEqual(realtimeService.channelsFor({ id: 'u5', role: 'admin', occupantId: null }), ['user:u5']);
+});
+
+test('un jeton de flux ne sert qu’une fois et expire', (context) => {
+  const { ticket } = realtimeService.issueTicket({ id: 'user-a' });
+  assert.equal(realtimeService.consumeTicket(ticket).userId, 'user-a');
+  assert.throws(() => realtimeService.consumeTicket(ticket), (error) => error.status === 401 && error.code === 'REALTIME_TICKET_INVALID');
+
+  const previousTtl = env.realtime.ticketTtl;
+  env.realtime.ticketTtl = -1;
+  context.after(() => { env.realtime.ticketTtl = previousTtl; });
+  const expired = realtimeService.issueTicket({ id: 'user-a' });
+  assert.throws(() => realtimeService.consumeTicket(expired.ticket), (error) => error.status === 401);
+  assert.throws(() => realtimeService.consumeTicket(undefined), (error) => error.status === 401);
+});
+
+test('le flux d’un occupant reçoit les changements de son stand, jamais ceux d’un autre', async (context) => {
+  const accounts = {
+    'occupant-a-user': { id: 'occupant-a-user', occupantId: 'stand-a', role: 'occupant' },
+    'occupant-b-user': { id: 'occupant-b-user', occupantId: 'stand-b', role: 'occupant' },
+  };
+  context.mock.method(User, 'findOne', async ({ where }) => {
+    const account = accounts[where.id];
+    return account ? { ...account, occupant: { status: 'active' }, toJSON: () => account } : null;
+  });
+
+  const server = app.listen(0, '127.0.0.1');
+  const controllers = [];
+  context.after(() => {
+    controllers.forEach((controller) => controller.abort());
+    realtimeService.closeAll();
+    server.close();
+  });
+  await new Promise((resolve) => server.once('listening', resolve));
+  const base = `http://127.0.0.1:${server.address().port}/api/realtime`;
+
+  const openStream = async (subject) => {
+    const ticketResponse = await fetch(`${base}/ticket`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${jwt.sign({}, env.auth.secret, { subject, expiresIn: '1h' })}` },
+    });
+    assert.equal(ticketResponse.status, 201);
+    const { ticket } = (await ticketResponse.json()).data;
+    const controller = new AbortController();
+    controllers.push(controller);
+    const response = await fetch(`${base}/stream?ticket=${encodeURIComponent(ticket)}`, { signal: controller.signal });
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get('content-type'), /^text\/event-stream/);
+    assert.equal(response.headers.get('x-accel-buffering'), 'no');
+    return { response, ticket };
+  };
+
+  const streamA = await openStream('occupant-a-user');
+  const streamB = await openStream('occupant-b-user');
+  assert.deepEqual(await readSseEvents(streamA.response, 1), ['ready']);
+  assert.deepEqual(await readSseEvents(streamB.response, 1), ['ready']);
+
+  realtimeService.events.contactsChanged('stand-a');
+  assert.deepEqual(await readSseEvents(streamA.response, 1), ['contacts']);
+  assert.deepEqual(await readSseEvents(streamB.response, 1, 200), []);
+
+  const reused = await fetch(`${base}/stream?ticket=${encodeURIComponent(streamA.ticket)}`);
+  assert.equal(reused.status, 401);
+
+  const withoutSession = await fetch(`${base}/ticket`, { method: 'POST' });
+  assert.equal(withoutSession.status, 401);
+});
+
+test('un passage validé prévient le stand, ses administrateurs, les animateurs et le participant', (context) => {
+  const published = [];
+  const hub = require('../src/modules/realtime/realtime.hub');
+  context.mock.method(hub, 'publish', (channels, topic) => { published.push({ channels, topic }); return 0; });
+
+  realtimeService.events.challengeChanged({ passportId: 'passport-a', occupantIds: ['stand-a', 'stand-a', null] });
+  assert.equal(published.length, 1);
+  assert.equal(published[0].topic, 'challenge');
+  assert.deepEqual(
+    published[0].channels.filter(Boolean).sort(),
+    ['admin:stand-a', 'animateur', 'occupant:stand-a', 'passport:passport-a', 'super-admin'],
+  );
+
+  published.length = 0;
+  realtimeService.events.investorRequestsChanged('stand-b');
+  assert.deepEqual(published[0], { channels: ['admin:stand-b', 'super-admin'], topic: 'investor-requests' });
+});
+
+test('une diffusion en échec ne fait jamais échouer l’action métier', (context) => {
+  const hub = require('../src/modules/realtime/realtime.hub');
+  context.mock.method(hub, 'publish', () => { throw new Error('flux cassé'); });
+  context.mock.method(console, 'error', () => {});
+  assert.equal(realtimeService.events.contactsChanged('stand-a'), 0);
+});

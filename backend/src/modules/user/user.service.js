@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const AppError = require('../../shared/app-error');
 const roles = require('../../shared/roles');
 const userRepository = require('./user.repository');
+const { events: realtime } = require('../realtime/realtime.service');
 
 const protectSuperAdmin = (actor, targetRole) => {
   if (actor.role !== roles.SUPER_ADMIN && targetRole === roles.SUPER_ADMIN) {
@@ -67,6 +68,7 @@ const create = async (actor, values) => {
   normalized.passwordHash = await bcrypt.hash(normalized.password, 12);
   delete normalized.password;
   const user = await userRepository.create(normalized);
+  realtime.usersChanged();
   return serialize(user);
 };
 
@@ -106,6 +108,8 @@ const update = async (actor, id, values) => {
   }
 
   const updated = await userRepository.update(user, nextValues);
+  realtime.usersChanged();
+  realtime.accountChanged(user.id);
   return serialize(updated);
 };
 
@@ -118,6 +122,8 @@ const remove = async (actor, id) => {
   }
 
   await userRepository.remove(user);
+  realtime.usersChanged();
+  realtime.accountChanged(user.id);
 };
 
 module.exports = { list, get, getProfile, changePassword, create, update, remove };

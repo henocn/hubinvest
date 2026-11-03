@@ -2,6 +2,7 @@ import { CheckCircle2, ScanLine } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ChallengeScannerDialog from '../components/occupant/ChallengeScannerDialog';
 import { api } from '../lib/api';
+import { useRealtimeConnected, useRealtimeEvent } from '../lib/realtime';
 
 const participantCode = /^[A-HJ-NP-Z2-9]{8}$/;
 
@@ -27,13 +28,22 @@ export default function OccupantChallengePage({ session, onLogout }) {
     }
   }, [onLogout, session.token]);
 
+  const realtimeConnected = useRealtimeConnected();
+  useRealtimeEvent('challenge', () => { void refreshStats(); });
+
   useEffect(() => {
     void refreshStats();
     const onFocus = () => { void refreshStats(); };
-    const interval = window.setInterval(() => { if (!document.hidden) void refreshStats(); }, 30000);
     window.addEventListener('focus', onFocus);
-    return () => { window.clearInterval(interval); window.removeEventListener('focus', onFocus); };
+    return () => window.removeEventListener('focus', onFocus);
   }, [refreshStats]);
+
+  // Rafraîchissement de secours seulement quand le flux en temps réel est coupé.
+  useEffect(() => {
+    if (realtimeConnected) return undefined;
+    const interval = window.setInterval(() => { if (!document.hidden) void refreshStats(); }, 30000);
+    return () => window.clearInterval(interval);
+  }, [realtimeConnected, refreshStats]);
 
   const prepareClassification = useCallback((value) => {
     const normalized = value.trim().toUpperCase();

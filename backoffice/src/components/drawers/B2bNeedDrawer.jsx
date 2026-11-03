@@ -1,6 +1,7 @@
 import { Check, Mail, Phone, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { api } from '../../lib/api';
+import { useRealtimeEvent } from '../../lib/realtime';
 
 const proposalLabels = { pending: 'À examiner', accepted: 'Acceptée', declined: 'Refusée' };
 
@@ -16,6 +17,12 @@ export default function B2bNeedDrawer({ need, occupants, fixedOccupant, token, o
     if (!need) return;
     api.b2bProposals(token, need.id).then(setProposals).catch((requestError) => setError(requestError.message));
   }, [need, token]);
+
+  // Une proposition reçue pendant que le tiroir est ouvert apparaît aussitôt.
+  useRealtimeEvent('b2b', () => {
+    if (!need) return;
+    api.b2bProposals(token, need.id).then(setProposals).catch(() => {});
+  });
 
   const submit = async (event) => {
     event.preventDefault();

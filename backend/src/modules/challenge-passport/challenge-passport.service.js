@@ -5,6 +5,7 @@ const roles = require('../../shared/roles');
 const { translatePublicContent } = require('../../shared/translation.service');
 const { sequelize } = require('../../models');
 const challengePassportRepository = require('./challenge-passport.repository');
+const { events: realtime } = require('../realtime/realtime.service');
 
 const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const requiredPassages = Math.max(1, env.challenge.requiredPassages);
@@ -39,16 +40,20 @@ const managerPayload = (passport) => {
   };
 };
 
-const createPublic = async (values) => publicPayload(await challengePassportRepository.create({
-  token: crypto.randomBytes(32).toString('hex'),
-  code: createCode(),
-  displayName: values.displayName,
-  contact: values.contact,
-  status: 'active',
-  completedAt: null,
-  redeemedAt: null,
-  redeemedByUserId: null,
-}), true);
+const createPublic = async (values) => {
+  const passport = await challengePassportRepository.create({
+    token: crypto.randomBytes(32).toString('hex'),
+    code: createCode(),
+    displayName: values.displayName,
+    contact: values.contact,
+    status: 'active',
+    completedAt: null,
+    redeemedAt: null,
+    redeemedByUserId: null,
+  });
+  realtime.challengeChanged({ passportId: passport.id });
+  return publicPayload(passport, true);
+};
 
 const getPublic = async (token, language) => {
   const passport = await challengePassportRepository.findPublicByToken(token);
@@ -94,15 +99,25 @@ const redeemPassport = async (user, passport, transaction) => {
     redeemedAt: new Date(),
     redeemedByUserId: user.id,
   }, transaction);
-  return managerPayload(updated);
+  return { payload: managerPayload(updated), passportId: passport.id };
 };
 
-const redeem = (user, id) => sequelize.transaction(async (transaction) => {
+// Enregistre la remise puis, une fois la transaction validée, prévient les écrans des stands traversés.
+// La recherche des stands ne retarde ni ne fait échouer la remise.
+const redeemAndPublish = async (work) => {
+  const { payload, passportId } = await sequelize.transaction(work);
+  challengePassportRepository.findOccupantIds(passportId)
+    .then((occupantIds) => realtime.challengeChanged({ passportId, occupantIds }))
+    .catch(() => realtime.challengeChanged({ passportId }));
+  return payload;
+};
+
+const redeem = (user, id) => redeemAndPublish(async (transaction) => {
   const passport = await challengePassportRepository.findByIdForUpdate(id, transaction);
   return redeemPassport(user, passport, transaction);
 });
 
-const redeemByCode = (user, code) => sequelize.transaction(async (transaction) => {
+const redeemByCode = (user, code) => redeemAndPublish(async (transaction) => {
   const passport = await challengePassportRepository.findByCodeForUpdate(code, transaction);
   return redeemPassport(user, passport, transaction);
 });

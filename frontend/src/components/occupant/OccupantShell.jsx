@@ -1,7 +1,8 @@
 import { CircleUserRound, Trophy, Users } from 'lucide-react';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import apizfLogo from '../../../../assets/Logo sans fond.png';
 import { api, resolveAssetUrl } from '../../lib/api';
+import { useRealtimeEvent } from '../../lib/realtime';
 
 const links = [
   { href: '/espace-occupant', label: 'Contacts', Icon: Users },
@@ -16,19 +17,24 @@ export default function OccupantShell({ session, onLogout, children }) {
   const path = window.location.pathname.replace(/\/$/, '') || '/';
   const [profile, setProfile] = useState(session.user);
 
+  const loadProfile = useCallback((isActive = () => true) => api.profile(session.token)
+    .then((user) => {
+      if (!isActive()) return;
+      setProfile(user);
+      localStorage.setItem('hubinvest-session', JSON.stringify({ ...session, user }));
+    })
+    .catch((error) => {
+      if (isActive() && (error.status === 401 || error.status === 403)) onLogout();
+    }), [onLogout, session]);
+
   useEffect(() => {
     let active = true;
-    api.profile(session.token)
-      .then((user) => {
-        if (!active) return;
-        setProfile(user);
-        localStorage.setItem('hubinvest-session', JSON.stringify({ ...session, user }));
-      })
-      .catch((error) => {
-        if (active && (error.status === 401 || error.status === 403)) onLogout();
-      });
+    void loadProfile(() => active);
     return () => { active = false; };
-  }, [onLogout, session]);
+  }, [loadProfile]);
+
+  // Le nom ou le logo du stand modifié au backoffice s'affiche aussitôt.
+  useRealtimeEvent(['occupants', 'account'], () => { void loadProfile(); });
 
   const occupantName = profile?.occupant?.name || 'Espace occupant';
 

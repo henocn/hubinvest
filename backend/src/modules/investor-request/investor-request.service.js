@@ -2,6 +2,7 @@ const AppError = require('../../shared/app-error');
 const roles = require('../../shared/roles');
 const investorRequestRepository = require('./investor-request.repository');
 const notificationService = require('../notification/notification.service');
+const { events: realtime } = require('../realtime/realtime.service');
 
 const standFor = (user) => {
   if (user.role === roles.SUPER_ADMIN) return null;
@@ -38,6 +39,7 @@ const createPublic = async (values, language = 'fr') => {
     consentCapturedAt: new Date(),
   });
   notificationService.investorRequestReceived(investorRequest, occupant);
+  realtime.investorRequestsChanged(values.occupantId);
   return investorRequest;
 };
 
@@ -47,10 +49,12 @@ const update = async (user, id, values) => {
     throw new AppError(404, 'INVESTOR_REQUEST_NOT_FOUND', 'Demande introuvable.');
   }
 
-  return investorRequestRepository.update(investorRequest, {
+  const updated = await investorRequestRepository.update(investorRequest, {
     ...values,
     assignedToUserId: investorRequest.assignedToUserId || user.id,
   });
+  realtime.investorRequestsChanged(investorRequest.occupantId);
+  return updated;
 };
 
 module.exports = { list, createPublic, update };
