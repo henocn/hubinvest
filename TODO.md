@@ -19,7 +19,7 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 ## Déjà fait
 
 - [x] Backend Node.js/Express, Sequelize, migrations, variables `DB_*`, déploiement automatique sur le VPS avec tests critiques.
-- [x] Frontend public et backoffice React/Vite, découpés en pages, composants, tiroirs et tableaux réutilisables.
+- [x] Frontend React/Vite unique (public, espaces et administration), découpés en pages, composants, tiroirs et tableaux réutilisables.
 - [x] Quatre rôles : super administrateur, administrateur rattaché à un stand, occupant et animateur.
 - [x] Authentification, mot de passe oublié par code à cinq chiffres (hash, cinq essais, usage unique).
 - [x] Cloisonnement des contacts par occupant vérifié côté API et couvert par les tests critiques.
@@ -32,7 +32,7 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 - [x] SMTP partagé (`shared/mailer.js`) ; le code de mot de passe oublié part sans faire attendre la réponse.
 - [x] Web Push VAPID : abonnement par appareil (`/api/push-subscriptions`), abonnements expirés oubliés automatiquement.
 - [x] Membre d’équipe prévenu en push, ou par e-mail s’il n’a aucun appareil joignable ; visiteurs prévenus par e-mail dans leur langue.
-- [x] Activation dans le Profil occupant et par la cloche du backoffice ; une déconnexion volontaire coupe les notifications de l’appareil.
+- [x] Activation dans le Profil occupant et par la cloche de l’administration ; une déconnexion volontaire coupe les notifications de l’appareil.
 - [x] Événements branchés : demande de recontact, relance de contact à sa date, Investor Desk, proposition B2B et décision, réponse d’un invité du Studio.
 - [ ] Renseigner les clés VAPID et vérifier la réception sur Android, iPhone (site ajouté à l’écran d’accueil) et ordinateur.
 - [ ] WhatsApp et SMS en canal supplémentaire lorsque le fournisseur et les modèles approuvés sont connus.
@@ -43,16 +43,16 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 - [x] Canaux cloisonnés comme l'API : super administrateur, administrateur et occupant de son stand, animateurs, compte, et parcours Défis public (`/api/realtime/passports/:token`).
 - [x] Le serveur n'envoie que le sujet modifié, jamais de données ; chaque écran recharge lui-même ce qu'il a le droit de voir.
 - [x] Branché sur : contacts (dont demandes du site), passages et remises Défis, Investor Desk, B2B et propositions, Studio, stands, comptes, programme.
-- [x] Écrans mis à jour sans actualiser : carnet et en-tête occupant, compteur Défis, fiche participant de l'animateur, passeport public, tous les tableaux du backoffice et les propositions d'un besoin B2B.
+- [x] Écrans mis à jour sans actualiser : carnet et en-tête occupant, compteur Défis, fiche participant de l'animateur, passeport public, tous les tableaux de l’administration et les propositions d'un besoin B2B.
 - [x] Reconnexion progressive, pause après 30 s d'onglet caché, resynchronisation complète au retour ; rafraîchissement de 30 s conservé seulement quand le flux est coupé.
 - [x] Nginx : bloc `location /api/realtime/` sans mise en tampon, délai de 1 h, HTTP/2 déclaré sur les deux sites (sauvegardes dans `/root/nginx-backups/` du VPS).
-- [ ] Vérifier après déploiement sur téléphone et au backoffice : un scan, une demande de recontact et une proposition B2B apparaissent sans actualiser.
+- [ ] Vérifier après déploiement sur téléphone et à l’administration : un scan, une demande de recontact et une proposition B2B apparaissent sans actualiser.
 - [ ] Si l'API passe un jour en mode cluster PM2, relayer les événements entre processus par PostgreSQL `LISTEN/NOTIFY`.
 
 ## M1 — La vitrine du Hub (indispensable)
 
 - [x] Ouvrir le site public sans compte ; lister les stands actifs et ouvrir une fiche avec couverture et logo.
-- [x] QR codes générés depuis le backoffice : accueil vers `/stands`, stand vers `/stands/:slug`.
+- [x] QR codes générés depuis l’administration : accueil vers `/stands`, stand vers `/stands/:slug`.
 - [x] Recherche simple par structure ou activité.
 - [x] Navigation basse : accueil, exploration, rencontres et défis.
 - [ ] Recherche par intérêt « Que recherchez-vous ? » avec pastilles de catégories administrées.
@@ -94,7 +94,7 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 
 ## M4 — Bourse des besoins et rendez-vous B2B (indispensable)
 
-- [x] Le backoffice publie et ferme un besoin pour un stand ; un professionnel propose une rencontre avec consentement ; l’administrateur accepte ou refuse.
+- [x] L’administration publie et ferme un besoin pour un stand ; un professionnel propose une rencontre avec consentement ; l’administrateur accepte ou refuse.
 - [x] Équipe du stand prévenue d’une proposition ; le professionnel reçoit une confirmation puis la décision par e-mail.
 - [ ] Besoins structurés : catégorie, description, volume, délai ; filtre par catégorie et secteur.
 - [ ] Offres des occupants : produits, services, capacités, marchés servis.

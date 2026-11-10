@@ -73,7 +73,7 @@ export default function ProgramEventDrawer({ programEvent, occupants, onClose, o
       <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="program-event-title" onMouseDown={(event) => event.stopPropagation()}>
         <header className="drawer-header">
           <div><span className="eyebrow">Programme</span><h2 id="program-event-title">{isEditing ? 'Modifier l’élément' : 'Ajouter au programme'}</h2></div>
-          <button className="icon-button" type="button" onClick={onClose} aria-label="Fermer"><X size={19} /></button>
+          <button className="admin-icon-button" type="button" onClick={onClose} aria-label="Fermer"><X size={19} /></button>
         </header>
         <form onSubmit={submit} className="drawer-form">
           <label>Type<select value={form.type} onChange={setField('type')} required>{Object.entries(programTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
@@ -106,7 +106,7 @@ export default function ProgramEventDrawer({ programEvent, occupants, onClose, o
             {isSpotlight && <span className="field-hint">Laissez vide pour reprendre l’activité du stand.</span>}
           </label>
           <span className="field-hint">Les horaires sont ceux du Hub (heure de Lomé).</span>
-          {error && <p className="form-error">{error}</p>}
+          {error && <p className="admin-form-error">{error}</p>}
           <footer className="drawer-actions">
             <button className="button button-secondary" type="button" onClick={onClose}>Annuler</button>
             <button className="button button-primary" type="submit" disabled={loading}>{loading ? 'Enregistrement...' : isEditing ? 'Enregistrer les modifications' : 'Ajouter au programme'}</button>

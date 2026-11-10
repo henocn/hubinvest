@@ -47,14 +47,14 @@ export default function StudioInvitationDrawer({ invitation, occupants, fixedOcc
       <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="studio-invitation-title" onMouseDown={(event) => event.stopPropagation()}>
         <header className="drawer-header">
           <div><span className="eyebrow">Studio</span><h2 id="studio-invitation-title">{isEditing ? 'Modifier l’invitation' : 'Créer une invitation'}</h2></div>
-          <button className="icon-button" type="button" onClick={onClose} aria-label="Fermer"><X size={19} /></button>
+          <button className="admin-icon-button" type="button" onClick={onClose} aria-label="Fermer"><X size={19} /></button>
         </header>
         <form onSubmit={submit} className="drawer-form">
           {!fixedOccupant && <label>Stand<select value={form.occupantId} onChange={(event) => setForm({ ...form, occupantId: event.target.value })} required><option value="">Sélectionner un stand</option>{occupants.map((occupant) => <option key={occupant.id} value={occupant.id}>{occupant.name}</option>)}</select></label>}
           <label>Nom de l’invité<input value={form.guestName} onChange={(event) => setForm({ ...form, guestName: event.target.value })} minLength={2} maxLength={160} required autoFocus /></label>
           <label>Sujet<input value={form.subject} onChange={(event) => setForm({ ...form, subject: event.target.value })} minLength={3} maxLength={180} required /></label>
           <label>Date et heure<input type="datetime-local" value={form.scheduledAt} onChange={(event) => setForm({ ...form, scheduledAt: event.target.value })} required /></label>
-          {error && <p className="form-error">{error}</p>}
+          {error && <p className="admin-form-error">{error}</p>}
           <footer className="drawer-actions">
             <button className="button button-secondary" type="button" onClick={onClose}>Annuler</button>
             <button className="button button-primary" type="submit" disabled={loading}>{loading ? 'Enregistrement...' : isEditing ? 'Enregistrer les modifications' : 'Créer l’invitation'}</button>

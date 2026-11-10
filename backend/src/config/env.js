@@ -50,7 +50,7 @@ module.exports = {
   },
   appUrls: {
     public: (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, ''),
-    backoffice: (process.env.BACKOFFICE_URL || 'http://localhost:5174').replace(/\/$/, ''),
+    administration: `${(process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '')}/administration`,
   },
   push: {
     publicKey: process.env.VAPID_PUBLIC_KEY || '',

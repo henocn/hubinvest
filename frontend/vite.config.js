@@ -12,7 +12,7 @@ export default defineConfig({
         name: 'HubInvest',
         short_name: 'HubInvest',
         description: 'Les stands et les contacts du Hub de l’Investissement',
-        theme_color: '#006A4F',
+        theme_color: '#156C53',
         background_color: '#FFFFFF',
         display: 'standalone',
         start_url: '/',

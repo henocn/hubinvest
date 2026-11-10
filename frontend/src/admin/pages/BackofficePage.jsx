@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Building2, BriefcaseBusiness, CalendarDays, Handshake, LogOut, Plus, QrCode, RefreshCw, Search, Trophy, UserRound, Users, Video } from 'lucide-react';
-import logo from '../../../assets/Logo fond blanc.jpeg';
+import logo from '../../../../assets/Logo fond blanc.jpeg';
 import ConfirmDelete from '../components/ConfirmDelete';
 import ConfirmReward from '../components/ConfirmReward';
 import QrCodeDialog from '../components/QrCodeDialog';
@@ -20,8 +20,8 @@ import StudioInvitationsTable from '../components/tables/StudioInvitationsTable'
 import UsersTable from '../components/tables/UsersTable';
 import { publicBaseUrl, roleLabels } from '../constants/access';
 import { api } from '../lib/api';
-import { disablePush } from '../lib/push';
-import { useRealtimeConnection, useRealtimeEvent } from '../lib/realtime';
+import { disablePush } from '../../lib/push';
+import { useRealtimeConnection, useRealtimeEvent } from '../../lib/realtime';
 
 const realtimeTopics = ['occupants', 'users', 'program', 'contacts', 'investor-requests', 'b2b', 'studio', 'challenge', 'account'];
 
@@ -254,12 +254,12 @@ export default function BackofficePage({ session, onLogout }) {
           <div><strong>{session.user.firstName} {session.user.lastName}</strong><span>{roleLabels[session.user.role] || session.user.role}</span></div>
           <span className="sidebar-user-actions">
             <PushToggleButton token={session.token} />
-            <button className="icon-button" type="button" onClick={signOut} aria-label="Se déconnecter" title="Se déconnecter"><LogOut size={18} /></button>
+            <button className="admin-icon-button" type="button" onClick={signOut} aria-label="Se déconnecter" title="Se déconnecter"><LogOut size={18} /></button>
           </span>
         </div>
       </aside>
 
-      <main className="workspace">
+      <main className="admin-workspace">
         <header className="workspace-header">
           <div><span className="eyebrow">Gestion</span><h1>{sectionMeta[section].title}</h1><p>{sectionMeta[section].description}</p></div>
           {(section === 'occupants' || section === 'users' || section === 'program' || section === 'b2b' || section === 'studio' || section === 'challenges') && <div className="workspace-actions">
@@ -310,8 +310,8 @@ export default function BackofficePage({ session, onLogout }) {
 
         <section className="data-panel">
           <header className="data-toolbar">
-            <label className="search-field"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={section === 'occupants' ? 'Rechercher un occupant' : section === 'users' ? 'Rechercher un utilisateur' : section === 'program' ? 'Rechercher dans le programme' : section === 'b2b' ? 'Rechercher un besoin' : section === 'studio' ? 'Rechercher une invitation' : section === 'challenges' ? 'Rechercher un participant' : 'Rechercher une demande'} /></label>
-            <button className="icon-button" type="button" onClick={loadData} aria-label="Actualiser"><RefreshCw size={18} /></button>
+            <label className="admin-search-field"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={section === 'occupants' ? 'Rechercher un occupant' : section === 'users' ? 'Rechercher un utilisateur' : section === 'program' ? 'Rechercher dans le programme' : section === 'b2b' ? 'Rechercher un besoin' : section === 'studio' ? 'Rechercher une invitation' : section === 'challenges' ? 'Rechercher un participant' : 'Rechercher une demande'} /></label>
+            <button className="admin-icon-button" type="button" onClick={loadData} aria-label="Actualiser"><RefreshCw size={18} /></button>
           </header>
           {error && <p className="panel-message is-error">{error}</p>}
           {loading && <p className="panel-message">Chargement des données...</p>}

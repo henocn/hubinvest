@@ -5,7 +5,7 @@ export default function AuthLayout({ children }) {
     <main className="login-page">
       <section className="login-brand">
         <img src={logo} alt="API-ZF" />
-        <div><strong>HubInvest</strong><span>Espace occupant</span></div>
+        <div><strong>HubInvest</strong><span>Espace équipe</span></div>
       </section>
       <section className="login-panel">{children}</section>
     </main>

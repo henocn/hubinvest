@@ -25,10 +25,10 @@ export default function QrCodeDialog({ title, url, fileName, onClose }) {
       <section className="qr-dialog" role="dialog" aria-modal="true" aria-labelledby="qr-title" onMouseDown={(event) => event.stopPropagation()}>
         <header>
           <h2 id="qr-title">{title}</h2>
-          <button className="icon-button" type="button" onClick={onClose} aria-label="Fermer"><X size={18} /></button>
+          <button className="admin-icon-button" type="button" onClick={onClose} aria-label="Fermer"><X size={18} /></button>
         </header>
         {image && <img src={image} alt={`QR code vers ${url}`} />}
-        {error && <p className="form-error">{error}</p>}
+        {error && <p className="admin-form-error">{error}</p>}
         <span className="qr-address">{url}</span>
         <footer>
           <button className="button button-secondary" type="button" onClick={onClose}>Fermer</button>

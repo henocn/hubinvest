@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import {
   ArrowLeft,
   Check,
@@ -30,6 +30,8 @@ import OccupantProfilePage from './pages/OccupantProfilePage';
 import AuthLayout from './components/AuthLayout';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 
+const AdminApp = lazy(() => import('./admin/AdminApp'));
+
 const qualificationLabels = {
   hot: 'Chaud',
   warm: 'Tiède',
@@ -39,7 +41,14 @@ const qualificationLabels = {
 const qualificationLabel = (value) => qualificationLabels[value] || 'À qualifier';
 const sessionRealtimeTopics = ['contacts', 'challenge', 'occupants', 'account'];
 
-const homeForRole = (role) => role === 'occupant' ? '/espace-occupant' : role === 'animateur' ? '/espace-animateur' : null;
+const roleHomes = {
+  'super-admin': '/administration',
+  admin: '/administration',
+  occupant: '/espace-occupant',
+  animateur: '/espace-animateur',
+};
+const homeForRole = (role) => roleHomes[role] || null;
+const isAdminRole = (role) => roleHomes[role] === '/administration';
 
 const toLocalDateTime = (value) => {
   if (!value) return '';
@@ -576,7 +585,7 @@ export default function App() {
   const login = async (values) => {
     const result = await api.login(values);
     const home = homeForRole(result.user.role);
-    if (!home) throw new Error("Ce compte utilise l’accès au backoffice.");
+    if (!home) throw new Error("Ce compte n’a accès à aucun espace.");
     localStorage.setItem('hubinvest-session', JSON.stringify(result));
     setSession(result);
     window.location.assign(home);
@@ -608,6 +617,11 @@ export default function App() {
 
   if (path === '/' || path === '/stands' || path.startsWith('/stands/')) {
     return <PublicPages path={path} />;
+  }
+
+  if (path === '/administration' || path.startsWith('/administration/')) {
+    if (!isAdminRole(session?.user.role)) return <Redirect to={sessionHome} />;
+    return <Suspense fallback={null}><AdminApp session={session} onLogout={logout} /></Suspense>;
   }
 
   if (path !== '/connexion' && path !== '/espace-occupant' && path !== '/espace-occupant/defis' && path !== '/espace-occupant/profil' && path !== '/espace-animateur' && path !== '/espace-animateur/remises' && path !== '/espace-animateur/profil') {

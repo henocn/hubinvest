@@ -28,7 +28,7 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 - Tous les champs de mot de passe disposent d’une action pour afficher ou masquer la valeur. La modification du mot de passe ne demande pas de confirmation et un champ vide ne le modifie pas.
 - La récupération d’un mot de passe reste un parcours court : adresse e-mail, code numérique à 5 chiffres reçu par e-mail, puis nouveau mot de passe avec l’action afficher/masquer. Ne pas envoyer de lien contenant un jeton de réinitialisation.
 
-## Tableaux et listes du backoffice
+## Tableaux et listes de l’administration
 
 - Afficher seulement les informations nécessaires pour reconnaître l’élément et décider de l’action suivante.
 - Garder une ligne compacte par élément. Ne pas afficher dans une cellule un texte qui peut occuper plusieurs lignes, comme une longue activité.
@@ -41,13 +41,14 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 ## Organisation du code
 
 - Limiter les comptes à quatre rôles : super administrateur, administrateur, occupant et animateur.
-- Un administrateur est rattaché à un stand, jamais à un « périmètre ». Dans le backoffice, il accède à Investor Desk, B2B, Studio et Participants, avec des données strictement filtrées sur son stand. Le super administrateur conserve la vue globale et la gestion des stands et des accès.
+- Un administrateur est rattaché à un stand, jamais à un « périmètre ». Dans l’administration, il accède à Investor Desk, B2B, Studio et Participants, avec des données strictement filtrées sur son stand. Le super administrateur conserve la vue globale et la gestion des stands et des accès.
 - L’occupant utilise seulement Contacts, Défis et Profil. L’animateur utilise seulement Scan, Remises et Profil pour contrôler, remettre puis retrouver les récompenses.
 - Remises de l'animateur : un tableau simple Participant, Contact, Remise le (date et heure), la plus récente en premier, alimenté en temps réel. Les lignes remises par l'animateur connecté ont un fond vert léger, sans colonne ni légende supplémentaire.
-- Le B2B se gère dans le backoffice et non dans l’espace occupant.
+- Un seul frontend : le site public, les espaces occupant et animateur, et l’administration à l’adresse `/administration`. Une seule page de connexion, `/connexion`, envoie chaque compte vers son espace selon son rôle. Il n’y a plus de backoffice séparé.
+- Le B2B se gère dans l’administration et non dans l’espace occupant.
 - Seule l’API-ZF administre et détient les données : elle seule a des comptes administrateur, et son référent est rattaché à son compte. Les organes rattachés (BRMN, INPIT, HAUQUE) sont traités comme les stands des entreprises. Le super administrateur est l’agence.
 - Les demandes Investor Desk vont uniquement à l’API-ZF. Il n’y a pas de réservation de rendez-vous investisseur en ligne.
-- Les réglages globaux du site (fichier de l’Investor Pack, nombre de stands requis pour les Défis, etc.) se gèrent dans le backoffice par le super administrateur.
+- Les réglages globaux du site (fichier de l’Investor Pack, nombre de stands requis pour les Défis, etc.) se gèrent dans l’administration par le super administrateur.
 - INVEST TRACK n’existe pas encore : les dossiers investisseurs sont exportés en Excel.
 - Les besoins B2B viennent des entreprises du Hub. Les rencontres express de la Journée API-ZF sont des rencontres B2B plus courtes : la durée des créneaux et les tables sont paramétrables.
 - Le planning du Studio et l’envoi des invitations sont gérés par l’agence (DEKA Editions), c’est-à-dire le super administrateur.
@@ -60,7 +61,7 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 - Backend JavaScript avec Node.js, Express, nodemon, Sequelize et migrations.
 - Un module backend lié à un modèle contient ses routes, validations, repository, service et controller.
 - Les paramètres sensibles et la connexion à la base utilisent les variables d’environnement.
-- En production, un push ou merge sur `main` déclenche le déploiement automatique sur le VPS Hostinger par SSH. Le workflow installe séparément le backend, le frontend et le backoffice, exécute les migrations Sequelize, compile les interfaces puis recharge le backend avec PM2 et `--update-env`.
+- En production, un push ou merge sur `main` déclenche le déploiement automatique sur le VPS Hostinger par SSH. Le workflow installe séparément le backend, le frontend et l’administration, exécute les migrations Sequelize, compile les interfaces puis recharge le backend avec PM2 et `--update-env`.
 - Les envois externes sont asynchrones. Une notification e-mail ou push est d’abord ajoutée à la file `notification_jobs`, puis envoyée en arrière-plan par le worker avec nouvelles tentatives. Une action métier n’attend jamais un envoi et n’échoue jamais à cause d’une notification.
 - Un membre d’équipe est prévenu en push sur ses appareils abonnés, et par e-mail seulement lorsqu’aucun appareil n’est joignable. Un visiteur sans compte reçoit uniquement des e-mails, dans la langue de sa demande.
 - Une notification d’équipe ne contient pas les coordonnées du visiteur : elle indique l’événement et mène à l’écran où la donnée est consultable.
@@ -86,7 +87,7 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 - Un lien public personnel inexistant ou deviné doit aboutir à un véritable état 404, sans révéler d’information sur les autres participants.
 - Toute donnée collectée dans un parcours public doit être consultable dans l’espace de travail de l’équipe qui doit réellement l’utiliser.
 - Un participant déjà inscrit aux défis doit retrouver automatiquement son parcours pendant 20 jours sur le même navigateur. Stocker localement uniquement le jeton et son expiration, jamais son nom ni son contact.
-- Pour les Défis, montrer d’abord un QR contenant uniquement le code participant, puis le code lisible en dessous. Côté occupant, centrer le nombre de joueurs scannés, le bouton « Scanner » et, en dessous, la saisie du code avec « OK » juste à côté. Le dialogue de scan ne contient que la caméra. Chaque passage validé est rattaché à l’occupant et ce rattachement est visible au backoffice.
-- Après le scan ou la saisie d’un code participant, afficher en bas trois boutons A, B et C de même importance. Le choix est obligatoire pour enregistrer le passage et reste rattaché à ce passage ; dans le backoffice, la lettre apparaît avec le stand sans ajouter une colonne supplémentaire.
+- Pour les Défis, montrer d’abord un QR contenant uniquement le code participant, puis le code lisible en dessous. Côté occupant, centrer le nombre de joueurs scannés, le bouton « Scanner » et, en dessous, la saisie du code avec « OK » juste à côté. Le dialogue de scan ne contient que la caméra. Chaque passage validé est rattaché à l’occupant et ce rattachement est visible à l’administration.
+- Après le scan ou la saisie d’un code participant, afficher en bas trois boutons A, B et C de même importance. Le choix est obligatoire pour enregistrer le passage et reste rattaché à ce passage ; dans l’administration, la lettre apparaît avec le stand sans ajouter une colonne supplémentaire.
 - Ne pas ajouter de bouton d’actualisation sous le code participant ; le suivi des passages se met à jour sans action dédiée.
 - Vérifier chaque interface à 320 px, 375 px et sur ordinateur avant de la considérer terminée.

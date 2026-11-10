@@ -75,7 +75,7 @@ export default function OccupantDrawer({ occupant, onClose, onSaved, token }) {
       <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="occupant-title" onMouseDown={(event) => event.stopPropagation()}>
         <header className="drawer-header">
           <div><span className="eyebrow">{isEditing ? 'Modification' : 'Nouvel occupant'}</span><h2 id="occupant-title">{isEditing ? 'Modifier le stand' : 'Créer un stand'}</h2></div>
-          <button className="icon-button" type="button" onClick={onClose} aria-label="Fermer"><X size={19} /></button>
+          <button className="admin-icon-button" type="button" onClick={onClose} aria-label="Fermer"><X size={19} /></button>
         </header>
         <form onSubmit={submit} className="drawer-form">
           <label>Nom de la structure<input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} minLength={2} required autoFocus /></label>
@@ -84,7 +84,7 @@ export default function OccupantDrawer({ occupant, onClose, onSaved, token }) {
           <label>Image de couverture<input type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" onChange={(event) => setCoverFile(event.target.files?.[0] || null)} required={!occupant?.coverImageUrl} /></label>
           <label>Activité<textarea rows="5" value={form.activity} onChange={(event) => setForm({ ...form, activity: event.target.value })} /></label>
           <label>Statut du stand<select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })}><option value="active">Actif</option><option value="inactive">Inactif</option></select></label>
-          {error && <p className="form-error">{error}</p>}
+          {error && <p className="admin-form-error">{error}</p>}
           <footer className="drawer-actions">
             <button className="button button-secondary" type="button" onClick={onClose}>Annuler</button>
             <button className="button button-primary" type="submit" disabled={loading}>{loading ? 'Enregistrement...' : isEditing ? 'Enregistrer les modifications' : "Créer l’occupant"}</button>

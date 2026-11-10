@@ -41,10 +41,10 @@ Ne pas déduire l'état actuel de `.env` de ce document : vérifier uniquement l
 
 ## Pour les occupants et les contacts
 
-- [x] Les occupants sont créés dans le backoffice avec un identifiant stable généré par la plateforme.
+- [x] Les occupants sont créés dans l’administration avec un identifiant stable généré par la plateforme.
 - [x] Une fiche occupant contient le nom, l’emplacement, l’activité, le statut et une image de couverture. Aucun numéro de preuve distinct.
-- [x] Chaque stand peut recevoir un logo JPG, PNG ou WebP dans le backoffice, limité à 2 Mo et 1200 × 1200 pixels.
-- [x] Les comptes occupants sont créés dans le backoffice et rattachés à leur occupant ; seul le premier compte administrateur dépend des variables `ADMIN_*`.
+- [x] Chaque stand peut recevoir un logo JPG, PNG ou WebP dans l’administration, limité à 2 Mo et 1200 × 1200 pixels.
+- [x] Les comptes occupants sont créés dans l’administration et rattachés à leur occupant ; seul le premier compte administrateur dépend des variables `ADMIN_*`.
 - [ ] Les cinq champs obligatoires exacts du formulaire de contact.
 - [ ] Confirmation de la possibilite ou non de noter une vente : produit, quantite et montant.
 - [ ] Texte de consentement a afficher avant l'enregistrement d'un contact, en francais et en anglais si necessaire.
@@ -56,11 +56,11 @@ Format prefere pour les listes : fichier Excel ou CSV avec une ligne par element
 ## Pour la vitrine
 
 - [x] Nom public definitif de la plateforme : HubInvest.
-- [x] Les contenus des occupants sont dynamiques et administrables depuis le backoffice ; aucun jeu de donnees fixe n'est necessaire au code.
+- [x] Les contenus des occupants sont dynamiques et administrables depuis l’administration ; aucun jeu de donnees fixe n'est necessaire au code.
 - [ ] Categories de la recherche `Que recherchez-vous ?` et occupants associes.
 - [ ] Destinations des QR codes d'accueil, de fiche occupant, de l'Investor Desk et des Défis ; n'imprimer que les parcours réellement prêts.
-- [x] Le programme, ses dates et ses heures seront geres depuis le backoffice.
-- [x] Le plan et les numeros de stands seront geres depuis le backoffice.
+- [x] Le programme, ses dates et ses heures seront geres depuis l’administration.
+- [x] Le plan et les numeros de stands seront geres depuis l’administration.
 - [x] L’interface statique du frontend public est disponible en français et en anglais, avec détection automatique de la langue du navigateur et choix mémorisé.
 - [ ] Si les contenus libres des occupants doivent aussi être traduits automatiquement, choisir le fournisseur et confirmer que ces contenus peuvent lui être transmis.
 
@@ -80,7 +80,7 @@ Aucune valeur fixe n'est demandee a ce stade. Le parcours sera adapte aux cas d'
 
 ## Pour le Studio
 
-- [x] Les horaires disponibles seront geres depuis le backoffice.
+- [x] Les horaires disponibles seront geres depuis l’administration.
 - [x] Les textes de confirmation et de rappel peuvent etre proposes lors de l'implementation.
 
 Les types de contenus, durees, informations invite et statuts ne sont pas des entrees necessaires au code pour le moment.
@@ -127,7 +127,7 @@ Aucune coordonnee personnelle de visiteur ne doit etre envoyee au fournisseur d'
 ## Pour la production
 
 - [ ] URL publique du frontend.
-- [ ] URL publique du backoffice.
+- [ ] URL publique de l’administration.
 - [ ] URL publique de l'API.
 - [ ] Origines autorisees par CORS.
 - [ ] Valeurs de connexion PostgreSQL de production.

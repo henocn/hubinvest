@@ -5,7 +5,7 @@ export default function PasswordInput(props) {
   const [visible, setVisible] = useState(false);
 
   return (
-    <div className="password-field">
+    <div className="admin-password-field">
       <input {...props} type={visible ? 'text' : 'password'} />
       <button type="button" onClick={() => setVisible((current) => !current)} aria-label={visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'} title={visible ? 'Masquer' : 'Afficher'}>
         {visible ? <EyeOff size={18} /> : <Eye size={18} />}

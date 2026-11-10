@@ -1,7 +1,7 @@
 import { Bell, BellOff } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
-import { currentPushSubscription, disablePush, enablePush, isPushSupported } from '../lib/push';
+import { currentPushSubscription, disablePush, enablePush, isPushSupported } from '../../lib/push';
 
 const labels = {
   on: 'Désactiver les notifications',
@@ -61,7 +61,7 @@ export default function PushToggleButton({ token }) {
 
   return (
     <button
-      className={`icon-button${state === 'on' ? ' is-active' : ''}`}
+      className={`admin-icon-button${state === 'on' ? ' is-active' : ''}`}
       type="button"
       onClick={toggle}
       disabled={busy || state === 'denied'}

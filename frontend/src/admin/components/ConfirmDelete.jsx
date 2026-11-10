@@ -9,7 +9,7 @@ export default function ConfirmDelete({ subject, loading, error, onCancel, onCon
           <h2 id="delete-title">Supprimer {subject.label}</h2>
           <p>Cette action est définitive. Les éléments encore utilisés par la plateforme ne pourront pas être supprimés.</p>
         </div>
-        {error && <p className="form-error dialog-error">{error}</p>}
+        {error && <p className="admin-form-error dialog-error">{error}</p>}
         <footer>
           <button className="button button-secondary" type="button" onClick={onCancel} disabled={loading}>Annuler</button>
           <button className="button button-danger" type="button" onClick={onConfirm} disabled={loading}>{loading ? 'Suppression...' : 'Supprimer'}</button>
