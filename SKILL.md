@@ -83,13 +83,14 @@ Eviter :
 
 ## Couleurs
 
-Les fichiers du dossier `assets/` sont la source de marque actuelle.
+La charte graphique du Hub (API-ZF 2026) fait référence ; les logos restent dans `assets/`.
 
-- Rouge API-ZF : `#D11135`
-- Vert API-ZF : `#006A4F`
-- Jaune API-ZF : `#FFCF11`
-- Noir : `#000000`
-- Blanc : `#FFFFFF`
+- Vert Hub, couleur maîtresse : `#156C53` (survol `#005B3F`), structure, liens, navigation active
+- Rouge signal : `#D31B34` (survol `#BA0024`), action principale, une seule par vue, filet de 56 × 3 px sous les grands titres publics
+- Jaune accent : `#FFCF15`, toujours avec du texte encre, jamais de blanc dessus
+- Encre : `#0F1822` ; gris texte : `#4D4D4D` ; bordures : `#D9DCDE` ; fond neutre : `#F4F5F5` ; teinte verte : `#EDF3F1`
+- Focus : anneau ambré `#E2A700`
+- Boutons en pilule, champs arrondis à 10 px
 
 Centraliser ces valeurs dans des tokens. Les surfaces neutres proviennent du noir et du blanc avec des niveaux controles ; ne pas ajouter une autre couleur chromatique sans raison metier.
 
@@ -99,9 +100,9 @@ Ne pas utiliser le logo comme motif decoratif. Choisir `Logo sans fond.png` lors
 
 ## Typographie
 
-Utiliser `Inter Variable`, auto-hebergee dans le projet avec Fontsource ou des fichiers locaux. Garder une pile systeme en repli.
+Titres en Sen (Fontsource, auto-hébergée), texte courant en Arial. Aleo italique est réservée aux citations et n’est pas chargée tant qu’aucune citation n’est affichée.
 
-- une seule famille pour l'interface ;
+- titres en Sen 700 à 800, en casse normale dans l’interface (les noms propres et titres longs restent lisibles) ;
 - texte courant de 16 px minimum sur mobile ;
 - libelles et donnees secondaires de 13 a 14 px minimum dans le backoffice ;
 - interligne lisible ;

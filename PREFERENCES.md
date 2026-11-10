@@ -6,7 +6,7 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 
 - Interface sobre, propre, simple et directement compréhensible, inspirée de la clarté de Postman sans la copier.
 - Éviter les signes de design généré par IA : textes de remplissage, cartes imbriquées, badges décoratifs, détails gratuits et grands espaces sans fonction.
-- Utiliser les couleurs et logos du dossier `assets/`, la police Inter et les icônes Lucide. Aucun emoji.
+- Suivre la charte graphique du Hub (couleurs, Sen pour les titres, Arial pour le texte, boutons en pilule, action principale rouge) sans alourdir l’UX : pas de supergraphie ni de motifs décoratifs dans les écrans de travail. Logos du dossier `assets/`, icônes Lucide, aucun emoji.
 - Employer des bordures horizontales et verticales légèrement noires pour structurer les tableaux sans les alourdir.
 - Un défaut visible d’alignement, de proportion, de centrage, de hauteur ou d’espacement bloque la livraison, même si l’écran fonctionne.
 - Ne jamais forcer un retour à la ligne (largeur maximale étroite sur un titre, `<br>`) : le texte occupe la largeur disponible et ne passe à la ligne que lorsque l'écran l'exige, ou quand un design particulier le justifie vraiment.
@@ -50,7 +50,10 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 - Les réglages globaux du site (fichier de l’Investor Pack, nombre de stands requis pour les Défis, etc.) se gèrent dans le backoffice par le super administrateur.
 - INVEST TRACK n’existe pas encore : les dossiers investisseurs sont exportés en Excel.
 - Les besoins B2B viennent des entreprises du Hub. Les rencontres express de la Journée API-ZF sont des rencontres B2B plus courtes : la durée des créneaux et les tables sont paramétrables.
-- Le planning du Studio est tenu par l’API-ZF (à confirmer par la direction). L’invité reçoit son lien par copie manuelle et aussi par e-mail.
+- Le planning du Studio et l’envoi des invitations sont gérés par l’agence (DEKA Editions), c’est-à-dire le super administrateur.
+- Investor Desk : l’API-ZF reçoit toujours la demande. Une fois qu’elle l’a acceptée, l’entreprise ou l’organe concerné reçoit une notification anonyme, visible dans son espace.
+- B2B : c’est l’API-ZF qui accepte ou refuse une proposition de rencontre, pour le compte de l’entreprise.
+- Roue des opportunités : en attente du contenu, ne pas la développer. L’invité reçoit son lien par copie manuelle et aussi par e-mail.
 - Le classement A, B, C est conservé sur les passages des Défis. Le nombre de stands requis reste un paramètre (3 par défaut) ; les récompenses sont gérées sur le terrain.
 - Le suivi des questions ouvertes pour la direction est tenu dans `QUESTIONS.md`.
 - Frontend React réparti dans des dossiers `components/` et `pages/`. Une page ne doit pas contenir tous les composants du parcours.
