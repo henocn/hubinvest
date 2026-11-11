@@ -273,7 +273,7 @@ export default function BackofficePage({ session, onLogout }) {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="brand-lockup"><img src={hubLogo} alt="Hub de l’Investissement" /><span>Administration</span></div>
+        <div className="brand-lockup"><img src={hubLogo} alt="Hub de l’Investissement" /></div>
         <nav aria-label="Navigation principale">
           {isSuperAdmin && <><button className={section === 'occupants' ? 'is-active' : ''} onClick={() => switchSection('occupants')} title="Stands"><Building2 size={18} /><span>Stands</span></button><button className={section === 'users' ? 'is-active' : ''} onClick={() => switchSection('users')} title="Accès"><Users size={18} /><span>Accès</span></button><button className={section === 'program' ? 'is-active' : ''} onClick={() => switchSection('program')} title="Programme"><CalendarDays size={18} /><span>Programme</span></button></>}
           {canAccessBusinessModules && <button className={section === 'investor-requests' ? 'is-active' : ''} onClick={() => switchSection('investor-requests')} title="Investor Desk"><BriefcaseBusiness size={18} /><span>Investor Desk</span></button>}

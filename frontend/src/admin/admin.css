@@ -70,7 +70,6 @@
 .admin-app .sidebar { position: sticky; top: 0; height: 100vh; padding: 21px 14px 16px; display: flex; flex-direction: column; border-right: 1px solid var(--line); background: #fff; }
 .admin-app .brand-lockup { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 0 9px 22px; }
 .admin-app .brand-lockup img { width: auto; height: 62px; display: block; }
-.admin-app .brand-lockup span { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
 .admin-app .sidebar nav { display: flex; flex-direction: column; gap: 4px; }
 .admin-app .sidebar nav button { display: flex; align-items: center; gap: 11px; width: 100%; padding: 10px 11px; border: 0; border-radius: 10px; color: #4d4d4d; background: transparent; font-size: 13px; font-weight: 600; text-align: left; }
 .admin-app .sidebar nav button:hover { background: #f4f5f5; }
@@ -219,7 +218,6 @@
   .admin-app .sidebar { position: static; height: auto; padding: 14px 18px; display: grid; grid-template-columns: auto 1fr auto; gap: 20px; align-items: center; border-right: 0; border-bottom: 1px solid var(--line); }
   .admin-app .brand-lockup { padding: 0; }
   .admin-app .brand-lockup img { height: 40px; }
-  .admin-app .brand-lockup span { display: none; }
   .admin-app .sidebar nav { min-width: 0; flex-direction: row; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; }
   .admin-app .sidebar nav button { flex: 0 0 auto; width: auto; white-space: nowrap; }
   .admin-app .sidebar-user { margin: 0; padding: 0; border: 0; grid-template-columns: 34px auto; }
