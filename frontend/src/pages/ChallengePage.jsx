@@ -5,6 +5,7 @@ import NotFoundPage from './NotFoundPage';
 import { api } from '../lib/api';
 import { clearChallengePassportToken, readChallengePassportToken, saveChallengePassportToken } from '../lib/challenge-passport-store';
 import { useTranslation } from 'react-i18next';
+import { ChevronRight, Disc3 } from 'lucide-react';
 import { publicErrorMessage } from '../lib/public-error';
 import { useRealtimeConnected, useRealtimeConnection, useRealtimeEvent } from '../lib/realtime';
 
@@ -94,6 +95,7 @@ export default function ChallengePage({ token }) {
       {loading && <p className="public-message">{t('challenge.loading')}</p>}
       {error && <p className="public-message is-error">{error}</p>}
       {passport && <ChallengePassportCard passport={passport} />}
+      {!loading && <a className="challenge-wheel-link" href="/roue"><Disc3 size={22} aria-hidden="true" /><span><strong>{t('wheel.title')}</strong>{t('wheel.link')}</span><ChevronRight size={18} aria-hidden="true" /></a>}
     </main>
   );
 }

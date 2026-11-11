@@ -9,7 +9,7 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 ## Écarts entre les deux documents à trancher
 
 - [ ] Nom du jeu : « Défis de la preuve » et parcours « Trouvez les trois preuves » (CDC) devenus « Défis du Hub » et « Trouvez les trois étapes » (PDF). Aligner les libellés FR/EN.
-- [ ] Le PDF ajoute une « roue des opportunités » alors que le CDC exclut la « roue de la chance en ligne ». Confirmer s’il s’agit d’une animation physique ou d’une fonction à coder.
+- [x] Roue des opportunités : confirmée sur téléphone, avec un code à usage unique remis par un administrateur.
 - [ ] Le positionnement passe de « La preuve par le Togo » à « Avec vous, à chaque étape » et à la série « Ils avancent avec l’API-ZF » : la fiche occupant doit-elle porter la success story (parcours avec l’Agence) ?
 - [ ] Formats du Studio : « 21 secondes avec… » (CDC) remplacé par « 2 min avec… », « API-ZF en 60 secondes » et Face-à-face (PDF).
 - [ ] Rencontres B2B : tables de 20 minutes (CDC) et « Rencontres express » de 10 minutes pendant la Journée API-ZF (PDF).
@@ -121,6 +121,7 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 - [ ] Parcours « Trouvez les trois étapes » : trois produits de trois occupants différents affichés sur le passeport, plusieurs versions modifiables chaque jour.
 - [ ] Quiz express et vrai ou faux (trois questions), sur téléphone ou tablette.
 - [ ] Badge numérique partageable à la fin du parcours.
+- [x] Roue des opportunités `/roue` : code à usage unique généré dans l’administration, tirage côté serveur, lots des partenaires avec quantités, cases perdantes, stock mis à jour en temps réel.
 - [ ] Récompenses : types, stock suivi en temps réel, alerte à 20 % du stock restant.
 - [ ] Souhaitable : micro-enquête de trois questions au retrait.
 - [ ] Faire valider le règlement du jeu par le service juridique ; aucun consentement commercial implicite.

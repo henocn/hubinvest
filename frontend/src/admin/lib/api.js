@@ -86,6 +86,14 @@ export const api = {
   challengePassports: (token) => request('/challenge-passports', authorized(token)),
   redeemChallengePassport: (token, id) =>
     request(`/challenge-passports/${id}/redeem`, authorized(token, { method: 'PATCH' })),
+  wheel: (token) => request('/wheel', authorized(token)),
+  createWheelCode: (token) => request('/wheel/codes', authorized(token, { method: 'POST' })),
+  createWheelSegment: (token, values) =>
+    request('/wheel/segments', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
+  updateWheelSegment: (token, id, values) =>
+    request(`/wheel/segments/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
+  deleteWheelSegment: (token, id) =>
+    request(`/wheel/segments/${id}`, authorized(token, { method: 'DELETE' })),
   users: (token) => request('/users', authorized(token)),
   contactStats: (token) => request('/contacts/admin/stats', authorized(token)),
   createUser: (token, values) =>

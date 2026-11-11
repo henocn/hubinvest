@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Building2, BriefcaseBusiness, CalendarDays, Handshake, LogOut, Plus, QrCode, RefreshCw, Search, Trophy, UserRound, Users, Video } from 'lucide-react';
+import { Building2, BriefcaseBusiness, CalendarDays, Disc3, Handshake, LogOut, Plus, QrCode, RefreshCw, Search, Ticket, Trophy, UserRound, Users, Video } from 'lucide-react';
 import logo from '../../../../assets/Logo fond blanc.jpeg';
 import ConfirmDelete from '../components/ConfirmDelete';
 import ConfirmReward from '../components/ConfirmReward';
@@ -18,12 +18,16 @@ import OccupantsTable from '../components/tables/OccupantsTable';
 import ProgramEventsTable from '../components/tables/ProgramEventsTable';
 import StudioInvitationsTable from '../components/tables/StudioInvitationsTable';
 import UsersTable from '../components/tables/UsersTable';
+import WheelSegmentsTable from '../components/tables/WheelSegmentsTable';
+import WheelCodesTable from '../components/tables/WheelCodesTable';
+import WheelSegmentDrawer from '../components/drawers/WheelSegmentDrawer';
+import WheelCodeDialog from '../components/WheelCodeDialog';
 import { publicBaseUrl, roleLabels } from '../constants/access';
 import { api } from '../lib/api';
 import { disablePush } from '../../lib/push';
 import { useRealtimeConnection, useRealtimeEvent } from '../../lib/realtime';
 
-const realtimeTopics = ['occupants', 'users', 'program', 'contacts', 'investor-requests', 'b2b', 'studio', 'challenge', 'account'];
+const realtimeTopics = ['occupants', 'users', 'program', 'contacts', 'investor-requests', 'b2b', 'studio', 'challenge', 'wheel', 'account'];
 
 const sectionMeta = {
   occupants: { title: 'Stands', description: 'Fiches publiques, emplacements et statuts.' },
@@ -33,6 +37,7 @@ const sectionMeta = {
   b2b: { title: 'B2B', description: 'Besoins publiés et propositions reçues.' },
   studio: { title: 'Studio', description: 'Invitations et planning des invités.' },
   challenges: { title: 'Participants aux défis', description: 'Contacts, progression et remise des récompenses.' },
+  wheel: { title: 'Roue des opportunités', description: 'Lots, quantités et codes de jeu à usage unique.' },
 };
 
 export default function BackofficePage({ session, onLogout }) {
@@ -48,6 +53,8 @@ export default function BackofficePage({ session, onLogout }) {
   const [programEvents, setProgramEvents] = useState([]);
   const [challengePassports, setChallengePassports] = useState([]);
   const [contactStats, setContactStats] = useState({ total: 0, byOccupant: {} });
+  const [wheel, setWheel] = useState({ segments: [], codes: [], stats: { played: 0, awarded: 0, remaining: 0 } });
+  const [wheelCode, setWheelCode] = useState(null);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -66,7 +73,7 @@ export default function BackofficePage({ session, onLogout }) {
     setError('');
     try {
       if (isSuperAdmin) {
-        const [occupantData, userData, statsData, investorData, b2bData, studioData, challengeData, programData] = await Promise.all([
+        const [occupantData, userData, statsData, investorData, b2bData, studioData, challengeData, programData, wheelData] = await Promise.all([
           api.occupants(session.token),
           api.users(session.token),
           api.contactStats(session.token),
@@ -75,6 +82,7 @@ export default function BackofficePage({ session, onLogout }) {
           api.studioInvitations(session.token),
           api.challengePassports(session.token),
           api.programEvents(session.token),
+          api.wheel(session.token),
         ]);
         setOccupants(occupantData);
         setUsers(userData);
@@ -84,17 +92,20 @@ export default function BackofficePage({ session, onLogout }) {
         setStudioInvitations(studioData);
         setChallengePassports(challengeData);
         setProgramEvents(programData);
+        setWheel(wheelData);
       } else {
-        const [investorData, needData, studioData, challengeData] = await Promise.all([
+        const [investorData, needData, studioData, challengeData, wheelData] = await Promise.all([
           api.investorRequests(session.token),
           api.b2bNeeds(session.token),
           api.studioInvitations(session.token),
           api.challengePassports(session.token),
+          api.wheel(session.token),
         ]);
         setInvestorRequests(investorData.items);
         setB2bNeeds(needData);
         setStudioInvitations(studioData);
         setChallengePassports(challengeData);
+        setWheel(wheelData);
       }
     } catch (requestError) {
       if (requestError.status === 401 || requestError.status === 403) onLogout();
@@ -114,6 +125,7 @@ export default function BackofficePage({ session, onLogout }) {
       b2b: async () => setB2bNeeds(await api.b2bNeeds(token)),
       studio: async () => setStudioInvitations(await api.studioInvitations(token)),
       challenge: async () => setChallengePassports(await api.challengePassports(token)),
+      wheel: async () => setWheel(await api.wheel(token)),
       account: async () => { await api.profile(token); },
     };
     if (isSuperAdmin) {
@@ -154,6 +166,7 @@ export default function BackofficePage({ session, onLogout }) {
   useRealtimeEvent('b2b', () => reloadTopic('b2b'));
   useRealtimeEvent('studio', () => reloadTopic('studio'));
   useRealtimeEvent('challenge', () => reloadTopic('challenge'));
+  useRealtimeEvent('wheel', () => reloadTopic('wheel'));
   useRealtimeEvent('account', () => reloadTopic('account'));
 
   const query = search.trim().toLowerCase();
@@ -166,6 +179,8 @@ export default function BackofficePage({ session, onLogout }) {
   const programTodayStart = new Date().setUTCHours(0, 0, 0, 0);
   const programTodayEnd = programTodayStart + 86_400_000;
   const visibleChallengePassports = useMemo(() => challengePassports.filter((item) => !query || [item.displayName, item.contact, item.code, ...(item.passages || []).flatMap((passage) => [passage.occupant?.name, passage.validatedBy?.firstName, passage.validatedBy?.lastName])].some((value) => String(value || '').toLowerCase().includes(query))), [challengePassports, query]);
+
+  const visibleWheelSegments = useMemo(() => wheel.segments.filter((item) => !query || [item.label, item.sponsor].some((value) => String(value || '').toLowerCase().includes(query))), [wheel.segments, query]);
 
   const switchSection = (next) => {
     setSection(next);
@@ -213,12 +228,29 @@ export default function BackofficePage({ session, onLogout }) {
     setPendingDelete({ type: 'program', item: programEvent, label: programEvent.type === 'spotlight' ? `la mise à l’affiche de ${programEvent.occupant?.name || 'ce stand'}` : `« ${programEvent.title} » du programme` });
   };
 
+  const requestWheelDelete = (segment) => {
+    setDeleteError('');
+    setPendingDelete({ type: 'wheel', item: segment, label: `la case « ${segment.label} » de la roue` });
+  };
+
+  // Délivre un code de jeu et l'affiche en grand pour le joueur.
+  const generateWheelCode = async () => {
+    setWheelCode((current) => ({ data: current?.data || null, loading: true, error: '' }));
+    try {
+      const data = await api.createWheelCode(session.token);
+      setWheelCode({ data, loading: false, error: '' });
+    } catch (requestError) {
+      setWheelCode((current) => ({ data: current?.data || null, loading: false, error: requestError.message }));
+    }
+  };
+
   const confirmDelete = async () => {
     setDeleting(true);
     setDeleteError('');
     try {
       if (pendingDelete.type === 'occupant') await api.deleteOccupant(session.token, pendingDelete.item.id);
       else if (pendingDelete.type === 'program') await api.deleteProgramEvent(session.token, pendingDelete.item.id);
+      else if (pendingDelete.type === 'wheel') await api.deleteWheelSegment(session.token, pendingDelete.item.id);
       else await api.deleteUser(session.token, pendingDelete.item.id);
       setPendingDelete(null);
       await loadData();
@@ -248,6 +280,7 @@ export default function BackofficePage({ session, onLogout }) {
           {canAccessBusinessModules && <button className={section === 'b2b' ? 'is-active' : ''} onClick={() => switchSection('b2b')} title="B2B"><Handshake size={18} /><span>B2B</span></button>}
           {canAccessBusinessModules && <button className={section === 'studio' ? 'is-active' : ''} onClick={() => switchSection('studio')} title="Studio"><Video size={18} /><span>Studio</span></button>}
           {canAccessBusinessModules && <button className={section === 'challenges' ? 'is-active' : ''} onClick={() => switchSection('challenges')} title="Participants aux défis"><Trophy size={18} /><span>Participants</span></button>}
+          {canAccessBusinessModules && <button className={section === 'wheel' ? 'is-active' : ''} onClick={() => switchSection('wheel')} title="Roue des opportunités"><Disc3 size={18} /><span>Roue</span></button>}
         </nav>
         <div className="sidebar-user">
           <span className="user-avatar"><UserRound size={18} /></span>
@@ -262,15 +295,22 @@ export default function BackofficePage({ session, onLogout }) {
       <main className="admin-workspace">
         <header className="workspace-header">
           <div><span className="eyebrow">Gestion</span><h1>{sectionMeta[section].title}</h1><p>{sectionMeta[section].description}</p></div>
-          {(section === 'occupants' || section === 'users' || section === 'program' || section === 'b2b' || section === 'studio' || section === 'challenges') && <div className="workspace-actions">
+          {(section === 'occupants' || section === 'users' || section === 'program' || section === 'b2b' || section === 'studio' || section === 'challenges' || section === 'wheel') && <div className="workspace-actions">
             {section === 'occupants' && <button className="button button-secondary" type="button" onClick={() => setQrCode({ title: 'QR du Hub', url: `${publicBaseUrl}/stands`, fileName: 'hubinvest-hub' })}><QrCode size={18} /> QR du Hub</button>}
             {section === 'challenges' && <button className="button button-secondary" type="button" onClick={() => setQrCode({ title: 'QR des Défis', url: `${publicBaseUrl}/defis`, fileName: 'hubinvest-defis' })}><QrCode size={18} /> QR des Défis</button>}
             {section === 'program' && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: 'program', item: null })}><Plus size={18} /> Ajouter au programme</button>}
-            {section !== 'challenges' && section !== 'program' && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: section === 'occupants' ? 'occupant' : section === 'users' ? 'user' : section === 'b2b' ? 'b2b' : 'studio', item: null })}><Plus size={18} /> {section === 'occupants' ? 'Nouveau stand' : section === 'users' ? 'Nouvel utilisateur' : section === 'b2b' ? 'Nouveau besoin' : 'Nouvelle invitation'}</button>}
+            {section === 'wheel' && <><button className="button button-secondary" type="button" onClick={() => setDrawer({ type: 'wheel', item: null })}><Plus size={18} /> Nouvelle case</button><button className="button button-primary" type="button" onClick={generateWheelCode}><Ticket size={18} /> Générer un code</button></>}
+            {section !== 'challenges' && section !== 'program' && section !== 'wheel' && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: section === 'occupants' ? 'occupant' : section === 'users' ? 'user' : section === 'b2b' ? 'b2b' : 'studio', item: null })}><Plus size={18} /> {section === 'occupants' ? 'Nouveau stand' : section === 'users' ? 'Nouvel utilisateur' : section === 'b2b' ? 'Nouveau besoin' : 'Nouvelle invitation'}</button>}
           </div>}
         </header>
 
-        {section === 'challenges' ? (
+        {section === 'wheel' ? (
+          <section className="summary-row" aria-label="Résumé">
+            <article><span>Parties jouées</span><strong>{loading || error ? '—' : wheel.stats.played}</strong><small>codes utilisés</small></article>
+            <article><span>Lots gagnés</span><strong>{loading || error ? '—' : wheel.stats.awarded}</strong><small>depuis l’ouverture</small></article>
+            <article><span>Lots restants</span><strong>{loading || error ? '—' : wheel.stats.remaining}</strong><small>encore sur la roue</small></article>
+          </section>
+        ) : section === 'challenges' ? (
           <section className="summary-row" aria-label="Résumé">
             <article><span>En cours</span><strong>{loading || error ? '—' : challengePassports.filter((item) => item.status === 'active').length}</strong><small>parcours commencés</small></article>
             <article><span>Terminés</span><strong>{loading || error ? '—' : challengePassports.filter((item) => item.status === 'completed').length}</strong><small>récompenses à remettre</small></article>
@@ -310,7 +350,7 @@ export default function BackofficePage({ session, onLogout }) {
 
         <section className="data-panel">
           <header className="data-toolbar">
-            <label className="admin-search-field"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={section === 'occupants' ? 'Rechercher un occupant' : section === 'users' ? 'Rechercher un utilisateur' : section === 'program' ? 'Rechercher dans le programme' : section === 'b2b' ? 'Rechercher un besoin' : section === 'studio' ? 'Rechercher une invitation' : section === 'challenges' ? 'Rechercher un participant' : 'Rechercher une demande'} /></label>
+            <label className="admin-search-field"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={section === 'occupants' ? 'Rechercher un occupant' : section === 'users' ? 'Rechercher un utilisateur' : section === 'program' ? 'Rechercher dans le programme' : section === 'b2b' ? 'Rechercher un besoin' : section === 'studio' ? 'Rechercher une invitation' : section === 'challenges' ? 'Rechercher un participant' : section === 'wheel' ? 'Rechercher un lot' : 'Rechercher une demande'} /></label>
             <button className="admin-icon-button" type="button" onClick={loadData} aria-label="Actualiser"><RefreshCw size={18} /></button>
           </header>
           {error && <p className="panel-message is-error">{error}</p>}
@@ -322,7 +362,9 @@ export default function BackofficePage({ session, onLogout }) {
           {!loading && !error && section === 'b2b' && <B2bNeedsTable needs={visibleB2bNeeds} query={query} showStand={isSuperAdmin} onEdit={(item) => setDrawer({ type: 'b2b', item })} />}
           {!loading && !error && section === 'studio' && <StudioInvitationsTable invitations={visibleStudioInvitations} query={query} showStand={isSuperAdmin} copiedId={copiedInvitationId} onCopy={copyInvitationLink} onEdit={(item) => setDrawer({ type: 'studio', item })} />}
           {!loading && !error && section === 'challenges' && <ChallengePassportsTable passports={visibleChallengePassports} query={query} allowReward={isSuperAdmin} onRedeem={(passport) => { setRewardError(''); setPendingReward(passport); }} />}
+          {!loading && !error && section === 'wheel' && <WheelSegmentsTable segments={visibleWheelSegments} query={query} onEdit={(item) => setDrawer({ type: 'wheel', item })} onDelete={requestWheelDelete} />}
         </section>
+        {section === 'wheel' && !loading && !error && <section className="data-panel wheel-codes-panel"><h2>Derniers codes</h2><WheelCodesTable codes={wheel.codes} /></section>}
       </main>
 
       {drawer?.type === 'occupant' && <OccupantDrawer occupant={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
@@ -331,6 +373,8 @@ export default function BackofficePage({ session, onLogout }) {
       {drawer?.type === 'investor-request' && <InvestorRequestDrawer investorRequest={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'b2b' && <B2bNeedDrawer need={drawer.item} occupants={occupants} fixedOccupant={isAdmin ? session.user.occupant : null} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'studio' && <StudioInvitationDrawer invitation={drawer.item} occupants={occupants} fixedOccupant={isAdmin ? session.user.occupant : null} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
+      {drawer?.type === 'wheel' && <WheelSegmentDrawer segment={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
+      {wheelCode && <WheelCodeDialog wheelCode={wheelCode.data} loading={wheelCode.loading} error={wheelCode.error} onNew={generateWheelCode} onClose={() => setWheelCode(null)} />}
       {pendingDelete && <ConfirmDelete subject={pendingDelete} loading={deleting} error={deleteError} onCancel={() => setPendingDelete(null)} onConfirm={confirmDelete} />}
       {pendingReward && <ConfirmReward passport={pendingReward} loading={rewarding} error={rewardError} onCancel={() => setPendingReward(null)} onConfirm={confirmReward} />}
       {qrCode && <QrCodeDialog {...qrCode} onClose={() => setQrCode(null)} />}

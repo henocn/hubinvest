@@ -73,6 +73,9 @@ module.exports = {
     maxStreams: integer(process.env.REALTIME_MAX_STREAMS, 2000),
   },
   corsOrigins: list(process.env.CORS_ORIGINS),
+  wheel: {
+    codeTtl: duration(process.env.WHEEL_CODE_TTL, 30 * 60 * 1000),
+  },
   challenge: {
     requiredPassages: integer(process.env.CHALLENGE_REQUIRED_PASSAGES, 3),
   },

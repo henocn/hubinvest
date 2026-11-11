@@ -243,3 +243,14 @@
   .admin-app .drawer-actions { bottom: -22px; margin: 9px -22px -22px; padding: 16px 22px; }
   .admin-app .row-actions { justify-content: flex-start; }
 }
+
+.admin-app .wheel-row.is-hidden td { color: #8a8f94; }
+.admin-app .wheel-row.is-hidden td strong { color: #8a8f94; }
+.admin-app .wheel-row.is-sold-out { background: rgba(211, 27, 52, .035); }
+.admin-app .wheel-stock-total { color: var(--muted); font-weight: 400; }
+.admin-app .wheel-code-row.is-won { background: rgba(21, 108, 83, .045); }
+.admin-app .wheel-code-row.is-expired td { color: #8a8f94; }
+.admin-app .wheel-codes-panel { margin-top: 18px; min-height: 0; }
+.admin-app .wheel-codes-panel > h2 { margin: 0; padding: 16px 18px; border-bottom: 1px solid rgba(0, 0, 0, .14); font-size: 15px; }
+.admin-app .wheel-code-value { display: block; margin: 26px 0 10px; color: var(--ink); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: clamp(40px, 12vw, 56px); font-weight: 800; letter-spacing: .16em; text-align: center; }
+.admin-app .wheel-code-hint { margin: 0; color: var(--muted); font-size: 13px; text-align: center; }

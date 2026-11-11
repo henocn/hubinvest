@@ -38,6 +38,8 @@ const pushSubscriptionRepository = require('../src/modules/push-subscription/pus
 const mailer = require('../src/shared/mailer');
 const webPush = require('../src/shared/web-push');
 const programEventService = require('../src/modules/program-event/program-event.service');
+const wheelService = require('../src/modules/wheel/wheel.service');
+const wheelRepository = require('../src/modules/wheel/wheel.repository');
 const programEventRepository = require('../src/modules/program-event/program-event.repository');
 
 env.notifications.enabled = false;
@@ -870,10 +872,10 @@ const readSseEvents = async (response, count, timeout = 2000) => {
 
 test('chaque rôle n’écoute que les canaux de son stand ou de son rôle', () => {
   assert.deepEqual(realtimeService.channelsFor({ id: 'u1', role: 'super-admin', occupantId: null }), ['user:u1', 'super-admin']);
-  assert.deepEqual(realtimeService.channelsFor({ id: 'u2', role: 'admin', occupantId: 'stand-a' }), ['user:u2', 'admin:stand-a']);
+  assert.deepEqual(realtimeService.channelsFor({ id: 'u2', role: 'admin', occupantId: 'stand-a' }), ['user:u2', 'admins', 'admin:stand-a']);
   assert.deepEqual(realtimeService.channelsFor({ id: 'u3', role: 'occupant', occupantId: 'stand-a' }), ['user:u3', 'occupant:stand-a']);
   assert.deepEqual(realtimeService.channelsFor({ id: 'u4', role: 'animateur', occupantId: null }), ['user:u4', 'animateur']);
-  assert.deepEqual(realtimeService.channelsFor({ id: 'u5', role: 'admin', occupantId: null }), ['user:u5']);
+  assert.deepEqual(realtimeService.channelsFor({ id: 'u5', role: 'admin', occupantId: null }), ['user:u5', 'admins']);
 });
 
 test('un jeton de flux ne sert qu’une fois et expire', (context) => {
@@ -976,4 +978,55 @@ test('la liste des remises signale seulement celles de l’animateur connecté, 
   assert.deepEqual(rewards.map((reward) => reward.redeemedByMe), [true, false]);
   assert.ok(rewards.every((reward) => !('redeemedByUserId' in reward)));
   assert.deepEqual(Object.keys(rewards[0]).sort(), ['contact', 'displayName', 'id', 'redeemedAt', 'redeemedByMe']);
+});
+
+const wheelSetup = (context, { segments, code }) => {
+  context.mock.method(wheelRepository.sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));
+  context.mock.method(wheelRepository, 'findCodeForUpdate', async (value) => (code && code.code === value ? code : null));
+  context.mock.method(wheelRepository, 'findActiveSegmentsForUpdate', async () => segments.filter((segment) => segment.isActive));
+  context.mock.method(wheelRepository, 'recordAward', async (segment) => { segment.awarded += 1; });
+  context.mock.method(wheelRepository, 'updateCode', async (wheelCode, values) => Object.assign(wheelCode, values));
+};
+
+test('un code de la roue ne sert qu’une fois et décompte le lot gagné', async (context) => {
+  const prize = { id: 'p1', kind: 'prize', label: 'T-shirt', sponsor: 'WAFO INDUSTRIE', quantity: 2, awarded: 0, isActive: true };
+  const lose = { id: 'l1', kind: 'lose', label: 'Presque !', sponsor: null, quantity: null, awarded: 0, isActive: true };
+  const code = { code: 'K7P2QX', usedAt: null, expiresAt: new Date(Date.now() + 60000) };
+  wheelSetup(context, { segments: [prize, lose], code });
+
+  const outcome = await wheelService.spin(' k7p2-qx ', 'fr', (length) => { assert.equal(length, 2); return 0; });
+  assert.equal(outcome.result.id, 'p1');
+  assert.equal(outcome.result.sponsor, 'WAFO INDUSTRIE');
+  assert.equal(prize.awarded, 1);
+  assert.equal(code.resultLabel, 'T-shirt');
+  assert.ok(code.usedAt);
+
+  await assert.rejects(wheelService.spin('K7P2QX', 'fr', () => 0), (error) => error.status === 409 && error.code === 'WHEEL_CODE_USED');
+  assert.equal(prize.awarded, 1);
+});
+
+test('un code expiré ou inventé ne fait pas tourner la roue', async (context) => {
+  const lose = { id: 'l1', kind: 'lose', label: 'Dommage !', quantity: null, awarded: 0, isActive: true };
+  const code = { code: 'ABCDEF', usedAt: null, expiresAt: new Date(Date.now() - 1000) };
+  wheelSetup(context, { segments: [lose], code });
+
+  await assert.rejects(wheelService.spin('ABCDEF', 'fr'), (error) => error.status === 410 && error.code === 'WHEEL_CODE_EXPIRED');
+  await assert.rejects(wheelService.spin('ZZZZZZ', 'fr'), (error) => error.status === 404 && error.code === 'WHEEL_CODE_INVALID');
+  assert.equal(code.usedAt, null);
+});
+
+test('un lot épuisé ou désactivé disparaît de la roue, et une roue vide ne consomme pas le code', async (context) => {
+  const soldOut = { id: 'p1', kind: 'prize', label: 'Casquette', quantity: 3, awarded: 3, isActive: true };
+  const inactive = { id: 'p2', kind: 'prize', label: 'Tablier', quantity: 5, awarded: 0, isActive: false };
+  const code = { code: 'QWERTY', usedAt: null, expiresAt: new Date(Date.now() + 60000) };
+  wheelSetup(context, { segments: [soldOut, inactive], code });
+
+  await assert.rejects(wheelService.spin('QWERTY', 'fr', () => 0), (error) => error.status === 409 && error.code === 'WHEEL_EMPTY');
+  assert.equal(code.usedAt, null);
+
+  const lose = { id: 'l1', kind: 'lose', label: 'Pas cette fois', quantity: null, awarded: 0, isActive: true };
+  wheelSetup(context, { segments: [soldOut, inactive, lose], code });
+  const outcome = await wheelService.spin('QWERTY', 'fr', (length) => { assert.equal(length, 1); return 0; });
+  assert.deepEqual(outcome.segments.map((segment) => segment.id), ['l1']);
+  assert.equal(soldOut.awarded, 3);
 });

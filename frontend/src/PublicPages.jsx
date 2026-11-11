@@ -10,6 +10,7 @@ import StandListPage from './pages/StandListPage';
 import StudioInvitationPage from './pages/StudioInvitationPage';
 import ChallengePage from './pages/ChallengePage';
 import MeetingsPage from './pages/MeetingsPage';
+import WheelPage from './pages/WheelPage';
 import './public.css';
 
 export default function PublicPages({ path }) {
@@ -38,6 +39,8 @@ export default function PublicPages({ path }) {
     page = <StudioInvitationPage token={studioInvitation[1]} />;
   } else if (path === '/defis') {
     page = <ChallengePage />;
+  } else if (path === '/roue') {
+    page = <WheelPage />;
   } else if (challengePassport) {
     page = <ChallengePage token={challengePassport[1]} />;
   } else {
