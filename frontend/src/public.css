@@ -1408,16 +1408,38 @@
 }
 
 .play-game .button {
-  justify-self: start;
+  justify-self: center;
+  min-width: min(100%, 260px);
   margin-top: 6px;
   text-decoration: none;
 }
 
-.play-passport {
-  width: 100%;
+.play-game-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* Passages validés, en haut à droite de la carte du parcours. */
+.play-game-badge {
   display: grid;
-  justify-items: center;
-  scroll-margin-top: 16px;
+  justify-items: end;
+  gap: 2px;
+  text-align: right;
+}
+
+.play-game-badge strong {
+  color: var(--green);
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.play-game-badge small {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 700;
 }
 
 .play-cta {
@@ -1527,44 +1549,15 @@
   margin-top: 4px;
 }
 
-.wheel-locked {
-  margin: 0;
-  color: var(--muted);
-  text-align: center;
-  line-height: 1.55;
-}
-
-.challenge-passport-card {
-  width: min(100%, 620px);
-  padding: clamp(26px, 6vw, 46px);
-  border: 1px solid rgba(0, 0, 0, 0.16);
-  border-radius: 10px;
-  background: #fff;
-}
-
-.challenge-passport-card > header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  font-size: 0.88rem;
-}
-
-.challenge-passport-card > header span {
-  overflow: hidden;
-  font-weight: 700;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.challenge-passport-card > header strong {
-  flex: 0 0 auto;
-  color: var(--green);
+.challenge-progress-block {
+  display: grid;
+  gap: 10px;
+  margin-top: 2px;
 }
 
 .challenge-progress {
   height: 6px;
-  margin: 14px 0 30px;
+  margin: 0;
   overflow: hidden;
   border-radius: 10px;
   background: #d9dcde;
@@ -1576,44 +1569,12 @@
   background: var(--green);
 }
 
-.challenge-code {
-  display: grid;
-  justify-items: center;
-  gap: 7px;
-  padding: 20px 16px 22px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  text-align: center;
-  background: #fff;
-}
-
-.challenge-qr {
-  width: min(216px, 100%);
-  height: auto;
-  display: block;
-  margin-bottom: 8px;
-  image-rendering: pixelated;
-}
-
-.challenge-code span {
-  color: var(--muted);
-  font-size: 0.76rem;
-  font-weight: 700;
-}
-
-.challenge-code strong {
-  color: var(--ink);
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  font-size: clamp(1.65rem, 8vw, 2.35rem);
-  letter-spacing: 0.12em;
-  overflow-wrap: anywhere;
-}
-
 .challenge-next-step {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  margin: 22px 0 0;
+  margin: 2px 0 0;
+  font-size: 0.9rem;
   color: #4d4d4d;
   line-height: 1.5;
 }
@@ -1625,19 +1586,8 @@
 }
 
 .challenge-passages {
-  margin-top: 26px;
-  padding-top: 22px;
-  border-top: 1px solid var(--border);
-}
-
-.challenge-passages h2 {
-  margin: 0 0 12px;
-  font-size: 0.95rem;
-}
-
-.challenge-passages ul {
   display: grid;
-  gap: 9px;
+  gap: 7px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1712,32 +1662,86 @@
   .program-item { grid-template-columns: 52px minmax(0, 1fr); gap: 11px; }
 }
 
-.wheel-page {
-  min-height: calc(100vh - 82px);
+/* Fenêtre « Me scanner » : grand QR et code dessous. */
+.scan-code {
   display: grid;
-  place-items: center;
-  padding-block: 32px 42px;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
 }
 
-.wheel-panel {
-  width: min(100%, 520px);
-  display: grid;
-  gap: 18px;
-  padding: clamp(22px, 5vw, 38px);
-  border: 1px solid rgba(0, 0, 0, 0.16);
+.scan-qr-frame {
+  width: min(100%, 280px);
+  aspect-ratio: 1;
+  padding: 10px;
+  border: 1px solid var(--border);
   border-radius: 10px;
   background: #fff;
 }
 
-.wheel-panel h1 {
-  margin: -8px 0 0;
-  font-size: clamp(1.8rem, 6vw, 2.5rem);
-  line-height: 1.08;
+.scan-qr {
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: pixelated;
+}
+
+.scan-code span {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.scan-code strong {
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: clamp(2rem, 10vw, 2.6rem);
+  letter-spacing: 0.16em;
+}
+
+/* Fenêtre de la roue : la roue, puis le champ du code. */
+.wheel-dialog {
+  width: min(100%, 440px);
+}
+
+.wheel-dialog > header {
+  margin-bottom: 8px;
+}
+
+.wheel-stage {
+  display: grid;
+  justify-items: center;
+  margin-bottom: 18px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.wheel-stage.is-busy {
+  cursor: grabbing;
+}
+
+.wheel-stage:focus-visible {
+  outline: 3px solid rgba(226, 167, 0, 0.6);
+  outline-offset: 4px;
+  border-radius: 50%;
+}
+
+.wheel-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.5;
+  text-align: center;
 }
 
 .wheel {
   position: relative;
-  width: min(100%, 360px);
+  width: min(100%, 320px);
   justify-self: center;
   padding-top: 14px;
 }
@@ -1762,16 +1766,6 @@
   display: block;
   font-family: var(--font-display);
   transform-origin: 50% 50%;
-}
-
-.wheel-disc.is-spinning {
-  transition: transform 5.2s cubic-bezier(0.12, 0.8, 0.18, 1);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .wheel-disc.is-spinning {
-    transition: transform 0.6s ease-out;
-  }
 }
 
 .wheel-form {

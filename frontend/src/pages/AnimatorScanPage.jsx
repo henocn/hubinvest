@@ -4,7 +4,7 @@ import ChallengeScannerDialog from '../components/occupant/ChallengeScannerDialo
 import { api } from '../lib/api';
 import { useRealtimeEvent } from '../lib/realtime';
 
-const participantCode = /^[A-HJ-NP-Z2-9]{8}$/;
+const participantCode = /^(?:[A-HJ-NP-Z2-9]{6}|[A-HJ-NP-Z2-9]{8})$/;
 
 export default function AnimatorScanPage({ session, onLogout }) {
   const submitting = useRef(false);
@@ -19,7 +19,7 @@ export default function AnimatorScanPage({ session, onLogout }) {
     if (submitting.current) return;
     const normalized = value.trim().toUpperCase();
     if (!participantCode.test(normalized)) {
-      setError('Saisissez les 8 caractères du code participant.');
+      setError('Saisissez les 6 caractères du code participant.');
       setParticipant(null);
       setResult('');
       return;
@@ -81,7 +81,7 @@ export default function AnimatorScanPage({ session, onLogout }) {
         <button className="button button-primary challenge-open-scanner" type="button" onClick={() => setCameraOpen(true)} disabled={loading}><ScanLine size={20} /> Scanner</button>
         <form className="challenge-manual-form" onSubmit={(event) => { event.preventDefault(); void findParticipant(code); }}>
           <label htmlFor="reward-participant-code">Code participant</label>
-          <div className="challenge-manual-row"><input id="reward-participant-code" className="challenge-code-input" value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} minLength={8} maxLength={8} autoCapitalize="characters" autoComplete="off" required /><button className="button button-secondary" type="submit" disabled={loading}>OK</button></div>
+          <div className="challenge-manual-row"><input id="reward-participant-code" className="challenge-code-input" value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} minLength={6} maxLength={8} autoCapitalize="characters" autoComplete="off" required /><button className="button button-secondary" type="submit" disabled={loading}>OK</button></div>
         </form>
         {participant && <section className={`animator-participant is-${participant.status}`}><strong>{participant.displayName}</strong><span>{participant.passageCount} / {participant.requiredPassages} passages</span>{participant.status === 'completed' && <button className="button button-primary" type="button" onClick={redeem} disabled={loading}>Remettre la récompense</button>}{participant.status === 'active' && <p>Parcours non terminé.</p>}{participant.status === 'redeemed' && <p>Récompense déjà remise.</p>}</section>}
         {error && <p className="panel-error" role="alert">{error}</p>}

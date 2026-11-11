@@ -90,7 +90,7 @@ La charte graphique du Hub (API-ZF 2026) fait référence ; les logos restent da
 - Jaune accent : `#FFCF15`, toujours avec du texte encre, jamais de blanc dessus
 - Encre : `#0F1822` ; gris texte : `#4D4D4D` ; bordures : `#D9DCDE` ; fond neutre : `#F4F5F5` ; teinte verte : `#EDF3F1`
 - Focus : anneau ambré `#E2A700`
-- Boutons en pilule, champs arrondis à 10 px
+- Boutons et champs arrondis à 10 px (pas de boutons en pilule)
 
 Centraliser ces valeurs dans des tokens. Les surfaces neutres proviennent du noir et du blanc avec des niveaux controles ; ne pas ajouter une autre couleur chromatique sans raison metier.
 

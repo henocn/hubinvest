@@ -10,7 +10,9 @@ const { events: realtime } = require('../realtime/realtime.service');
 const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const requiredPassages = Math.max(1, env.challenge.requiredPassages);
 
-const createCode = () => Array.from(crypto.randomBytes(8), (value) => alphabet[value % alphabet.length]).join('');
+// Code participant de 6 caractères (les anciens codes de 8 restent acceptés aux stands).
+const CODE_LENGTH = 6;
+const createCode = () => Array.from({ length: CODE_LENGTH }, () => alphabet[crypto.randomInt(alphabet.length)]).join('');
 
 const publicPayload = (passport, includeToken = false) => {
   const values = passport.toJSON ? passport.toJSON() : passport;

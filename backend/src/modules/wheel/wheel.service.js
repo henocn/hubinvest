@@ -8,7 +8,7 @@ const { events: realtime } = require('../realtime/realtime.service');
 
 // Lettres et chiffres sans ambiguïté à l'oral ou à l'écrit (pas de 0/O, 1/I/L).
 const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-const CODE_LENGTH = 6;
+const CODE_LENGTH = 4;
 const RECENT_CODES = 30;
 
 const plain = (value) => (value?.toJSON ? value.toJSON() : value);

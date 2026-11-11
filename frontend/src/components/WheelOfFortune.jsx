@@ -33,7 +33,8 @@ const toLines = (label) => {
   return [clip(label.slice(0, cut)), clip(label.slice(cut + 1))];
 };
 
-export default function WheelOfFortune({ segments, rotation, spinning, onSpinEnd }) {
+// La rotation est appliquée directement sur le disque (discRef) image par image, sans repasser par React.
+export default function WheelOfFortune({ segments, discRef }) {
   const count = segments.length;
   const slice = count ? 360 / count : 360;
   const baseFont = count <= 6 ? 10 : count <= 10 ? 8.5 : count <= 14 ? 7.2 : 6.2;
@@ -42,10 +43,9 @@ export default function WheelOfFortune({ segments, rotation, spinning, onSpinEnd
     <div className="wheel">
       <span className="wheel-pointer" aria-hidden="true" />
       <svg
-        className={`wheel-disc${spinning ? ' is-spinning' : ''}`}
+        ref={discRef}
+        className="wheel-disc"
         viewBox={`0 0 ${SIZE} ${SIZE}`}
-        style={{ transform: `rotate(${rotation}deg)` }}
-        onTransitionEnd={onSpinEnd}
         role="img"
         aria-label={segments.map((segment) => segment.label).join(', ')}
       >

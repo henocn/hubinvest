@@ -4,7 +4,7 @@ import ChallengeScannerDialog from '../components/occupant/ChallengeScannerDialo
 import { api } from '../lib/api';
 import { useRealtimeConnected, useRealtimeEvent } from '../lib/realtime';
 
-const participantCode = /^[A-HJ-NP-Z2-9]{8}$/;
+const participantCode = /^(?:[A-HJ-NP-Z2-9]{6}|[A-HJ-NP-Z2-9]{8})$/;
 
 export default function OccupantChallengePage({ session, onLogout }) {
   const validatingRef = useRef(false);
@@ -48,7 +48,7 @@ export default function OccupantChallengePage({ session, onLogout }) {
   const prepareClassification = useCallback((value) => {
     const normalized = value.trim().toUpperCase();
     if (!participantCode.test(normalized)) {
-      setError('Saisissez les 8 caractères du code participant.');
+      setError('Saisissez les 6 caractères du code participant.');
       setPendingCode('');
       setResult(null);
       return false;
@@ -102,7 +102,7 @@ export default function OccupantChallengePage({ session, onLogout }) {
         <form className="challenge-manual-form" onSubmit={submit}>
           <label htmlFor="challenge-participant-code">Code participant</label>
           <div className="challenge-manual-row">
-            <input id="challenge-participant-code" className="challenge-code-input" value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} minLength={8} maxLength={8} autoCapitalize="characters" autoComplete="off" required />
+            <input id="challenge-participant-code" className="challenge-code-input" value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} minLength={6} maxLength={8} autoCapitalize="characters" autoComplete="off" required />
             <button className="button button-secondary" type="submit" disabled={loading}>OK</button>
           </div>
         </form>

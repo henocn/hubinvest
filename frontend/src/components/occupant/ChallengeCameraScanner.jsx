@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-const participantCode = /^[A-HJ-NP-Z2-9]{8}$/;
+const participantCode = /^(?:[A-HJ-NP-Z2-9]{6}|[A-HJ-NP-Z2-9]{8})$/;
 
 export default function ChallengeCameraScanner({ onCode }) {
   const videoRef = useRef(null);
