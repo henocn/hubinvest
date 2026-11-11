@@ -28,8 +28,6 @@
 .admin-app input, .admin-app select, .admin-app textarea, .admin-app .button { min-height: 0; }
 .admin-app h1 { margin-bottom: 0; line-height: 1.15; }
 
-.admin-app .brand-lockup img { width: 48px; height: 48px; border-radius: 10px; object-fit: cover; background: #fff; }
-.admin-app .brand-lockup div { display: flex; flex-direction: column; gap: 3px; }
 .admin-app .workspace-header h1 { margin: 0; color: var(--ink); letter-spacing: -0.015em; }
 .admin-app .workspace-header p { margin: 10px 0 0; color: var(--muted); line-height: 1.55; }
 
@@ -70,10 +68,9 @@
 
 .admin-app .app-shell { min-height: 100vh; display: grid; grid-template-columns: 244px minmax(0, 1fr); }
 .admin-app .sidebar { position: sticky; top: 0; height: 100vh; padding: 21px 14px 16px; display: flex; flex-direction: column; border-right: 1px solid var(--line); background: #fff; }
-.admin-app .brand-lockup { display: flex; align-items: center; gap: 11px; padding: 0 9px 22px; }
-.admin-app .brand-lockup img { width: 38px; height: 38px; border: 1px solid var(--line); border-radius: 10px; }
-.admin-app .brand-lockup strong { font-size: 15px; }
-.admin-app .brand-lockup span { color: var(--muted); font-size: 11px; }
+.admin-app .brand-lockup { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 0 9px 22px; }
+.admin-app .brand-lockup img { width: auto; height: 62px; display: block; }
+.admin-app .brand-lockup span { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
 .admin-app .sidebar nav { display: flex; flex-direction: column; gap: 4px; }
 .admin-app .sidebar nav button { display: flex; align-items: center; gap: 11px; width: 100%; padding: 10px 11px; border: 0; border-radius: 10px; color: #4d4d4d; background: transparent; font-size: 13px; font-weight: 600; text-align: left; }
 .admin-app .sidebar nav button:hover { background: #f4f5f5; }
@@ -221,6 +218,8 @@
   .admin-app .app-shell { grid-template-columns: 1fr; }
   .admin-app .sidebar { position: static; height: auto; padding: 14px 18px; display: grid; grid-template-columns: auto 1fr auto; gap: 20px; align-items: center; border-right: 0; border-bottom: 1px solid var(--line); }
   .admin-app .brand-lockup { padding: 0; }
+  .admin-app .brand-lockup img { height: 40px; }
+  .admin-app .brand-lockup span { display: none; }
   .admin-app .sidebar nav { min-width: 0; flex-direction: row; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; }
   .admin-app .sidebar nav button { flex: 0 0 auto; width: auto; white-space: nowrap; }
   .admin-app .sidebar-user { margin: 0; padding: 0; border: 0; grid-template-columns: 34px auto; }
@@ -229,8 +228,9 @@
 }
 
 @media (max-width: 620px) {
-  .admin-app .brand-lockup div, .admin-app .sidebar-user .user-avatar { display: none; }
-  .admin-app .sidebar { grid-template-columns: 38px 1fr auto; gap: 8px; }
+  .admin-app .sidebar-user .user-avatar { display: none; }
+  .admin-app .sidebar { grid-template-columns: auto 1fr auto; gap: 8px; }
+  .admin-app .brand-lockup img { height: 34px; }
   .admin-app .sidebar nav button { justify-content: center; }
   .admin-app .sidebar nav button svg { flex: 0 0 auto; }
   .admin-app .sidebar nav button span { display: none; }

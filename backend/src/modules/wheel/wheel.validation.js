@@ -7,6 +7,7 @@ const idParams = Joi.object({
 
 const spin = Joi.object({
   code: Joi.string().trim().min(4).max(16).required(),
+  player: Joi.string().hex().length(64).required(),
 });
 
 const fields = {

@@ -47,9 +47,12 @@ const listPublic = async (language) => {
 const normalizeCode = (value) => String(value || '').trim().toUpperCase().replace(/[\s-]/g, '');
 
 // Tire une case au hasard parmi celles visibles : le code est consommé et le stock décompté dans la même transaction.
-const spin = async (rawCode, language, randomIndex = crypto.randomInt) => {
+// Seul un joueur identifié peut jouer ; sa partie lui est rattachée.
+const spin = async ({ code: rawCode, player }, language, randomIndex = crypto.randomInt) => {
   const code = normalizeCode(rawCode);
   const outcome = await wheelRepository.sequelize.transaction(async (transaction) => {
+    const passport = await wheelRepository.findPlayerByToken(player, transaction);
+    if (!passport) throw new AppError(422, 'WHEEL_PLAYER_REQUIRED', 'Identifiez-vous avant de jouer.');
     const wheelCode = await wheelRepository.findCodeForUpdate(code, transaction);
     if (!wheelCode) throw new AppError(404, 'WHEEL_CODE_INVALID', 'Ce code n’existe pas. Vérifiez-le auprès de l’équipe du stand.');
     if (wheelCode.usedAt) throw new AppError(409, 'WHEEL_CODE_USED', 'Ce code a déjà servi. Demandez-en un nouveau à l’équipe du stand.');
@@ -62,6 +65,7 @@ const spin = async (rawCode, language, randomIndex = crypto.randomInt) => {
     if (chosen.kind === 'prize') await wheelRepository.recordAward(chosen, transaction);
     await wheelRepository.updateCode(wheelCode, {
       usedAt: new Date(),
+      passportId: passport.id,
       segmentId: chosen.id,
       resultKind: chosen.kind,
       resultLabel: chosen.label,
@@ -118,6 +122,7 @@ const overview = async () => {
         status: values.usedAt ? 'used' : expired ? 'expired' : 'waiting',
         result: values.usedAt ? { kind: values.resultKind, label: values.resultLabel, sponsor: values.resultSponsor } : null,
         createdBy: values.createdBy ? { firstName: values.createdBy.firstName, lastName: values.createdBy.lastName } : null,
+        player: values.player ? { displayName: values.player.displayName, email: values.player.email, phone: values.player.phone } : null,
       };
     }),
     stats: {

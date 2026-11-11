@@ -53,7 +53,7 @@ const findByIdForUpdate = (id, transaction) => ChallengePassport.findByPk(id, {
 // Liste les récompenses remises, la plus récente en premier.
 const findRedeemed = () => ChallengePassport.findAll({
   where: { status: 'redeemed' },
-  attributes: ['id', 'displayName', 'contact', 'redeemedAt', 'redeemedByUserId'],
+  attributes: ['id', 'displayName', 'email', 'phone', 'contact', 'redeemedAt', 'redeemedByUserId'],
   order: [['redeemedAt', 'DESC']],
 });
 

@@ -31,6 +31,24 @@ module.exports = (sequelize, DataTypes) =>
         type: DataTypes.STRING(180),
         allowNull: true,
       },
+      firstName: {
+        type: DataTypes.STRING(80),
+        allowNull: true,
+        field: 'first_name',
+      },
+      lastName: {
+        type: DataTypes.STRING(80),
+        allowNull: true,
+        field: 'last_name',
+      },
+      email: {
+        type: DataTypes.STRING(180),
+        allowNull: true,
+      },
+      phone: {
+        type: DataTypes.STRING(32),
+        allowNull: true,
+      },
       status: {
         type: DataTypes.STRING(24),
         allowNull: false,

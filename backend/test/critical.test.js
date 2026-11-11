@@ -516,7 +516,7 @@ test('le planning Studio d’un administrateur est filtré sur son stand', async
   assert.deepEqual(requestedStands, ['occupant-pia']);
 });
 
-test('le contact d’un participant est conservé sans être exposé sur son passeport public', async (context) => {
+test('l’identité d’un joueur est conservée sans être exposée sur son passeport public', async (context) => {
   let saved;
   context.mock.method(challengePassportRepository, 'create', async (values) => {
     saved = values;
@@ -524,12 +524,18 @@ test('le contact d’un participant est conservé sans être exposé sur son pas
   });
 
   const result = await challengePassportService.createPublic({
-    displayName: 'Visiteur Test',
-    contact: 'visiteur@example.com',
+    firstName: 'Afi',
+    lastName: 'Mensah',
+    email: 'afi@example.com',
+    phone: '+22890000000',
   });
 
-  assert.equal(saved.contact, 'visiteur@example.com');
-  assert.equal(result.contact, undefined);
+  assert.equal(saved.displayName, 'Afi Mensah');
+  assert.equal(saved.email, 'afi@example.com');
+  assert.equal(saved.phone, '+22890000000');
+  assert.equal(result.displayName, 'Afi Mensah');
+  assert.equal(result.email, undefined);
+  assert.equal(result.phone, undefined);
 });
 
 test('la liste des joueurs conserve le validateur et son stand pour chaque scan', async (context) => {
@@ -977,11 +983,13 @@ test('la liste des remises signale seulement celles de l’animateur connecté, 
   const rewards = await challengePassportService.listRewards({ id: 'animator-a', role: 'animateur' });
   assert.deepEqual(rewards.map((reward) => reward.redeemedByMe), [true, false]);
   assert.ok(rewards.every((reward) => !('redeemedByUserId' in reward)));
-  assert.deepEqual(Object.keys(rewards[0]).sort(), ['contact', 'displayName', 'id', 'redeemedAt', 'redeemedByMe']);
+  assert.deepEqual(Object.keys(rewards[0]).sort(), ['contact', 'displayName', 'email', 'id', 'phone', 'redeemedAt', 'redeemedByMe']);
 });
 
+const PLAYER = 'a'.repeat(64);
 const wheelSetup = (context, { segments, code }) => {
   context.mock.method(wheelRepository.sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));
+  context.mock.method(wheelRepository, 'findPlayerByToken', async (token) => (token === PLAYER ? { id: 'passport-a' } : null));
   context.mock.method(wheelRepository, 'findCodeForUpdate', async (value) => (code && code.code === value ? code : null));
   context.mock.method(wheelRepository, 'findActiveSegmentsForUpdate', async () => segments.filter((segment) => segment.isActive));
   context.mock.method(wheelRepository, 'recordAward', async (segment) => { segment.awarded += 1; });
@@ -994,14 +1002,15 @@ test('un code de la roue ne sert qu’une fois et décompte le lot gagné', asyn
   const code = { code: 'K7P2QX', usedAt: null, expiresAt: new Date(Date.now() + 60000) };
   wheelSetup(context, { segments: [prize, lose], code });
 
-  const outcome = await wheelService.spin(' k7p2-qx ', 'fr', (length) => { assert.equal(length, 2); return 0; });
+  const outcome = await wheelService.spin({ code: ' k7p2-qx ', player: PLAYER }, 'fr', (length) => { assert.equal(length, 2); return 0; });
   assert.equal(outcome.result.id, 'p1');
   assert.equal(outcome.result.sponsor, 'WAFO INDUSTRIE');
   assert.equal(prize.awarded, 1);
   assert.equal(code.resultLabel, 'T-shirt');
+  assert.equal(code.passportId, 'passport-a');
   assert.ok(code.usedAt);
 
-  await assert.rejects(wheelService.spin('K7P2QX', 'fr', () => 0), (error) => error.status === 409 && error.code === 'WHEEL_CODE_USED');
+  await assert.rejects(wheelService.spin({ code: 'K7P2QX', player: PLAYER }, 'fr', () => 0), (error) => error.status === 409 && error.code === 'WHEEL_CODE_USED');
   assert.equal(prize.awarded, 1);
 });
 
@@ -1010,8 +1019,9 @@ test('un code expiré ou inventé ne fait pas tourner la roue', async (context) 
   const code = { code: 'ABCDEF', usedAt: null, expiresAt: new Date(Date.now() - 1000) };
   wheelSetup(context, { segments: [lose], code });
 
-  await assert.rejects(wheelService.spin('ABCDEF', 'fr'), (error) => error.status === 410 && error.code === 'WHEEL_CODE_EXPIRED');
-  await assert.rejects(wheelService.spin('ZZZZZZ', 'fr'), (error) => error.status === 404 && error.code === 'WHEEL_CODE_INVALID');
+  await assert.rejects(wheelService.spin({ code: 'ABCDEF', player: PLAYER }, 'fr'), (error) => error.status === 410 && error.code === 'WHEEL_CODE_EXPIRED');
+  await assert.rejects(wheelService.spin({ code: 'ZZZZZZ', player: PLAYER }, 'fr'), (error) => error.status === 404 && error.code === 'WHEEL_CODE_INVALID');
+  await assert.rejects(wheelService.spin({ code: 'ABCDEF', player: 'b'.repeat(64) }, 'fr'), (error) => error.status === 422 && error.code === 'WHEEL_PLAYER_REQUIRED');
   assert.equal(code.usedAt, null);
 });
 
@@ -1021,12 +1031,12 @@ test('un lot épuisé ou désactivé disparaît de la roue, et une roue vide ne 
   const code = { code: 'QWERTY', usedAt: null, expiresAt: new Date(Date.now() + 60000) };
   wheelSetup(context, { segments: [soldOut, inactive], code });
 
-  await assert.rejects(wheelService.spin('QWERTY', 'fr', () => 0), (error) => error.status === 409 && error.code === 'WHEEL_EMPTY');
+  await assert.rejects(wheelService.spin({ code: 'QWERTY', player: PLAYER }, 'fr', () => 0), (error) => error.status === 409 && error.code === 'WHEEL_EMPTY');
   assert.equal(code.usedAt, null);
 
   const lose = { id: 'l1', kind: 'lose', label: 'Pas cette fois', quantity: null, awarded: 0, isActive: true };
   wheelSetup(context, { segments: [soldOut, inactive, lose], code });
-  const outcome = await wheelService.spin('QWERTY', 'fr', (length) => { assert.equal(length, 1); return 0; });
+  const outcome = await wheelService.spin({ code: 'QWERTY', player: PLAYER }, 'fr', (length) => { assert.equal(length, 1); return 0; });
   assert.deepEqual(outcome.segments.map((segment) => segment.id), ['l1']);
   assert.equal(soldOut.awarded, 3);
 });

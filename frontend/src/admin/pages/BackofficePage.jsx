@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Building2, BriefcaseBusiness, CalendarDays, Disc3, Handshake, LogOut, Plus, QrCode, RefreshCw, Search, Ticket, Trophy, UserRound, Users, Video } from 'lucide-react';
-import logo from '../../../../assets/Logo fond blanc.jpeg';
+import hubLogo from '../../assets/brand/hub-logo.png';
 import ConfirmDelete from '../components/ConfirmDelete';
 import ConfirmReward from '../components/ConfirmReward';
 import QrCodeDialog from '../components/QrCodeDialog';
@@ -178,7 +178,7 @@ export default function BackofficePage({ session, onLogout }) {
   const visibleProgramEvents = useMemo(() => programEvents.filter((item) => !query || [item.title, item.location, item.description, item.occupant?.name].some((value) => String(value || '').toLowerCase().includes(query))), [programEvents, query]);
   const programTodayStart = new Date().setUTCHours(0, 0, 0, 0);
   const programTodayEnd = programTodayStart + 86_400_000;
-  const visibleChallengePassports = useMemo(() => challengePassports.filter((item) => !query || [item.displayName, item.contact, item.code, ...(item.passages || []).flatMap((passage) => [passage.occupant?.name, passage.validatedBy?.firstName, passage.validatedBy?.lastName])].some((value) => String(value || '').toLowerCase().includes(query))), [challengePassports, query]);
+  const visibleChallengePassports = useMemo(() => challengePassports.filter((item) => !query || [item.displayName, item.email, item.phone, item.contact, item.code, ...(item.passages || []).flatMap((passage) => [passage.occupant?.name, passage.validatedBy?.firstName, passage.validatedBy?.lastName])].some((value) => String(value || '').toLowerCase().includes(query))), [challengePassports, query]);
 
   const visibleWheelSegments = useMemo(() => wheel.segments.filter((item) => !query || [item.label, item.sponsor].some((value) => String(value || '').toLowerCase().includes(query))), [wheel.segments, query]);
 
@@ -273,7 +273,7 @@ export default function BackofficePage({ session, onLogout }) {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="brand-lockup"><img src={logo} alt="API-ZF" /><div><strong>HubInvest</strong><span>Administration</span></div></div>
+        <div className="brand-lockup"><img src={hubLogo} alt="Hub de l’Investissement" /><span>Administration</span></div>
         <nav aria-label="Navigation principale">
           {isSuperAdmin && <><button className={section === 'occupants' ? 'is-active' : ''} onClick={() => switchSection('occupants')} title="Stands"><Building2 size={18} /><span>Stands</span></button><button className={section === 'users' ? 'is-active' : ''} onClick={() => switchSection('users')} title="Accès"><Users size={18} /><span>Accès</span></button><button className={section === 'program' ? 'is-active' : ''} onClick={() => switchSection('program')} title="Programme"><CalendarDays size={18} /><span>Programme</span></button></>}
           {canAccessBusinessModules && <button className={section === 'investor-requests' ? 'is-active' : ''} onClick={() => switchSection('investor-requests')} title="Investor Desk"><BriefcaseBusiness size={18} /><span>Investor Desk</span></button>}

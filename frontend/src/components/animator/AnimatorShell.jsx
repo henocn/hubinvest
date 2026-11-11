@@ -1,5 +1,5 @@
 import { CircleUserRound, Gift, ScanLine } from 'lucide-react';
-import apizfLogo from '../../../../assets/Logo sans fond.png';
+import hubLogo from '../../assets/brand/hub-logo.png';
 
 const links = [
   { href: '/espace-animateur', label: 'Scan', Icon: ScanLine },
@@ -13,7 +13,7 @@ export default function AnimatorShell({ children }) {
   return (
     <div className="occupant-shell animator-shell">
       <header className="occupant-logo-header animator-logo-header">
-        <span className="occupant-apizf-logo-frame"><img className="occupant-apizf-logo" src={apizfLogo} alt="API-ZF" /></span>
+        <img className="occupant-hub-logo" src={hubLogo} alt="Hub de l’Investissement" />
       </header>
       {children}
       <nav className="occupant-bottom-nav animator-bottom-nav" aria-label="Navigation de l’espace animateur">

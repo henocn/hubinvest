@@ -6,6 +6,7 @@ const errorKeys = {
   WHEEL_CODE_EXPIRED: 'wheel.errors.expired',
   WHEEL_EMPTY: 'wheel.notReady',
   WHEEL_RATE_LIMITED: 'wheel.errors.rateLimited',
+  WHEEL_PLAYER_REQUIRED: 'play.identifyFirst',
 };
 
 export const publicErrorMessage = (t, error) => t(errorKeys[error?.code] || 'common.requestFailed');

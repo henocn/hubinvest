@@ -10,6 +10,9 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 
 - [ ] Nom du jeu : « Défis de la preuve » et parcours « Trouvez les trois preuves » (CDC) devenus « Défis du Hub » et « Trouvez les trois étapes » (PDF). Aligner les libellés FR/EN.
 - [x] Roue des opportunités : confirmée sur téléphone, avec un code à usage unique remis par un administrateur.
+- [x] Défis : page des deux jeux, identification commune (nom, prénom, e-mail, téléphone validé par libphonenumber-js), parties de roue rattachées au joueur.
+- [x] Logo du Hub, favicon et icônes de l’application issus de la charte.
+- [ ] Appliquer le champ téléphone obligatoire (`PhoneField`) aux autres formulaires : Investor Desk, B2B, recontact.
 - [ ] Le positionnement passe de « La preuve par le Togo » à « Avec vous, à chaque étape » et à la série « Ils avancent avec l’API-ZF » : la fiche occupant doit-elle porter la success story (parcours avec l’Agence) ?
 - [ ] Formats du Studio : « 21 secondes avec… » (CDC) remplacé par « 2 min avec… », « API-ZF en 60 secondes » et Face-à-face (PDF).
 - [ ] Rencontres B2B : tables de 20 minutes (CDC) et « Rencontres express » de 10 minutes pendant la Journée API-ZF (PDF).

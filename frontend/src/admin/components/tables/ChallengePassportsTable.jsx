@@ -1,11 +1,6 @@
 import { CheckCircle2, Gift, Trophy, XCircle } from 'lucide-react';
 import EmptyState from '../EmptyState';
-
-const contactHref = (contact) => {
-  if (contact.includes('@')) return `mailto:${contact}`;
-  if (/^[+\d\s().-]+$/.test(contact)) return `tel:${contact.replace(/[^\d+]/g, '')}`;
-  return null;
-};
+import PlayerContact from '../../../components/PlayerContact';
 
 export default function ChallengePassportsTable({ passports, query, onRedeem, allowReward = true }) {
   if (!passports.length) {
@@ -24,7 +19,7 @@ export default function ChallengePassportsTable({ passports, query, onRedeem, al
           const actionLabel = passport.status === 'redeemed' ? 'Récompense déjà remise' : canRedeem ? `Remettre la récompense à ${passport.displayName}` : 'Récompense indisponible';
           return <tr key={passport.id} className={`challenge-row is-${passport.status}`}>
             <td><strong>{passport.displayName}</strong></td>
-            <td>{passport.contact && contactHref(passport.contact) ? <a className="challenge-table-contact" href={contactHref(passport.contact)}>{passport.contact}</a> : <span className={passport.contact ? '' : 'challenge-table-empty'}>{passport.contact || '—'}</span>}</td>
+            <td><PlayerContact player={passport} /></td>
             <td><code className="challenge-table-code">{passport.code}</code></td>
             <td className="challenge-table-scans">{passport.passageCount}</td>
             <td><span className="challenge-table-people" title={validators}>{validators || '—'}</span></td>

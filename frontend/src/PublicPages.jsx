@@ -1,5 +1,6 @@
 import PublicHeader from './components/PublicHeader';
 import PublicBottomNav from './components/PublicBottomNav';
+import BrandFooter from './components/BrandFooter';
 import B2bDetailPage from './pages/B2bDetailPage';
 import B2bListPage from './pages/B2bListPage';
 import HomePage from './pages/HomePage';
@@ -51,6 +52,7 @@ export default function PublicPages({ path }) {
     <div className="public-app">
       <PublicHeader />
       {page}
+      <BrandFooter />
       <PublicBottomNav path={path} />
     </div>
   );

@@ -2,6 +2,7 @@ import { Gift } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { useRealtimeEvent } from '../lib/realtime';
+import PlayerContact from '../components/PlayerContact';
 
 const formatRedeemedAt = (value) => (value
   ? new Date(value).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -55,7 +56,7 @@ export default function AnimatorRewardsPage({ session, onLogout }) {
               {rewards.map((reward) => (
                 <tr key={reward.id} className={reward.redeemedByMe ? 'is-mine' : undefined}>
                   <td>{reward.displayName}</td>
-                  <td>{reward.contact}</td>
+                  <td><PlayerContact player={reward} /></td>
                   <td>{formatRedeemedAt(reward.redeemedAt)}</td>
                 </tr>
               ))}

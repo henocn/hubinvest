@@ -8,7 +8,7 @@ const getPublic = async (request, response) => response.json({
 
 // Fait tourner la roue avec un code à usage unique.
 const spin = async (request, response) => response.json({
-  data: await wheelService.spin(request.body.code, publicLanguage(request)),
+  data: await wheelService.spin(request.body, publicLanguage(request)),
 });
 
 // Renvoie les cases, les derniers codes et les chiffres de la roue.

@@ -44,8 +44,12 @@ const createPublic = async (values) => {
   const passport = await challengePassportRepository.create({
     token: crypto.randomBytes(32).toString('hex'),
     code: createCode(),
-    displayName: values.displayName,
-    contact: values.contact,
+    displayName: `${values.firstName} ${values.lastName}`,
+    firstName: values.firstName,
+    lastName: values.lastName,
+    email: values.email,
+    phone: values.phone,
+    contact: null,
     status: 'active',
     completedAt: null,
     redeemedAt: null,
@@ -93,6 +97,8 @@ const getByCode = async (code) => {
 const listRewards = async (user) => (await challengePassportRepository.findRedeemed()).map((passport) => ({
   id: passport.id,
   displayName: passport.displayName,
+  email: passport.email,
+  phone: passport.phone,
   contact: passport.contact,
   redeemedAt: passport.redeemedAt,
   redeemedByMe: passport.redeemedByUserId === user.id,

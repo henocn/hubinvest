@@ -83,6 +83,8 @@ WheelSegment.hasMany(WheelCode, { foreignKey: 'segmentId', as: 'codes' });
 WheelCode.belongsTo(WheelSegment, { foreignKey: 'segmentId', as: 'segment' });
 User.hasMany(WheelCode, { foreignKey: 'createdByUserId', as: 'createdWheelCodes' });
 WheelCode.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
+ChallengePassport.hasMany(WheelCode, { foreignKey: 'passportId', as: 'wheelCodes' });
+WheelCode.belongsTo(ChallengePassport, { foreignKey: 'passportId', as: 'player' });
 
 module.exports = {
   sequelize,

@@ -6,7 +6,7 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 
 - Interface sobre, propre, simple et directement compréhensible, inspirée de la clarté de Postman sans la copier.
 - Éviter les signes de design généré par IA : textes de remplissage, cartes imbriquées, badges décoratifs, détails gratuits et grands espaces sans fonction.
-- Suivre la charte graphique du Hub (couleurs, Sen pour les titres, Arial pour le texte, boutons en pilule, action principale rouge) sans alourdir l’UX : pas de supergraphie ni de motifs décoratifs dans les écrans de travail. Logos du dossier `assets/`, icônes Lucide, aucun emoji.
+- Suivre la charte graphique du Hub (couleurs, Sen pour les titres, Arial pour le texte, boutons en pilule, action principale rouge) sans alourdir l’UX : pas de supergraphie dans les écrans de travail. Le logo du Hub (`frontend/src/assets/brand/`, tiré de `assets/Logo Hub couleur.png` et `assets/Logo Hub blanc.png`) signe toutes les interfaces ; l’API-ZF apparaît en co-marquage « Une initiative de », à 60 % de la hauteur du Hub, séparée par un filet gris. Le symbole seul sert au favicon, aux icônes de l’application et en filigrane léger (bandeaux, page de connexion), jamais comme signature principale. Icônes Lucide, aucun emoji.
 - Employer des bordures horizontales et verticales légèrement noires pour structurer les tableaux sans les alourdir.
 - Un défaut visible d’alignement, de proportion, de centrage, de hauteur ou d’espacement bloque la livraison, même si l’écran fonctionne.
 - Ne jamais forcer un retour à la ligne (largeur maximale étroite sur un titre, `<br>`) : le texte occupe la largeur disponible et ne passe à la ligne que lorsque l'écran l'exige, ou quand un design particulier le justifie vraiment.
@@ -55,6 +55,7 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 - Investor Desk : l’API-ZF reçoit toujours la demande. Une fois qu’elle l’a acceptée, l’entreprise ou l’organe concerné reçoit une notification anonyme, visible dans son espace.
 - B2B : c’est l’API-ZF qui accepte ou refuse une proposition de rencontre, pour le compte de l’entreprise.
 - Roue des opportunités (dans les Défis, page `/roue`) : pour jouer, un administrateur génère dans l’administration un code à usage unique (6 caractères, valable 30 minutes) qu’il donne au visiteur. Le tirage se fait côté serveur, au hasard parmi les cases visibles : chaque lot avec sa quantité restante et des cases perdantes « fun ». Un lot épuisé, sans quantité ou masqué disparaît de la roue. Les quantités se règlent dans l’administration. Le visiteur gagnant montre son écran (lot, partenaire, code) au stand.
+- Défis (`/defis`) : la page présente les deux jeux, le parcours des stands et la roue. Un bouton central en bas, « S’identifier pour jouer », ouvre une fenêtre qui demande nom, prénom, e-mail et téléphone ; cette identification vaut pour les deux jeux. La roue n’accepte un code que d’un joueur identifié, et chaque partie est rattachée au joueur dans l’administration.
 - Studio : L’invité reçoit son lien par copie manuelle et aussi par e-mail.
 - Le classement A, B, C est conservé sur les passages des Défis. Le nombre de stands requis reste un paramètre (3 par défaut) ; les récompenses sont gérées sur le terrain.
 - Le suivi des questions ouvertes pour la direction est tenu dans `QUESTIONS.md`.
@@ -84,7 +85,7 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 - Présenter le choix de langue dans un sélecteur compact avec le nom de la langue puis son drapeau, plutôt que deux boutons séparés.
 - Dans l’espace occupant, placer également les destinations principales dans une navigation basse ; conserver en haut uniquement l’identité visuelle.
 - Ne pas afficher l’accès occupant dans la navigation publique : les occupants reçoivent leur lien directement et toute route protégée les envoie vers la connexion si leur session est absente.
-- Dans l’espace occupant, afficher uniquement le logo API-ZF à gauche et le logo de l’institution à droite, assez grands pour être lisibles, sans nom répété au centre. La navigation basse contient Contacts, Défis et Profil ; la déconnexion appartient à la page Profil.
+- Dans l’espace occupant, afficher uniquement le logo du Hub à gauche et le logo de l’institution à droite, assez grands pour être lisibles, sans nom répété au centre. La navigation basse contient Contacts, Défis et Profil ; la déconnexion appartient à la page Profil.
 - Un lien public personnel inexistant ou deviné doit aboutir à un véritable état 404, sans révéler d’information sur les autres participants.
 - Toute donnée collectée dans un parcours public doit être consultable dans l’espace de travail de l’équipe qui doit réellement l’utiliser.
 - Un participant déjà inscrit aux défis doit retrouver automatiquement son parcours pendant 20 jours sur le même navigateur. Stocker localement uniquement le jeton et son expiration, jamais son nom ni son contact.

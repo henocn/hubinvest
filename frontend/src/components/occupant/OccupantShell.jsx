@@ -1,6 +1,6 @@
 import { CircleUserRound, Trophy, Users } from 'lucide-react';
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import apizfLogo from '../../../../assets/Logo sans fond.png';
+import hubLogo from '../../assets/brand/hub-logo.png';
 import { api, resolveAssetUrl } from '../../lib/api';
 import { useRealtimeEvent } from '../../lib/realtime';
 
@@ -42,7 +42,7 @@ export default function OccupantShell({ session, onLogout, children }) {
     <OccupantProfileContext.Provider value={profile}>
       <div className="occupant-shell">
         <header className="occupant-logo-header">
-          <span className="occupant-apizf-logo-frame"><img className="occupant-apizf-logo" src={apizfLogo} alt="API-ZF" /></span>
+          <img className="occupant-hub-logo" src={hubLogo} alt="Hub de l’Investissement" />
           {profile?.occupant?.logoUrl
             ? <img className="occupant-institution-logo" src={resolveAssetUrl(profile.occupant.logoUrl)} alt={`Logo ${occupantName}`} />
             : <span className="occupant-logo-placeholder" aria-label={`Logo ${occupantName}`}>{occupantName.slice(0, 1).toUpperCase()}</span>}

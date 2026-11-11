@@ -1,13 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { ArrowRight, Disc3, Route } from 'lucide-react';
 import ChallengePassportCard from '../components/ChallengePassportCard';
-import ChallengeStartForm from '../components/ChallengeStartForm';
+import PlayCta from '../components/PlayCta';
+import PlayerIdentifyDialog from '../components/PlayerIdentifyDialog';
 import NotFoundPage from './NotFoundPage';
 import { api } from '../lib/api';
 import { clearChallengePassportToken, readChallengePassportToken, saveChallengePassportToken } from '../lib/challenge-passport-store';
-import { useTranslation } from 'react-i18next';
-import { ChevronRight, Disc3 } from 'lucide-react';
 import { publicErrorMessage } from '../lib/public-error';
 import { useRealtimeConnected, useRealtimeConnection, useRealtimeEvent } from '../lib/realtime';
+
+// Présente un jeu des Défis : ce qu'on y gagne et comment y jouer.
+function GameCard({ icon: Icon, tone, title, text, steps, doneSteps = 0, action }) {
+  return (
+    <article className={`play-game is-${tone}`}>
+      <span className="play-game-icon" aria-hidden="true"><Icon size={26} /></span>
+      <h2>{title}</h2>
+      <p>{text}</p>
+      <ol>{steps.map((step, index) => <li key={step} className={index < doneSteps ? 'is-done' : undefined}>{step}</li>)}</ol>
+      {action}
+    </article>
+  );
+}
 
 export default function ChallengePage({ token }) {
   const { t } = useTranslation();
@@ -17,6 +31,8 @@ export default function ChallengePage({ token }) {
   const [loading, setLoading] = useState(Boolean(initialToken));
   const [error, setError] = useState('');
   const [notFound, setNotFound] = useState(false);
+  const [identifying, setIdentifying] = useState(false);
+  const passportRef = useRef(null);
 
   useEffect(() => {
     if (!personalToken || passport) return undefined;
@@ -45,12 +61,13 @@ export default function ChallengePage({ token }) {
     return () => { active = false; };
   }, [passport, personalToken, t, token]);
 
-  const created = (data) => {
+  const identified = (data) => {
     window.history.replaceState({}, '', `/defis/${data.token}`);
     const { token: newToken, ...publicPassport } = data;
     saveChallengePassportToken(newToken);
     setPersonalToken(newToken);
     setPassport(publicPassport);
+    setIdentifying(false);
   };
 
   const hasPassport = Boolean(passport?.code && personalToken);
@@ -89,13 +106,46 @@ export default function ChallengePage({ token }) {
 
   if (notFound) return <NotFoundPage />;
 
+  const showPassport = () => passportRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
   return (
     <main className="public-container challenge-page">
-      {!passport && !loading && !error && <section className="challenge-start-panel"><span className="public-eyebrow">{t('challenge.eyebrow')}</span><h1>{t('challenge.title')}</h1><p>{t('challenge.intro')}</p><ChallengeStartForm onCreated={created} /></section>}
+      <section className="play-intro">
+        <span className="public-eyebrow">{t('challenge.eyebrow')}</span>
+        <h1>{hasPassport ? t('play.welcome', { name: passport.displayName }) : t('play.title')}</h1>
+        <p>{hasPassport ? t('play.readyIntro') : t('play.intro')}</p>
+      </section>
+
       {loading && <p className="public-message">{t('challenge.loading')}</p>}
       {error && <p className="public-message is-error">{error}</p>}
-      {passport && <ChallengePassportCard passport={passport} />}
-      {!loading && <a className="challenge-wheel-link" href="/roue"><Disc3 size={22} aria-hidden="true" /><span><strong>{t('wheel.title')}</strong>{t('wheel.link')}</span><ChevronRight size={18} aria-hidden="true" /></a>}
+
+      {!loading && (
+        <div className="play-games">
+          <GameCard
+            icon={Route}
+            tone="route"
+            title={t('play.routeTitle')}
+            text={hasPassport ? t('play.routeTextCount', { count: passport.requiredPassages }) : t('play.routeText')}
+            steps={[t('play.routeStep1'), t('play.routeStep2'), t('play.routeStep3')]}
+            doneSteps={hasPassport ? 1 : 0}
+            action={hasPassport && <button className="button button-secondary" type="button" onClick={showPassport}>{t('play.routeAction')}<ArrowRight size={17} /></button>}
+          />
+          <GameCard
+            icon={Disc3}
+            tone="wheel"
+            title={t('wheel.title')}
+            text={t('play.wheelText')}
+            steps={[t('play.wheelStep1'), t('play.wheelStep2'), t('play.wheelStep3')]}
+            doneSteps={hasPassport ? 1 : 0}
+            action={hasPassport && <a className="button button-primary" href="/roue">{t('play.wheelAction')}<ArrowRight size={17} /></a>}
+          />
+        </div>
+      )}
+
+      {passport && <div ref={passportRef} className="play-passport"><ChallengePassportCard passport={passport} /></div>}
+
+      {!loading && !hasPassport && <PlayCta onClick={() => setIdentifying(true)} />}
+      {identifying && <PlayerIdentifyDialog onClose={() => setIdentifying(false)} onIdentified={identified} />}
     </main>
   );
 }

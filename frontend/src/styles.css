@@ -77,22 +77,37 @@ button:disabled {
   border-bottom: 1px solid var(--border);
 }
 
-.login-brand img {
-  width: 78px;
-  height: 48px;
-  object-fit: contain;
+.login-brand {
+  position: relative;
+  overflow: hidden;
+  flex-wrap: wrap;
 }
 
-.login-brand div {
-  display: grid;
-  gap: 2px;
+/* Le motif du Hub en filigrane, derrière le logo. */
+.login-brand::after {
+  content: "";
+  position: absolute;
+  right: -70px;
+  bottom: -80px;
+  width: 260px;
+  height: 245px;
+  background: url('./assets/brand/hub-symbol.png') center / contain no-repeat;
+  opacity: 0.08;
+  pointer-events: none;
 }
 
-.login-brand strong {
-  font-size: 1.08rem;
+.login-hub-logo {
+  width: auto;
+  height: 64px;
+  display: block;
 }
 
-.login-brand span,
+.login-space {
+  flex-basis: 100%;
+  font-weight: 700;
+}
+
+.login-space,
 .page-heading p,
 .contact-main span {
   color: var(--muted);
@@ -367,19 +382,10 @@ select:focus {
   border-bottom: 1px solid var(--border);
 }
 
-.occupant-apizf-logo-frame {
-  width: 80px;
-  height: 54px;
+.occupant-hub-logo {
+  width: auto;
+  height: 52px;
   display: block;
-  overflow: hidden;
-}
-
-.occupant-apizf-logo {
-  width: 80px;
-  height: 54px;
-  display: block;
-  object-fit: contain;
-  transform: scale(1.6);
 }
 
 .occupant-institution-logo {
@@ -1229,11 +1235,13 @@ select:focus {
     padding-inline: 14px;
   }
 
-  .occupant-apizf-logo-frame,
-  .occupant-apizf-logo,
   .occupant-institution-logo {
     width: 72px;
     height: 48px;
+  }
+
+  .occupant-hub-logo {
+    height: 46px;
   }
 
   .heading-with-action {
@@ -1318,11 +1326,18 @@ select:focus {
   }
 
   .login-brand {
+    flex-direction: column;
+    flex-wrap: nowrap;
     align-items: flex-start;
+    gap: 26px;
     padding: 44px;
     border-right: 1px solid var(--border);
     border-bottom: 0;
     background: #f3f6f5;
+  }
+
+  .login-space {
+    flex-basis: auto;
   }
 
   .login-panel {
@@ -1337,4 +1352,51 @@ select:focus {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+.player-contact {
+  display: grid;
+  gap: 2px;
+  font-size: 0.86em;
+}
+
+.player-contact a {
+  color: var(--green);
+  font-weight: 600;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.player-contact a:hover {
+  text-decoration: underline;
+}
+
+/* Co-marquage en pied de page : l'API-ZF à 60 % de la hauteur du logo du Hub. */
+.brand-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 26px 20px 30px;
+}
+
+.brand-footer small {
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.brand-footer img {
+  width: auto;
+  height: 37px;
+  display: block;
+}
+
+.login-footer {
+  justify-content: flex-start;
+  margin-top: 40px;
+  padding: 18px 0 0;
+  border-top: 1px solid var(--border);
 }

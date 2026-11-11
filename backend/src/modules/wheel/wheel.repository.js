@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const { sequelize, WheelSegment, WheelCode, User } = require('../../models');
+const { sequelize, WheelSegment, WheelCode, User, ChallengePassport } = require('../../models');
 
 const segmentOrder = [['position', 'ASC'], ['createdAt', 'ASC']];
 
@@ -38,13 +38,19 @@ const findCodeForUpdate = (code, transaction) => WheelCode.findOne({
   lock: transaction.LOCK.UPDATE,
 });
 
+// Retrouve le joueur identifié à partir de son lien personnel.
+const findPlayerByToken = (token, transaction) => ChallengePassport.findOne({ where: { token }, attributes: ['id'], transaction });
+
 const createCode = (values) => WheelCode.create(values);
 
 const updateCode = (wheelCode, values, transaction) => wheelCode.update(values, { transaction });
 
 // Liste les derniers codes délivrés, avec la personne qui les a donnés.
 const findRecentCodes = (limit) => WheelCode.findAll({
-  include: [{ model: User, as: 'createdBy', attributes: ['id', 'firstName', 'lastName'], required: false }],
+  include: [
+    { model: User, as: 'createdBy', attributes: ['id', 'firstName', 'lastName'], required: false },
+    { model: ChallengePassport, as: 'player', attributes: ['id', 'displayName', 'email', 'phone'], required: false },
+  ],
   order: [['createdAt', 'DESC']],
   limit,
 });
@@ -64,6 +70,7 @@ module.exports = {
   removeSegment,
   recordAward,
   findCodeForUpdate,
+  findPlayerByToken,
   createCode,
   updateCode,
   findRecentCodes,

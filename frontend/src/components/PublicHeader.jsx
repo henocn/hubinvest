@@ -1,4 +1,4 @@
-import logo from '../../../assets/Logo fond blanc.jpeg';
+import hubLogo from '../assets/brand/hub-logo.png';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown } from 'lucide-react';
 
@@ -25,8 +25,7 @@ export default function PublicHeader() {
   return (
     <header className="public-header">
       <a className="public-brand" href="/" aria-label={t('brand.homeLabel')}>
-        <img src={logo} alt="API-ZF" />
-        <span><strong>HubInvest</strong><small>{t('brand.subtitle')}</small></span>
+        <img src={hubLogo} alt={t('brand.subtitle')} />
       </a>
       <div className="language-select">
         <select value={language} onChange={(event) => i18n.changeLanguage(event.target.value)} aria-label={t('language.label')}>

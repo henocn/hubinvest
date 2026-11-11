@@ -17,6 +17,11 @@ module.exports = (sequelize, DataTypes) =>
         allowNull: true,
         field: 'created_by_user_id',
       },
+      passportId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        field: 'passport_id',
+      },
       expiresAt: {
         type: DataTypes.DATE,
         allowNull: false,

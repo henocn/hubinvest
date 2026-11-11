@@ -1,13 +1,14 @@
-import logo from '../../../assets/Logo fond blanc.jpeg';
+import hubLogo from '../assets/brand/hub-logo.png';
+import BrandFooter from './BrandFooter';
 
 export default function AuthLayout({ children }) {
   return (
     <main className="login-page">
       <section className="login-brand">
-        <img src={logo} alt="API-ZF" />
-        <div><strong>HubInvest</strong><span>Espace équipe</span></div>
+        <img className="login-hub-logo" src={hubLogo} alt="Hub de l’Investissement" />
+        <span className="login-space">Espace équipe</span>
       </section>
-      <section className="login-panel">{children}</section>
+      <section className="login-panel">{children}<BrandFooter className="login-footer" /></section>
     </main>
   );
 }

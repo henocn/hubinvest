@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import PlayCta from '../components/PlayCta';
+import PlayerIdentifyDialog from '../components/PlayerIdentifyDialog';
 import WheelOfFortune from '../components/WheelOfFortune';
 import { api } from '../lib/api';
+import { clearChallengePassportToken, readChallengePassportToken, saveChallengePassportToken } from '../lib/challenge-passport-store';
 import { publicErrorMessage } from '../lib/public-error';
 
 const FULL_TURNS = 6;
@@ -25,6 +28,8 @@ export default function WheelPage() {
   const [rotation, setRotation] = useState(0);
   const [outcome, setOutcome] = useState(null);
   const [revealed, setRevealed] = useState(false);
+  const [player, setPlayer] = useState(() => readChallengePassportToken());
+  const [identifying, setIdentifying] = useState(false);
   const pendingOutcome = useRef(null);
   const resultRef = useRef(null);
 
@@ -54,7 +59,7 @@ export default function WheelPage() {
     setError('');
     setSpinning(true);
     try {
-      const data = await api.spinWheel(code);
+      const data = await api.spinWheel(code, player);
       const index = data.segments.findIndex((segment) => segment.id === data.result.id);
       pendingOutcome.current = data;
       setSegments(data.segments);
@@ -62,8 +67,19 @@ export default function WheelPage() {
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) window.setTimeout(reveal, 700);
     } catch (requestError) {
       setSpinning(false);
+      if (requestError.code === 'WHEEL_PLAYER_REQUIRED') {
+        clearChallengePassportToken();
+        setPlayer('');
+      }
       setError(publicErrorMessage(t, requestError));
     }
+  };
+
+  const identified = (data) => {
+    saveChallengePassportToken(data.token);
+    setPlayer(data.token);
+    setIdentifying(false);
+    setError('');
   };
 
   const playAgain = () => {
@@ -84,7 +100,10 @@ export default function WheelPage() {
         {!loading && !segments.length && !error && <p className="public-message">{t('wheel.notReady')}</p>}
         {segments.length > 0 && <WheelOfFortune segments={segments} rotation={rotation} spinning={spinning} onSpinEnd={reveal} />}
 
-        {revealed && outcome ? (
+        {!player && !loading && <p className="wheel-locked">{t('play.wheelLocked')}</p>}
+        {!player && error && <p className="form-error">{error}</p>}
+
+        {!player ? null : revealed && outcome ? (
           <div ref={resultRef} className={`wheel-result${won ? ' is-won' : ''}`} role="status">
             {won && <span>{t('wheel.won')}</span>}
             <strong>{outcome.result.label}</strong>
@@ -115,6 +134,8 @@ export default function WheelPage() {
           </form>
         )}
       </section>
+      {!player && !loading && <PlayCta onClick={() => setIdentifying(true)} />}
+      {identifying && <PlayerIdentifyDialog onClose={() => setIdentifying(false)} onIdentified={identified} />}
     </main>
   );
 }
