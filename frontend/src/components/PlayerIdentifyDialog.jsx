@@ -1,30 +1,48 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight } from 'lucide-react';
-import PhoneField from './PhoneField';
 import PublicDialog from './PublicDialog';
 import { api } from '../lib/api';
-import { isValidPhone, toInternationalPhone } from '../lib/phone';
+import { formatPhoneInput, toInternationalPhone } from '../lib/phone';
 import { publicErrorMessage } from '../lib/public-error';
 
-// Identifie le joueur une seule fois pour les deux jeux des Défis : parcours des stands et roue.
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_CHARACTERS = /^[+\d\s().-]*$/;
+
+// Le joueur donne un e-mail ou un téléphone : l'e-mail est gardé tel quel, le numéro passe au format international.
+const normalizeContact = (value) => {
+  const contact = value.trim();
+  if (contact.includes('@')) return EMAIL.test(contact) ? contact.toLowerCase() : '';
+  return toInternationalPhone(contact);
+};
+
+// Identifie le joueur une seule fois pour les deux jeux des Défis, avec deux champs seulement.
 export default function PlayerIdentifyDialog({ onClose, onIdentified }) {
   const { t } = useTranslation();
-  const [form, setForm] = useState({ lastName: '', firstName: '', email: '', phone: '' });
+  const [fullName, setFullName] = useState('');
+  const [contact, setContact] = useState('');
+  const [contactError, setContactError] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
 
-  const field = (name) => (event) => setForm((current) => ({ ...current, [name]: event.target.value }));
+  // Un numéro se met en forme pendant la saisie ; dès qu'une lettre ou un @ apparaît, la valeur reste libre.
+  const changeContact = (event) => {
+    const { value } = event.target;
+    setContact(PHONE_CHARACTERS.test(value) && /\d/.test(value) ? formatPhoneInput(value) : value);
+    setContactError('');
+  };
 
   const submit = async (event) => {
     event.preventDefault();
-    setSubmitted(true);
-    if (!isValidPhone(form.phone)) return;
+    const normalized = normalizeContact(contact);
+    if (!normalized) {
+      setContactError(t('play.contactInvalid'));
+      return;
+    }
     setLoading(true);
     setError('');
     try {
-      onIdentified(await api.createChallengePassport({ ...form, phone: toInternationalPhone(form.phone) }));
+      onIdentified(await api.createChallengePassport({ fullName: fullName.trim(), contact: normalized }));
     } catch (requestError) {
       setError(publicErrorMessage(t, requestError));
       setLoading(false);
@@ -33,15 +51,15 @@ export default function PlayerIdentifyDialog({ onClose, onIdentified }) {
 
   return (
     <PublicDialog title={t('play.identifyTitle')} intro={t('play.identifyIntro')} onClose={onClose} locked={loading}>
-      <form className="player-form" onSubmit={submit}>
-        <div className="public-field-row">
-          <label>{t('fields.lastName')}<input value={form.lastName} onChange={field('lastName')} maxLength={80} autoComplete="family-name" autoFocus required /></label>
-          <label>{t('fields.firstName')}<input value={form.firstName} onChange={field('firstName')} maxLength={80} autoComplete="given-name" required /></label>
-        </div>
-        <label>{t('fields.email')}<input type="email" value={form.email} onChange={field('email')} maxLength={180} autoComplete="email" required /></label>
-        <PhoneField value={form.phone} onChange={(phone) => setForm((current) => ({ ...current, phone }))} showError={submitted} />
+      <form className="player-form" onSubmit={submit} noValidate>
+        <label>{t('play.fullName')}<input value={fullName} onChange={(event) => setFullName(event.target.value)} minLength={2} maxLength={120} autoComplete="name" autoFocus required /></label>
+        <label>
+          {t('play.contact')}
+          <input value={contact} onChange={changeContact} maxLength={180} autoComplete="on" autoCapitalize="none" spellCheck="false" aria-invalid={Boolean(contactError)} required />
+          {contactError && <small className="field-hint is-error" role="alert">{contactError}</small>}
+        </label>
         {error && <p className="request-error" role="alert">{error}</p>}
-        <button className="button button-primary button-large" type="submit" disabled={loading}>{loading ? t('play.identifying') : t('play.identifySubmit')}<ArrowRight size={18} /></button>
+        <button className="button button-primary button-large" type="submit" disabled={loading || fullName.trim().length < 2 || !contact.trim()}>{loading ? t('play.identifying') : t('play.identifySubmit')}<ArrowRight size={18} /></button>
       </form>
     </PublicDialog>
   );

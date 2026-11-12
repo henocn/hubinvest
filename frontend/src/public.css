@@ -1644,6 +1644,11 @@
   font-size: 1.35rem;
 }
 
+.player-dialog > header > div {
+  flex: 1;
+  min-width: 0;
+}
+
 .player-dialog header p {
   margin: 0;
   color: var(--muted);

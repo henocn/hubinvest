@@ -523,16 +523,14 @@ test('l’identité d’un joueur est conservée sans être exposée sur son pas
     return { ...values, passages: [] };
   });
 
-  const result = await challengePassportService.createPublic({
-    firstName: 'Afi',
-    lastName: 'Mensah',
-    email: 'afi@example.com',
-    phone: '+22890000000',
-  });
+  const result = await challengePassportService.createPublic({ fullName: 'Afi Mensah', contact: '+22890000000' });
 
   assert.equal(saved.displayName, 'Afi Mensah');
-  assert.equal(saved.email, 'afi@example.com');
+  assert.equal(saved.email, null);
   assert.equal(saved.phone, '+22890000000');
+  await challengePassportService.createPublic({ fullName: 'Afi Mensah', contact: 'afi@example.com' });
+  assert.equal(saved.email, 'afi@example.com');
+  assert.equal(saved.phone, null);
   assert.equal(result.displayName, 'Afi Mensah');
   assert.equal(result.email, undefined);
   assert.equal(result.phone, undefined);
@@ -1076,4 +1074,12 @@ test('une description trop longue est coupée sur un mot', () => {
   const summary = seoService.summarize(text);
   assert.ok(summary.length <= 160);
   assert.match(summary, /investissement…$/);
+});
+
+test('pour jouer, un nom complet et un e-mail ou un téléphone suffisent', () => {
+  const { createPublic } = require('../src/modules/challenge-passport/challenge-passport.validation');
+  assert.equal(createPublic.validate({ fullName: 'Afi Mensah', contact: 'AFI@Example.com' }).value.contact, 'afi@example.com');
+  assert.equal(createPublic.validate({ fullName: 'Afi Mensah', contact: '+22890000000' }).error, undefined);
+  assert.ok(createPublic.validate({ fullName: 'Afi Mensah', contact: 'pas un contact' }).error);
+  assert.ok(createPublic.validate({ fullName: 'Afi Mensah' }).error);
 });
