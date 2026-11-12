@@ -1,6 +1,6 @@
 .public-app {
   min-height: 100vh;
-  padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  padding-bottom: calc(66px + env(safe-area-inset-bottom));
   color: #0f1822;
   background: #f4f5f5;
 }
@@ -10,30 +10,195 @@
   margin-inline: auto;
 }
 
+/* En-tête façon application : bandeau vert fixé en haut, menu à gauche, logo blanc. */
 .public-header {
-  min-height: 82px;
+  position: sticky;
+  z-index: 25;
+  top: 0;
+  min-height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
-  padding: 14px max(20px, calc((100vw - 1080px) / 2));
-  border-top: 5px solid var(--green);
-  border-bottom: 1px solid var(--border);
-  background: #fff;
+  gap: 6px;
+  padding: calc(8px + env(safe-area-inset-top)) max(12px, calc((100vw - 1080px) / 2)) 8px;
+  background: var(--green);
+  box-shadow: 0 2px 12px rgba(15, 24, 34, 0.16);
 }
+
+.public-menu-button {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  margin-left: -6px;
+  border: 0;
+  border-radius: 10px;
+  color: #fff;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.public-menu-button:hover,
+.public-menu-button:focus-visible { background: rgba(255, 255, 255, 0.14); }
 
 .public-brand {
   display: inline-flex;
   align-items: center;
-  gap: 13px;
   color: inherit;
   text-decoration: none;
 }
 
 .public-brand img {
   width: auto;
-  height: 62px;
+  height: 42px;
   display: block;
+}
+
+/* Panneau latéral ouvert par le bouton menu. */
+.side-menu-backdrop {
+  position: fixed;
+  z-index: 60;
+  inset: 0;
+  background: rgba(15, 24, 34, 0.48);
+  animation: side-menu-fade 0.2s ease;
+}
+
+.side-menu {
+  width: min(86vw, 340px);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: #fff;
+  box-shadow: 8px 0 30px rgba(15, 24, 34, 0.24);
+  outline: none;
+  animation: side-menu-slide 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.side-menu > header {
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: calc(10px + env(safe-area-inset-top)) 10px 10px 20px;
+  background: var(--green);
+}
+
+.side-menu > header img { width: auto; height: 42px; display: block; }
+
+.side-menu > header button {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  color: #fff;
+  background: transparent;
+  cursor: pointer;
+}
+
+.side-menu > header button:hover,
+.side-menu > header button:focus-visible { background: rgba(255, 255, 255, 0.14); }
+
+.side-menu nav {
+  display: grid;
+  gap: 2px;
+  padding: 12px 10px;
+}
+
+.side-menu nav a,
+.side-menu-team {
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 14px;
+  border-radius: 10px;
+  color: #0f1822;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.side-menu nav a svg { color: var(--muted); }
+
+.side-menu nav a:hover,
+.side-menu-team:hover { background: #f4f5f5; }
+
+.side-menu nav a.is-active {
+  color: var(--green);
+  background: rgba(21, 108, 83, 0.1);
+}
+
+.side-menu nav a.is-active svg { color: var(--green); }
+
+.side-menu-section {
+  display: grid;
+  gap: 10px;
+  margin: 0 10px;
+  padding: 16px 14px;
+  border-top: 1px solid var(--border);
+}
+
+.side-menu-section > span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.side-menu-languages {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 10px;
+  background: #f0f2f2;
+}
+
+.side-menu-languages button {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 8px;
+  color: #4d4d4d;
+  background: transparent;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.side-menu-languages button.is-active {
+  color: #0f1822;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(15, 24, 34, 0.14);
+}
+
+.side-menu-languages .language-select-flag { position: static; transform: none; flex: 0 0 auto; }
+
+.side-menu-team {
+  margin: 0 10px;
+  color: var(--green);
+}
+
+.side-menu-footer {
+  margin-top: auto;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+}
+
+@keyframes side-menu-slide { from { transform: translateX(-100%); } }
+@keyframes side-menu-fade { from { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .side-menu, .side-menu-backdrop { animation: none; }
 }
 
 .language-select {
@@ -86,65 +251,67 @@
   display: block;
 }
 
+/* Barre d'onglets façon application : fond vert, onglet actif en pastille. */
 .public-bottom-nav {
   position: fixed;
   z-index: 30;
   right: 0;
   bottom: 0;
   left: 0;
-  border-top: 1px solid rgba(0, 0, 0, 0.17);
-  background: rgba(255, 255, 255, 0.98);
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--green);
+  box-shadow: 0 -6px 20px rgba(15, 24, 34, 0.14);
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .public-bottom-nav > div {
   width: min(100%, 680px);
-  min-height: 71px;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-inline: auto;
-  padding-bottom: env(safe-area-inset-bottom);
+  padding: 8px 6px 9px;
 }
 
 .public-bottom-nav a {
-  position: relative;
   min-width: 0;
-  min-height: 71px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  gap: 5px;
-  color: #4d4d4d;
+  gap: 4px;
+  color: rgba(255, 255, 255, 0.78);
   text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.public-bottom-nav a::before {
-  content: '';
-  position: absolute;
-  top: -1px;
-  left: 25%;
-  width: 50%;
-  height: 2px;
-  background: transparent;
+.public-bottom-nav a svg {
+  width: 56px;
+  height: 30px;
+  padding: 5px 0;
+  border-radius: 15px;
+  transition: background-color 0.18s ease, color 0.18s ease;
 }
 
 .public-bottom-nav a span {
   max-width: 100%;
   overflow: hidden;
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.public-bottom-nav a:hover,
-.public-bottom-nav a.is-active {
-  color: var(--red);
+.public-bottom-nav a:hover { color: #fff; }
+
+.public-bottom-nav a.is-active { color: #fff; }
+
+.public-bottom-nav a.is-active svg {
+  color: var(--green);
+  background: #fff;
 }
 
-.public-bottom-nav a.is-active::before {
-  background: var(--red);
-}
+.public-bottom-nav a:active svg { transform: scale(0.94); }
 
 .public-back:hover {
   color: var(--green);
@@ -477,7 +644,7 @@
 .meeting-choices > a {
   min-height: 104px;
   display: grid;
-  grid-template-columns: 36px minmax(0, 1fr) auto;
+  grid-template-columns: 36px minmax(0, 1fr);
   align-items: center;
   gap: 16px;
   padding: 22px 24px;
@@ -493,7 +660,7 @@
   color: var(--green);
 }
 
-.meeting-choices > a > span:not(.meeting-choice-action) {
+.meeting-choices > a > span {
   display: grid;
   gap: 5px;
 }
@@ -506,15 +673,6 @@
   color: var(--muted);
   font-size: 0.84rem;
   line-height: 1.45;
-}
-
-.meeting-choice-action {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  color: var(--green);
-  font-size: 0.82rem;
-  font-weight: 750;
 }
 
 .public-main {
@@ -719,9 +877,7 @@
 
 .stand-profile-section {
   max-width: 700px;
-  margin-top: 42px;
-  padding-top: 26px;
-  border-top: 1px solid var(--border);
+  margin-top: 18px;
 }
 
 .stand-profile-section h2 {
@@ -1323,14 +1479,13 @@
   gap: 12px;
   padding: clamp(22px, 4vw, 30px);
   overflow: hidden;
-  border: 1px solid rgba(0, 0, 0, 0.14);
-  border-top: 4px solid var(--green);
+  border: 2px solid var(--green);
   border-radius: 10px;
   background: #fff;
 }
 
 .play-game.is-wheel {
-  border-top-color: var(--yellow);
+  border-color: var(--yellow);
 }
 
 .play-game-icon {
@@ -1446,7 +1601,7 @@
   position: fixed;
   z-index: 31;
   left: 50%;
-  bottom: calc(71px + env(safe-area-inset-bottom) + 14px);
+  bottom: calc(66px + env(safe-area-inset-bottom) + 14px);
   transform: translateX(-50%);
 }
 
@@ -1628,10 +1783,11 @@
 }
 
 @media (max-width: 720px) {
-  .public-header { min-height: 74px; }
-  .public-brand img { height: 52px; }
+  .public-intro { padding: 26px 0 24px; }
+  .public-main { padding-block: 24px 40px; }
+  .meetings-page { padding-block: 26px 40px; }
+  .meetings-page > header { margin-bottom: 20px; }
   .meeting-choices > a { grid-template-columns: 32px minmax(0, 1fr); padding: 19px 18px; }
-  .meeting-choice-action { grid-column: 2; }
   .stand-grid { grid-template-columns: 1fr; }
   .home-spotlight { grid-template-columns: 1fr; }
   .home-spotlight-cover { min-height: 0; aspect-ratio: 16 / 9; border-right: 0; border-bottom: 1px solid rgba(0, 0, 0, 0.12); }
@@ -1642,23 +1798,21 @@
   .public-field-row { grid-template-columns: 1fr; }
   .investor-form-actions { flex-direction: column-reverse; }
   .investor-form-actions .button, .investor-next-button { width: 100%; }
-  .studio-response-page { min-height: calc(100vh - 74px); padding-block: 24px; }
+  .studio-response-page { min-height: calc(100vh - 64px); padding-block: 24px; }
   .studio-schedule { grid-template-columns: 1fr; }
   .studio-schedule span + span { border-top: 1px solid var(--border); border-left: 0; }
   .studio-response-actions { align-items: stretch; flex-direction: column; }
   .studio-response-actions .button { width: 100%; min-height: 48px; }
-  .challenge-page { min-height: calc(100vh - 74px); padding-block: 20px 32px; }
+  .challenge-page { min-height: calc(100vh - 64px); padding-block: 20px 32px; }
   .play-games { grid-template-columns: 1fr; }
   .play-game .button { width: 100%; justify-content: center; }
 }
 
 @media (max-width: 420px) {
-  .public-header { gap: 8px; padding-inline: 12px; }
-  .public-brand img { height: 48px; }
+  .public-brand img { height: 38px; }
   .language-select { width: 128px; }
   .language-select select { padding-left: 10px; }
-  .public-bottom-nav a { gap: 4px; }
-  .public-bottom-nav a span { font-size: 0.62rem; }
+  .public-bottom-nav a span { font-size: 0.64rem; }
   .program-item { grid-template-columns: 52px minmax(0, 1fr); gap: 11px; }
 }
 

@@ -45,7 +45,6 @@ export default function StudioInvitationPage({ token }) {
   return (
     <main className="public-container studio-response-page">
       <section className="studio-response-panel">
-        <span className="public-eyebrow">{t('studio.eyebrow')}</span>
         <h1>{t('studio.invitation', { name: invitation.guestName })}</h1>
         <p className="studio-subject">{invitation.subject}</p>
 

@@ -111,7 +111,6 @@ export default function HomePage() {
     <>
       <section className="public-intro home-intro">
         <div className="public-container">
-          <span className="public-eyebrow">{t('home.eyebrow')}</span>
           <h1>{t('home.title')}</h1>
           <p className="home-date">{formats.day.format(data ? new Date(data.date) : new Date(now))}</p>
         </div>

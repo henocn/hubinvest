@@ -65,7 +65,6 @@ button:disabled {
   min-height: 100vh;
   display: grid;
   grid-template-rows: auto 1fr;
-  border-top: 8px solid var(--green);
   background: var(--surface);
 }
 

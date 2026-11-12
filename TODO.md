@@ -29,6 +29,17 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 - [x] Interface publique FR/EN avec détection de la langue et choix mémorisé ; traduction DeepL des contenus publics.
 - [x] Accès occupant retiré de l’interface publique ; routes protégées et redirections de session.
 
+## Référencement (SEO)
+
+- [x] Titre, description, URL canonique, balises de partage (Open Graph, X) et données structurées par page, insérés par l'API dans l'index.html (`backend/src/modules/seo`). Vraie 404 pour les pages inconnues, `noindex` sur les espaces privés et liens personnels.
+- [x] `robots.txt`, `sitemap.xml` dynamique (pages publiques, stands actifs, besoins B2B ouverts) et image de partage `og-image.png`.
+- [x] Les robots lisent la version française (Googlebot annonce l'anglais).
+- [ ] Nginx : faire passer les pages par l'API (`location @app`) après déploiement du code.
+- [ ] Google Search Console et Bing Webmaster Tools : valider le domaine hub.investir.tg et soumettre le sitemap (compte API-ZF).
+- [ ] Lien vers hub.investir.tg depuis investir.tg et les réseaux de l'API-ZF : c'est le premier levier de visibilité.
+- [ ] Inciter chaque occupant à remplir son activité : c'est la description de sa fiche dans Google.
+- [ ] Données structurées « Event » quand les dates et le lieu de la Foire sont confirmés.
+
 ## Notifications asynchrones (e-mail et push)
 
 - [x] File `notification_jobs` en base, traitée en arrière-plan par un worker : lots réservés sans conflit entre processus, nouvelles tentatives espacées, abandon journalisé après la dernière.

@@ -28,7 +28,6 @@ export default function ContactRequestForm({ stand }) {
   return (
     <section className="request-panel" aria-labelledby="request-title">
       <div className="request-intro">
-        <span className="public-eyebrow">{t('contact.eyebrow')}</span>
         <h2 id="request-title">{t('contact.title')}</h2>
         <p>{t('contact.intro', { name: stand.name })}</p>
       </div>

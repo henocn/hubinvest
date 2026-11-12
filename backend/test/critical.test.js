@@ -1040,3 +1040,40 @@ test('un lot épuisé ou désactivé disparaît de la roue, et une roue vide ne 
   assert.deepEqual(outcome.segments.map((segment) => segment.id), ['l1']);
   assert.equal(soldOut.awarded, 3);
 });
+
+const seoService = require('../src/modules/seo/seo.service');
+const seoRepository = require('../src/modules/seo/seo.repository');
+
+test('les espaces privés et liens personnels ne sont jamais indexés', async () => {
+  for (const page of ['/connexion', '/administration', '/administration/stands', '/espace-occupant/defis', '/studio/abc', `/defis/${'a'.repeat(64)}`]) {
+    const meta = await seoService.pageMeta(page);
+    assert.equal(meta.robots, 'noindex, nofollow', page);
+    assert.equal(meta.canonical, undefined, page);
+  }
+});
+
+test('la roue renvoie vers la page Défis et une page inconnue répond 404', async () => {
+  assert.equal((await seoService.pageMeta('/roue')).canonical, '/defis');
+  assert.equal((await seoService.pageMeta('/stands/')).canonical, '/stands');
+  const missing = await seoService.pageMeta('/nimporte-quoi');
+  assert.equal(missing.status, 404);
+  assert.equal(missing.robots, 'noindex');
+});
+
+test('la fiche d’un stand reprend son nom, son activité et son image', async (context) => {
+  context.mock.method(seoRepository, 'findStand', async () => ({ name: 'PIA', slug: 'pia', standLabel: 'Pavillon 2', activity: 'Aménagement <industriel>', coverImageUrl: '/uploads/covers/pia.jpg' }));
+  const meta = await seoService.pageMeta('/stands/pia');
+  assert.equal(meta.title, 'PIA · Stands · Hub de l’Investissement');
+  assert.match(meta.description, /^PIA au Hub de l’Investissement \(Pavillon 2\) : Aménagement/);
+  assert.match(meta.image, /\/uploads\/covers\/pia\.jpg$/);
+  const tags = seoService.renderTags(meta);
+  assert.match(tags, /&lt;industriel&gt;/);
+  assert.doesNotMatch(tags, /<industriel>/);
+});
+
+test('une description trop longue est coupée sur un mot', () => {
+  const text = `${'investissement '.repeat(20)}fin`;
+  const summary = seoService.summarize(text);
+  assert.ok(summary.length <= 160);
+  assert.match(summary, /investissement…$/);
+});

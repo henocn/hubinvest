@@ -7,6 +7,7 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 - Interface sobre, propre, simple et directement compréhensible, inspirée de la clarté de Postman sans la copier.
 - Éviter les signes de design généré par IA : textes de remplissage, cartes imbriquées, badges décoratifs, détails gratuits et grands espaces sans fonction.
 - Suivre la charte graphique du Hub (couleurs, Sen pour les titres, Arial pour le texte, boutons arrondis à 10 px comme les champs, action principale rouge) sans alourdir l’UX : pas de supergraphie dans les écrans de travail. Le logo du Hub (`frontend/src/assets/brand/`, tiré de `assets/Logo Hub couleur.png` et `assets/Logo Hub blanc.png`) signe toutes les interfaces ; l’API-ZF apparaît uniquement en pied de page (« Une initiative de » + logo API-ZF), jamais dans l’en-tête. Le symbole seul sert au favicon, aux icônes de l’application et en filigrane léger (bandeaux, page de connexion), jamais comme signature principale. Icônes Lucide, aucun emoji.
+- Site public façon application mobile : en-tête vert fixé en haut (bouton menu à gauche, logo blanc à droite), panneau latéral pour toutes les rubriques, la langue et l’espace équipe, barre d’onglets verte en bas avec l’onglet actif en pastille blanche.
 - Employer des bordures horizontales et verticales légèrement noires pour structurer les tableaux sans les alourdir.
 - Un défaut visible d’alignement, de proportion, de centrage, de hauteur ou d’espacement bloque la livraison, même si l’écran fonctionne.
 - Ne jamais forcer un retour à la ligne (largeur maximale étroite sur un titre, `<br>`) : le texte occupe la largeur disponible et ne passe à la ligne que lorsque l'écran l'exige, ou quand un design particulier le justifie vraiment.
@@ -19,6 +20,8 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 - Commencer par l’intention de l’utilisateur, puis révéler les informations suivantes seulement lorsqu’elles deviennent nécessaires.
 - Ne demander aucun champ qui ne change pas le traitement ou la suite donnée.
 - Éviter les textes d’aide, sous-textes et placeholders lorsqu’un libellé clair suffit.
+- Pas de surtitre (« API-ZF · Hub de l’Investissement », « Annuaire », « Prendre contact »…), d’intro ou de lien « Ouvrir » qui répète le titre ou la carte : chaque ligne de texte doit apporter une information.
+- Logo du Hub à droite de l’en-tête, bouton menu à gauche.
 - Ne pas afficher d’aperçu complet d’une fiche dans son formulaire d’édition.
 - Ne pas répéter un contenu libre potentiellement long dans l’étape suivante d’un formulaire.
 - Une image administrée se choisit comme fichier ; ne pas demander à l’utilisateur de saisir son URL.

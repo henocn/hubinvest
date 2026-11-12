@@ -49,7 +49,7 @@ export default function PublicPages({ path }) {
 
   return (
     <div className="public-app">
-      <PublicHeader />
+      <PublicHeader path={path} />
       {page}
       <BrandFooter />
       <PublicBottomNav path={path} />

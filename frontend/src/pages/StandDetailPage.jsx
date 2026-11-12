@@ -26,10 +26,9 @@ export default function StandDetailPage({ slug }) {
       {stand && (
         <article className="stand-profile">
           {stand.coverImageUrl && <img className="stand-profile-cover" src={resolveAssetUrl(stand.coverImageUrl)} alt="" />}
-          <div className="stand-profile-top"><span className="public-eyebrow">{t('stands.hubStand')}</span></div>
           <h1>{stand.name}</h1>
           {stand.standLabel && <p className="stand-profile-location"><MapPin size={19} /> {stand.standLabel}</p>}
-          {stand.activity && <section className="stand-profile-section"><h2>{t('stands.activity')}</h2><p>{stand.activity}</p></section>}
+          {stand.activity && <section className="stand-profile-section"><p>{stand.activity}</p></section>}
         </article>
       )}
       {stand && <ContactRequestForm stand={stand} />}

@@ -145,7 +145,6 @@ export default function ChallengePage({ token, openWheel = false }) {
   return (
     <main className="public-container challenge-page">
       <section className="play-intro">
-        <span className="public-eyebrow">{t('challenge.eyebrow')}</span>
         <h1>{hasPassport ? t('play.welcome', { name: passport.displayName }) : t('play.title')}</h1>
         <p>{hasPassport ? t('play.readyIntro') : t('play.intro')}</p>
       </section>

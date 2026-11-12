@@ -4,6 +4,9 @@ import { initReactI18next } from 'react-i18next';
 import en from './locales/en';
 import fr from './locales/fr';
 
+// Les robots d'indexation (Googlebot annonce l'anglais) lisent la version française, langue de référence du site.
+const isCrawler = /bot|crawl|spider|slurp|facebookexternalhit|whatsapp|lighthouse/i.test(navigator.userAgent);
+
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
@@ -14,6 +17,7 @@ i18n
     },
     supportedLngs: ['fr', 'en'],
     fallbackLng: 'fr',
+    ...(isCrawler && { lng: 'fr' }),
     detection: {
       order: ['localStorage', 'navigator'],
       caches: ['localStorage'],
