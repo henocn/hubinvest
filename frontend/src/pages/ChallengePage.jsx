@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Disc3, QrCode, Route } from 'lucide-react';
 import ChallengeProgress from '../components/ChallengeProgress';
 import PlayCta from '../components/PlayCta';
@@ -41,6 +42,8 @@ export default function ChallengePage({ token, openWheel = false }) {
   const [wheelOpen, setWheelOpen] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
   const wantsWheel = useRef(openWheel);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (!personalToken || passport) return undefined;
@@ -70,7 +73,7 @@ export default function ChallengePage({ token, openWheel = false }) {
   }, [passport, personalToken, t, token]);
 
   const identified = (data) => {
-    window.history.replaceState({}, '', `/defis/${data.token}`);
+    navigate(`/defis/${data.token}`, { replace: true });
     const { token: newToken, ...publicPassport } = data;
     saveChallengePassportToken(newToken);
     setPersonalToken(newToken);
@@ -95,7 +98,7 @@ export default function ChallengePage({ token, openWheel = false }) {
 
   const closeWheel = () => {
     setWheelOpen(false);
-    if (window.location.pathname === '/roue') window.history.replaceState({}, '', '/defis');
+    if (location.pathname === '/roue') navigate('/defis', { replace: true });
   };
 
   // Le parcours n'existe plus côté serveur : le joueur doit se réidentifier.

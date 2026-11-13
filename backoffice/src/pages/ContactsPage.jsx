@@ -262,9 +262,11 @@ function ContactDetail({ contact, onBack, onSave, apiOnline }) {
 
 // Carnet de contacts du stand : liste (/contacts), nouveau contact (/contacts/nouveau) et fiche (/contacts/:id).
 // Les contacts sont d'abord enregistrés sur le téléphone, puis synchronisés dès que le réseau revient.
-export default function ContactsPage({ session, onLogout, view = 'list' }) {
+export default function ContactsPage({ session, onLogout }) {
   const navigate = useNavigate();
-  const { contactId } = useParams();
+  const subPath = (useParams()['*'] || '').replace(/\/$/, '');
+  const view = !subPath ? 'list' : subPath === 'nouveau' ? 'new' : 'detail';
+  const contactId = view === 'detail' ? subPath : null;
   const [apiOnline, setApiOnline] = useState(false);
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -338,6 +340,19 @@ export default function ContactsPage({ session, onLogout, view = 'list' }) {
   useEffect(() => {
     if (apiOnline) sync();
   }, [apiOnline, sync]);
+
+  // Au retour sur l'application, les contacts saisis hors ligne partent et la liste se met à jour.
+  useEffect(() => {
+    const syncWhenVisible = () => {
+      if (document.visibilityState === 'visible' && navigator.onLine) void sync();
+    };
+    document.addEventListener('visibilitychange', syncWhenVisible);
+    window.addEventListener('online', syncWhenVisible);
+    return () => {
+      document.removeEventListener('visibilitychange', syncWhenVisible);
+      window.removeEventListener('online', syncWhenVisible);
+    };
+  }, [sync]);
 
   // Une demande du site ou une saisie depuis un autre téléphone du stand apparaît sans actualiser.
   useRealtimeEvent('contacts', () => {
@@ -423,10 +438,6 @@ export default function ContactsPage({ session, onLogout, view = 'list' }) {
             onChange={(event) => setSearch(event.target.value)}
           />
         </label>
-        <button className="button button-secondary button-compact" type="button" onClick={sync} disabled={loading}>
-          <RefreshCw size={17} />
-          Synchroniser
-        </button>
       </div>
 
       {error && <p className="panel-error">{error}</p>}

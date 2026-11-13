@@ -1,5 +1,8 @@
 import { api } from './api';
 
+// Événement émis quand l'abonnement de cet appareil change, pour mettre à jour la cloche et le Profil.
+export const PUSH_CHANGED = 'hubinvest-push-changed';
+
 // Convertit la clé publique VAPID au format attendu par le navigateur.
 const toApplicationServerKey = (base64) => {
   const padded = `${base64}${'='.repeat((4 - (base64.length % 4)) % 4)}`.replace(/-/g, '+').replace(/_/g, '/');

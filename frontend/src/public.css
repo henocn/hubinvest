@@ -815,13 +815,6 @@
   color: #ba0024;
 }
 
-.public-message button {
-  padding: 0;
-  border: 0;
-  color: var(--green);
-  background: transparent;
-  font-weight: 700;
-}
 
 .public-detail {
   padding-block: 46px 90px;

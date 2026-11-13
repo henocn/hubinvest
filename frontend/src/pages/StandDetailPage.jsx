@@ -1,7 +1,9 @@
+import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { ArrowLeft, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import ContactRequestForm from '../components/ContactRequestForm';
+import { SITE_NAME, setPageTitle } from '../lib/page-title';
 import { api, resolveAssetUrl } from '../lib/api';
 import { publicErrorMessage } from '../lib/public-error';
 
@@ -18,9 +20,14 @@ export default function StandDetailPage({ slug }) {
       .finally(() => setLoading(false));
   }, [slug, t]);
 
+  // Titre d'onglet de la fiche une fois chargée.
+  useEffect(() => {
+    if (stand) setPageTitle(`${stand.name} · Stands · ${SITE_NAME}`);
+  }, [stand]);
+
   return (
     <main className="public-container public-detail">
-      <a className="public-back" href="/stands"><ArrowLeft size={18} /> {t('stands.all')}</a>
+      <Link className="public-back" to="/stands"><ArrowLeft size={18} /> {t('stands.all')}</Link>
       {loading && <p className="public-message">{t('stands.loadingOne')}</p>}
       {error && <p className="public-message is-error">{error}</p>}
       {stand && (

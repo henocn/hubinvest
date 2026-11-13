@@ -25,6 +25,11 @@ function LoginPage() {
 
   const submit = async (event) => {
     event.preventDefault();
+    // Le clic sur « Se connecter » sert de geste pour la demande d'autorisation des notifications :
+    // le navigateur l'affiche aussitôt, et l'appareil est abonné une fois dans l'espace.
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {});
+    }
     setLoading(true);
     setError('');
     try {
@@ -93,9 +98,8 @@ function TeamRoutes() {
       <Route element={<RequireSession><TeamShell /></RequireSession>}>
         {role === 'occupant' && (
           <>
-            <Route path="/contacts" element={<ContactsPage {...props} />} />
-            <Route path="/contacts/nouveau" element={<ContactsPage {...props} view="new" />} />
-            <Route path="/contacts/:contactId" element={<ContactsPage {...props} view="detail" />} />
+            {/* Une seule route : le carnet reste chargé entre la liste, la fiche et le formulaire. */}
+            <Route path="/contacts/*" element={<ContactsPage {...props} />} />
             <Route path="/defis" element={<OccupantChallengePage {...props} />} />
           </>
         )}

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { Handshake, Home, Search, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -17,10 +18,10 @@ export default function PublicBottomNav({ path }) {
         {links.map(({ key, href, Icon, matches }) => {
           const active = matches(path);
           return (
-            <a key={key} href={href} className={active ? 'is-active' : ''} aria-current={active ? 'page' : undefined}>
+            <Link key={key} to={href} className={active ? 'is-active' : ''} aria-current={active ? 'page' : undefined}>
               <Icon size={20} strokeWidth={active ? 2.2 : 1.8} aria-hidden="true" />
               <span>{t(`nav.${key}`)}</span>
-            </a>
+            </Link>
           );
         })}
       </div>

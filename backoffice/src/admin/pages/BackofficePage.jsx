@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Plus, QrCode, RefreshCw, Search, Ticket } from 'lucide-react';
+import { Plus, QrCode, Search, Ticket } from 'lucide-react';
 import ConfirmDelete from '../components/ConfirmDelete';
 import ConfirmReward from '../components/ConfirmReward';
 import QrCodeDialog from '../components/QrCodeDialog';
@@ -309,7 +309,6 @@ export default function BackofficePage({ session, onLogout, section }) {
         <section className="data-panel">
           <header className="data-toolbar">
             <label className="admin-search-field"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={section === 'occupants' ? 'Rechercher un occupant' : section === 'users' ? 'Rechercher un utilisateur' : section === 'program' ? 'Rechercher dans le programme' : section === 'b2b' ? 'Rechercher un besoin' : section === 'studio' ? 'Rechercher une invitation' : section === 'challenges' ? 'Rechercher un participant' : section === 'wheel' ? 'Rechercher un lot' : 'Rechercher une demande'} /></label>
-            <button className="admin-icon-button" type="button" onClick={loadData} aria-label="Actualiser"><RefreshCw size={18} /></button>
           </header>
           {error && <p className="panel-message is-error">{error}</p>}
           {loading && <p className="panel-message">Chargement des données...</p>}

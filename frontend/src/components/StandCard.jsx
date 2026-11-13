@@ -1,9 +1,10 @@
+import { Link } from 'react-router-dom';
 import { MapPin } from 'lucide-react';
 import { resolveAssetUrl } from '../lib/api';
 
 export default function StandCard({ stand }) {
   return (
-    <a className="stand-card" href={`/stands/${stand.slug}`}>
+    <Link className="stand-card" to={`/stands/${stand.slug}`}>
       <div className="stand-card-cover">
         {stand.coverImageUrl
           ? <img src={resolveAssetUrl(stand.coverImageUrl)} alt="" loading="lazy" />
@@ -14,6 +15,6 @@ export default function StandCard({ stand }) {
         {stand.standLabel && <span className="stand-location"><MapPin size={14} /> {stand.standLabel}</span>}
         {stand.activity && <p>{stand.activity}</p>}
       </div>
-    </a>
+    </Link>
   );
 }

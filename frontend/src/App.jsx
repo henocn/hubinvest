@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import PublicPages from './PublicPages';
 import { teamUrl } from './lib/team';
 
@@ -20,7 +21,8 @@ function TeamRedirect({ to }) {
 }
 
 export default function App() {
-  const path = window.location.pathname.replace(/\/$/, '') || '/';
+  // Navigation sans rechargement : l'adresse vient du routeur et chaque clic ne change que le contenu.
+  const path = useLocation().pathname.replace(/\/$/, '') || '/';
   for (const [pattern, target] of teamRedirects) {
     const match = path.match(pattern);
     if (match) return <TeamRedirect to={target(match)} />;

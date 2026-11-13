@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { BriefcaseBusiness, Handshake } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -15,10 +16,10 @@ export default function MeetingsPage() {
       </header>
       <div className="meeting-choices">
         {choices.map(({ href, Icon, title, text }) => (
-          <a href={href} key={href}>
+          <Link to={href} key={href}>
             <Icon size={23} aria-hidden="true" />
             <span><strong>{title}</strong><small>{text}</small></span>
-          </a>
+          </Link>
         ))}
       </div>
     </main>

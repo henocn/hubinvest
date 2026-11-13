@@ -24,7 +24,6 @@ export default {
   },
   common: {
     optional: "optional",
-    retry: "Try again",
     loading: "Loading…",
     requestFailed: "Something went wrong. Please try again.",
     validationFailed: "Some information is invalid. Check the fields.",
