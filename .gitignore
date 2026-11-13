@@ -7,4 +7,6 @@ frontend/node_modules/
 backoffice/node_modules/
 backend/uploads/
 frontend/dist/
+frontend/dev-dist/
 backoffice/dist/
+backoffice/dev-dist/
