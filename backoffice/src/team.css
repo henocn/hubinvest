@@ -368,3 +368,64 @@ a.button,
 a.contact-row {
   text-decoration: none;
 }
+
+/* Fenêtre qui propose d'activer les notifications à l'arrivée dans l'espace. */
+.notification-prompt-backdrop {
+  position: fixed;
+  z-index: 70;
+  inset: 0;
+  display: grid;
+  place-items: end center;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  background: rgba(15, 24, 34, 0.48);
+  animation: team-fade 0.2s ease;
+}
+
+.notification-prompt {
+  width: min(100%, 420px);
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  padding: 22px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 20px 55px rgba(15, 24, 34, 0.24);
+}
+
+.notification-prompt-icon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: var(--green);
+  background: var(--tint);
+}
+
+.notification-prompt h2 {
+  margin: 4px 0 0;
+  font-size: 1.25rem;
+}
+
+.notification-prompt p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.notification-prompt-actions {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.notification-prompt-actions .button {
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .notification-prompt-backdrop {
+    place-items: center;
+  }
+}

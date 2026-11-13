@@ -4,6 +4,7 @@ import { LogOut, Menu, UserRound, X } from 'lucide-react';
 import hubLogoWhite from '../assets/brand/hub-logo-white.png';
 import hubLogo from '../assets/brand/hub-logo.png';
 import PushToggleButton from '../admin/components/PushToggleButton';
+import NotificationPrompt from './NotificationPrompt';
 import { api, resolveAssetUrl } from '../lib/api';
 import { disablePush } from '../lib/push';
 import { useRealtimeConnection, useRealtimeEvent } from '../lib/realtime';
@@ -116,6 +117,8 @@ export default function TeamShell() {
       <div className="team-content">
         {isAdmin ? <div className="admin-app"><Outlet /></div> : <Outlet />}
       </div>
+
+      <NotificationPrompt token={token} />
 
       <nav className="team-tabs" aria-label="Rubriques principales">
         <div>

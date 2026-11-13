@@ -1,7 +1,7 @@
 import { Bell, BellOff } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
-import { currentPushSubscription, disablePush, enablePush, isPushSupported } from '../../lib/push';
+import { currentPushSubscription, disablePush, enablePush, isPushSupported, PUSH_CHANGED } from '../../lib/push';
 
 const labels = {
   on: 'Désactiver les notifications',
@@ -30,10 +30,15 @@ export default function PushToggleButton({ token }) {
       }
       return 'off';
     };
-    load()
+    const refresh = () => load()
       .then((next) => { if (active) setState(next); })
       .catch(() => { if (active) setState('hidden'); });
-    return () => { active = false; };
+    void refresh();
+    window.addEventListener(PUSH_CHANGED, refresh);
+    return () => {
+      active = false;
+      window.removeEventListener(PUSH_CHANGED, refresh);
+    };
   }, [token]);
 
   // Bascule l'abonnement de l'appareil.

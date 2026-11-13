@@ -7,6 +7,7 @@ import {
   enablePush,
   isPushSupported,
   needsHomeScreenInstall,
+  PUSH_CHANGED,
 } from '../lib/push';
 
 // Permet d'activer ou couper les notifications push de cet appareil.
@@ -30,10 +31,15 @@ export default function PushNotificationPanel({ token }) {
       }
       return 'off';
     };
-    load()
+    const refresh = () => load()
       .then((next) => { if (active) setState(next); })
       .catch(() => { if (active) setState('hidden'); });
-    return () => { active = false; };
+    void refresh();
+    window.addEventListener(PUSH_CHANGED, refresh);
+    return () => {
+      active = false;
+      window.removeEventListener(PUSH_CHANGED, refresh);
+    };
   }, [token]);
 
   // Bascule l'abonnement de l'appareil.
