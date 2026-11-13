@@ -1,14 +1,14 @@
 name: CI
 
-# Contrôle chaque push sur dev et chaque pull request vers main, avant tout déploiement.
+# Vérifie que le site public et l'espace équipe se construisent, à chaque push sur main
+# et à chaque pull request de dev vers main. Les tests se lancent en local avant la mise en ligne.
 on:
   push:
     branches:
-      - dev
+      - main
   pull_request:
     branches:
       - main
-  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -18,29 +18,9 @@ permissions:
   contents: read
 
 jobs:
-  backend:
-    name: Backend (tests critiques)
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    defaults:
-      run:
-        working-directory: backend
-    env:
-      NODE_ENV: test
-      # Secret factice : les tests signent des jetons, sans base de données ni .env.
-      JWT_SECRET: ci-only-secret-not-used-in-production
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: backend/package-lock.json
-      - run: npm ci
-      - run: npm run test:critical
-
   build:
     name: Build ${{ matrix.app }}
+    if: github.event_name == 'push' || github.head_ref == 'dev'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:

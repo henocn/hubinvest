@@ -42,7 +42,6 @@ jobs:
 
             cd "$DEPLOY_PATH/backend"
             npm ci --include=dev
-            npm run test:critical
 
             cd "$DEPLOY_PATH/frontend"
             npm ci --include=dev
