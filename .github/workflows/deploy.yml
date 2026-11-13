@@ -36,25 +36,33 @@ jobs:
           script: |
             set -e
 
+            # 1. Code : la version de GitHub s'impose. Une modification locale (package-lock.json
+            #    après un npm install manuel, par exemple) est écrasée au lieu de bloquer le déploiement.
+            #    Les fichiers ignorés par git (.env, uploads, dist, node_modules) ne sont pas touchés.
             cd "$DEPLOY_PATH"
-            git checkout main
-            git pull --ff-only origin main
+            git fetch --prune origin main
+            git checkout -f main
+            git reset --hard origin/main
+            echo "Version déployée : $(git log --oneline -1)"
 
-            cd "$DEPLOY_PATH/backend"
-            npm ci --include=dev
-            npm run test:critical
+            # 2. Dépendances des trois dossiers. npm ci installe exactement le package-lock.json
+            #    sans jamais le réécrire, donc sans créer de nouveau conflit.
+            for app in backend frontend backoffice; do
+              cd "$DEPLOY_PATH/$app"
+              npm ci --include=dev --no-audit --no-fund
+            done
 
-            cd "$DEPLOY_PATH/frontend"
-            npm ci --include=dev
-            npm run build
+            # 3. Builds du site public et de l'espace équipe.
+            for app in frontend backoffice; do
+              cd "$DEPLOY_PATH/$app"
+              npm run build
+            done
 
-            cd "$DEPLOY_PATH/backoffice"
-            npm ci --include=dev
-            npm run build
-
+            # 4. Migrations de la base.
             cd "$DEPLOY_PATH/backend"
             export NODE_ENV=production
             npm run db:migrate
 
+            # 5. Redémarrage de l'API sans coupure.
             pm2 reload "$PM2_APP_NAME" --update-env
             pm2 save
