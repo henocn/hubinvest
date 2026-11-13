@@ -262,9 +262,11 @@ function ContactDetail({ contact, onBack, onSave, apiOnline }) {
 
 // Carnet de contacts du stand : liste (/contacts), nouveau contact (/contacts/nouveau) et fiche (/contacts/:id).
 // Les contacts sont d'abord enregistrés sur le téléphone, puis synchronisés dès que le réseau revient.
-export default function ContactsPage({ session, onLogout, view = 'list' }) {
+export default function ContactsPage({ session, onLogout }) {
   const navigate = useNavigate();
-  const { contactId } = useParams();
+  const subPath = (useParams()['*'] || '').replace(/\/$/, '');
+  const view = !subPath ? 'list' : subPath === 'nouveau' ? 'new' : 'detail';
+  const contactId = view === 'detail' ? subPath : null;
   const [apiOnline, setApiOnline] = useState(false);
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);

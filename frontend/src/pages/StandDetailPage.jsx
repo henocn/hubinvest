@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import ContactRequestForm from '../components/ContactRequestForm';
+import { SITE_NAME, setPageTitle } from '../lib/page-title';
 import { api, resolveAssetUrl } from '../lib/api';
 import { publicErrorMessage } from '../lib/public-error';
 
@@ -18,6 +19,11 @@ export default function StandDetailPage({ slug }) {
       .catch((requestError) => setError(requestError.status === 404 ? t('stands.unavailable') : publicErrorMessage(t, requestError)))
       .finally(() => setLoading(false));
   }, [slug, t]);
+
+  // Titre d'onglet de la fiche une fois chargée.
+  useEffect(() => {
+    if (stand) setPageTitle(`${stand.name} · Stands · ${SITE_NAME}`);
+  }, [stand]);
 
   return (
     <main className="public-container public-detail">

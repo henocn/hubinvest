@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import B2bProposalForm from '../components/B2bProposalForm';
+import { SITE_NAME, setPageTitle } from '../lib/page-title';
 import { api } from '../lib/api';
 import { publicErrorMessage } from '../lib/public-error';
 
@@ -15,6 +16,11 @@ export default function B2bDetailPage({ id }) {
   useEffect(() => {
     api.publicB2bNeed(id).then(setNeed).catch((requestError) => setError(requestError.status === 404 ? t('b2b.unavailable') : publicErrorMessage(t, requestError))).finally(() => setLoading(false));
   }, [id, t]);
+
+  // Titre d'onglet de la fiche une fois chargée.
+  useEffect(() => {
+    if (need) setPageTitle(`${need.title} · Besoin B2B · ${SITE_NAME}`);
+  }, [need]);
 
   return (
     <main className="public-container b2b-detail-page">

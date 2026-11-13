@@ -93,9 +93,8 @@ function TeamRoutes() {
       <Route element={<RequireSession><TeamShell /></RequireSession>}>
         {role === 'occupant' && (
           <>
-            <Route path="/contacts" element={<ContactsPage {...props} />} />
-            <Route path="/contacts/nouveau" element={<ContactsPage {...props} view="new" />} />
-            <Route path="/contacts/:contactId" element={<ContactsPage {...props} view="detail" />} />
+            {/* Une seule route : le carnet reste chargé entre la liste, la fiche et le formulaire. */}
+            <Route path="/contacts/*" element={<ContactsPage {...props} />} />
             <Route path="/defis" element={<OccupantChallengePage {...props} />} />
           </>
         )}
