@@ -1,6 +1,6 @@
 import { CheckCircle2, ScanLine } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import ChallengeScannerDialog from '../components/occupant/ChallengeScannerDialog';
+import ChallengeScannerDialog from '../components/ChallengeScannerDialog';
 import { api } from '../lib/api';
 import { useRealtimeConnected, useRealtimeEvent } from '../lib/realtime';
 

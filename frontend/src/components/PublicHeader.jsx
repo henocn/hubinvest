@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Briefcase, Handshake, Home, LogIn, Menu, Search, Star, X } from 'lucide-react';
 import hubLogoWhite from '../assets/brand/hub-logo-white.png';
 import BrandFooter from './BrandFooter';
+import { teamUrl } from '../lib/team';
 
 function LanguageFlag({ language }) {
   if (language === 'fr') {
@@ -78,7 +79,7 @@ function SideMenu({ path, onClose }) {
           </div>
         </div>
 
-        <a className="side-menu-team" href="/connexion"><LogIn size={19} aria-hidden="true" />{t('nav.team')}</a>
+        <a className="side-menu-team" href={teamUrl('/connexion')}><LogIn size={19} aria-hidden="true" />{t('nav.team')}</a>
 
         <BrandFooter className="side-menu-footer" />
       </aside>

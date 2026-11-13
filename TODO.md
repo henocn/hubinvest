@@ -22,7 +22,9 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 ## Déjà fait
 
 - [x] Backend Node.js/Express, Sequelize, migrations, variables `DB_*`, déploiement automatique sur le VPS avec tests critiques.
-- [x] Frontend React/Vite unique (public, espaces et administration), découpés en pages, composants, tiroirs et tableaux réutilisables.
+- [x] Deux projets React/Vite : site public (`frontend/`) et espace équipe (`backoffice/`, adminhub.investir.tg) pour l’administration, les occupants et les animateurs, avec une adresse par rubrique (React Router).
+- [ ] Nginx : servir `backoffice/dist` sur adminhub.investir.tg et rediriger les anciennes adresses du site public ; `BACKOFFICE_URL=https://adminhub.investir.tg` dans le `.env` du serveur.
+- [ ] Prévenir l’équipe : nouvelle adresse adminhub.investir.tg, reconnexion nécessaire, notifications à réactiver depuis le nouvel espace (cloche ou Profil).
 - [x] Quatre rôles : super administrateur, administrateur rattaché à un stand, occupant et animateur.
 - [x] Authentification, mot de passe oublié par code à cinq chiffres (hash, cinq essais, usage unique).
 - [x] Cloisonnement des contacts par occupant vérifié côté API et couvert par les tests critiques.

@@ -48,6 +48,10 @@ jobs:
             npm ci --include=dev
             npm run build
 
+            cd "$DEPLOY_PATH/backoffice"
+            npm ci --include=dev
+            npm run build
+
             cd "$DEPLOY_PATH/backend"
             export NODE_ENV=production
             npm run db:migrate

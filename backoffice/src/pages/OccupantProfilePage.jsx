@@ -1,13 +1,12 @@
 import { LogOut } from 'lucide-react';
 import { useState } from 'react';
 import PasswordField from '../components/PasswordField';
-import { useOccupantProfile } from '../components/occupant/OccupantShell';
-import PushNotificationPanel from '../components/occupant/PushNotificationPanel';
+import PushNotificationPanel from '../components/PushNotificationPanel';
 import { api } from '../lib/api';
 import { disablePush } from '../lib/push';
 
 export default function OccupantProfilePage({ session, onLogout }) {
-  const profile = useOccupantProfile() || session.user;
+  const profile = session.user;
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(false);

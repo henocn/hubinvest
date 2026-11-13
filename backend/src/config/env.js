@@ -52,7 +52,8 @@ module.exports = {
   frontendDist: process.env.FRONTEND_DIST || path.resolve(__dirname, '..', '..', '..', 'frontend', 'dist'),
   appUrls: {
     public: (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, ''),
-    administration: `${(process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '')}/administration`,
+    // Espace équipe (administration, occupants, animateurs), servi sur son propre sous-domaine.
+    backoffice: (process.env.BACKOFFICE_URL || 'http://localhost:5175').replace(/\/$/, ''),
   },
   push: {
     publicKey: process.env.VAPID_PUBLIC_KEY || '',

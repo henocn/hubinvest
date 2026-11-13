@@ -1,13 +1,13 @@
 import { Bell, BellOff } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { api } from '../../lib/api';
+import { api } from '../lib/api';
 import {
   currentPushSubscription,
   disablePush,
   enablePush,
   isPushSupported,
   needsHomeScreenInstall,
-} from '../../lib/push';
+} from '../lib/push';
 
 // Permet d'activer ou couper les notifications push de cet appareil.
 export default function PushNotificationPanel({ token }) {

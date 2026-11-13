@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Building2, BriefcaseBusiness, CalendarDays, Disc3, Handshake, LogOut, Plus, QrCode, RefreshCw, Search, Ticket, Trophy, UserRound, Users, Video } from 'lucide-react';
-import hubLogo from '../../assets/brand/hub-logo.png';
+import { Plus, QrCode, RefreshCw, Search, Ticket } from 'lucide-react';
 import ConfirmDelete from '../components/ConfirmDelete';
 import ConfirmReward from '../components/ConfirmReward';
 import QrCodeDialog from '../components/QrCodeDialog';
-import PushToggleButton from '../components/PushToggleButton';
 import InvestorRequestDrawer from '../components/drawers/InvestorRequestDrawer';
 import B2bNeedDrawer from '../components/drawers/B2bNeedDrawer';
 import OccupantDrawer from '../components/drawers/OccupantDrawer';
@@ -22,12 +20,9 @@ import WheelSegmentsTable from '../components/tables/WheelSegmentsTable';
 import WheelCodesTable from '../components/tables/WheelCodesTable';
 import WheelSegmentDrawer from '../components/drawers/WheelSegmentDrawer';
 import WheelCodeDialog from '../components/WheelCodeDialog';
-import { publicBaseUrl, roleLabels } from '../constants/access';
+import { publicBaseUrl } from '../constants/access';
 import { api } from '../lib/api';
-import { disablePush } from '../../lib/push';
-import { useRealtimeConnection, useRealtimeEvent } from '../../lib/realtime';
-
-const realtimeTopics = ['occupants', 'users', 'program', 'contacts', 'investor-requests', 'b2b', 'studio', 'challenge', 'wheel', 'account'];
+import { useRealtimeEvent } from '../../lib/realtime';
 
 const sectionMeta = {
   occupants: { title: 'Stands', description: 'Fiches publiques, emplacements et statuts.' },
@@ -40,11 +35,10 @@ const sectionMeta = {
   wheel: { title: 'Roue des opportunités', description: 'Lots, quantités et codes de jeu à usage unique.' },
 };
 
-export default function BackofficePage({ session, onLogout }) {
+// Page d'une rubrique de l'administration ; la rubrique vient de l'adresse (/stands, /b2b, /roue…).
+export default function BackofficePage({ session, onLogout, section }) {
   const isSuperAdmin = session.user.role === 'super-admin';
   const isAdmin = session.user.role === 'admin';
-  const canAccessBusinessModules = isSuperAdmin || isAdmin;
-  const [section, setSection] = useState(() => (isSuperAdmin ? 'occupants' : 'investor-requests'));
   const [occupants, setOccupants] = useState([]);
   const [users, setUsers] = useState([]);
   const [investorRequests, setInvestorRequests] = useState([]);
@@ -153,11 +147,6 @@ export default function BackofficePage({ session, onLogout }) {
     }
   }, [onLogout, silentLoaders]);
 
-  useRealtimeConnection(`backoffice:${session.user.id}:${session.token.slice(-16)}`, async () => {
-    const { ticket } = await api.realtimeTicket(session.token);
-    return api.realtimeStreamUrl(ticket);
-  }, { topics: realtimeTopics, onUnauthorized: onLogout });
-
   useRealtimeEvent('occupants', () => reloadTopic('occupants'));
   useRealtimeEvent('users', () => reloadTopic('users'));
   useRealtimeEvent('program', () => reloadTopic('program'));
@@ -182,10 +171,8 @@ export default function BackofficePage({ session, onLogout }) {
 
   const visibleWheelSegments = useMemo(() => wheel.segments.filter((item) => !query || [item.label, item.sponsor].some((value) => String(value || '').toLowerCase().includes(query))), [wheel.segments, query]);
 
-  const switchSection = (next) => {
-    setSection(next);
-    setSearch('');
-  };
+  // Chaque rubrique s'ouvre avec une recherche vide.
+  useEffect(() => { setSearch(''); }, [section]);
 
   const saved = async () => {
     setDrawer(null);
@@ -261,40 +248,11 @@ export default function BackofficePage({ session, onLogout }) {
     }
   };
 
-  // Coupe les notifications de cet appareil avant de quitter volontairement la session.
-  const signOut = async () => {
-    await Promise.race([
-      disablePush(session.token).catch(() => {}),
-      new Promise((resolve) => { setTimeout(resolve, 1500); }),
-    ]);
-    onLogout();
-  };
-
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <div className="brand-lockup"><img src={hubLogo} alt="Hub de l’Investissement" /></div>
-        <nav aria-label="Navigation principale">
-          {isSuperAdmin && <><button className={section === 'occupants' ? 'is-active' : ''} onClick={() => switchSection('occupants')} title="Stands"><Building2 size={18} /><span>Stands</span></button><button className={section === 'users' ? 'is-active' : ''} onClick={() => switchSection('users')} title="Accès"><Users size={18} /><span>Accès</span></button><button className={section === 'program' ? 'is-active' : ''} onClick={() => switchSection('program')} title="Programme"><CalendarDays size={18} /><span>Programme</span></button></>}
-          {canAccessBusinessModules && <button className={section === 'investor-requests' ? 'is-active' : ''} onClick={() => switchSection('investor-requests')} title="Investor Desk"><BriefcaseBusiness size={18} /><span>Investor Desk</span></button>}
-          {canAccessBusinessModules && <button className={section === 'b2b' ? 'is-active' : ''} onClick={() => switchSection('b2b')} title="B2B"><Handshake size={18} /><span>B2B</span></button>}
-          {canAccessBusinessModules && <button className={section === 'studio' ? 'is-active' : ''} onClick={() => switchSection('studio')} title="Studio"><Video size={18} /><span>Studio</span></button>}
-          {canAccessBusinessModules && <button className={section === 'challenges' ? 'is-active' : ''} onClick={() => switchSection('challenges')} title="Participants aux défis"><Trophy size={18} /><span>Participants</span></button>}
-          {canAccessBusinessModules && <button className={section === 'wheel' ? 'is-active' : ''} onClick={() => switchSection('wheel')} title="Roue des opportunités"><Disc3 size={18} /><span>Roue</span></button>}
-        </nav>
-        <div className="sidebar-user">
-          <span className="user-avatar"><UserRound size={18} /></span>
-          <div><strong>{session.user.firstName} {session.user.lastName}</strong><span>{roleLabels[session.user.role] || session.user.role}</span></div>
-          <span className="sidebar-user-actions">
-            <PushToggleButton token={session.token} />
-            <button className="admin-icon-button" type="button" onClick={signOut} aria-label="Se déconnecter" title="Se déconnecter"><LogOut size={18} /></button>
-          </span>
-        </div>
-      </aside>
-
+    <>
       <main className="admin-workspace">
         <header className="workspace-header">
-          <div><span className="eyebrow">Gestion</span><h1>{sectionMeta[section].title}</h1><p>{sectionMeta[section].description}</p></div>
+          <div><h1>{sectionMeta[section].title}</h1><p>{sectionMeta[section].description}</p></div>
           {(section === 'occupants' || section === 'users' || section === 'program' || section === 'b2b' || section === 'studio' || section === 'challenges' || section === 'wheel') && <div className="workspace-actions">
             {section === 'occupants' && <button className="button button-secondary" type="button" onClick={() => setQrCode({ title: 'QR du Hub', url: `${publicBaseUrl}/stands`, fileName: 'hubinvest-hub' })}><QrCode size={18} /> QR du Hub</button>}
             {section === 'challenges' && <button className="button button-secondary" type="button" onClick={() => setQrCode({ title: 'QR des Défis', url: `${publicBaseUrl}/defis`, fileName: 'hubinvest-defis' })}><QrCode size={18} /> QR des Défis</button>}
@@ -378,6 +336,6 @@ export default function BackofficePage({ session, onLogout }) {
       {pendingDelete && <ConfirmDelete subject={pendingDelete} loading={deleting} error={deleteError} onCancel={() => setPendingDelete(null)} onConfirm={confirmDelete} />}
       {pendingReward && <ConfirmReward passport={pendingReward} loading={rewarding} error={rewardError} onCancel={() => setPendingReward(null)} onConfirm={confirmReward} />}
       {qrCode && <QrCodeDialog {...qrCode} onClose={() => setQrCode(null)} />}
-    </div>
+    </>
   );
 }
