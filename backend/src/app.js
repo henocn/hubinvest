@@ -16,7 +16,9 @@ const challengePassportRoutes = require('./modules/challenge-passport/challenge-
 const challengePassageRoutes = require('./modules/challenge-passage/challenge-passage.route');
 const pushSubscriptionRoutes = require('./modules/push-subscription/push-subscription.route');
 const programEventRoutes = require('./modules/program-event/program-event.route');
+const wheelRoutes = require('./modules/wheel/wheel.route');
 const realtimeRoutes = require('./modules/realtime/realtime.route');
+const seoRoutes = require('./modules/seo/seo.route');
 const httpLogger = require('./middlewares/http-logger.middleware');
 const notFound = require('./middlewares/not-found.middleware');
 const errorHandler = require('./middlewares/error.middleware');
@@ -54,7 +56,14 @@ app.use('/api/challenge-passports', challengePassportRoutes);
 app.use('/api/challenge-passages', challengePassageRoutes);
 app.use('/api/push-subscriptions', pushSubscriptionRoutes);
 app.use('/api/program-events', programEventRoutes);
+app.use('/api/wheel', wheelRoutes);
 app.use('/api/realtime', realtimeRoutes);
+
+// Pages HTML et sitemap servis par Nginx via l'API ; l'en-tête CSP de Helmet ne s'applique pas au site.
+app.use((request, response, next) => {
+  if (!request.path.startsWith('/api/') && !request.path.startsWith('/uploads/')) response.removeHeader('Content-Security-Policy');
+  next();
+}, seoRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

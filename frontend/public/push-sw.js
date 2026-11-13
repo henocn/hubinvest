@@ -9,8 +9,8 @@ self.addEventListener('push', (event) => {
 
   event.waitUntil(self.registration.showNotification(data.title || 'HubInvest', {
     body: data.body || '',
-    icon: '/favicon.svg',
-    badge: '/favicon.svg',
+    icon: '/pwa-192.png',
+    badge: '/badge-96.png',
     tag: data.tag,
     data: { url: data.url || '/' },
   }));

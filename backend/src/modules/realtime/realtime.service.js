@@ -10,6 +10,7 @@ const tickets = new Map();
 
 const channels = Object.freeze({
   superAdmins: 'super-admin',
+  admins: 'admins',
   animators: 'animateur',
   user: (id) => `user:${id}`,
   occupant: (occupantId) => `occupant:${occupantId}`,
@@ -21,6 +22,7 @@ const channels = Object.freeze({
 const channelsFor = (user) => {
   const list = [channels.user(user.id)];
   if (user.role === roles.SUPER_ADMIN) list.push(channels.superAdmins);
+  if (user.role === roles.ADMIN) list.push(channels.admins);
   if (user.role === roles.ADMIN && user.occupantId) list.push(channels.admin(user.occupantId));
   if (user.role === roles.OCCUPANT && user.occupantId) list.push(channels.occupant(user.occupantId));
   if (user.role === roles.ANIMATOR) list.push(channels.animators);
@@ -122,6 +124,8 @@ const events = {
   // Compte modifié, désactivé ou supprimé : ses écrans revérifient leur session.
   accountChanged: (userId) => safePublish([channels.user(userId)], 'account'),
   programChanged: () => safePublish([channels.superAdmins], 'program'),
+  // Roue des opportunités : cases, stock et codes, partagés par toute l'administration.
+  wheelChanged: () => safePublish([channels.superAdmins, channels.admins], 'wheel'),
 };
 
 module.exports = {

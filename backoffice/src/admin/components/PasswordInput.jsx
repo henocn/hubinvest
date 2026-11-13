@@ -1,0 +1,15 @@
+import { useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
+
+export default function PasswordInput(props) {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <div className="admin-password-field">
+      <input {...props} type={visible ? 'text' : 'password'} />
+      <button type="button" onClick={() => setVisible((current) => !current)} aria-label={visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'} title={visible ? 'Masquer' : 'Afficher'}>
+        {visible ? <EyeOff size={18} /> : <Eye size={18} />}
+      </button>
+    </div>
+  );
+}

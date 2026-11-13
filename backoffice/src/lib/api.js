@@ -1,11 +1,11 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 const request = async (path, options = {}) => {
-  const hasFormData = options.body instanceof FormData;
   const response = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: {
-      ...(!hasFormData && { 'Content-Type': 'application/json' }),
+      'Content-Type': 'application/json',
+      'Accept-Language': 'fr',
       ...options.headers,
     },
   });
@@ -36,64 +36,27 @@ const authorized = (token, options = {}) => ({
   },
 });
 
+// Appels de l'espace équipe communs à tous les rôles ; ceux de l'administration sont dans admin/lib/api.js.
 export const api = {
+  health: () => request('/health'),
   login: (values) => request('/auth/login', { method: 'POST', body: JSON.stringify(values) }),
   forgotPassword: (email) => request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
   resetPassword: (email, code, password) => request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ email, code, password }) }),
   profile: (token) => request('/users/me', authorized(token)),
+  changeOwnPassword: (token, values) =>
+    request('/users/me/password', authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
+  contacts: (token) => request('/contacts', authorized(token)),
+  createContact: (token, values) =>
+    request('/contacts', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
+  updateContact: (token, id, values) =>
+    request(`/contacts/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
+  validateChallengePassage: (token, code, classification) => request('/challenge-passages', authorized(token, { method: 'POST', body: JSON.stringify({ code, classification }) })),
+  challengePassageStats: (token) => request('/challenge-passages/stats', authorized(token)),
+  challengeRewards: (token) => request('/challenge-passports/rewards', authorized(token)),
+  challengeRewardByCode: (token, code) => request(`/challenge-passports/code/${encodeURIComponent(code)}`, authorized(token)),
+  redeemChallengeReward: (token, code) => request('/challenge-passports/redeem-by-code', authorized(token, { method: 'POST', body: JSON.stringify({ code }) })),
   realtimeTicket: (token) => request('/realtime/ticket', authorized(token, { method: 'POST' })),
   realtimeStreamUrl: (ticket) => `${API_URL}/realtime/stream?ticket=${encodeURIComponent(ticket)}`,
-  occupants: (token) => request('/occupants', authorized(token)),
-  createOccupant: (token, values) =>
-    request('/occupants', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
-  updateOccupant: (token, id, values) =>
-    request(`/occupants/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
-  uploadOccupantCover: (token, id, file) => {
-    const body = new FormData();
-    body.append('coverImage', file);
-    return request(`/occupants/${id}/cover`, authorized(token, { method: 'POST', body }));
-  },
-  uploadOccupantLogo: (token, id, file) => {
-    const body = new FormData();
-    body.append('logo', file);
-    return request(`/occupants/${id}/logo`, authorized(token, { method: 'POST', body }));
-  },
-  deleteOccupant: (token, id) =>
-    request(`/occupants/${id}`, authorized(token, { method: 'DELETE' })),
-  investorRequests: (token) => request('/investor-requests', authorized(token)),
-  updateInvestorRequest: (token, id, values) =>
-    request(`/investor-requests/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
-  b2bNeeds: (token) => request('/b2b-needs', authorized(token)),
-  createB2bNeed: (token, values) =>
-    request('/b2b-needs', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
-  updateB2bNeed: (token, id, values) =>
-    request(`/b2b-needs/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
-  b2bProposals: (token, needId) => request(`/b2b-proposals/need/${needId}`, authorized(token)),
-  updateB2bProposal: (token, id, values) =>
-    request(`/b2b-proposals/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
-  studioInvitations: (token) => request('/studio-invitations', authorized(token)),
-  createStudioInvitation: (token, values) =>
-    request('/studio-invitations', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
-  updateStudioInvitation: (token, id, values) =>
-    request(`/studio-invitations/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
-  programEvents: (token) => request('/program-events', authorized(token)),
-  createProgramEvent: (token, values) =>
-    request('/program-events', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
-  updateProgramEvent: (token, id, values) =>
-    request(`/program-events/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
-  deleteProgramEvent: (token, id) =>
-    request(`/program-events/${id}`, authorized(token, { method: 'DELETE' })),
-  challengePassports: (token) => request('/challenge-passports', authorized(token)),
-  redeemChallengePassport: (token, id) =>
-    request(`/challenge-passports/${id}/redeem`, authorized(token, { method: 'PATCH' })),
-  users: (token) => request('/users', authorized(token)),
-  contactStats: (token) => request('/contacts/admin/stats', authorized(token)),
-  createUser: (token, values) =>
-    request('/users', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
-  updateUser: (token, id, values) =>
-    request(`/users/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
-  deleteUser: (token, id) =>
-    request(`/users/${id}`, authorized(token, { method: 'DELETE' })),
   pushPublicKey: () => request('/push-subscriptions/public-key'),
   subscribePush: (token, subscription) =>
     request('/push-subscriptions', authorized(token, { method: 'POST', body: JSON.stringify(subscription) })),

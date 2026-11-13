@@ -38,6 +38,8 @@ const pushSubscriptionRepository = require('../src/modules/push-subscription/pus
 const mailer = require('../src/shared/mailer');
 const webPush = require('../src/shared/web-push');
 const programEventService = require('../src/modules/program-event/program-event.service');
+const wheelService = require('../src/modules/wheel/wheel.service');
+const wheelRepository = require('../src/modules/wheel/wheel.repository');
 const programEventRepository = require('../src/modules/program-event/program-event.repository');
 
 env.notifications.enabled = false;
@@ -514,20 +516,24 @@ test('le planning Studio d’un administrateur est filtré sur son stand', async
   assert.deepEqual(requestedStands, ['occupant-pia']);
 });
 
-test('le contact d’un participant est conservé sans être exposé sur son passeport public', async (context) => {
+test('l’identité d’un joueur est conservée sans être exposée sur son passeport public', async (context) => {
   let saved;
   context.mock.method(challengePassportRepository, 'create', async (values) => {
     saved = values;
     return { ...values, passages: [] };
   });
 
-  const result = await challengePassportService.createPublic({
-    displayName: 'Visiteur Test',
-    contact: 'visiteur@example.com',
-  });
+  const result = await challengePassportService.createPublic({ fullName: 'Afi Mensah', contact: '+22890000000' });
 
-  assert.equal(saved.contact, 'visiteur@example.com');
-  assert.equal(result.contact, undefined);
+  assert.equal(saved.displayName, 'Afi Mensah');
+  assert.equal(saved.email, null);
+  assert.equal(saved.phone, '+22890000000');
+  await challengePassportService.createPublic({ fullName: 'Afi Mensah', contact: 'afi@example.com' });
+  assert.equal(saved.email, 'afi@example.com');
+  assert.equal(saved.phone, null);
+  assert.equal(result.displayName, 'Afi Mensah');
+  assert.equal(result.email, undefined);
+  assert.equal(result.phone, undefined);
 });
 
 test('la liste des joueurs conserve le validateur et son stand pour chaque scan', async (context) => {
@@ -870,10 +876,10 @@ const readSseEvents = async (response, count, timeout = 2000) => {
 
 test('chaque rôle n’écoute que les canaux de son stand ou de son rôle', () => {
   assert.deepEqual(realtimeService.channelsFor({ id: 'u1', role: 'super-admin', occupantId: null }), ['user:u1', 'super-admin']);
-  assert.deepEqual(realtimeService.channelsFor({ id: 'u2', role: 'admin', occupantId: 'stand-a' }), ['user:u2', 'admin:stand-a']);
+  assert.deepEqual(realtimeService.channelsFor({ id: 'u2', role: 'admin', occupantId: 'stand-a' }), ['user:u2', 'admins', 'admin:stand-a']);
   assert.deepEqual(realtimeService.channelsFor({ id: 'u3', role: 'occupant', occupantId: 'stand-a' }), ['user:u3', 'occupant:stand-a']);
   assert.deepEqual(realtimeService.channelsFor({ id: 'u4', role: 'animateur', occupantId: null }), ['user:u4', 'animateur']);
-  assert.deepEqual(realtimeService.channelsFor({ id: 'u5', role: 'admin', occupantId: null }), ['user:u5']);
+  assert.deepEqual(realtimeService.channelsFor({ id: 'u5', role: 'admin', occupantId: null }), ['user:u5', 'admins']);
 });
 
 test('un jeton de flux ne sert qu’une fois et expire', (context) => {
@@ -975,5 +981,105 @@ test('la liste des remises signale seulement celles de l’animateur connecté, 
   const rewards = await challengePassportService.listRewards({ id: 'animator-a', role: 'animateur' });
   assert.deepEqual(rewards.map((reward) => reward.redeemedByMe), [true, false]);
   assert.ok(rewards.every((reward) => !('redeemedByUserId' in reward)));
-  assert.deepEqual(Object.keys(rewards[0]).sort(), ['contact', 'displayName', 'id', 'redeemedAt', 'redeemedByMe']);
+  assert.deepEqual(Object.keys(rewards[0]).sort(), ['contact', 'displayName', 'email', 'id', 'phone', 'redeemedAt', 'redeemedByMe']);
+});
+
+const PLAYER = 'a'.repeat(64);
+const wheelSetup = (context, { segments, code }) => {
+  context.mock.method(wheelRepository.sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));
+  context.mock.method(wheelRepository, 'findPlayerByToken', async (token) => (token === PLAYER ? { id: 'passport-a' } : null));
+  context.mock.method(wheelRepository, 'findCodeForUpdate', async (value) => (code && code.code === value ? code : null));
+  context.mock.method(wheelRepository, 'findActiveSegmentsForUpdate', async () => segments.filter((segment) => segment.isActive));
+  context.mock.method(wheelRepository, 'recordAward', async (segment) => { segment.awarded += 1; });
+  context.mock.method(wheelRepository, 'updateCode', async (wheelCode, values) => Object.assign(wheelCode, values));
+};
+
+test('un code de la roue ne sert qu’une fois et décompte le lot gagné', async (context) => {
+  const prize = { id: 'p1', kind: 'prize', label: 'T-shirt', sponsor: 'WAFO INDUSTRIE', quantity: 2, awarded: 0, isActive: true };
+  const lose = { id: 'l1', kind: 'lose', label: 'Presque !', sponsor: null, quantity: null, awarded: 0, isActive: true };
+  const code = { code: 'K7P2QX', usedAt: null, expiresAt: new Date(Date.now() + 60000) };
+  wheelSetup(context, { segments: [prize, lose], code });
+
+  const outcome = await wheelService.spin({ code: ' k7p2-qx ', player: PLAYER }, 'fr', (length) => { assert.equal(length, 2); return 0; });
+  assert.equal(outcome.result.id, 'p1');
+  assert.equal(outcome.result.sponsor, 'WAFO INDUSTRIE');
+  assert.equal(prize.awarded, 1);
+  assert.equal(code.resultLabel, 'T-shirt');
+  assert.equal(code.passportId, 'passport-a');
+  assert.ok(code.usedAt);
+
+  await assert.rejects(wheelService.spin({ code: 'K7P2QX', player: PLAYER }, 'fr', () => 0), (error) => error.status === 409 && error.code === 'WHEEL_CODE_USED');
+  assert.equal(prize.awarded, 1);
+});
+
+test('un code expiré ou inventé ne fait pas tourner la roue', async (context) => {
+  const lose = { id: 'l1', kind: 'lose', label: 'Dommage !', quantity: null, awarded: 0, isActive: true };
+  const code = { code: 'ABCDEF', usedAt: null, expiresAt: new Date(Date.now() - 1000) };
+  wheelSetup(context, { segments: [lose], code });
+
+  await assert.rejects(wheelService.spin({ code: 'ABCDEF', player: PLAYER }, 'fr'), (error) => error.status === 410 && error.code === 'WHEEL_CODE_EXPIRED');
+  await assert.rejects(wheelService.spin({ code: 'ZZZZZZ', player: PLAYER }, 'fr'), (error) => error.status === 404 && error.code === 'WHEEL_CODE_INVALID');
+  await assert.rejects(wheelService.spin({ code: 'ABCDEF', player: 'b'.repeat(64) }, 'fr'), (error) => error.status === 422 && error.code === 'WHEEL_PLAYER_REQUIRED');
+  assert.equal(code.usedAt, null);
+});
+
+test('un lot épuisé ou désactivé disparaît de la roue, et une roue vide ne consomme pas le code', async (context) => {
+  const soldOut = { id: 'p1', kind: 'prize', label: 'Casquette', quantity: 3, awarded: 3, isActive: true };
+  const inactive = { id: 'p2', kind: 'prize', label: 'Tablier', quantity: 5, awarded: 0, isActive: false };
+  const code = { code: 'QWERTY', usedAt: null, expiresAt: new Date(Date.now() + 60000) };
+  wheelSetup(context, { segments: [soldOut, inactive], code });
+
+  await assert.rejects(wheelService.spin({ code: 'QWERTY', player: PLAYER }, 'fr', () => 0), (error) => error.status === 409 && error.code === 'WHEEL_EMPTY');
+  assert.equal(code.usedAt, null);
+
+  const lose = { id: 'l1', kind: 'lose', label: 'Pas cette fois', quantity: null, awarded: 0, isActive: true };
+  wheelSetup(context, { segments: [soldOut, inactive, lose], code });
+  const outcome = await wheelService.spin({ code: 'QWERTY', player: PLAYER }, 'fr', (length) => { assert.equal(length, 1); return 0; });
+  assert.deepEqual(outcome.segments.map((segment) => segment.id), ['l1']);
+  assert.equal(soldOut.awarded, 3);
+});
+
+const seoService = require('../src/modules/seo/seo.service');
+const seoRepository = require('../src/modules/seo/seo.repository');
+
+test('les espaces privés et liens personnels ne sont jamais indexés', async () => {
+  for (const page of ['/connexion', '/administration', '/administration/stands', '/espace-occupant/defis', '/studio/abc', `/defis/${'a'.repeat(64)}`]) {
+    const meta = await seoService.pageMeta(page);
+    assert.equal(meta.robots, 'noindex, nofollow', page);
+    assert.equal(meta.canonical, undefined, page);
+  }
+});
+
+test('la roue renvoie vers la page Défis et une page inconnue répond 404', async () => {
+  assert.equal((await seoService.pageMeta('/roue')).canonical, '/defis');
+  assert.equal((await seoService.pageMeta('/stands/')).canonical, '/stands');
+  const missing = await seoService.pageMeta('/nimporte-quoi');
+  assert.equal(missing.status, 404);
+  assert.equal(missing.robots, 'noindex');
+});
+
+test('la fiche d’un stand reprend son nom, son activité et son image', async (context) => {
+  context.mock.method(seoRepository, 'findStand', async () => ({ name: 'PIA', slug: 'pia', standLabel: 'Pavillon 2', activity: 'Aménagement <industriel>', coverImageUrl: '/uploads/covers/pia.jpg' }));
+  const meta = await seoService.pageMeta('/stands/pia');
+  assert.equal(meta.title, 'PIA · Stands · Hub de l’Investissement');
+  assert.match(meta.description, /^PIA au Hub de l’Investissement \(Pavillon 2\) : Aménagement/);
+  assert.match(meta.image, /\/uploads\/covers\/pia\.jpg$/);
+  const tags = seoService.renderTags(meta);
+  assert.match(tags, /&lt;industriel&gt;/);
+  assert.doesNotMatch(tags, /<industriel>/);
+});
+
+test('une description trop longue est coupée sur un mot', () => {
+  const text = `${'investissement '.repeat(20)}fin`;
+  const summary = seoService.summarize(text);
+  assert.ok(summary.length <= 160);
+  assert.match(summary, /investissement…$/);
+});
+
+test('pour jouer, un nom complet et un e-mail ou un téléphone suffisent', () => {
+  const { createPublic } = require('../src/modules/challenge-passport/challenge-passport.validation');
+  assert.equal(createPublic.validate({ fullName: 'Afi Mensah', contact: 'AFI@Example.com' }).value.contact, 'afi@example.com');
+  assert.equal(createPublic.validate({ fullName: 'Afi Mensah', contact: '+22890000000' }).error, undefined);
+  assert.ok(createPublic.validate({ fullName: 'Afi Mensah', contact: 'pas un contact' }).error);
+  assert.ok(createPublic.validate({ fullName: 'Afi Mensah' }).error);
 });

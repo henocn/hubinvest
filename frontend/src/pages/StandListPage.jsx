@@ -31,16 +31,10 @@ export default function StandListPage() {
     <>
       <section className="public-intro">
         <div className="public-container">
-          <span className="public-eyebrow">{t('stands.eyebrow')}</span>
           <h1>{t('stands.title')}</h1>
-          <p>{t('stands.intro')}</p>
         </div>
       </section>
       <main className="public-container public-main">
-        <div className="public-section-heading">
-          <div><span className="public-eyebrow">{t('stands.directory')}</span><h2>{t('stands.explore')}</h2></div>
-          {!loading && !error && <span className="stand-count">{t('stands.count', { count: stands.length })}</span>}
-        </div>
         <label className="public-search">
           <Search size={20} aria-hidden="true" />
           <span className="sr-only">{t('stands.searchLabel')}</span>

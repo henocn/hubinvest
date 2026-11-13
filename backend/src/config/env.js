@@ -48,9 +48,12 @@ module.exports = {
     fromName: process.env.SMTP_FROM_NAME || 'HubInvest',
     fromEmail: process.env.SMTP_FROM_EMAIL || '',
   },
+  // Build du site public, dont l'index.html reçoit les balises SEO de chaque page.
+  frontendDist: process.env.FRONTEND_DIST || path.resolve(__dirname, '..', '..', '..', 'frontend', 'dist'),
   appUrls: {
     public: (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, ''),
-    backoffice: (process.env.BACKOFFICE_URL || 'http://localhost:5174').replace(/\/$/, ''),
+    // Espace équipe (administration, occupants, animateurs), servi sur son propre sous-domaine.
+    backoffice: (process.env.BACKOFFICE_URL || 'http://localhost:5175').replace(/\/$/, ''),
   },
   push: {
     publicKey: process.env.VAPID_PUBLIC_KEY || '',
@@ -73,6 +76,9 @@ module.exports = {
     maxStreams: integer(process.env.REALTIME_MAX_STREAMS, 2000),
   },
   corsOrigins: list(process.env.CORS_ORIGINS),
+  wheel: {
+    codeTtl: duration(process.env.WHEEL_CODE_TTL, 30 * 60 * 1000),
+  },
   challenge: {
     requiredPassages: integer(process.env.CHALLENGE_REQUIRED_PASSAGES, 3),
   },

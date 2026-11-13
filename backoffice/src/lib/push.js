@@ -9,10 +9,9 @@ const toApplicationServerKey = (base64) => {
 // Indique si ce navigateur sait recevoir des notifications push.
 export const isPushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 
-// Enregistre le service worker qui affiche les notifications du backoffice.
-export const registerPushWorker = () => {
-  if (isPushSupported()) navigator.serviceWorker.register('/push-sw.js').catch(() => {});
-};
+// Indique un iPhone ou iPad où HubInvest n'est pas encore ajouté à l'écran d'accueil.
+export const needsHomeScreenInstall = () => /iphone|ipad|ipod/i.test(navigator.userAgent)
+  && !window.matchMedia('(display-mode: standalone)').matches;
 
 // Retrouve l'abonnement push actuel de cet appareil.
 export const currentPushSubscription = async () => {

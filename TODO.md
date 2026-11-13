@@ -9,7 +9,10 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 ## Écarts entre les deux documents à trancher
 
 - [ ] Nom du jeu : « Défis de la preuve » et parcours « Trouvez les trois preuves » (CDC) devenus « Défis du Hub » et « Trouvez les trois étapes » (PDF). Aligner les libellés FR/EN.
-- [ ] Le PDF ajoute une « roue des opportunités » alors que le CDC exclut la « roue de la chance en ligne ». Confirmer s’il s’agit d’une animation physique ou d’une fonction à coder.
+- [x] Roue des opportunités : confirmée sur téléphone, avec un code à usage unique remis par un administrateur.
+- [x] Défis : page des deux jeux, identification commune (nom, prénom, e-mail, téléphone validé par libphonenumber-js), parties de roue rattachées au joueur.
+- [x] Logo du Hub, favicon et icônes de l’application issus de la charte.
+- [ ] Appliquer le champ téléphone obligatoire (`PhoneField`) aux autres formulaires : Investor Desk, B2B, recontact.
 - [ ] Le positionnement passe de « La preuve par le Togo » à « Avec vous, à chaque étape » et à la série « Ils avancent avec l’API-ZF » : la fiche occupant doit-elle porter la success story (parcours avec l’Agence) ?
 - [ ] Formats du Studio : « 21 secondes avec… » (CDC) remplacé par « 2 min avec… », « API-ZF en 60 secondes » et Face-à-face (PDF).
 - [ ] Rencontres B2B : tables de 20 minutes (CDC) et « Rencontres express » de 10 minutes pendant la Journée API-ZF (PDF).
@@ -19,12 +22,25 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 ## Déjà fait
 
 - [x] Backend Node.js/Express, Sequelize, migrations, variables `DB_*`, déploiement automatique sur le VPS avec tests critiques.
-- [x] Frontend public et backoffice React/Vite, découpés en pages, composants, tiroirs et tableaux réutilisables.
+- [x] Deux projets React/Vite : site public (`frontend/`) et espace équipe (`backoffice/`, adminhub.investir.tg) pour l’administration, les occupants et les animateurs, avec une adresse par rubrique (React Router).
+- [ ] Nginx : servir `backoffice/dist` sur adminhub.investir.tg et rediriger les anciennes adresses du site public ; `BACKOFFICE_URL=https://adminhub.investir.tg` dans le `.env` du serveur.
+- [ ] Prévenir l’équipe : nouvelle adresse adminhub.investir.tg, reconnexion nécessaire, notifications à réactiver depuis le nouvel espace (cloche ou Profil).
 - [x] Quatre rôles : super administrateur, administrateur rattaché à un stand, occupant et animateur.
 - [x] Authentification, mot de passe oublié par code à cinq chiffres (hash, cinq essais, usage unique).
 - [x] Cloisonnement des contacts par occupant vérifié côté API et couvert par les tests critiques.
 - [x] Interface publique FR/EN avec détection de la langue et choix mémorisé ; traduction DeepL des contenus publics.
 - [x] Accès occupant retiré de l’interface publique ; routes protégées et redirections de session.
+
+## Référencement (SEO)
+
+- [x] Titre, description, URL canonique, balises de partage (Open Graph, X) et données structurées par page, insérés par l'API dans l'index.html (`backend/src/modules/seo`). Vraie 404 pour les pages inconnues, `noindex` sur les espaces privés et liens personnels.
+- [x] `robots.txt`, `sitemap.xml` dynamique (pages publiques, stands actifs, besoins B2B ouverts) et image de partage `og-image.png`.
+- [x] Les robots lisent la version française (Googlebot annonce l'anglais).
+- [ ] Nginx : faire passer les pages par l'API (`location @app`) après déploiement du code.
+- [ ] Google Search Console et Bing Webmaster Tools : valider le domaine hub.investir.tg et soumettre le sitemap (compte API-ZF).
+- [ ] Lien vers hub.investir.tg depuis investir.tg et les réseaux de l'API-ZF : c'est le premier levier de visibilité.
+- [ ] Inciter chaque occupant à remplir son activité : c'est la description de sa fiche dans Google.
+- [ ] Données structurées « Event » quand les dates et le lieu de la Foire sont confirmés.
 
 ## Notifications asynchrones (e-mail et push)
 
@@ -32,7 +48,7 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 - [x] SMTP partagé (`shared/mailer.js`) ; le code de mot de passe oublié part sans faire attendre la réponse.
 - [x] Web Push VAPID : abonnement par appareil (`/api/push-subscriptions`), abonnements expirés oubliés automatiquement.
 - [x] Membre d’équipe prévenu en push, ou par e-mail s’il n’a aucun appareil joignable ; visiteurs prévenus par e-mail dans leur langue.
-- [x] Activation dans le Profil occupant et par la cloche du backoffice ; une déconnexion volontaire coupe les notifications de l’appareil.
+- [x] Activation dans le Profil occupant et par la cloche de l’administration ; une déconnexion volontaire coupe les notifications de l’appareil.
 - [x] Événements branchés : demande de recontact, relance de contact à sa date, Investor Desk, proposition B2B et décision, réponse d’un invité du Studio.
 - [ ] Renseigner les clés VAPID et vérifier la réception sur Android, iPhone (site ajouté à l’écran d’accueil) et ordinateur.
 - [ ] WhatsApp et SMS en canal supplémentaire lorsque le fournisseur et les modèles approuvés sont connus.
@@ -43,16 +59,16 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 - [x] Canaux cloisonnés comme l'API : super administrateur, administrateur et occupant de son stand, animateurs, compte, et parcours Défis public (`/api/realtime/passports/:token`).
 - [x] Le serveur n'envoie que le sujet modifié, jamais de données ; chaque écran recharge lui-même ce qu'il a le droit de voir.
 - [x] Branché sur : contacts (dont demandes du site), passages et remises Défis, Investor Desk, B2B et propositions, Studio, stands, comptes, programme.
-- [x] Écrans mis à jour sans actualiser : carnet et en-tête occupant, compteur Défis, fiche participant de l'animateur, passeport public, tous les tableaux du backoffice et les propositions d'un besoin B2B.
+- [x] Écrans mis à jour sans actualiser : carnet et en-tête occupant, compteur Défis, fiche participant de l'animateur, passeport public, tous les tableaux de l’administration et les propositions d'un besoin B2B.
 - [x] Reconnexion progressive, pause après 30 s d'onglet caché, resynchronisation complète au retour ; rafraîchissement de 30 s conservé seulement quand le flux est coupé.
 - [x] Nginx : bloc `location /api/realtime/` sans mise en tampon, délai de 1 h, HTTP/2 déclaré sur les deux sites (sauvegardes dans `/root/nginx-backups/` du VPS).
-- [ ] Vérifier après déploiement sur téléphone et au backoffice : un scan, une demande de recontact et une proposition B2B apparaissent sans actualiser.
+- [ ] Vérifier après déploiement sur téléphone et à l’administration : un scan, une demande de recontact et une proposition B2B apparaissent sans actualiser.
 - [ ] Si l'API passe un jour en mode cluster PM2, relayer les événements entre processus par PostgreSQL `LISTEN/NOTIFY`.
 
 ## M1 — La vitrine du Hub (indispensable)
 
 - [x] Ouvrir le site public sans compte ; lister les stands actifs et ouvrir une fiche avec couverture et logo.
-- [x] QR codes générés depuis le backoffice : accueil vers `/stands`, stand vers `/stands/:slug`.
+- [x] QR codes générés depuis l’administration : accueil vers `/stands`, stand vers `/stands/:slug`.
 - [x] Recherche simple par structure ou activité.
 - [x] Navigation basse : accueil, exploration, rencontres et défis.
 - [ ] Recherche par intérêt « Que recherchez-vous ? » avec pastilles de catégories administrées.
@@ -94,7 +110,7 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 
 ## M4 — Bourse des besoins et rendez-vous B2B (indispensable)
 
-- [x] Le backoffice publie et ferme un besoin pour un stand ; un professionnel propose une rencontre avec consentement ; l’administrateur accepte ou refuse.
+- [x] L’administration publie et ferme un besoin pour un stand ; un professionnel propose une rencontre avec consentement ; l’administrateur accepte ou refuse.
 - [x] Équipe du stand prévenue d’une proposition ; le professionnel reçoit une confirmation puis la décision par e-mail.
 - [ ] Besoins structurés : catégorie, description, volume, délai ; filtre par catégorie et secteur.
 - [ ] Offres des occupants : produits, services, capacités, marchés servis.
@@ -121,6 +137,7 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 - [ ] Parcours « Trouvez les trois étapes » : trois produits de trois occupants différents affichés sur le passeport, plusieurs versions modifiables chaque jour.
 - [ ] Quiz express et vrai ou faux (trois questions), sur téléphone ou tablette.
 - [ ] Badge numérique partageable à la fin du parcours.
+- [x] Roue des opportunités `/roue` : code à usage unique généré dans l’administration, tirage côté serveur, lots des partenaires avec quantités, cases perdantes, stock mis à jour en temps réel.
 - [ ] Récompenses : types, stock suivi en temps réel, alerte à 20 % du stock restant.
 - [ ] Souhaitable : micro-enquête de trois questions au retrait.
 - [ ] Faire valider le règlement du jeu par le service juridique ; aucun consentement commercial implicite.

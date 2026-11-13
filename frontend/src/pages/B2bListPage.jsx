@@ -16,7 +16,7 @@ export default function B2bListPage() {
 
   return (
     <>
-      <section className="public-intro b2b-intro"><div className="public-container"><span className="public-eyebrow">{t('b2b.eyebrow')}</span><h1>{t('b2b.title')}</h1><p>{t('b2b.intro')}</p></div></section>
+      <section className="public-intro b2b-intro"><div className="public-container"><h1>{t('b2b.title')}</h1></div></section>
       <main className="public-container public-main">
         {loading && <p className="public-message">{t('b2b.loading')}</p>}
         {error && <div className="public-message is-error"><p>{error}</p><button type="button" onClick={() => window.location.reload()}>{t('common.retry')}</button></div>}

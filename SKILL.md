@@ -1,13 +1,13 @@
 ---
 name: hubinvest-interface
-description: Concevoir ou modifier un écran, un composant, un formulaire ou un parcours du frontend mobile ou du backoffice HubInvest. Appliquer une direction sobre inspirée des outils de travail comme Postman, avec une hiérarchie, des espacements, des alignements et des contrôles visuellement vérifiés. Ne pas utiliser pour le backend seul.
+description: Concevoir ou modifier un écran, un composant, un formulaire ou un parcours du frontend mobile ou de l’administration HubInvest. Appliquer une direction sobre inspirée des outils de travail comme Postman, avec une hiérarchie, des espacements, des alignements et des contrôles visuellement vérifiés. Ne pas utiliser pour le backend seul.
 ---
 
 # Interface HubInvest
 
 Construire une interface sobre, nette et fonctionnelle. Elle doit ressembler a un produit de travail concu par une equipe humaine, pas a une demonstration d'IA.
 
-Le frontend mobile et le backoffice partagent la meme identite, mais pas la meme densite. Le mobile favorise une action evidente a la fois. Le backoffice peut etre plus compact, avec une navigation stable et un espace de travail clair.
+Le frontend mobile et l’administration partagent la meme identite, mais pas la meme densite. Le mobile favorise une action evidente a la fois. L’administration peut etre plus compact, avec une navigation stable et un espace de travail clair.
 
 ## Avant de toucher au code
 
@@ -64,7 +64,7 @@ Utiliser :
 - peu d'ombres, reservees aux menus, dialogues et elements flottants ;
 - des rayons moderes et coherents ;
 - une grille d'espacement reguliere ;
-- une densite confortable sur mobile et maitrisee dans le backoffice ;
+- une densite confortable sur mobile et maitrisee dans l’administration ;
 - une seule zone visuellement forte par ecran.
 
 Eviter :
@@ -83,13 +83,14 @@ Eviter :
 
 ## Couleurs
 
-Les fichiers du dossier `assets/` sont la source de marque actuelle.
+La charte graphique du Hub (API-ZF 2026) fait référence ; les logos restent dans `assets/`.
 
-- Rouge API-ZF : `#D11135`
-- Vert API-ZF : `#006A4F`
-- Jaune API-ZF : `#FFCF11`
-- Noir : `#000000`
-- Blanc : `#FFFFFF`
+- Vert Hub, couleur maîtresse : `#156C53` (survol `#005B3F`), structure, liens, navigation active
+- Rouge signal : `#D31B34` (survol `#BA0024`), action principale, une seule par vue, filet de 56 × 3 px sous les grands titres publics
+- Jaune accent : `#FFCF15`, toujours avec du texte encre, jamais de blanc dessus
+- Encre : `#0F1822` ; gris texte : `#4D4D4D` ; bordures : `#D9DCDE` ; fond neutre : `#F4F5F5` ; teinte verte : `#EDF3F1`
+- Focus : anneau ambré `#E2A700`
+- Boutons et champs arrondis à 10 px (pas de boutons en pilule)
 
 Centraliser ces valeurs dans des tokens. Les surfaces neutres proviennent du noir et du blanc avec des niveaux controles ; ne pas ajouter une autre couleur chromatique sans raison metier.
 
@@ -99,11 +100,11 @@ Ne pas utiliser le logo comme motif decoratif. Choisir `Logo sans fond.png` lors
 
 ## Typographie
 
-Utiliser `Inter Variable`, auto-hebergee dans le projet avec Fontsource ou des fichiers locaux. Garder une pile systeme en repli.
+Titres en Sen (Fontsource, auto-hébergée), texte courant en Arial. Aleo italique est réservée aux citations et n’est pas chargée tant qu’aucune citation n’est affichée.
 
-- une seule famille pour l'interface ;
+- titres en Sen 700 à 800, en casse normale dans l’interface (les noms propres et titres longs restent lisibles) ;
 - texte courant de 16 px minimum sur mobile ;
-- libelles et donnees secondaires de 13 a 14 px minimum dans le backoffice ;
+- libelles et donnees secondaires de 13 a 14 px minimum dans l’administration ;
 - interligne lisible ;
 - titres courts, alignes a gauche ;
 - deux ou trois graisses suffisent ;
@@ -117,7 +118,7 @@ Utiliser `lucide-react` et importer seulement les icones affichees.
 - icone + texte pour une action importante ou inhabituelle ;
 - icone seule uniquement pour une action universellement comprise ;
 - `aria-label` obligatoire pour un bouton sans texte ;
-- infobulle dans le backoffice lorsqu'une icone seule peut etre ambigue ;
+- infobulle dans l’administration lorsqu'une icone seule peut etre ambigue ;
 - aucun caractere Unicode ou emoji a la place d'une icone.
 
 ## Composants
@@ -127,7 +128,7 @@ Construire quelques primitives propres au projet : bouton, champ, selecteur, dia
 ### Actions
 
 - un bouton principal visible par ecran ou par panneau de travail ;
-- hauteur minimale de 48 px sur mobile et 40 px dans le backoffice ;
+- hauteur minimale de 48 px sur mobile et 40 px dans l’administration ;
 - etats normal, survol, focus, chargement, desactive, succes et erreur si necessaires ;
 - le libelle decrit le resultat : `Enregistrer le contact`, pas `Valider` ;
 - une action destructive demande confirmation lorsque l'annulation n'est pas simple.
@@ -162,7 +163,7 @@ Construire quelques primitives propres au projet : bouton, champ, selecteur, dia
 - aucun menu profond ;
 - contenu critique disponible en connexion faible.
 
-### Backoffice
+### Administration
 
 - barre laterale gauche stable pour les fonctions disponibles au role connecte ;
 - barre haute contextuelle courte ;

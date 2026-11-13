@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /administration
+Disallow: /espace-occupant
+Disallow: /espace-animateur
+Disallow: /connexion
+Disallow: /mot-de-passe-oublie
+Disallow: /studio/
+Disallow: /defis/
+
+Sitemap: https://hub.investir.tg/sitemap.xml

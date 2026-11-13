@@ -10,7 +10,9 @@ const { events: realtime } = require('../realtime/realtime.service');
 const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const requiredPassages = Math.max(1, env.challenge.requiredPassages);
 
-const createCode = () => Array.from(crypto.randomBytes(8), (value) => alphabet[value % alphabet.length]).join('');
+// Code participant de 6 caractères (les anciens codes de 8 restent acceptés aux stands).
+const CODE_LENGTH = 6;
+const createCode = () => Array.from({ length: CODE_LENGTH }, () => alphabet[crypto.randomInt(alphabet.length)]).join('');
 
 const publicPayload = (passport, includeToken = false) => {
   const values = passport.toJSON ? passport.toJSON() : passport;
@@ -44,8 +46,12 @@ const createPublic = async (values) => {
   const passport = await challengePassportRepository.create({
     token: crypto.randomBytes(32).toString('hex'),
     code: createCode(),
-    displayName: values.displayName,
-    contact: values.contact,
+    displayName: values.fullName,
+    firstName: null,
+    lastName: null,
+    email: values.contact.includes('@') ? values.contact : null,
+    phone: values.contact.includes('@') ? null : values.contact,
+    contact: null,
     status: 'active',
     completedAt: null,
     redeemedAt: null,
@@ -93,6 +99,8 @@ const getByCode = async (code) => {
 const listRewards = async (user) => (await challengePassportRepository.findRedeemed()).map((passport) => ({
   id: passport.id,
   displayName: passport.displayName,
+  email: passport.email,
+  phone: passport.phone,
   contact: passport.contact,
   redeemedAt: passport.redeemedAt,
   redeemedByMe: passport.redeemedByUserId === user.id,

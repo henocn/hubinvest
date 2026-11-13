@@ -12,6 +12,8 @@ const defineChallengePassage = require('./challenge-passage.model');
 const defineNotificationJob = require('./notification-job.model');
 const definePushSubscription = require('./push-subscription.model');
 const defineProgramEvent = require('./program-event.model');
+const defineWheelSegment = require('./wheel-segment.model');
+const defineWheelCode = require('./wheel-code.model');
 
 const Occupant = defineOccupant(sequelize, DataTypes);
 const User = defineUser(sequelize, DataTypes);
@@ -25,6 +27,8 @@ const ChallengePassage = defineChallengePassage(sequelize, DataTypes);
 const NotificationJob = defineNotificationJob(sequelize, DataTypes);
 const PushSubscription = definePushSubscription(sequelize, DataTypes);
 const ProgramEvent = defineProgramEvent(sequelize, DataTypes);
+const WheelSegment = defineWheelSegment(sequelize, DataTypes);
+const WheelCode = defineWheelCode(sequelize, DataTypes);
 
 Occupant.hasMany(User, { foreignKey: 'occupantId', as: 'users' });
 User.belongsTo(Occupant, { foreignKey: 'occupantId', as: 'occupant' });
@@ -75,6 +79,13 @@ PushSubscription.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 Occupant.hasMany(ProgramEvent, { foreignKey: 'occupantId', as: 'programEvents' });
 ProgramEvent.belongsTo(Occupant, { foreignKey: 'occupantId', as: 'occupant' });
 
+WheelSegment.hasMany(WheelCode, { foreignKey: 'segmentId', as: 'codes' });
+WheelCode.belongsTo(WheelSegment, { foreignKey: 'segmentId', as: 'segment' });
+User.hasMany(WheelCode, { foreignKey: 'createdByUserId', as: 'createdWheelCodes' });
+WheelCode.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
+ChallengePassport.hasMany(WheelCode, { foreignKey: 'passportId', as: 'wheelCodes' });
+WheelCode.belongsTo(ChallengePassport, { foreignKey: 'passportId', as: 'player' });
+
 module.exports = {
   sequelize,
   Occupant,
@@ -89,4 +100,6 @@ module.exports = {
   NotificationJob,
   PushSubscription,
   ProgramEvent,
+  WheelSegment,
+  WheelCode,
 };

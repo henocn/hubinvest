@@ -1,7 +1,8 @@
 const env = require('../../config/env');
 
-const occupantSpaceUrl = () => `${env.appUrls.public}/espace-occupant`;
-const backofficeUrl = () => env.appUrls.backoffice;
+// Liens vers la bonne rubrique de l'espace équipe.
+const teamUrl = (path) => `${env.appUrls.backoffice}${path}`;
+const occupantSpaceUrl = () => teamUrl('/contacts');
 
 // Construit le texte d'un e-mail interne à partir du message court et du lien utile.
 const teamText = (user, lines, url) => [
@@ -39,18 +40,18 @@ const contactReminder = ({ user, contact }) => {
 const investorRequestReceived = ({ user, occupant }) => ({
   title: 'Nouvelle demande Investor Desk',
   body: `Un projet vient d’être présenté à ${occupant.name}.`,
-  url: backofficeUrl(),
+  url: teamUrl('/investor-desk'),
   subject: 'Nouvelle demande Investor Desk',
-  text: teamText(user, [`Un projet vient d’être présenté à ${occupant.name} depuis l’Investor Desk.`, 'Consultez-le dans le backoffice :'], backofficeUrl()),
+  text: teamText(user, [`Un projet vient d’être présenté à ${occupant.name} depuis l’Investor Desk.`, 'Consultez-le dans l’administration :'], teamUrl('/investor-desk')),
 });
 
 // Prévient l'équipe qu'une proposition de rencontre répond à un besoin B2B.
 const b2bProposalReceived = ({ user, need }) => ({
   title: 'Nouvelle proposition B2B',
   body: `Le besoin « ${need.title} » a reçu une proposition.`,
-  url: backofficeUrl(),
+  url: teamUrl('/b2b'),
   subject: 'Nouvelle proposition B2B',
-  text: teamText(user, [`Le besoin « ${need.title} » a reçu une proposition de rencontre.`, 'Acceptez-la ou refusez-la dans le backoffice :'], backofficeUrl()),
+  text: teamText(user, [`Le besoin « ${need.title} » a reçu une proposition de rencontre.`, 'Acceptez-la ou refusez-la dans l’administration :'], teamUrl('/b2b')),
 });
 
 // Prévient l'équipe qu'un invité a répondu à son invitation au Studio.
@@ -59,9 +60,9 @@ const studioInvitationAnswered = ({ user, invitation }) => {
   return {
     title: 'Réponse à une invitation Studio',
     body: `${invitation.guestName} ${answer} l’invitation.`,
-    url: backofficeUrl(),
+    url: teamUrl('/studio'),
     subject: `Studio : ${invitation.guestName} ${answer} l’invitation`,
-    text: teamText(user, [`${invitation.guestName} ${answer} l’invitation « ${invitation.subject} ».`, 'Consultez le planning du Studio :'], backofficeUrl()),
+    text: teamText(user, [`${invitation.guestName} ${answer} l’invitation « ${invitation.subject} ».`, 'Consultez le planning du Studio :'], teamUrl('/studio')),
   };
 };
 

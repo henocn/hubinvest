@@ -9,8 +9,8 @@ self.addEventListener('push', (event) => {
 
   event.waitUntil(self.registration.showNotification(data.title || 'HubInvest', {
     body: data.body || '',
-    icon: '/favicon.svg',
-    badge: '/favicon.svg',
+    icon: '/pwa-192.png',
+    badge: '/badge-96.png',
     tag: data.tag,
     data: { url: data.url || '/' },
   }));
@@ -23,8 +23,11 @@ self.addEventListener('notificationclick', (event) => {
 
   event.waitUntil((async () => {
     const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    const existing = windows.find((client) => new URL(client.url).origin === new URL(target).origin);
-    if (existing) return existing.focus();
+    const existing = windows.find((client) => client.url === target) || windows.find((client) => new URL(client.url).origin === new URL(target).origin);
+    if (existing) {
+      if (existing.url !== target && 'navigate' in existing) await existing.navigate(target);
+      return existing.focus();
+    }
     return self.clients.openWindow(target);
   })());
 });

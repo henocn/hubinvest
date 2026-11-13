@@ -1,5 +1,6 @@
 import PublicHeader from './components/PublicHeader';
 import PublicBottomNav from './components/PublicBottomNav';
+import BrandFooter from './components/BrandFooter';
 import B2bDetailPage from './pages/B2bDetailPage';
 import B2bListPage from './pages/B2bListPage';
 import HomePage from './pages/HomePage';
@@ -38,6 +39,8 @@ export default function PublicPages({ path }) {
     page = <StudioInvitationPage token={studioInvitation[1]} />;
   } else if (path === '/defis') {
     page = <ChallengePage />;
+  } else if (path === '/roue') {
+    page = <ChallengePage openWheel />;
   } else if (challengePassport) {
     page = <ChallengePage token={challengePassport[1]} />;
   } else {
@@ -46,8 +49,9 @@ export default function PublicPages({ path }) {
 
   return (
     <div className="public-app">
-      <PublicHeader />
+      <PublicHeader path={path} />
       {page}
+      <BrandFooter />
       <PublicBottomNav path={path} />
     </div>
   );
