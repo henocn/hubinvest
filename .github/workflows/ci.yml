@@ -1,0 +1,63 @@
+name: CI
+
+# Contrôle chaque push sur dev et chaque pull request vers main, avant tout déploiement.
+on:
+  push:
+    branches:
+      - dev
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend (tests critiques)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      NODE_ENV: test
+      # Secret factice : les tests signent des jetons, sans base de données ni .env.
+      JWT_SECRET: ci-only-secret-not-used-in-production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run test:critical
+
+  build:
+    name: Build ${{ matrix.app }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [frontend, backoffice]
+    defaults:
+      run:
+        working-directory: ${{ matrix.app }}
+    env:
+      VITE_API_URL: /api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: ${{ matrix.app }}/package-lock.json
+      - run: npm ci
+      - run: npm run build
