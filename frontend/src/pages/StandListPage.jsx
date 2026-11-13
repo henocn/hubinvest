@@ -41,7 +41,7 @@ export default function StandListPage() {
           <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t('stands.searchPlaceholder')} />
         </label>
         {loading && <p className="public-message">{t('stands.loading')}</p>}
-        {error && <div className="public-message is-error"><p>{error}</p><button type="button" onClick={() => window.location.reload()}>{t('common.retry')}</button></div>}
+        {error && <div className="public-message is-error"><p>{error}</p></div>}
         {!loading && !error && filtered.length === 0 && <p className="public-message">{t(query ? 'stands.noResult' : 'stands.empty')}</p>}
         {!loading && !error && filtered.length > 0 && <div className="stand-grid">{filtered.map((stand) => <StandCard stand={stand} key={stand.id} />)}</div>}
       </main>

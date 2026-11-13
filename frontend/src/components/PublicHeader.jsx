@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { Briefcase, Handshake, Home, LogIn, Menu, Search, Star, X } from 'lucide-react';
 import hubLogoWhite from '../assets/brand/hub-logo-white.png';
 import BrandFooter from './BrandFooter';
@@ -59,10 +60,10 @@ function SideMenu({ path, onClose }) {
           {menuLinks.map(({ key, href, Icon, matches }) => {
             const active = matches(path);
             return (
-              <a key={key} href={href} className={active ? 'is-active' : ''} aria-current={active ? 'page' : undefined}>
+              <Link key={key} to={href} className={active ? 'is-active' : ''} aria-current={active ? 'page' : undefined}>
                 <Icon size={20} aria-hidden="true" />
                 <span>{t(`nav.${key}`)}</span>
-              </a>
+              </Link>
             );
           })}
         </nav>
@@ -92,15 +93,18 @@ export default function PublicHeader({ path }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
 
+  // Le menu se referme dès qu'une rubrique s'ouvre.
+  useEffect(() => { setMenuOpen(false); }, [path]);
+
   return (
     <>
       <header className="public-header">
         <button className="public-menu-button" type="button" onClick={() => setMenuOpen(true)} aria-label={t('nav.menu')} aria-expanded={menuOpen} aria-controls="side-menu">
           <Menu size={24} />
         </button>
-        <a className="public-brand" href="/" aria-label={t('brand.homeLabel')}>
+        <Link className="public-brand" to="/" aria-label={t('brand.homeLabel')}>
           <img src={hubLogoWhite} alt={t('brand.subtitle')} />
-        </a>
+        </Link>
       </header>
       {menuOpen && <SideMenu path={path} onClose={closeMenu} />}
     </>

@@ -24,7 +24,6 @@ export default {
   },
   common: {
     optional: "facultatif",
-    retry: "Réessayer",
     loading: "Chargement…",
     requestFailed: "Une erreur est survenue. Réessayez.",
     validationFailed: "Certaines informations sont invalides. Vérifiez les champs.",

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { ArrowLeft, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -20,7 +21,7 @@ export default function StandDetailPage({ slug }) {
 
   return (
     <main className="public-container public-detail">
-      <a className="public-back" href="/stands"><ArrowLeft size={18} /> {t('stands.all')}</a>
+      <Link className="public-back" to="/stands"><ArrowLeft size={18} /> {t('stands.all')}</Link>
       {loading && <p className="public-message">{t('stands.loadingOne')}</p>}
       {error && <p className="public-message is-error">{error}</p>}
       {stand && (

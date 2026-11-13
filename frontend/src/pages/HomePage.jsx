@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { ArrowRight, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -38,7 +39,7 @@ function SpotlightCard({ spotlight }) {
   const { t } = useTranslation();
   const { occupant } = spotlight;
   return (
-    <a className="home-spotlight" href={`/stands/${occupant.slug}`}>
+    <Link className="home-spotlight" to={`/stands/${occupant.slug}`}>
       <div className="home-spotlight-cover">
         {occupant.coverImageUrl
           ? <img src={resolveAssetUrl(occupant.coverImageUrl)} alt="" />
@@ -52,7 +53,7 @@ function SpotlightCard({ spotlight }) {
         )}
         {(spotlight.description || occupant.activity) && <p>{spotlight.description || occupant.activity}</p>}
       </div>
-    </a>
+    </Link>
   );
 }
 
@@ -79,7 +80,7 @@ function ProgramItem({ event, formats, now, showDay }) {
         {(location || event.occupant) && (
           <span className="program-meta">
             {location && <span><MapPin size={13} aria-hidden="true" /> {location}</span>}
-            {event.occupant && <a href={`/stands/${event.occupant.slug}`}>{event.occupant.name}</a>}
+            {event.occupant && <Link to={`/stands/${event.occupant.slug}`}>{event.occupant.name}</Link>}
           </span>
         )}
       </div>
@@ -117,11 +118,11 @@ export default function HomePage() {
       </section>
       <main className="public-container public-main home-main">
         {loading && <p className="public-message">{t('home.loading')}</p>}
-        {error && <div className="public-message is-error"><p>{error}</p><button type="button" onClick={() => window.location.reload()}>{t('common.retry')}</button></div>}
+        {error && <div className="public-message is-error"><p>{error}</p></div>}
         {!loading && !error && isEmpty && (
           <div className="public-message home-empty">
             <p>{t('home.empty')}</p>
-            <a href="/stands">{t('home.exploreStands')} <ArrowRight size={16} aria-hidden="true" /></a>
+            <Link to="/stands">{t('home.exploreStands')} <ArrowRight size={16} aria-hidden="true" /></Link>
           </div>
         )}
         {!loading && !error && data && !isEmpty && (
@@ -141,7 +142,7 @@ export default function HomePage() {
                 </section>
               )}
             </div>
-            <a className="home-explore-link" href="/stands">{t('home.exploreStands')} <ArrowRight size={16} aria-hidden="true" /></a>
+            <Link className="home-explore-link" to="/stands">{t('home.exploreStands')} <ArrowRight size={16} aria-hidden="true" /></Link>
           </>
         )}
       </main>

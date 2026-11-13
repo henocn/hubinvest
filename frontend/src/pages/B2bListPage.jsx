@@ -19,7 +19,7 @@ export default function B2bListPage() {
       <section className="public-intro b2b-intro"><div className="public-container"><h1>{t('b2b.title')}</h1></div></section>
       <main className="public-container public-main">
         {loading && <p className="public-message">{t('b2b.loading')}</p>}
-        {error && <div className="public-message is-error"><p>{error}</p><button type="button" onClick={() => window.location.reload()}>{t('common.retry')}</button></div>}
+        {error && <div className="public-message is-error"><p>{error}</p></div>}
         {!loading && !error && needs.length === 0 && <p className="public-message">{t('b2b.empty')}</p>}
         {!loading && !error && needs.length > 0 && <div className="b2b-need-grid">{needs.map((need) => <B2bNeedCard key={need.id} need={need} />)}</div>}
       </main>

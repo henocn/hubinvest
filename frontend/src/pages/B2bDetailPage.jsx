@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { ArrowLeft, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -17,7 +18,7 @@ export default function B2bDetailPage({ id }) {
 
   return (
     <main className="public-container b2b-detail-page">
-      <a className="public-back" href="/b2b"><ArrowLeft size={18} /> {t('b2b.all')}</a>
+      <Link className="public-back" to="/b2b"><ArrowLeft size={18} /> {t('b2b.all')}</Link>
       {loading && <p className="public-message">{t('b2b.loadingOne')}</p>}
       {error && <p className="public-message is-error">{error}</p>}
       {need && <>
