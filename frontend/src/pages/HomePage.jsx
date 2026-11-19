@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { ArrowRight, MapPin, MessageCircleQuestion } from 'lucide-react';
+import { ArrowRight, ChevronDown, MessageCircleQuestion } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { api, resolveAssetUrl } from '../lib/api';
 import { publicErrorMessage } from '../lib/public-error';
@@ -24,7 +24,7 @@ function useHubFormats(language) {
   const locale = language?.startsWith('en') ? 'en-GB' : 'fr-FR';
   return {
     day: new Intl.DateTimeFormat(locale, { timeZone: HUB_TIME_ZONE, weekday: 'long', day: 'numeric', month: 'long' }),
-    shortDay: new Intl.DateTimeFormat(locale, { timeZone: HUB_TIME_ZONE, weekday: 'short', day: 'numeric' }),
+    weekday: new Intl.DateTimeFormat(locale, { timeZone: HUB_TIME_ZONE, weekday: 'long', day: 'numeric' }),
     time: new Intl.DateTimeFormat(locale, { timeZone: HUB_TIME_ZONE, hour: '2-digit', minute: '2-digit' }),
   };
 }
@@ -36,30 +36,6 @@ function eventState(event, now) {
   return 'done';
 }
 
-// Affiche l'occupant mis à l'affiche du jour, image séparée de ses informations.
-function SpotlightCard({ spotlight }) {
-  const { t } = useTranslation();
-  const { occupant } = spotlight;
-  return (
-    <Link className="home-spotlight" to={`/stands/${occupant.slug}`}>
-      <div className="home-spotlight-cover">
-        {occupant.coverImageUrl
-          ? <img src={resolveAssetUrl(occupant.coverImageUrl)} alt="" />
-          : <span aria-hidden="true">{occupant.name.slice(0, 1)}</span>}
-      </div>
-      <div className="home-spotlight-content">
-        <span className="public-eyebrow">{t('home.spotlight')}</span>
-        <h2>{occupant.name}</h2>
-        {(spotlight.location || occupant.standLabel) && (
-          <span className="stand-location"><MapPin size={14} aria-hidden="true" /> {spotlight.location || occupant.standLabel}</span>
-        )}
-        {(spotlight.description || occupant.activity) && <p>{spotlight.description || occupant.activity}</p>}
-      </div>
-    </Link>
-  );
-}
-
-// Affiche une ligne du programme : horaire, type, titre, lieu et stand concerné.
 // Questions ouvertes pendant un direct (Studio, prise de parole, temps fort), comme côté serveur :
 // jusqu'à 10 minutes après la fin, ou 2 heures après le début s'il n'y a pas d'heure de fin.
 const LIVE_QUESTION_TYPES = new Set(['studio', 'talk', 'highlight']);
@@ -70,42 +46,176 @@ const acceptsQuestions = (event, now) => {
   return now >= start && now <= end;
 };
 
-function ProgramItem({ event, formats, now, showDay }) {
+// Bouton « Poser une question » avec sa fenêtre, partagé par le bandeau et la grille.
+function AskButton({ event, className }) {
+  const { t } = useTranslation();
+  const [asking, setAsking] = useState(false);
+  return (
+    <>
+      <button className={className} type="button" onClick={() => setAsking(true)}>
+        <MessageCircleQuestion size={18} aria-hidden="true" />
+        {t('live.ask')}
+      </button>
+      {asking && <LiveQuestionDialog event={event} onClose={() => setAsking(false)} />}
+    </>
+  );
+}
+
+// Bandeau d'ouverture : la date, et ce qui se passe maintenant (ou juste après) en grand, comme à l'entrée d'un festival.
+function HomeHero({ data, formats, now }) {
   const { t } = useTranslation();
   const settings = useSiteSettings();
-  const [asking, setAsking] = useState(false);
-  const canAsk = !showDay && settings.liveQuestionsOpen !== false && acceptsQuestions(event, now);
-  const state = showDay ? 'next' : eventState(event, now);
+  const today = data?.today || [];
+  const live = today.find((event) => eventState(event, now) === 'live');
+  const next = today.find((event) => eventState(event, now) === 'next');
+  const featured = live || next;
+  const location = featured && (featured.location || featured.occupant?.standLabel);
+
+  return (
+    <section className="home-hero">
+      <div className="public-container">
+        <p className="home-hero-date">{formats.day.format(data ? new Date(data.date) : new Date(now))}</p>
+        <h1>{t('home.title')}</h1>
+        {featured && (
+          <div className={`home-hero-now${live ? ' is-live' : ''}`}>
+            <span className="home-hero-label">
+              {live ? t('home.now') : t('home.next')}
+              <span>{formats.time.format(new Date(featured.startsAt))}{featured.endsAt && ` – ${formats.time.format(new Date(featured.endsAt))}`}</span>
+            </span>
+            <strong>{featured.title}</strong>
+            <span className="home-hero-meta">
+              {[t(`program.types.${featured.type}`), location, featured.occupant?.name].filter(Boolean).join(' · ')}
+            </span>
+            {live && settings.liveQuestionsOpen !== false && acceptsQuestions(live, now) && <AskButton event={live} className="home-hero-ask" />}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+// Stand à l'affiche du jour : un bandeau discret (vignette, nom, emplacement) qui mène à sa fiche.
+function SpotlightCard({ spotlight }) {
+  const { t } = useTranslation();
+  const { occupant } = spotlight;
+  const image = occupant.logoUrl || occupant.coverImageUrl;
+  const location = spotlight.location || occupant.standLabel;
+  return (
+    <Link className="home-spotlight" to={`/stands/${occupant.slug}`}>
+      <span className={`home-spotlight-thumb${occupant.logoUrl ? ' is-logo' : ''}`}>
+        {image ? <img src={resolveAssetUrl(image)} alt="" /> : <span aria-hidden="true">{occupant.name.slice(0, 1)}</span>}
+      </span>
+      <span className="home-spotlight-text">
+        <small>{t('home.spotlight')}</small>
+        <strong>{occupant.name}</strong>
+        {location && <span>{location}</span>}
+      </span>
+      <ArrowRight className="home-spotlight-arrow" size={18} aria-hidden="true" />
+    </Link>
+  );
+}
+
+// Un rendez-vous sur le rail : grande heure, rail coloré selon le type, titre puis lieu et stand.
+function ProgramItem({ event, formats, now, upcoming = false, featuredId = null }) {
+  const { t } = useTranslation();
+  const settings = useSiteSettings();
+  const state = upcoming ? 'next' : eventState(event, now);
+  // Le direct mis en avant dans le bandeau y a déjà son bouton : pas de doublon dans la grille.
+  const canAsk = !upcoming && state === 'live' && event.id !== featuredId && settings.liveQuestionsOpen !== false && acceptsQuestions(event, now);
   const location = event.location || event.occupant?.standLabel;
 
   return (
-    <li className={`program-item is-${state}`}>
+    <li className={`program-item is-${state} type-${event.type}`}>
       <time dateTime={event.startsAt}>
-        {showDay && <small>{formats.shortDay.format(new Date(event.startsAt))}</small>}
         <strong>{formats.time.format(new Date(event.startsAt))}</strong>
-        {!showDay && event.endsAt && state !== 'live' && <small>{formats.time.format(new Date(event.endsAt))}</small>}
+        {event.endsAt && <small>{formats.time.format(new Date(event.endsAt))}</small>}
       </time>
-      <div>
+      <div className="program-body">
+        <span className="program-type">{state === 'live' ? `${t('home.now')} · ` : ''}{t(`program.types.${event.type}`)}</span>
         <strong>{event.title}</strong>
-        <span className="program-meta">
-          {state === 'live' && <span className="program-now">{t('home.now')}</span>}
-          <span>{t(`program.types.${event.type}`)}</span>
-          {location && <span>{location}</span>}
-          {event.occupant && <Link to={`/stands/${event.occupant.slug}`}>{event.occupant.name}</Link>}
-        </span>
-        {canAsk && (
-          <button className="live-question-button" type="button" onClick={() => setAsking(true)}>
-            <MessageCircleQuestion size={17} aria-hidden="true" />
-            {t('live.ask')}
-          </button>
+        {(location || event.occupant) && (
+          <span className="program-meta">
+            {location}
+            {location && event.occupant && ' · '}
+            {event.occupant && <Link to={`/stands/${event.occupant.slug}`}>{event.occupant.name}</Link>}
+          </span>
         )}
+        {canAsk && <AskButton event={event} className="live-question-button" />}
       </div>
-      {asking && <LiveQuestionDialog event={event} onClose={() => setAsking(false)} />}
     </li>
   );
 }
 
-// Page d'accueil : occupant à l'affiche, programme du jour et prochains rendez-vous du Hub.
+// Programme du jour : les rendez-vous passés sont repliés, une ligne rouge marque l'heure qu'il est.
+function TodaySchedule({ events, formats, now, featuredId }) {
+  const { t } = useTranslation();
+  const [showPast, setShowPast] = useState(false);
+  const past = events.filter((event) => eventState(event, now) === 'done');
+  const visible = showPast ? events : events.filter((event) => eventState(event, now) !== 'done');
+  const clockBefore = visible.find((event) => eventState(event, now) === 'next');
+  const hasLive = events.some((event) => eventState(event, now) === 'live');
+
+  return (
+    <section className="home-schedule" aria-labelledby="home-today-title">
+      <h2 id="home-today-title">{t('home.today')}</h2>
+      {past.length > 0 && (
+        <button className={`program-past-toggle${showPast ? ' is-open' : ''}`} type="button" onClick={() => setShowPast((current) => !current)}>
+          {showPast ? t('home.hidePast') : t('home.showPast', { count: past.length })}
+          <ChevronDown size={16} aria-hidden="true" />
+        </button>
+      )}
+      {events.length === 0 && <p className="home-schedule-empty">{t('home.noToday')}</p>}
+      {visible.length > 0 ? (
+        <ol className="program-list">
+          {visible.map((event) => (
+            <FragmentWithClock key={event.id} showClock={!hasLive && clockBefore === event} now={now} formats={formats}>
+              <ProgramItem event={event} formats={formats} now={now} featuredId={featuredId} />
+            </FragmentWithClock>
+          ))}
+        </ol>
+      ) : events.length > 0 && <p className="home-schedule-empty">{t('home.dayOver')}</p>}
+    </section>
+  );
+}
+
+// Insère la ligne « Il est 16:42 » juste avant le prochain rendez-vous quand rien n'est en cours.
+function FragmentWithClock({ showClock, now, formats, children }) {
+  const { t } = useTranslation();
+  return (
+    <>
+      {showClock && <li className="program-clock" aria-hidden="true"><span>{t('home.clock', { time: formats.time.format(new Date(now)) })}</span></li>}
+      {children}
+    </>
+  );
+}
+
+// À venir : regroupé par jour.
+function UpcomingSchedule({ events, formats, now }) {
+  const { t } = useTranslation();
+  const days = events.reduce((groups, event) => {
+    const day = formats.weekday.format(new Date(event.startsAt));
+    const group = groups.find((item) => item.day === day);
+    if (group) group.events.push(event);
+    else groups.push({ day, events: [event] });
+    return groups;
+  }, []);
+
+  return (
+    <section className="home-schedule is-upcoming" aria-labelledby="home-upcoming-title">
+      <h2 id="home-upcoming-title">{t('home.upcoming')}</h2>
+      {days.map(({ day, events: dayEvents }) => (
+        <div className="program-day" key={day}>
+          <h3>{day}</h3>
+          <ol className="program-list">
+            {dayEvents.map((event) => <ProgramItem event={event} formats={formats} now={now} upcoming key={event.id} />)}
+          </ol>
+        </div>
+      ))}
+    </section>
+  );
+}
+
+// Page d'accueil : ce qui se passe maintenant, le stand à l'affiche, le programme du jour et les prochains rendez-vous.
 export default function HomePage() {
   const { t, i18n } = useTranslation();
   const [data, setData] = useState(null);
@@ -127,13 +237,8 @@ export default function HomePage() {
 
   return (
     <>
-      <section className="public-intro home-intro">
-        <div className="public-container">
-          <h1>{t('home.title')}</h1>
-          <p className="home-date">{formats.day.format(data ? new Date(data.date) : new Date(now))}</p>
-        </div>
-      </section>
-      <main className="public-container public-main home-main">
+      <HomeHero data={data} formats={formats} now={now} />
+      <main className="public-container home-main">
         {loading && <p className="public-message">{t('home.loading')}</p>}
         {error && <div className="public-message is-error"><p>{error}</p></div>}
         {!loading && !error && isEmpty && (
@@ -146,18 +251,8 @@ export default function HomePage() {
           <>
             {data.spotlight && <SpotlightCard spotlight={data.spotlight} />}
             <div className="home-columns">
-              <section className="home-schedule" aria-labelledby="home-today-title">
-                <h2 id="home-today-title">{t('home.today')}</h2>
-                {data.today.length > 0
-                  ? <ol className="program-list">{data.today.map((event) => <ProgramItem event={event} formats={formats} now={now} key={event.id} />)}</ol>
-                  : <p className="home-schedule-empty">{t('home.noToday')}</p>}
-              </section>
-              {data.upcoming.length > 0 && (
-                <section className="home-schedule is-upcoming" aria-labelledby="home-upcoming-title">
-                  <h2 id="home-upcoming-title">{t('home.upcoming')}</h2>
-                  <ol className="program-list">{data.upcoming.map((event) => <ProgramItem event={event} formats={formats} now={now} showDay key={event.id} />)}</ol>
-                </section>
-              )}
+              <TodaySchedule events={data.today} formats={formats} now={now} featuredId={data.today.find((event) => eventState(event, now) === 'live')?.id} />
+              {data.upcoming.length > 0 && <UpcomingSchedule events={data.upcoming} formats={formats} now={now} />}
             </div>
             <Link className="home-explore-link" to="/stands">{t('home.exploreStands')} <ArrowRight size={16} aria-hidden="true" /></Link>
           </>

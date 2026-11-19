@@ -1158,3 +1158,18 @@ test('une question du public arrive à l’animateur seulement pendant le direct
   assert.equal(saved.authorName, null);
   await assert.rejects(liveQuestionService.createPublic('later', { question: 'Trop tôt ?' }, now), (error) => error.code === 'LIVE_NOT_OPEN');
 });
+
+test('la galerie d’un stand garde 5 images au plus et retire le fichier refusé', async (context) => {
+  const occupant = { id: 'stand-a', gallery: ['/uploads/gallery/a.jpg', '/uploads/gallery/b.jpg', '/uploads/gallery/c.jpg', '/uploads/gallery/d.jpg'] };
+  context.mock.method(occupantRepository, 'findById', async () => occupant);
+  context.mock.method(occupantRepository, 'update', async (item, values) => Object.assign(item, values));
+
+  await occupantService.addGalleryImage('stand-a', { filename: 'e.jpg' });
+  assert.equal(occupant.gallery.length, 5);
+  await assert.rejects(occupantService.addGalleryImage('stand-a', { filename: 'f.jpg' }), (error) => error.code === 'GALLERY_FULL');
+  assert.equal(occupant.gallery.length, 5);
+
+  await occupantService.removeGalleryImage('stand-a', '/uploads/gallery/a.jpg');
+  assert.deepEqual(occupant.gallery, ['/uploads/gallery/b.jpg', '/uploads/gallery/c.jpg', '/uploads/gallery/d.jpg', '/uploads/gallery/e.jpg']);
+  await assert.rejects(occupantService.removeGalleryImage('stand-a', '/uploads/gallery/zz.jpg'), (error) => error.code === 'GALLERY_IMAGE_NOT_FOUND');
+});

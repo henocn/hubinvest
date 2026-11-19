@@ -7,6 +7,7 @@ const occupantValidation = require('./occupant.validation');
 const occupantController = require('./occupant.controller');
 const uploadCover = require('./occupant-cover.middleware');
 const uploadLogo = require('./occupant-logo.middleware');
+const uploadGalleryImage = require('./occupant-gallery.middleware');
 
 const router = express.Router();
 const adminOnly = requireRoles(roles.SUPER_ADMIN);
@@ -40,6 +41,18 @@ router.post(
   validate(occupantValidation.params, 'params'),
   uploadLogo,
   asyncHandler(occupantController.updateLogo),
+);
+router.post(
+  '/:id/gallery',
+  validate(occupantValidation.params, 'params'),
+  uploadGalleryImage,
+  asyncHandler(occupantController.addGalleryImage),
+);
+router.delete(
+  '/:id/gallery',
+  validate(occupantValidation.params, 'params'),
+  validate(occupantValidation.galleryImage),
+  asyncHandler(occupantController.removeGalleryImage),
 );
 router.delete(
   '/:id',

@@ -58,6 +58,13 @@ export const api = {
     body.append('logo', file);
     return request(`/occupants/${id}/logo`, authorized(token, { method: 'POST', body }));
   },
+  addOccupantGalleryImage: (token, id, file) => {
+    const body = new FormData();
+    body.append('image', file);
+    return request(`/occupants/${id}/gallery`, authorized(token, { method: 'POST', body }));
+  },
+  removeOccupantGalleryImage: (token, id, url) =>
+    request(`/occupants/${id}/gallery`, authorized(token, { method: 'DELETE', body: JSON.stringify({ url }) })),
   deleteOccupant: (token, id) =>
     request(`/occupants/${id}`, authorized(token, { method: 'DELETE' })),
   investorRequests: (token) => request('/investor-requests', authorized(token)),

@@ -12,6 +12,8 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 - Un défaut visible d’alignement, de proportion, de centrage, de hauteur ou d’espacement bloque la livraison, même si l’écran fonctionne.
 - Ne jamais forcer un retour à la ligne (largeur maximale étroite sur un titre, `<br>`) : le texte occupe la largeur disponible et ne passe à la ligne que lorsque l'écran l'exige, ou quand un design particulier le justifie vraiment.
 - Conserver les accents dans tous les textes français.
+- Accueil : un bandeau vert (date en jaune, symbole en filigrane) annonce en grand ce qui se passe « En ce moment » ou « Ensuite », avec « Poser une question » pendant un direct. Le stand à l’affiche est un simple bandeau (vignette, nom, emplacement). Le programme est un rail : grande heure en Sen, tronçon coloré par type (Studio rouge, prise de parole vert, temps fort jaune, animation encre), rendez-vous passés repliés, ligne rouge « Il est … » entre deux rendez-vous. Pas de cartes imbriquées, pas de majuscules espacées, pas de pastilles décoratives.
+- Fiche de stand : Activités, Produits, Services (une entrée par ligne dans l’administration), site web, et un carrousel de 5 photos au plus.
 - Sur une carte de stand, séparer nettement l’image de couverture et les informations. Ne jamais poser le nom, l’activité ou l’action directement sur la photo.
 - Une carte de stand s’arrête après sa description tronquée. Ne pas ajouter « Voir la fiche », « View profile », une flèche ou une autre action répétant que la carte entière est cliquable.
 
