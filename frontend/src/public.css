@@ -364,7 +364,7 @@
   padding: clamp(30px, 6vw, 64px) 0 clamp(30px, 5vw, 56px);
   color: #fff;
   /* Vert du Hub un peu éclairci, pour que le bandeau ne se confonde pas avec l’en-tête. */
-  background: rgba(21, 108, 83, 0.84);
+  background: rgba(21, 108, 83, 0.72);
 }
 
 .home-hero::after {
