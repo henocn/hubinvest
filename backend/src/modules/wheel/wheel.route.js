@@ -35,6 +35,7 @@ router.post('/public/spin', limitFailedSpins, validate(wheelValidation.spin), as
 
 router.use(asyncHandler(authenticate), requireRoles(roles.SUPER_ADMIN, roles.ADMIN));
 router.get('/', asyncHandler(wheelController.overview));
+router.get('/plays', asyncHandler(wheelController.listPlays));
 router.post('/codes', asyncHandler(wheelController.generateCode));
 router.post('/segments', validate(wheelValidation.createSegment), asyncHandler(wheelController.createSegment));
 router.patch(

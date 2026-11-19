@@ -17,6 +17,10 @@ const overview = async (request, response) => response.json({
 });
 
 // Délivre un nouveau code de jeu.
+const listPlays = async (request, response) => response.json({
+  data: await wheelService.listPlays(),
+});
+
 const generateCode = async (request, response) => response.status(201).json({
   data: await wheelService.generateCode(request.user),
 });
@@ -36,4 +40,4 @@ const removeSegment = async (request, response) => {
   response.json({ message: 'Case retirée de la roue.' });
 };
 
-module.exports = { getPublic, spin, overview, generateCode, createSegment, updateSegment, removeSegment };
+module.exports = { getPublic, spin, overview, listPlays, generateCode, createSegment, updateSegment, removeSegment };

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Check, Clock3, Cloud, Pencil, Phone, Plus, RefreshCw, Search, UserRound } from 'lucide-react';
+import { ArrowLeft, Check, Clock3, Cloud, Download, Pencil, Phone, Plus, RefreshCw, Search, UserRound } from 'lucide-react';
 import { api } from '../lib/api';
+import { exportToExcel, formatDate } from '../lib/excel';
 import { useRealtimeEvent } from '../lib/realtime';
 import { listStoredContacts, mergeServerContacts, queueContact, syncPendingContacts } from '../lib/contact-store';
 
@@ -409,6 +410,26 @@ export default function ContactsPage({ session, onLogout }) {
   }, { total: 0, unqualified: 0, byQualification: { hot: 0, warm: 0, cold: 0 } });
   const pendingCount = contacts.filter((contact) => contact.syncStatus !== 'synced').length;
 
+  // Le carnet du stand en Excel : les contacts affichés (après recherche), même ceux pas encore synchronisés.
+  const exportContacts = () => exportToExcel({
+    name: 'contacts',
+    sheetName: 'Contacts',
+    rows: filteredContacts,
+    columns: [
+      { header: 'Enregistré le', value: (item) => formatDate(item.createdAt), width: 18 },
+      { header: 'Nom', value: (item) => item.fullName, width: 28 },
+      { header: 'Téléphone', value: (item) => item.phone, width: 18 },
+      { header: 'Entreprise', value: (item) => item.company, width: 26 },
+      { header: 'Recherche', value: (item) => item.need, width: 45 },
+      { header: 'Qualification', value: (item) => qualificationLabel(item.qualification), width: 14 },
+      { header: 'Prochaine action', value: (item) => item.nextAction, width: 32 },
+      { header: 'Date de l’action', value: (item) => formatDate(item.nextActionAt), width: 18 },
+      { header: 'Origine', value: (item) => (item.source === 'public' ? 'Demande du site' : 'Saisi sur le stand'), width: 18 },
+      { header: 'Accord API-ZF', value: (item) => Boolean(item.consentApizf), width: 14 },
+      { header: 'Synchronisé', value: (item) => item.syncStatus === 'synced' || !item.syncStatus, width: 13 },
+    ],
+  });
+
   return (
     <main className="workspace">
       <div className="page-heading heading-with-action">
@@ -438,6 +459,10 @@ export default function ContactsPage({ session, onLogout }) {
             onChange={(event) => setSearch(event.target.value)}
           />
         </label>
+        <button className="button button-secondary button-compact" type="button" onClick={exportContacts} disabled={!filteredContacts.length} aria-label="Exporter les contacts en Excel">
+          <Download size={17} />
+          Excel
+        </button>
       </div>
 
       {error && <p className="panel-error">{error}</p>}

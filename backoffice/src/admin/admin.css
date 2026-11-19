@@ -233,3 +233,15 @@
 .admin-app .wheel-codes-panel > h2 { margin: 0; padding: 16px 18px; border-bottom: 1px solid rgba(0, 0, 0, .14); font-size: 15px; }
 .admin-app .wheel-code-value { display: block; margin: 26px 0 10px; color: var(--ink); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: clamp(40px, 12vw, 56px); font-weight: 800; letter-spacing: .16em; text-align: center; }
 .admin-app .wheel-code-hint { margin: 0; color: var(--muted); font-size: 13px; text-align: center; }
+
+/* Barre des tableaux : recherche, filtre, tri, nombre de lignes et export. */
+.admin-app .data-toolbar { flex-wrap: wrap; }
+.admin-app .data-toolbar-controls { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+.admin-app .data-toolbar-controls select { width: auto; min-width: 0; padding: 8px 30px 8px 10px; font-size: 13px; background-color: #fafafa; }
+.admin-app .data-count { color: var(--muted); font-size: 12px; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.admin-app .data-export { padding: 8px 12px; }
+@media (max-width: 620px) {
+  .admin-app .data-toolbar-controls { width: 100%; display: grid; grid-template-columns: 1fr 1fr; margin-left: 0; }
+  .admin-app .data-count { align-self: center; }
+  .admin-app .data-export { justify-self: end; }
+}

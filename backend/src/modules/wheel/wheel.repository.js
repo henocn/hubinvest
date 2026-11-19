@@ -55,6 +55,16 @@ const findRecentCodes = (limit) => WheelCode.findAll({
   limit,
 });
 
+// Toutes les parties jouées, de la plus récente à la plus ancienne.
+const findPlayedCodes = () => WheelCode.findAll({
+  where: { usedAt: { [Op.ne]: null } },
+  include: [
+    { model: User, as: 'createdBy', attributes: ['id', 'firstName', 'lastName'], required: false },
+    { model: ChallengePassport, as: 'player', attributes: ['id', 'displayName', 'email', 'phone'], required: false },
+  ],
+  order: [['usedAt', 'DESC']],
+});
+
 // Compte les parties réellement jouées.
 const countPlayed = () => WheelCode.count({ where: { usedAt: { [Op.ne]: null } } });
 
@@ -74,5 +84,6 @@ module.exports = {
   createCode,
   updateCode,
   findRecentCodes,
+  findPlayedCodes,
   countPlayed,
 };

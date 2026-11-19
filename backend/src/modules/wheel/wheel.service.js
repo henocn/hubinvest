@@ -100,6 +100,23 @@ const generateCode = async (user) => {
   throw new AppError(503, 'WHEEL_CODE_UNAVAILABLE', 'Impossible de créer un code pour le moment. Réessayez.');
 };
 
+// Code de jeu vu par l'administration : statut, résultat, joueur et personne qui l'a délivré.
+const adminCode = (item) => {
+  const values = plain(item);
+  const expired = !values.usedAt && new Date(values.expiresAt) <= new Date();
+  return {
+    id: values.id,
+    code: values.code,
+    createdAt: values.createdAt,
+    expiresAt: values.expiresAt,
+    usedAt: values.usedAt,
+    status: values.usedAt ? 'used' : expired ? 'expired' : 'waiting',
+    result: values.usedAt ? { kind: values.resultKind, label: values.resultLabel, sponsor: values.resultSponsor } : null,
+    createdBy: values.createdBy ? { firstName: values.createdBy.firstName, lastName: values.createdBy.lastName } : null,
+    player: values.player ? { displayName: values.player.displayName, email: values.player.email, phone: values.player.phone } : null,
+  };
+};
+
 // Rassemble les cases, les derniers codes et les chiffres de la roue pour l'administration.
 const overview = async () => {
   const [segments, codes, played] = await Promise.all([
@@ -110,21 +127,7 @@ const overview = async () => {
   const list = segments.map(adminSegment);
   return {
     segments: list,
-    codes: codes.map((item) => {
-      const values = plain(item);
-      const expired = !values.usedAt && new Date(values.expiresAt) <= new Date();
-      return {
-        id: values.id,
-        code: values.code,
-        createdAt: values.createdAt,
-        expiresAt: values.expiresAt,
-        usedAt: values.usedAt,
-        status: values.usedAt ? 'used' : expired ? 'expired' : 'waiting',
-        result: values.usedAt ? { kind: values.resultKind, label: values.resultLabel, sponsor: values.resultSponsor } : null,
-        createdBy: values.createdBy ? { firstName: values.createdBy.firstName, lastName: values.createdBy.lastName } : null,
-        player: values.player ? { displayName: values.player.displayName, email: values.player.email, phone: values.player.phone } : null,
-      };
-    }),
+    codes: codes.map(adminCode),
     stats: {
       played,
       awarded: list.reduce((total, segment) => total + (segment.kind === 'prize' ? segment.awarded : 0), 0),
@@ -173,6 +176,9 @@ const removeSegment = async (id) => {
   realtime.wheelChanged();
 };
 
+// Toutes les parties jouées, pour l'export Excel.
+const listPlays = async () => (await wheelRepository.findPlayedCodes()).map(adminCode);
+
 module.exports = {
   listPublic,
   spin,
@@ -184,4 +190,5 @@ module.exports = {
   arrange,
   isDrawable,
   normalizeCode,
+  listPlays,
 };

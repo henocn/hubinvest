@@ -87,6 +87,7 @@ export const api = {
   redeemChallengePassport: (token, id) =>
     request(`/challenge-passports/${id}/redeem`, authorized(token, { method: 'PATCH' })),
   wheel: (token) => request('/wheel', authorized(token)),
+  wheelPlays: (token) => request('/wheel/plays', authorized(token)),
   createWheelCode: (token) => request('/wheel/codes', authorized(token, { method: 'POST' })),
   createWheelSegment: (token, values) =>
     request('/wheel/segments', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
