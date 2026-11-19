@@ -26,6 +26,20 @@ export default defineConfig({
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//, /^\/uploads\//, /^\/sitemap\.xml$/, /^\/robots\.txt$/],
         cleanupOutdatedCaches: true,
+        // Hors ligne, l'application garde aussi ses logos, icônes et la police Sen, pas seulement le HTML, le JS et le CSS.
+        globPatterns: ['**/*.{js,css,html,png,svg,ico,webp,woff2,webmanifest}'],
+        // Photos et logos des stands envoyés depuis l'administration : gardés au fil de l'affichage, rafraîchis en arrière-plan.
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/uploads/'),
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'hubinvest-uploads',
+              expiration: { maxEntries: 200, maxAgeSeconds: 30 * 24 * 60 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
         importScripts: ['push-sw.js'],
       },
       devOptions: {
