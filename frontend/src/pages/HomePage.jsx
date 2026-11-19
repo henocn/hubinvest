@@ -83,24 +83,19 @@ function ProgramItem({ event, formats, now, showDay }) {
       <time dateTime={event.startsAt}>
         {showDay && <small>{formats.shortDay.format(new Date(event.startsAt))}</small>}
         <strong>{formats.time.format(new Date(event.startsAt))}</strong>
-        {!showDay && event.endsAt && <small>{formats.time.format(new Date(event.endsAt))}</small>}
+        {!showDay && event.endsAt && state !== 'live' && <small>{formats.time.format(new Date(event.endsAt))}</small>}
       </time>
       <div>
-        <span className="program-labels">
-          <span className={`program-type is-${event.type}`}>{t(`program.types.${event.type}`)}</span>
-          {state === 'live' && <span className="program-state is-live">{t('home.live')}</span>}
-          {state === 'done' && <span className="program-state">{t('home.done')}</span>}
-        </span>
         <strong>{event.title}</strong>
-        {(location || event.occupant) && (
-          <span className="program-meta">
-            {location && <span><MapPin size={13} aria-hidden="true" /> {location}</span>}
-            {event.occupant && <Link to={`/stands/${event.occupant.slug}`}>{event.occupant.name}</Link>}
-          </span>
-        )}
+        <span className="program-meta">
+          {state === 'live' && <span className="program-now">{t('home.now')}</span>}
+          <span>{t(`program.types.${event.type}`)}</span>
+          {location && <span>{location}</span>}
+          {event.occupant && <Link to={`/stands/${event.occupant.slug}`}>{event.occupant.name}</Link>}
+        </span>
         {canAsk && (
-          <button className="button button-primary live-question-button" type="button" onClick={() => setAsking(true)}>
-            <MessageCircleQuestion size={18} aria-hidden="true" />
+          <button className="live-question-button" type="button" onClick={() => setAsking(true)}>
+            <MessageCircleQuestion size={17} aria-hidden="true" />
             {t('live.ask')}
           </button>
         )}
@@ -151,14 +146,14 @@ export default function HomePage() {
           <>
             {data.spotlight && <SpotlightCard spotlight={data.spotlight} />}
             <div className="home-columns">
-              <section className="home-panel" aria-labelledby="home-today-title">
+              <section className="home-schedule" aria-labelledby="home-today-title">
                 <h2 id="home-today-title">{t('home.today')}</h2>
                 {data.today.length > 0
                   ? <ol className="program-list">{data.today.map((event) => <ProgramItem event={event} formats={formats} now={now} key={event.id} />)}</ol>
-                  : <p className="home-panel-empty">{t('home.noToday')}</p>}
+                  : <p className="home-schedule-empty">{t('home.noToday')}</p>}
               </section>
               {data.upcoming.length > 0 && (
-                <section className="home-panel" aria-labelledby="home-upcoming-title">
+                <section className="home-schedule is-upcoming" aria-labelledby="home-upcoming-title">
                   <h2 id="home-upcoming-title">{t('home.upcoming')}</h2>
                   <ol className="program-list">{data.upcoming.map((event) => <ProgramItem event={event} formats={formats} now={now} showDay key={event.id} />)}</ol>
                 </section>

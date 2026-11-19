@@ -454,41 +454,48 @@
   gap: 22px;
 }
 
-.home-panel {
+/* Programme : une grille horaire sobre, comme un programme imprimé. Le titre est hors du cadre,
+   un seul bloc blanc à lignes fines, l'heure en colonne, le titre d'abord puis une ligne discrète. */
+.home-schedule {
   min-width: 0;
-  padding: clamp(20px, 3.5vw, 28px);
-  border: 1px solid rgba(0, 0, 0, 0.16);
-  border-radius: 10px;
-  background: #fff;
 }
 
-.home-panel > h2 {
-  margin: 0 0 6px;
-  font-size: 1.15rem;
+.home-schedule > h2 {
+  margin: 0 0 10px;
+  font-size: 1.2rem;
   letter-spacing: -0.015em;
 }
 
-.home-panel-empty {
-  margin: 12px 0 0;
+.home-schedule-empty {
+  margin: 0;
+  padding: 18px 20px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 10px;
   color: var(--muted);
+  background: #fff;
   line-height: 1.5;
 }
 
 .program-list {
   margin: 0;
   padding: 0;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 10px;
+  background: #fff;
   list-style: none;
 }
 
 .program-item {
+  position: relative;
   display: grid;
-  grid-template-columns: 62px minmax(0, 1fr);
-  gap: 14px;
-  padding-block: 15px;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 16px;
+  padding: 16px 18px;
 }
 
 .program-item + .program-item {
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .program-item time {
@@ -504,7 +511,7 @@
 
 .program-item time small {
   color: var(--muted);
-  font-size: 0.74rem;
+  font-size: 0.76rem;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -512,79 +519,28 @@
 .program-item > div {
   min-width: 0;
   display: grid;
-  gap: 5px;
+  justify-items: start;
+  gap: 4px;
 }
 
 .program-item > div > strong {
-  font-size: 0.95rem;
+  font-size: 0.98rem;
   line-height: 1.4;
 }
 
-.program-labels {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
-.program-type {
-  color: var(--green);
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.program-state {
-  color: var(--muted);
-  font-size: 0.72rem;
-  font-weight: 700;
-}
-
-.program-state.is-live {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--red);
-}
-
-.program-state.is-live::before {
-  content: '';
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: currentColor;
-}
-
-.program-item.is-live {
-  margin-inline: -12px;
-  padding-inline: 12px;
-  border-radius: 10px;
-  background: #fbf3f5;
-}
-
-.program-item.is-live + .program-item,
-.program-item + .program-item.is-live {
-  border-top-color: transparent;
-}
-
-.program-item.is-done time,
-.program-item.is-done > div > strong {
-  color: #8a918d;
-}
-
+/* Type, lieu et stand sur une ligne, séparés par un point médian. */
 .program-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 12px;
-  color: #4d4d4d;
-  font-size: 0.8rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
 }
 
-.program-meta > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+.program-meta > * + *::before {
+  content: '·';
+  margin: 0 7px;
+  color: #b5b9b7;
 }
 
 .program-meta a {
@@ -595,6 +551,44 @@
 
 .program-meta a:hover {
   text-decoration: underline;
+}
+
+/* En ce moment : un trait vert à gauche et l'heure en vert, sans fond ni pastille. */
+.program-item.is-live::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  background: var(--green);
+}
+
+.program-item.is-live time strong {
+  color: var(--green);
+}
+
+.program-meta .program-now {
+  color: var(--green);
+  font-weight: 700;
+}
+
+/* Passé : grisé, pour que l'œil aille au prochain rendez-vous. */
+.program-item.is-done time strong,
+.program-item.is-done time small,
+.program-item.is-done > div > strong,
+.program-item.is-done .program-meta {
+  color: #9aa09d;
+}
+
+.program-item.is-done .program-meta a {
+  color: inherit;
+  font-weight: 400;
+}
+
+/* À venir : le jour au-dessus de l'heure. */
+.home-schedule.is-upcoming .program-item time small:first-child {
+  text-transform: capitalize;
 }
 
 .home-explore-link,
@@ -2010,10 +2004,22 @@
 
 /* Direct en cours : question envoyée à l'animateur depuis la carte du programme. */
 .live-question-button {
-  min-height: 42px;
-  margin-top: 10px;
-  padding: 0 16px;
-  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 7px 12px;
+  border: 1px solid rgba(21, 108, 83, 0.35);
+  border-radius: 10px;
+  color: var(--green);
+  background: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.live-question-button:hover {
+  background: var(--tint);
 }
 
 .live-question-sent {
@@ -2029,4 +2035,11 @@
   margin: 0;
   color: #0f1822;
   font-weight: 650;
+}
+
+/* À l'affiche : surtitre en écriture normale, sans majuscules espacées. */
+.home-spotlight .public-eyebrow {
+  font-size: 0.85rem;
+  letter-spacing: 0;
+  text-transform: none;
 }

@@ -45,8 +45,7 @@ export default {
     noToday: "Aucun rendez-vous n’est programmé aujourd’hui.",
     empty: "Le programme du Hub sera bientôt publié. En attendant, découvrez les stands présents.",
     exploreStands: "Explorer les stands",
-    live: "En cours",
-    done: "Terminé",
+    now: "En ce moment",
   },
   program: {
     types: {
