@@ -40,7 +40,7 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 - [x] Code perdu : recherche d'un joueur par nom, téléphone ou e-mail (animateur, occupant).
 - [x] Téléphone obligatoire et vérifié dans les formulaires de recontact, Investor Desk, B2B et la saisie de contact de l'occupant.
 - [x] E-mail de bienvenue à la création d'un compte (adresse de l'espace équipe, sans mot de passe).
-- [ ] Installer la sauvegarde quotidienne de la base sur le VPS :  (instructions en tête du fichier).
+- [ ] Installer la sauvegarde quotidienne de la base sur le VPS : `deploy/backup-db.sh` (instructions en tête du fichier).
 - [ ] Suivi des notifications envoyées (reçu ou non, relance) si l'équipe le demande.
 
 ## Référencement (SEO)
