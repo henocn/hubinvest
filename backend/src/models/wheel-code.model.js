@@ -52,6 +52,16 @@ module.exports = (sequelize, DataTypes) =>
         allowNull: true,
         field: 'result_sponsor',
       },
+      claimedAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        field: 'claimed_at',
+      },
+      claimedByUserId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        field: 'claimed_by_user_id',
+      },
     },
     {
       tableName: 'wheel_codes',

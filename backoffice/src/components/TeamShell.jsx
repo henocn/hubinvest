@@ -5,28 +5,45 @@ import hubLogoWhite from '../assets/brand/hub-logo-white.png';
 import hubLogo from '../assets/brand/hub-logo.png';
 import PushToggleButton from '../admin/components/PushToggleButton';
 import NotificationPrompt from './NotificationPrompt';
+import { DashboardProvider, useDashboard } from '../admin/dashboard';
 import { api, resolveAssetUrl } from '../lib/api';
 import { disablePush } from '../lib/push';
 import { useRealtimeConnection, useRealtimeEvent } from '../lib/realtime';
 import { isAdminRole, linksForRole, roleLabels, tabsForRole } from '../navigation';
 import { useSession } from '../session';
 
-const adminTopics = ['occupants', 'users', 'program', 'contacts', 'investor-requests', 'b2b', 'studio', 'challenge', 'wheel', 'account'];
-const teamTopics = ['contacts', 'challenge', 'occupants', 'account'];
+const adminTopics = ['occupants', 'users', 'program', 'contacts', 'investor-requests', 'b2b', 'studio', 'challenge', 'wheel', 'settings', 'live-questions', 'account'];
+const teamTopics = ['contacts', 'challenge', 'occupants', 'live-questions', 'account'];
 
 // Liens de navigation : NavLink marque la rubrique ouverte, y compris ses sous-pages (/contacts/nouveau…).
-function NavItems({ links, className = '' }) {
-  return links.map(({ path, label, Icon }) => (
-    <NavLink key={path} to={path} className={({ isActive }) => `${className}${isActive ? ' is-active' : ''}`.trim()}>
-      <Icon size={20} aria-hidden="true" />
-      <span>{label}</span>
-    </NavLink>
-  ));
+// La pastille donne le nombre exact d'éléments qui attendent une action dans la rubrique.
+// Dans la barre du bas, un libellé court remplace le nom complet quand il y en a un.
+function NavItems({ links, className = '', short = false }) {
+  const todo = useDashboard()?.data?.todo || {};
+  return links.map(({ path, label: fullLabel, tabLabel, Icon, section }) => {
+    const label = short && tabLabel ? tabLabel : fullLabel;
+    const count = section ? todo[section] || 0 : 0;
+    return (
+      <NavLink key={path} to={path} className={({ isActive }) => `${className}${isActive ? ' is-active' : ''}`.trim()} aria-label={count ? `${label}, ${count} à traiter` : undefined}>
+        <span className="team-nav-icon">
+          <Icon size={20} aria-hidden="true" />
+          {count > 0 && <b className="team-badge" aria-hidden="true">{count}</b>}
+        </span>
+        <span>{label}</span>
+      </NavLink>
+    );
+  });
 }
 
 // Cadre commun de l'espace équipe : façon application sur téléphone (barre verte en haut, onglets en bas,
 // menu latéral), barre latérale fixe sur ordinateur.
 export default function TeamShell() {
+  const { session, logout } = useSession();
+  const shell = <TeamShellLayout />;
+  return isAdminRole(session.user.role) ? <DashboardProvider session={session} onLogout={logout}>{shell}</DashboardProvider> : shell;
+}
+
+function TeamShellLayout() {
   const { session, updateUser, logout } = useSession();
   const { user, token } = session;
   const location = useLocation();
@@ -122,7 +139,7 @@ export default function TeamShell() {
 
       <nav className="team-tabs" aria-label="Rubriques principales">
         <div>
-          <NavItems links={tabs} />
+          <NavItems links={tabs} short />
           {links.length > tabs.length && (
             <button type="button" onClick={() => setMenuOpen(true)} aria-label="Toutes les rubriques">
               <Menu size={20} aria-hidden="true" />

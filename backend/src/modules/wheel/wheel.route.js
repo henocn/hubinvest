@@ -33,9 +33,16 @@ const limitFailedSpins = (request, response, next) => {
 router.get('/public', asyncHandler(wheelController.getPublic));
 router.post('/public/spin', limitFailedSpins, validate(wheelValidation.spin), asyncHandler(wheelController.spin));
 
-router.use(asyncHandler(authenticate), requireRoles(roles.SUPER_ADMIN, roles.ADMIN));
+router.use(asyncHandler(authenticate));
+// Les équipes des stands délivrent aussi des codes ; toute l'équipe peut remettre un lot gagné.
+router.post('/codes', requireRoles(roles.SUPER_ADMIN, roles.ADMIN, roles.OCCUPANT), asyncHandler(wheelController.generateCode));
+const prizeTeam = requireRoles(roles.SUPER_ADMIN, roles.ADMIN, roles.OCCUPANT, roles.ANIMATOR);
+router.get('/prizes/:code', prizeTeam, validate(wheelValidation.codeParams, 'params'), asyncHandler(wheelController.findPrize));
+router.post('/prizes/:code/claim', prizeTeam, validate(wheelValidation.codeParams, 'params'), asyncHandler(wheelController.claimPrize));
+
+router.use(requireRoles(roles.SUPER_ADMIN, roles.ADMIN));
 router.get('/', asyncHandler(wheelController.overview));
-router.post('/codes', asyncHandler(wheelController.generateCode));
+router.get('/plays', asyncHandler(wheelController.listPlays));
 router.post('/segments', validate(wheelValidation.createSegment), asyncHandler(wheelController.createSegment));
 router.patch(
   '/segments/:id',

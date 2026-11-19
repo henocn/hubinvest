@@ -1,6 +1,8 @@
 import { CheckCircle2, ScanLine } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ChallengeScannerDialog from '../components/ChallengeScannerDialog';
+import PlayerSearch from '../components/PlayerSearch';
+import { useWheelPrize, WheelCodeGenerator, WheelPrizeCard, WheelPrizeResult, wheelCodePattern } from '../components/WheelPrize';
 import { api } from '../lib/api';
 import { useRealtimeConnected, useRealtimeEvent } from '../lib/realtime';
 
@@ -16,6 +18,7 @@ export default function OccupantChallengePage({ session, onLogout }) {
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const wheel = useWheelPrize({ session, onLogout });
 
   const refreshStats = useCallback(async () => {
     try {
@@ -46,9 +49,19 @@ export default function OccupantChallengePage({ session, onLogout }) {
   }, [realtimeConnected, refreshStats]);
 
   const prepareClassification = useCallback((value) => {
-    const normalized = value.trim().toUpperCase();
+    const normalized = value.trim().toUpperCase().replace(/[s-]/g, '');
+    // Un code de 4 caractères est un code de jeu de la roue : on retrouve le lot gagné pour le remettre.
+    if (wheelCodePattern.test(normalized)) {
+      setError('');
+      setPendingCode('');
+      setResult(null);
+      setCode('');
+      void wheel.findPrize(normalized);
+      return false;
+    }
+    wheel.resetPrize();
     if (!participantCode.test(normalized)) {
-      setError('Saisissez les 6 caractères du code participant.');
+      setError('Saisissez le code participant (6 caractères) ou le code de jeu de la roue (4 caractères).');
       setPendingCode('');
       setResult(null);
       return false;
@@ -58,7 +71,7 @@ export default function OccupantChallengePage({ session, onLogout }) {
     setResult(null);
     setPendingCode(normalized);
     return true;
-  }, []);
+  }, [wheel]);
 
   const validateCode = useCallback(async (classification) => {
     if (validatingRef.current) return;
@@ -100,15 +113,20 @@ export default function OccupantChallengePage({ session, onLogout }) {
         {statsError && <p className="panel-error" role="alert">{statsError}</p>}
         <button className="button button-primary challenge-open-scanner" type="button" onClick={() => setOpen(true)} disabled={loading}><ScanLine size={20} /> Scanner</button>
         <form className="challenge-manual-form" onSubmit={submit}>
-          <label htmlFor="challenge-participant-code">Code participant</label>
+          <label htmlFor="challenge-participant-code">Code participant ou code de jeu</label>
           <div className="challenge-manual-row">
-            <input id="challenge-participant-code" className="challenge-code-input" value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} minLength={6} maxLength={8} autoCapitalize="characters" autoComplete="off" required />
+            <input id="challenge-participant-code" className="challenge-code-input" value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} minLength={4} maxLength={8} autoCapitalize="characters" autoComplete="off" required />
             <button className="button button-secondary" type="submit" disabled={loading}>OK</button>
           </div>
         </form>
+        <PlayerSearch session={session} onLogout={onLogout} onPick={prepareClassification} />
         {error && <p className="panel-error" role="alert">{error}</p>}
         {pendingCode && <div className="challenge-classification" role="group" aria-label="Classer le participant"><strong>Classer le participant</strong><div>{['A', 'B', 'C'].map((classification) => <button className="challenge-classification-button" type="button" key={classification} onClick={() => { void validateCode(classification); }} disabled={loading} aria-label={`Classer le participant en ${classification}`}>{classification}</button>)}</div></div>}
         {result && <p className="challenge-validation-success" role="status"><CheckCircle2 size={20} /> Passage validé pour {result.displayName} · Classement {result.classification}</p>}
+        <WheelPrizeCard prize={wheel.prize} loading={wheel.prizeLoading} onClaim={wheel.claimPrize} />
+        {wheel.prizeError && <p className="panel-error" role="alert">{wheel.prizeError}</p>}
+        <WheelPrizeResult text={wheel.claimed} />
+        <WheelCodeGenerator session={session} onLogout={onLogout} />
       </section>
       {open && <ChallengeScannerDialog onCode={scanned} onClose={() => setOpen(false)} />}
     </main>

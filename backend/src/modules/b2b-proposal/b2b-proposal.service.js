@@ -3,8 +3,10 @@ const b2bNeedService = require('../b2b-need/b2b-need.service');
 const b2bProposalRepository = require('./b2b-proposal.repository');
 const notificationService = require('../notification/notification.service');
 const { events: realtime } = require('../realtime/realtime.service');
+const settingsService = require('../settings/settings.service');
 
 const createPublic = async (needId, values, language = 'fr') => {
+  settingsService.assertOpen('b2bOpen');
   if (values.consentOccupant !== true) throw new AppError(422, 'CONSENT_REQUIRED', 'Votre accord est nécessaire pour cette proposition.');
   const need = await b2bNeedService.getPublic(needId);
   const proposal = await b2bProposalRepository.create({

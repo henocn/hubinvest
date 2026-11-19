@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { ArrowRight, MapPin } from 'lucide-react';
+import { ArrowRight, MapPin, MessageCircleQuestion } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { api, resolveAssetUrl } from '../lib/api';
 import { publicErrorMessage } from '../lib/public-error';
+import { useSiteSettings } from '../lib/settings';
+import LiveQuestionDialog from '../components/LiveQuestionDialog';
 
 const HUB_TIME_ZONE = 'Africa/Lome';
 
@@ -58,8 +60,21 @@ function SpotlightCard({ spotlight }) {
 }
 
 // Affiche une ligne du programme : horaire, type, titre, lieu et stand concerné.
+// Questions ouvertes pendant un direct (Studio, prise de parole, temps fort), comme côté serveur :
+// jusqu'à 10 minutes après la fin, ou 2 heures après le début s'il n'y a pas d'heure de fin.
+const LIVE_QUESTION_TYPES = new Set(['studio', 'talk', 'highlight']);
+const acceptsQuestions = (event, now) => {
+  if (!LIVE_QUESTION_TYPES.has(event.type)) return false;
+  const start = new Date(event.startsAt).getTime();
+  const end = event.endsAt ? new Date(event.endsAt).getTime() + 10 * 60_000 : start + 2 * 60 * 60_000;
+  return now >= start && now <= end;
+};
+
 function ProgramItem({ event, formats, now, showDay }) {
   const { t } = useTranslation();
+  const settings = useSiteSettings();
+  const [asking, setAsking] = useState(false);
+  const canAsk = !showDay && settings.liveQuestionsOpen !== false && acceptsQuestions(event, now);
   const state = showDay ? 'next' : eventState(event, now);
   const location = event.location || event.occupant?.standLabel;
 
@@ -83,7 +98,14 @@ function ProgramItem({ event, formats, now, showDay }) {
             {event.occupant && <Link to={`/stands/${event.occupant.slug}`}>{event.occupant.name}</Link>}
           </span>
         )}
+        {canAsk && (
+          <button className="button button-primary live-question-button" type="button" onClick={() => setAsking(true)}>
+            <MessageCircleQuestion size={18} aria-hidden="true" />
+            {t('live.ask')}
+          </button>
+        )}
       </div>
+      {asking && <LiveQuestionDialog event={event} onClose={() => setAsking(false)} />}
     </li>
   );
 }

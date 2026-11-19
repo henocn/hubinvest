@@ -5,10 +5,12 @@ import { useTranslation } from 'react-i18next';
 import B2bProposalForm from '../components/B2bProposalForm';
 import { SITE_NAME, setPageTitle } from '../lib/page-title';
 import { api } from '../lib/api';
+import { useSiteSettings } from '../lib/settings';
 import { publicErrorMessage } from '../lib/public-error';
 
 export default function B2bDetailPage({ id }) {
   const { t } = useTranslation();
+  const settings = useSiteSettings();
   const [need, setNeed] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -29,7 +31,9 @@ export default function B2bDetailPage({ id }) {
       {error && <p className="public-message is-error">{error}</p>}
       {need && <>
         <article className="b2b-need-detail"><span className="public-eyebrow">{need.occupant.name}</span><h1>{need.title}</h1>{need.occupant.standLabel && <span className="b2b-detail-location"><MapPin size={16} /> {need.occupant.standLabel}</span>}<p>{need.description}</p></article>
-        <section className="b2b-proposal-panel"><h2>{t('b2b.propose')}</h2><B2bProposalForm need={need} /></section>
+        {settings.b2bOpen
+          ? <section className="b2b-proposal-panel"><h2>{t('b2b.propose')}</h2><B2bProposalForm need={need} /></section>
+          : <p className="public-message is-closed">{t('closed.b2b')}</p>}
       </>}
     </main>
   );

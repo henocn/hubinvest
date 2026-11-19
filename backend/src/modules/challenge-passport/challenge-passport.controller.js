@@ -32,4 +32,6 @@ const redeemByCode = async (request, response) => response.json({
   message: 'Récompense remise.',
 });
 
-module.exports = { createPublic, getPublic, list, listRewards, getByCode, redeem, redeemByCode };
+const search = async (request, response) => response.json({ data: await challengePassportService.search(request.query.q) });
+
+module.exports = { createPublic, getPublic, list, listRewards, getByCode, redeem, redeemByCode, search };

@@ -50,9 +50,38 @@ const findRecentCodes = (limit) => WheelCode.findAll({
   include: [
     { model: User, as: 'createdBy', attributes: ['id', 'firstName', 'lastName'], required: false },
     { model: ChallengePassport, as: 'player', attributes: ['id', 'displayName', 'email', 'phone'], required: false },
+    { model: User, as: 'claimedBy', attributes: ['id', 'firstName', 'lastName'], required: false },
   ],
   order: [['createdAt', 'DESC']],
   limit,
+});
+
+// Toutes les parties jouées, de la plus récente à la plus ancienne.
+const findPlayedCodes = () => WheelCode.findAll({
+  where: { usedAt: { [Op.ne]: null } },
+  include: [
+    { model: User, as: 'createdBy', attributes: ['id', 'firstName', 'lastName'], required: false },
+    { model: ChallengePassport, as: 'player', attributes: ['id', 'displayName', 'email', 'phone'], required: false },
+    { model: User, as: 'claimedBy', attributes: ['id', 'firstName', 'lastName'], required: false },
+  ],
+  order: [['usedAt', 'DESC']],
+});
+
+// Compte les parties jouées par un joueur depuis une date (limite quotidienne).
+const countPlayerPlaysSince = (passportId, since, transaction) => WheelCode.count({
+  where: { passportId, usedAt: { [Op.gte]: since } },
+  transaction,
+});
+
+// Retrouve un code joué avec son joueur, verrouillé le temps de la remise du lot.
+const findPlayedCodeForClaim = (code, transaction) => WheelCode.findOne({
+  where: { code },
+  include: [
+    { model: ChallengePassport, as: 'player', attributes: ['id', 'displayName', 'email', 'phone'], required: false },
+    { model: User, as: 'claimedBy', attributes: ['id', 'firstName', 'lastName'], required: false },
+  ],
+  transaction,
+  ...(transaction && { lock: { level: transaction.LOCK.UPDATE, of: WheelCode } }),
 });
 
 // Compte les parties réellement jouées.
@@ -74,5 +103,8 @@ module.exports = {
   createCode,
   updateCode,
   findRecentCodes,
+  findPlayedCodes,
+  countPlayerPlaysSince,
+  findPlayedCodeForClaim,
   countPlayed,
 };

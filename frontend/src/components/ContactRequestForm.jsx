@@ -2,6 +2,8 @@ import { useRef, useState } from 'react';
 import { api } from '../lib/api';
 import { useTranslation } from 'react-i18next';
 import { publicErrorMessage } from '../lib/public-error';
+import PhoneField from './PhoneField';
+import { isValidPhone, toInternationalPhone } from '../lib/phone';
 
 export default function ContactRequestForm({ stand }) {
   const { t } = useTranslation();
@@ -10,13 +12,16 @@ export default function ContactRequestForm({ stand }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [received, setReceived] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   const submit = async (event) => {
     event.preventDefault();
+    setSubmitted(true);
+    if (!isValidPhone(form.phone)) return;
     setLoading(true);
     setError('');
     try {
-      await api.requestContact(stand.slug, { ...form, id: requestId.current });
+      await api.requestContact(stand.slug, { ...form, phone: toInternationalPhone(form.phone), id: requestId.current });
       setReceived(true);
     } catch (requestError) {
       setError(publicErrorMessage(t, requestError));
@@ -36,7 +41,7 @@ export default function ContactRequestForm({ stand }) {
       ) : (
         <form className="request-form" onSubmit={submit}>
           <label>{t('contact.fullName')}<input value={form.fullName} onChange={(event) => setForm({ ...form, fullName: event.target.value })} minLength={2} maxLength={160} autoComplete="name" required /></label>
-          <label>{t('contact.phone')}<input type="tel" inputMode="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} minLength={6} maxLength={32} autoComplete="tel" required /></label>
+          <PhoneField label={t('contact.phone')} value={form.phone} onChange={(phone) => setForm((current) => ({ ...current, phone }))} showError={submitted} />
           <label>{t('contact.request')} <span className="request-optional">{t('common.optional')}</span><textarea value={form.need} onChange={(event) => setForm({ ...form, need: event.target.value })} rows={3} maxLength={4000} /></label>
           <label className="request-consent">
             <input type="checkbox" checked={form.consentOccupant} onChange={(event) => setForm({ ...form, consentOccupant: event.target.checked })} required />

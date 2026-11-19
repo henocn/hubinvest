@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Plus, QrCode, Search, Ticket } from 'lucide-react';
+import { Download, Plus, QrCode, Search, Ticket } from 'lucide-react';
 import ConfirmDelete from '../components/ConfirmDelete';
 import ConfirmReward from '../components/ConfirmReward';
 import QrCodeDialog from '../components/QrCodeDialog';
@@ -21,6 +21,8 @@ import WheelCodesTable from '../components/tables/WheelCodesTable';
 import WheelSegmentDrawer from '../components/drawers/WheelSegmentDrawer';
 import WheelCodeDialog from '../components/WheelCodeDialog';
 import { publicBaseUrl } from '../constants/access';
+import { tableSettings } from '../constants/tables';
+import { exportToExcel } from '../../lib/excel';
 import { api } from '../lib/api';
 import { useRealtimeEvent } from '../../lib/realtime';
 
@@ -50,6 +52,9 @@ export default function BackofficePage({ session, onLogout, section }) {
   const [wheel, setWheel] = useState({ segments: [], codes: [], stats: { played: 0, awarded: 0, remaining: 0 } });
   const [wheelCode, setWheelCode] = useState(null);
   const [search, setSearch] = useState('');
+  const [filterValue, setFilterValue] = useState('');
+  const [sortValue, setSortValue] = useState('');
+  const [exporting, setExporting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [drawer, setDrawer] = useState(null);
@@ -172,7 +177,51 @@ export default function BackofficePage({ session, onLogout, section }) {
   const visibleWheelSegments = useMemo(() => wheel.segments.filter((item) => !query || [item.label, item.sponsor].some((value) => String(value || '').toLowerCase().includes(query))), [wheel.segments, query]);
 
   // Chaque rubrique s'ouvre avec une recherche vide.
-  useEffect(() => { setSearch(''); }, [section]);
+  useEffect(() => {
+    setSearch('');
+    setFilterValue('');
+    setSortValue('');
+  }, [section]);
+
+  // Filtre et tri du tableau affiché : le premier tri proposé est celui par défaut.
+  const settings = tableSettings[section];
+  const arrange = (items) => {
+    const matches = (item) => {
+      const result = settings.filterOf(item, filterValue);
+      return result === true || result === filterValue;
+    };
+    const sorter = settings.sorts.find((item) => item.value === sortValue) || settings.sorts[0];
+    return (filterValue ? items.filter(matches) : [...items]).sort(sorter.compare);
+  };
+  const sectionRows = {
+    occupants: visibleOccupants,
+    users: visibleUsers,
+    program: visibleProgramEvents,
+    'investor-requests': visibleInvestorRequests,
+    b2b: visibleB2bNeeds,
+    studio: visibleStudioInvitations,
+    challenges: visibleChallengePassports,
+    wheel: visibleWheelSegments,
+  };
+  const rows = arrange(sectionRows[section] || []);
+
+  // Exporte exactement les lignes affichées ; pour la roue, toutes les parties jouées.
+  const exportRows = async () => {
+    setExporting(true);
+    try {
+      const data = section === 'wheel' ? await api.wheelPlays(session.token) : rows;
+      await exportToExcel({
+        name: settings.exportName,
+        sheetName: sectionMeta[section].title,
+        columns: settings.columns({ contactStats, publicBaseUrl }),
+        rows: data,
+      });
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const saved = async () => {
     setDrawer(null);
@@ -309,17 +358,30 @@ export default function BackofficePage({ session, onLogout, section }) {
         <section className="data-panel">
           <header className="data-toolbar">
             <label className="admin-search-field"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={section === 'occupants' ? 'Rechercher un occupant' : section === 'users' ? 'Rechercher un utilisateur' : section === 'program' ? 'Rechercher dans le programme' : section === 'b2b' ? 'Rechercher un besoin' : section === 'studio' ? 'Rechercher une invitation' : section === 'challenges' ? 'Rechercher un participant' : section === 'wheel' ? 'Rechercher un lot' : 'Rechercher une demande'} /></label>
+            <div className="data-toolbar-controls">
+              <select value={filterValue} onChange={(event) => setFilterValue(event.target.value)} aria-label={settings.filterLabel}>
+                <option value="">{settings.filterLabel} : tous</option>
+                {settings.filters.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+              </select>
+              <select value={sortValue || settings.sorts[0].value} onChange={(event) => setSortValue(event.target.value)} aria-label="Trier">
+                {settings.sorts.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+              </select>
+              <span className="data-count">{loading ? '—' : rows.length} ligne{rows.length > 1 ? 's' : ''}</span>
+              <button className="button button-secondary data-export" type="button" onClick={exportRows} disabled={loading || exporting || (section !== 'wheel' && !rows.length)}>
+                <Download size={16} /> {exporting ? 'Export…' : section === 'wheel' ? 'Exporter les parties' : 'Exporter'}
+              </button>
+            </div>
           </header>
           {error && <p className="panel-message is-error">{error}</p>}
           {loading && <p className="panel-message">Chargement des données...</p>}
-          {!loading && !error && section === 'occupants' && <OccupantsTable occupants={visibleOccupants} contactStats={contactStats} query={query} onQrCode={setQrCode} onEdit={(item) => setDrawer({ type: 'occupant', item })} onDelete={requestOccupantDelete} />}
-          {!loading && !error && section === 'users' && <UsersTable users={visibleUsers} query={query} currentUserId={session.user.id} onEdit={(item) => setDrawer({ type: 'user', item })} onDelete={requestUserDelete} />}
-          {!loading && !error && section === 'program' && <ProgramEventsTable events={visibleProgramEvents} query={query} onEdit={(item) => setDrawer({ type: 'program', item })} onDelete={requestProgramDelete} />}
-          {!loading && !error && section === 'investor-requests' && <InvestorRequestsTable requests={visibleInvestorRequests} query={query} showStand={isSuperAdmin} onEdit={(item) => setDrawer({ type: 'investor-request', item })} />}
-          {!loading && !error && section === 'b2b' && <B2bNeedsTable needs={visibleB2bNeeds} query={query} showStand={isSuperAdmin} onEdit={(item) => setDrawer({ type: 'b2b', item })} />}
-          {!loading && !error && section === 'studio' && <StudioInvitationsTable invitations={visibleStudioInvitations} query={query} showStand={isSuperAdmin} copiedId={copiedInvitationId} onCopy={copyInvitationLink} onEdit={(item) => setDrawer({ type: 'studio', item })} />}
-          {!loading && !error && section === 'challenges' && <ChallengePassportsTable passports={visibleChallengePassports} query={query} allowReward={isSuperAdmin} onRedeem={(passport) => { setRewardError(''); setPendingReward(passport); }} />}
-          {!loading && !error && section === 'wheel' && <WheelSegmentsTable segments={visibleWheelSegments} query={query} onEdit={(item) => setDrawer({ type: 'wheel', item })} onDelete={requestWheelDelete} />}
+          {!loading && !error && section === 'occupants' && <OccupantsTable occupants={rows} contactStats={contactStats} query={query} onQrCode={setQrCode} onEdit={(item) => setDrawer({ type: 'occupant', item })} onDelete={requestOccupantDelete} />}
+          {!loading && !error && section === 'users' && <UsersTable users={rows} query={query} currentUserId={session.user.id} onEdit={(item) => setDrawer({ type: 'user', item })} onDelete={requestUserDelete} />}
+          {!loading && !error && section === 'program' && <ProgramEventsTable events={rows} query={query} onEdit={(item) => setDrawer({ type: 'program', item })} onDelete={requestProgramDelete} />}
+          {!loading && !error && section === 'investor-requests' && <InvestorRequestsTable requests={rows} query={query} showStand={isSuperAdmin} onEdit={(item) => setDrawer({ type: 'investor-request', item })} />}
+          {!loading && !error && section === 'b2b' && <B2bNeedsTable needs={rows} query={query} showStand={isSuperAdmin} onEdit={(item) => setDrawer({ type: 'b2b', item })} />}
+          {!loading && !error && section === 'studio' && <StudioInvitationsTable invitations={rows} query={query} showStand={isSuperAdmin} copiedId={copiedInvitationId} onCopy={copyInvitationLink} onEdit={(item) => setDrawer({ type: 'studio', item })} />}
+          {!loading && !error && section === 'challenges' && <ChallengePassportsTable passports={rows} query={query} allowReward={isSuperAdmin} onRedeem={(passport) => { setRewardError(''); setPendingReward(passport); }} />}
+          {!loading && !error && section === 'wheel' && <WheelSegmentsTable segments={rows} query={query} onEdit={(item) => setDrawer({ type: 'wheel', item })} onDelete={requestWheelDelete} />}
         </section>
         {section === 'wheel' && !loading && !error && <section className="data-panel wheel-codes-panel"><h2>Derniers codes</h2><WheelCodesTable codes={wheel.codes} /></section>}
       </main>

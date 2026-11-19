@@ -985,7 +985,8 @@ test('la liste des remises signale seulement celles de l’animateur connecté, 
 });
 
 const PLAYER = 'a'.repeat(64);
-const wheelSetup = (context, { segments, code }) => {
+const wheelSetup = (context, { segments, code, playsToday = 0 }) => {
+  context.mock.method(wheelRepository, 'countPlayerPlaysSince', async () => playsToday);
   context.mock.method(wheelRepository.sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));
   context.mock.method(wheelRepository, 'findPlayerByToken', async (token) => (token === PLAYER ? { id: 'passport-a' } : null));
   context.mock.method(wheelRepository, 'findCodeForUpdate', async (value) => (code && code.code === value ? code : null));
@@ -1082,4 +1083,78 @@ test('pour jouer, un nom complet et un e-mail ou un téléphone suffisent', () =
   assert.equal(createPublic.validate({ fullName: 'Afi Mensah', contact: '+22890000000' }).error, undefined);
   assert.ok(createPublic.validate({ fullName: 'Afi Mensah', contact: 'pas un contact' }).error);
   assert.ok(createPublic.validate({ fullName: 'Afi Mensah' }).error);
+});
+
+const settingsService = require('../src/modules/settings/settings.service');
+const settingsValidation = require('../src/modules/settings/settings.validation');
+const { AppSetting } = require('../src/models');
+
+test('un module fermé depuis l’administration refuse les actions publiques', async (context) => {
+  context.after(() => settingsService._reset());
+  context.mock.method(AppSetting, 'findAll', async () => [{ key: 'investorDeskOpen', value: false }, { key: 'requiredPassages', value: 5 }]);
+  await settingsService.load();
+  await assert.rejects(investorRequestService.createPublic({ occupantId: 'stand-a' }), (error) => error.code === 'MODULE_CLOSED' && error.status === 403);
+  assert.doesNotThrow(() => settingsService.assertOpen('b2bOpen'));
+  assert.equal(settingsService.requiredPassages(), 5);
+  assert.equal(settingsService.publicSettings().investorDeskOpen, false);
+});
+
+test('les réglages refusent un nombre de stands hors limites et une clé inconnue', () => {
+  assert.ok(settingsValidation.update.validate({ requiredPassages: 0 }).error);
+  assert.ok(settingsValidation.update.validate({ inconnu: true }).error);
+  assert.ok(settingsValidation.update.validate({}).error);
+  assert.equal(settingsValidation.update.validate({ wheelOpen: false, requiredPassages: 4 }).error, undefined);
+});
+
+test('un joueur ne tourne la roue qu’une fois par jour et le code reste valable', async (context) => {
+  const prize = { id: 'p1', kind: 'prize', label: 'T-shirt', sponsor: null, quantity: 2, awarded: 0, isActive: true };
+  const code = { code: 'AB23', usedAt: null, expiresAt: new Date(Date.now() + 60000) };
+  wheelSetup(context, { segments: [prize], code, playsToday: 1 });
+  await assert.rejects(wheelService.spin({ code: 'AB23', player: PLAYER }, 'fr', () => 0), (error) => error.status === 429 && error.code === 'WHEEL_DAILY_LIMIT');
+  assert.equal(code.usedAt, null);
+  assert.equal(prize.awarded, 0);
+});
+
+test('un lot gagné ne se remet qu’une fois, et seulement s’il a été gagné', async (context) => {
+  const won = { code: 'WIN2', usedAt: new Date(), resultKind: 'prize', resultLabel: 'Casquette', claimedAt: null, player: { displayName: 'Ama' } };
+  const lost = { code: 'LOS3', usedAt: new Date(), resultKind: 'lose', resultLabel: 'Presque !', claimedAt: null };
+  context.mock.method(wheelRepository.sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));
+  context.mock.method(wheelRepository, 'findPlayedCodeForClaim', async (value) => ({ WIN2: won, LOS3: lost })[value] || null);
+  context.mock.method(wheelRepository, 'updateCode', async (wheelCode, values) => Object.assign(wheelCode, values));
+  const user = { id: 'animateur-a', firstName: 'Kossi', lastName: 'A.' };
+
+  const claimed = await wheelService.claimPrize(user, 'win2');
+  assert.equal(claimed.result.label, 'Casquette');
+  assert.ok(won.claimedAt);
+  assert.equal(won.claimedByUserId, 'animateur-a');
+  await assert.rejects(wheelService.claimPrize(user, 'WIN2'), (error) => error.code === 'WHEEL_PRIZE_ALREADY_CLAIMED');
+  await assert.rejects(wheelService.claimPrize(user, 'LOS3'), (error) => error.code === 'WHEEL_NO_PRIZE');
+  await assert.rejects(wheelService.claimPrize(user, 'NOPE'), (error) => error.code === 'WHEEL_CODE_INVALID');
+});
+
+const liveQuestionService = require('../src/modules/live-question/live-question.service');
+const liveQuestionRepository = require('../src/modules/live-question/live-question.repository');
+
+test('les questions ne s’ouvrent que pendant un direct du Studio, une prise de parole ou un temps fort', () => {
+  const now = new Date('2026-11-20T10:30:00Z');
+  const event = (values) => ({ type: 'studio', startsAt: '2026-11-20T10:00:00Z', endsAt: '2026-11-20T11:00:00Z', ...values });
+  assert.equal(liveQuestionService.isLive(event(), now), true);
+  assert.equal(liveQuestionService.isLive(event({ startsAt: '2026-11-20T10:45:00Z' }), now), false);
+  assert.equal(liveQuestionService.isLive(event({ endsAt: '2026-11-20T10:25:00Z' }), now), true);
+  assert.equal(liveQuestionService.isLive(event({ endsAt: '2026-11-20T10:15:00Z' }), now), false);
+  assert.equal(liveQuestionService.isLive(event({ endsAt: null, startsAt: '2026-11-20T09:00:00Z' }), now), true);
+  assert.equal(liveQuestionService.isLive(event({ type: 'spotlight' }), now), false);
+});
+
+test('une question du public arrive à l’animateur seulement pendant le direct', async (context) => {
+  const now = new Date('2026-11-20T10:30:00Z');
+  let saved;
+  context.mock.method(liveQuestionRepository, 'findEvent', async (id) => (id === 'live' ? { id, type: 'talk', startsAt: '2026-11-20T10:00:00Z', endsAt: null } : { id, type: 'talk', startsAt: '2026-11-20T15:00:00Z', endsAt: null }));
+  context.mock.method(liveQuestionRepository, 'create', async (values) => { saved = values; return { id: 'q1', ...values }; });
+
+  const created = await liveQuestionService.createPublic('live', { question: 'Quels avantages fiscaux ?', authorName: '' }, now);
+  assert.equal(created.id, 'q1');
+  assert.equal(saved.status, 'new');
+  assert.equal(saved.authorName, null);
+  await assert.rejects(liveQuestionService.createPublic('later', { question: 'Trop tôt ?' }, now), (error) => error.code === 'LIVE_NOT_OPEN');
 });

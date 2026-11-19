@@ -1,11 +1,10 @@
 const { UniqueConstraintError } = require('sequelize');
 const AppError = require('../../shared/app-error');
-const env = require('../../config/env');
 const challengePassportRepository = require('../challenge-passport/challenge-passport.repository');
 const challengePassageRepository = require('./challenge-passage.repository');
 const { events: realtime } = require('../realtime/realtime.service');
+const settingsService = require('../settings/settings.service');
 
-const requiredPassages = Math.max(1, env.challenge.requiredPassages);
 
 const stats = async (user) => {
   if (!user.occupantId) throw new AppError(403, 'OCCUPANT_REQUIRED', 'Ce compte ne dépend pas d’un occupant.');
@@ -13,6 +12,7 @@ const stats = async (user) => {
 };
 
 const validate = async (user, values) => {
+  settingsService.assertOpen('challengeOpen');
   if (!user.occupantId) throw new AppError(403, 'OCCUPANT_REQUIRED', 'Ce compte ne dépend pas d’un occupant.');
   const { code, classification } = values;
   let passportId = null;
@@ -36,7 +36,7 @@ const validate = async (user, values) => {
       }, transaction);
 
       const passageCount = await challengePassageRepository.countByPassport(passport.id, transaction);
-      const completed = passageCount >= requiredPassages;
+      const completed = passageCount >= settingsService.requiredPassages();
       if (completed) {
         await challengePassportRepository.update(passport, {
           status: 'completed',
@@ -49,7 +49,7 @@ const validate = async (user, values) => {
         code: passport.code,
         classification,
         passageCount,
-        requiredPassages,
+        requiredPassages: settingsService.requiredPassages(),
         status: completed ? 'completed' : 'active',
       };
     });

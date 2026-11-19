@@ -233,3 +233,56 @@
 .admin-app .wheel-codes-panel > h2 { margin: 0; padding: 16px 18px; border-bottom: 1px solid rgba(0, 0, 0, .14); font-size: 15px; }
 .admin-app .wheel-code-value { display: block; margin: 26px 0 10px; color: var(--ink); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: clamp(40px, 12vw, 56px); font-weight: 800; letter-spacing: .16em; text-align: center; }
 .admin-app .wheel-code-hint { margin: 0; color: var(--muted); font-size: 13px; text-align: center; }
+
+/* Barre des tableaux : recherche, filtre, tri, nombre de lignes et export. */
+.admin-app .data-toolbar { flex-wrap: wrap; }
+.admin-app .data-toolbar-controls { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+.admin-app .data-toolbar-controls select { width: auto; min-width: 0; padding: 8px 30px 8px 10px; font-size: 13px; background-color: #fafafa; }
+.admin-app .data-count { color: var(--muted); font-size: 12px; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.admin-app .data-export { padding: 8px 12px; }
+@media (max-width: 620px) {
+  .admin-app .data-toolbar-controls { width: 100%; display: grid; grid-template-columns: 1fr 1fr; margin-left: 0; }
+  .admin-app .data-count { align-self: center; }
+  .admin-app .data-export { justify-self: end; }
+}
+
+/* Paramètres : une ligne par réglage, interrupteur à droite. */
+.admin-app .settings-panel { min-height: 0; margin-bottom: 18px; }
+.admin-app .settings-panel > h2 { margin: 0; padding: 16px 18px; border-bottom: 1px solid rgba(0, 0, 0, .14); font-size: 15px; }
+.admin-app .settings-row { display: flex; flex-direction: row; align-items: center; gap: 14px; padding: 16px 18px; border-bottom: 1px solid var(--line); color: var(--ink); font-size: 14px; cursor: pointer; }
+.admin-app .settings-row:last-child { border-bottom: 0; }
+.admin-app .settings-row > span:first-child { flex: 1; min-width: 0; display: grid; gap: 4px; }
+.admin-app .settings-row small { color: var(--muted); font-size: 12px; font-weight: 500; }
+.admin-app .settings-saved { color: var(--green); flex: 0 0 auto; }
+.admin-app .settings-switch { appearance: none; width: 46px; height: 26px; min-height: 0; flex: 0 0 auto; padding: 0; position: relative; border: 0; border-radius: 13px; background: #c9cccf; cursor: pointer; transition: background .15s; }
+.admin-app .settings-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .25); transition: transform .15s; }
+.admin-app .settings-switch:checked { background: var(--green); }
+.admin-app .settings-switch:checked::after { transform: translateX(20px); }
+.admin-app .settings-switch:focus-visible { outline: 3px solid rgba(226, 167, 0, .6); outline-offset: 2px; box-shadow: none; }
+.admin-app .settings-number { display: flex; align-items: center; gap: 8px; }
+.admin-app .settings-number input { width: 72px; text-align: center; }
+@media (max-width: 620px) {
+  .admin-app form.settings-row { flex-wrap: wrap; }
+  .admin-app .settings-number { width: 100%; }
+  .admin-app .settings-number input { flex: 1; width: auto; }
+}
+.admin-app .wheel-unclaimed { color: #b70f2c; font-weight: 700; }
+
+/* Tableau de bord : d'abord ce qui attend une action, puis les chiffres. */
+.admin-app .dashboard-group { margin-bottom: 28px; }
+.admin-app .dashboard-group > h2 { margin: 0 0 12px; color: var(--muted); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.admin-app .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+.admin-app .dashboard-stat { position: relative; display: grid; gap: 4px; padding: 18px 18px 16px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: #fff; text-decoration: none; }
+.admin-app a.dashboard-stat:hover { border-color: rgba(21, 108, 83, .45); }
+.admin-app .dashboard-stat strong { font-family: var(--font-display); font-size: 34px; line-height: 1; letter-spacing: -0.02em; }
+.admin-app .dashboard-stat span { font-size: 13px; font-weight: 700; }
+.admin-app .dashboard-stat small { color: var(--muted); font-size: 12px; }
+.admin-app .dashboard-stat.is-urgent { border-color: rgba(211, 27, 52, .35); background: #fff7f8; }
+.admin-app .dashboard-stat.is-urgent strong { color: var(--red); }
+.admin-app .dashboard-arrow { position: absolute; top: 18px; right: 16px; color: #9aa0a5; }
+@media (max-width: 620px) {
+  .admin-app .dashboard-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .admin-app .dashboard-stat { padding: 14px 12px; }
+  .admin-app .dashboard-stat strong { font-size: 28px; }
+  .admin-app .dashboard-arrow { display: none; }
+}

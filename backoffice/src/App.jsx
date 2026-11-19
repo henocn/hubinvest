@@ -4,12 +4,15 @@ import AuthLayout from './components/AuthLayout';
 import PasswordField from './components/PasswordField';
 import TeamShell from './components/TeamShell';
 import BackofficePage from './admin/pages/BackofficePage';
+import SettingsPage from './admin/pages/SettingsPage';
+import DashboardPage from './admin/pages/DashboardPage';
 import AnimatorRewardsPage from './pages/AnimatorRewardsPage';
 import AnimatorScanPage from './pages/AnimatorScanPage';
 import ContactsPage from './pages/ContactsPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import OccupantChallengePage from './pages/OccupantChallengePage';
 import OccupantProfilePage from './pages/OccupantProfilePage';
+import LiveQuestionsPage from './pages/LiveQuestionsPage';
 import { api } from './lib/api';
 import { adminSectionForPath, homeForRole, isAdminRole } from './navigation';
 import { SessionProvider, useSession } from './session';
@@ -109,7 +112,10 @@ function TeamRoutes() {
             <Route path="/remises" element={<AnimatorRewardsPage {...props} />} />
           </>
         )}
+        {(role === 'animateur' || role === 'super-admin') && <Route path="/questions" element={<LiveQuestionsPage {...props} />} />}
         <Route path="/profil" element={<OccupantProfilePage {...props} />} />
+        {isAdminRole(role) && <Route path="/tableau-de-bord" element={<DashboardPage {...props} />} />}
+        {role === 'super-admin' && <Route path="/parametres" element={<SettingsPage {...props} />} />}
         {isAdminRole(role) && <Route path="/*" element={<AdminSection />} />}
       </Route>
       <Route path="*" element={session ? <Navigate to={homeForRole(role)} replace /> : <RequireSession />} />

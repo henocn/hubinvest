@@ -18,6 +18,9 @@ const pushSubscriptionRoutes = require('./modules/push-subscription/push-subscri
 const programEventRoutes = require('./modules/program-event/program-event.route');
 const wheelRoutes = require('./modules/wheel/wheel.route');
 const realtimeRoutes = require('./modules/realtime/realtime.route');
+const settingsRoutes = require('./modules/settings/settings.route');
+const dashboardRoutes = require('./modules/dashboard/dashboard.route');
+const liveQuestionRoutes = require('./modules/live-question/live-question.route');
 const seoRoutes = require('./modules/seo/seo.route');
 const httpLogger = require('./middlewares/http-logger.middleware');
 const notFound = require('./middlewares/not-found.middleware');
@@ -26,6 +29,9 @@ const errorHandler = require('./middlewares/error.middleware');
 const app = express();
 
 app.disable('x-powered-by');
+// Derrière Nginx : l'adresse du visiteur vient de X-Forwarded-For, posé par le proxy local uniquement.
+// Sans ce réglage, tous les visiteurs auraient l'adresse de Nginx et partageraient les mêmes limites d'essais.
+app.set('trust proxy', 'loopback');
 app.use(httpLogger);
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(
@@ -58,6 +64,9 @@ app.use('/api/push-subscriptions', pushSubscriptionRoutes);
 app.use('/api/program-events', programEventRoutes);
 app.use('/api/wheel', wheelRoutes);
 app.use('/api/realtime', realtimeRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/live-questions', liveQuestionRoutes);
 
 // Pages HTML et sitemap servis par Nginx via l'API ; l'en-tête CSP de Helmet ne s'applique pas au site.
 app.use((request, response, next) => {

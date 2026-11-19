@@ -954,13 +954,6 @@
 .request-error { margin: 0; color: #ba0024; font-size: 0.84rem; }
 .request-success { align-self: start; margin: 0; padding: 20px; border: 1px solid #bcd8ca; border-radius: 10px; color: var(--green-dark); background: #edf3f1; line-height: 1.6; }
 
-.login-public-link {
-  display: inline-block;
-  margin-top: 28px;
-  color: var(--green);
-  text-decoration: none;
-  font-weight: 700;
-}
 
 .investor-desk-page {
   padding-block: clamp(32px, 5vw, 52px) 90px;
@@ -1998,4 +1991,42 @@
 
 .wheel-result .button {
   margin-top: 8px;
+}
+
+/* Module fermé depuis l'administration : message calme à la place du formulaire ou du jeu. */
+.public-message.is-closed {
+  border-left: 3px solid var(--green);
+  color: #0f1822;
+  background: #fff;
+  font-weight: 650;
+}
+
+.play-closed {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 650;
+  text-align: center;
+}
+
+/* Direct en cours : question envoyée à l'animateur depuis la carte du programme. */
+.live-question-button {
+  min-height: 42px;
+  margin-top: 10px;
+  padding: 0 16px;
+  font-size: 0.9rem;
+}
+
+.live-question-sent {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 8px 0 4px;
+  color: var(--green);
+  text-align: center;
+}
+
+.live-question-sent p {
+  margin: 0;
+  color: #0f1822;
+  font-weight: 650;
 }

@@ -126,6 +126,10 @@ const events = {
   programChanged: () => safePublish([channels.superAdmins], 'program'),
   // Roue des opportunités : cases, stock et codes, partagés par toute l'administration.
   wheelChanged: () => safePublish([channels.superAdmins, channels.admins], 'wheel'),
+  // Modules ouverts ou fermés, nombre de stands des Défis : toute l'équipe.
+  // Questions du public pendant un direct : animateurs et super administrateurs.
+  liveQuestionsChanged: () => safePublish([channels.animators, channels.superAdmins], 'live-questions'),
+  settingsChanged: () => safePublish([channels.superAdmins, channels.admins, channels.animators], 'settings'),
 };
 
 module.exports = {

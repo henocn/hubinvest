@@ -3,6 +3,7 @@ const roles = require('../../shared/roles');
 const investorRequestRepository = require('./investor-request.repository');
 const notificationService = require('../notification/notification.service');
 const { events: realtime } = require('../realtime/realtime.service');
+const settingsService = require('../settings/settings.service');
 
 const standFor = (user) => {
   if (user.role === roles.SUPER_ADMIN) return null;
@@ -23,6 +24,7 @@ const list = async (user, query) => {
 };
 
 const createPublic = async (values, language = 'fr') => {
+  settingsService.assertOpen('investorDeskOpen');
   const occupant = await investorRequestRepository.findActiveOccupantById(values.occupantId);
   if (!occupant) throw new AppError(422, 'OCCUPANT_NOT_FOUND', 'Le stand choisi n’est pas disponible.');
   const investorRequest = await investorRequestRepository.create({
