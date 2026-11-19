@@ -45,8 +45,7 @@ export default {
     noToday: "Nothing is scheduled today.",
     empty: "The Hub programme will be published soon. In the meantime, discover the stands.",
     exploreStands: "Explore the stands",
-    live: "Live now",
-    done: "Finished",
+    now: "Happening now",
   },
   program: {
     types: {
