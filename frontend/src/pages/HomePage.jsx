@@ -219,7 +219,6 @@ export default function HomePage() {
               <TodaySchedule events={data.today} formats={formats} now={now} />
               {data.upcoming.length > 0 && <UpcomingSchedule events={data.upcoming} formats={formats} />}
             </div>
-            <Link className="home-explore-link" to="/stands">{t('home.exploreStands')} <ArrowRight size={16} aria-hidden="true" /></Link>
           </>
         )}
       </main>
