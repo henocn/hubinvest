@@ -30,16 +30,7 @@ export const resolveAssetUrl = (value) => {
   return new URL(value, new URL(API_URL, window.location.origin).origin).toString();
 };
 
-const authorized = (token, options = {}) => ({
-  ...options,
-  headers: {
-    ...options.headers,
-    Authorization: `Bearer ${token}`,
-  },
-});
-
 export const api = {
-  health: () => request('/health'),
   publicToday: () => request('/program-events/public/today'),
   publicWheel: () => request('/wheel/public'),
   spinWheel: (code, player) => request('/wheel/public/spin', { method: 'POST', body: JSON.stringify({ code, player }) }),
@@ -54,29 +45,5 @@ export const api = {
   respondStudioInvitation: (token, status) => request(`/studio-invitations/public/${encodeURIComponent(token)}`, { method: 'PATCH', body: JSON.stringify({ status }) }),
   createChallengePassport: (values) => request('/challenge-passports/public', { method: 'POST', body: JSON.stringify(values) }),
   publicChallengePassport: (token) => request(`/challenge-passports/public/${encodeURIComponent(token)}`),
-  login: (values) => request('/auth/login', { method: 'POST', body: JSON.stringify(values) }),
-  forgotPassword: (email) => request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
-  resetPassword: (email, code, password) => request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ email, code, password }) }),
-  profile: (token) => request('/users/me', authorized(token)),
-  changeOwnPassword: (token, values) =>
-    request('/users/me/password', authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
-  contacts: (token) => request('/contacts', authorized(token)),
-  contactStats: (token) => request('/contacts/stats', authorized(token)),
-  createContact: (token, values) =>
-    request('/contacts', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
-  updateContact: (token, id, values) =>
-    request(`/contacts/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
-  validateChallengePassage: (token, code, classification) => request('/challenge-passages', authorized(token, { method: 'POST', body: JSON.stringify({ code, classification }) })),
-  challengePassageStats: (token) => request('/challenge-passages/stats', authorized(token)),
-  challengeRewards: (token) => request('/challenge-passports/rewards', authorized(token)),
-  challengeRewardByCode: (token, code) => request(`/challenge-passports/code/${encodeURIComponent(code)}`, authorized(token)),
-  redeemChallengeReward: (token, code) => request('/challenge-passports/redeem-by-code', authorized(token, { method: 'POST', body: JSON.stringify({ code }) })),
-  realtimeTicket: (token) => request('/realtime/ticket', authorized(token, { method: 'POST' })),
-  realtimeStreamUrl: (ticket) => `${API_URL}/realtime/stream?ticket=${encodeURIComponent(ticket)}`,
   challengePassportStreamUrl: (personalToken) => `${API_URL}/realtime/passports/${encodeURIComponent(personalToken)}`,
-  pushPublicKey: () => request('/push-subscriptions/public-key'),
-  subscribePush: (token, subscription) =>
-    request('/push-subscriptions', authorized(token, { method: 'POST', body: JSON.stringify(subscription) })),
-  unsubscribePush: (token, endpoint) =>
-    request('/push-subscriptions', authorized(token, { method: 'DELETE', body: JSON.stringify({ endpoint }) })),
 };
