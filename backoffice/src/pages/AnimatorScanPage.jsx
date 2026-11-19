@@ -1,6 +1,7 @@
 import { CheckCircle2, ScanLine } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import ChallengeScannerDialog from '../components/ChallengeScannerDialog';
+import PlayerSearch from '../components/PlayerSearch';
 import { useWheelPrize, WheelPrizeCard, WheelPrizeResult, wheelCodePattern } from '../components/WheelPrize';
 import { api } from '../lib/api';
 import { useRealtimeEvent } from '../lib/realtime';
@@ -95,6 +96,7 @@ export default function AnimatorScanPage({ session, onLogout }) {
           <label htmlFor="reward-participant-code">Code participant ou code de jeu</label>
           <div className="challenge-manual-row"><input id="reward-participant-code" className="challenge-code-input" value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} minLength={4} maxLength={8} autoCapitalize="characters" autoComplete="off" required /><button className="button button-secondary" type="submit" disabled={loading}>OK</button></div>
         </form>
+        <PlayerSearch session={session} onLogout={onLogout} onPick={(value) => { void findParticipant(value); }} />
         {participant && <section className={`animator-participant is-${participant.status}`}><strong>{participant.displayName}</strong><span>{participant.passageCount} / {participant.requiredPassages} passages</span>{participant.status === 'completed' && <button className="button button-primary" type="button" onClick={redeem} disabled={loading}>Remettre la récompense</button>}{participant.status === 'active' && <p>Parcours non terminé.</p>}{participant.status === 'redeemed' && <p>Récompense déjà remise.</p>}</section>}
         <WheelPrizeCard prize={wheel.prize} loading={wheel.prizeLoading} onClaim={wheel.claimPrize} />
         {wheel.prizeError && <p className="panel-error" role="alert">{wheel.prizeError}</p>}

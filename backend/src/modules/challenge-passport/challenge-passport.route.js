@@ -15,6 +15,8 @@ router.get('/public/:token', validate(challengePassportValidation.tokenParams, '
 
 router.use(asyncHandler(authenticate));
 router.get('/', challengeManagers, asyncHandler(challengePassportController.list));
+// Code perdu : l'équipe retrouve le joueur par son nom, son e-mail ou son téléphone.
+router.get('/search', requireRoles(roles.SUPER_ADMIN, roles.ADMIN, roles.ANIMATOR, roles.OCCUPANT), validate(challengePassportValidation.searchQuery, 'query'), asyncHandler(challengePassportController.search));
 router.get('/rewards', rewardTeamOnly, asyncHandler(challengePassportController.listRewards));
 router.get('/code/:code', rewardTeamOnly, validate(challengePassportValidation.rewardCodeParams, 'params'), asyncHandler(challengePassportController.getByCode));
 router.post('/redeem-by-code', rewardTeamOnly, validate(challengePassportValidation.rewardCode), asyncHandler(challengePassportController.redeemByCode));

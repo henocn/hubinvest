@@ -1,3 +1,4 @@
+const { Op } = require('sequelize');
 const { ChallengePassport, ChallengePassage, Occupant, User } = require('../../models');
 
 const publicPassageInclude = [{
@@ -39,6 +40,27 @@ const findByCode = (code) => ChallengePassport.findOne({
   include: managerPassageInclude,
 });
 
+// Recherche de secours d'un joueur qui a perdu son code : nom, e-mail, téléphone ou début du code.
+const escapeLike = (value) => value.replace(/[%_\\]/g, (character) => `\\${character}`);
+
+const search = (query, limit = 8) => {
+  const text = escapeLike(query);
+  const digits = query.replace(/\D/g, '');
+  return ChallengePassport.findAll({
+    where: {
+      [Op.or]: [
+        { displayName: { [Op.iLike]: `%${text}%` } },
+        { email: { [Op.iLike]: `%${text}%` } },
+        { code: { [Op.iLike]: `${text}%` } },
+        ...(digits.length >= 4 ? [{ phone: { [Op.like]: `%${digits}%` } }] : []),
+      ],
+    },
+    attributes: ['id', 'code', 'displayName', 'email', 'phone', 'status'],
+    order: [['createdAt', 'DESC']],
+    limit,
+  });
+};
+
 const findByCodeForUpdate = (code, transaction) => ChallengePassport.findOne({
   where: { code },
   transaction,
@@ -70,4 +92,6 @@ const findOccupantIds = async (passportId, transaction) => (await ChallengePassa
 const create = (values) => ChallengePassport.create(values);
 const update = (passport, values, transaction) => passport.update(values, { transaction });
 
-module.exports = { findPublicByToken, findRedeemed, findIdByToken, findOccupantIds, findAll, findByCode, findByCodeForUpdate, findByIdForUpdate, create, update };
+module.exports = {
+  search,
+  findPublicByToken, findRedeemed, findIdByToken, findOccupantIds, findAll, findByCode, findByCodeForUpdate, findByIdForUpdate, create, update };

@@ -1,6 +1,7 @@
 import { CheckCircle2, ScanLine } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ChallengeScannerDialog from '../components/ChallengeScannerDialog';
+import PlayerSearch from '../components/PlayerSearch';
 import { useWheelPrize, WheelCodeGenerator, WheelPrizeCard, WheelPrizeResult, wheelCodePattern } from '../components/WheelPrize';
 import { api } from '../lib/api';
 import { useRealtimeConnected, useRealtimeEvent } from '../lib/realtime';
@@ -118,6 +119,7 @@ export default function OccupantChallengePage({ session, onLogout }) {
             <button className="button button-secondary" type="submit" disabled={loading}>OK</button>
           </div>
         </form>
+        <PlayerSearch session={session} onLogout={onLogout} onPick={prepareClassification} />
         {error && <p className="panel-error" role="alert">{error}</p>}
         {pendingCode && <div className="challenge-classification" role="group" aria-label="Classer le participant"><strong>Classer le participant</strong><div>{['A', 'B', 'C'].map((classification) => <button className="challenge-classification-button" type="button" key={classification} onClick={() => { void validateCode(classification); }} disabled={loading} aria-label={`Classer le participant en ${classification}`}>{classification}</button>)}</div></div>}
         {result && <p className="challenge-validation-success" role="status"><CheckCircle2 size={20} /> Passage validé pour {result.displayName} · Classement {result.classification}</p>}

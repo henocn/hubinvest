@@ -139,4 +139,10 @@ const redeemByCode = (user, code) => redeemAndPublish(async (transaction) => {
   return redeemPassport(user, passport, transaction);
 });
 
-module.exports = { createPublic, getPublic, list, listRewards, getByCode, redeem, redeemByCode, publicPayload };
+// Joueurs correspondant à une recherche (nom, e-mail, téléphone, code), pour retrouver un code perdu.
+const search = async (query) => (await challengePassportRepository.search(query.trim())).map((passport) => {
+  const values = passport.toJSON ? passport.toJSON() : passport;
+  return { code: values.code, displayName: values.displayName, email: values.email, phone: values.phone, status: values.status };
+});
+
+module.exports = { createPublic, getPublic, list, listRewards, getByCode, redeem, redeemByCode, publicPayload, search };
