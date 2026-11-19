@@ -19,6 +19,7 @@ const programEventRoutes = require('./modules/program-event/program-event.route'
 const wheelRoutes = require('./modules/wheel/wheel.route');
 const realtimeRoutes = require('./modules/realtime/realtime.route');
 const settingsRoutes = require('./modules/settings/settings.route');
+const dashboardRoutes = require('./modules/dashboard/dashboard.route');
 const seoRoutes = require('./modules/seo/seo.route');
 const httpLogger = require('./middlewares/http-logger.middleware');
 const notFound = require('./middlewares/not-found.middleware');
@@ -60,6 +61,7 @@ app.use('/api/program-events', programEventRoutes);
 app.use('/api/wheel', wheelRoutes);
 app.use('/api/realtime', realtimeRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Pages HTML et sitemap servis par Nginx via l'API ; l'en-tête CSP de Helmet ne s'applique pas au site.
 app.use((request, response, next) => {

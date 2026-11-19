@@ -1,4 +1,4 @@
-import { Building2, BriefcaseBusiness, CalendarDays, CircleUserRound, Disc3, Gift, Handshake, ScanLine, SlidersHorizontal, Trophy, Users, Video } from 'lucide-react';
+import { Building2, BriefcaseBusiness, CalendarDays, CircleUserRound, Disc3, Gift, Handshake, LayoutDashboard, ScanLine, SlidersHorizontal, Trophy, Users, Video } from 'lucide-react';
 
 // Rubriques de l'administration : chaque section a sa propre adresse.
 // « tab » place la rubrique dans la barre du bas sur téléphone (quatre au plus) ; les autres restent dans le menu.
@@ -14,10 +14,12 @@ export const adminSections = [
 ];
 
 const profileLink = { path: '/profil', label: 'Profil', Icon: CircleUserRound, tab: true };
+// Accueil de l'administration : ce qui attend une action et les chiffres du Hub.
+const dashboardLink = { path: '/tableau-de-bord', label: 'Tableau de bord', Icon: LayoutDashboard, tab: true };
 
 const roleLinks = {
-  'super-admin': [...adminSections, { path: '/parametres', label: 'Paramètres', Icon: SlidersHorizontal }, { ...profileLink, tab: false }],
-  admin: [...adminSections.filter((item) => !item.superOnly), { ...profileLink, tab: false }],
+  'super-admin': [dashboardLink, ...adminSections, { path: '/parametres', label: 'Paramètres', Icon: SlidersHorizontal }, { ...profileLink, tab: false }],
+  admin: [dashboardLink, ...adminSections.filter((item) => !item.superOnly), { ...profileLink, tab: false }],
   occupant: [
     { path: '/contacts', label: 'Contacts', Icon: Users, tab: true },
     { path: '/defis', label: 'Défis', Icon: Trophy, tab: true },

@@ -5,6 +5,7 @@ import PasswordField from './components/PasswordField';
 import TeamShell from './components/TeamShell';
 import BackofficePage from './admin/pages/BackofficePage';
 import SettingsPage from './admin/pages/SettingsPage';
+import DashboardPage from './admin/pages/DashboardPage';
 import AnimatorRewardsPage from './pages/AnimatorRewardsPage';
 import AnimatorScanPage from './pages/AnimatorScanPage';
 import ContactsPage from './pages/ContactsPage';
@@ -111,6 +112,7 @@ function TeamRoutes() {
           </>
         )}
         <Route path="/profil" element={<OccupantProfilePage {...props} />} />
+        {isAdminRole(role) && <Route path="/tableau-de-bord" element={<DashboardPage {...props} />} />}
         {role === 'super-admin' && <Route path="/parametres" element={<SettingsPage {...props} />} />}
         {isAdminRole(role) && <Route path="/*" element={<AdminSection />} />}
       </Route>

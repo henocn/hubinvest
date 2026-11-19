@@ -5,6 +5,7 @@ import hubLogoWhite from '../assets/brand/hub-logo-white.png';
 import hubLogo from '../assets/brand/hub-logo.png';
 import PushToggleButton from '../admin/components/PushToggleButton';
 import NotificationPrompt from './NotificationPrompt';
+import { DashboardProvider, useDashboard } from '../admin/dashboard';
 import { api, resolveAssetUrl } from '../lib/api';
 import { disablePush } from '../lib/push';
 import { useRealtimeConnection, useRealtimeEvent } from '../lib/realtime';
@@ -15,18 +16,32 @@ const adminTopics = ['occupants', 'users', 'program', 'contacts', 'investor-requ
 const teamTopics = ['contacts', 'challenge', 'occupants', 'account'];
 
 // Liens de navigation : NavLink marque la rubrique ouverte, y compris ses sous-pages (/contacts/nouveau…).
+// La pastille donne le nombre exact d'éléments qui attendent une action dans la rubrique.
 function NavItems({ links, className = '' }) {
-  return links.map(({ path, label, Icon }) => (
-    <NavLink key={path} to={path} className={({ isActive }) => `${className}${isActive ? ' is-active' : ''}`.trim()}>
-      <Icon size={20} aria-hidden="true" />
-      <span>{label}</span>
-    </NavLink>
-  ));
+  const todo = useDashboard()?.data?.todo || {};
+  return links.map(({ path, label, Icon, section }) => {
+    const count = section ? todo[section] || 0 : 0;
+    return (
+      <NavLink key={path} to={path} className={({ isActive }) => `${className}${isActive ? ' is-active' : ''}`.trim()} aria-label={count ? `${label}, ${count} à traiter` : undefined}>
+        <span className="team-nav-icon">
+          <Icon size={20} aria-hidden="true" />
+          {count > 0 && <b className="team-badge" aria-hidden="true">{count}</b>}
+        </span>
+        <span>{label}</span>
+      </NavLink>
+    );
+  });
 }
 
 // Cadre commun de l'espace équipe : façon application sur téléphone (barre verte en haut, onglets en bas,
 // menu latéral), barre latérale fixe sur ordinateur.
 export default function TeamShell() {
+  const { session, logout } = useSession();
+  const shell = <TeamShellLayout />;
+  return isAdminRole(session.user.role) ? <DashboardProvider session={session} onLogout={logout}>{shell}</DashboardProvider> : shell;
+}
+
+function TeamShellLayout() {
   const { session, updateUser, logout } = useSession();
   const { user, token } = session;
   const location = useLocation();
