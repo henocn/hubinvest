@@ -15,7 +15,7 @@ export const adminSections = [
 
 const profileLink = { path: '/profil', label: 'Profil', Icon: CircleUserRound, tab: true };
 // Accueil de l'administration : ce qui attend une action et les chiffres du Hub.
-const dashboardLink = { path: '/tableau-de-bord', label: 'Tableau de bord', Icon: LayoutDashboard, tab: true };
+const dashboardLink = { path: '/tableau-de-bord', label: 'Tableau de bord', tabLabel: 'Accueil', Icon: LayoutDashboard, tab: true };
 // Questions du public pendant les directs, reçues par l'animateur.
 const questionsLink = { path: '/questions', label: 'Questions', Icon: MessageCircleQuestion, tab: true };
 

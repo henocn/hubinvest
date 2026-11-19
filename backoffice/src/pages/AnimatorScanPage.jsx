@@ -48,7 +48,11 @@ export default function AnimatorScanPage({ session, onLogout }) {
       setCode('');
     } catch (requestError) {
       if (requestError.status === 401 || requestError.status === 403) onLogout();
-      else setError(requestError.message);
+      // Anciens codes de jeu de 6 caractères : inconnus comme participant, on cherche un lot de la roue.
+      else if (requestError.status === 404) {
+        setCode('');
+        await wheel.findPrize(normalized);
+      } else setError(requestError.message);
     } finally {
       submitting.current = false;
       setLoading(false);
