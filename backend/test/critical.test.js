@@ -1131,3 +1131,30 @@ test('un lot gagné ne se remet qu’une fois, et seulement s’il a été gagn�
   await assert.rejects(wheelService.claimPrize(user, 'LOS3'), (error) => error.code === 'WHEEL_NO_PRIZE');
   await assert.rejects(wheelService.claimPrize(user, 'NOPE'), (error) => error.code === 'WHEEL_CODE_INVALID');
 });
+
+const liveQuestionService = require('../src/modules/live-question/live-question.service');
+const liveQuestionRepository = require('../src/modules/live-question/live-question.repository');
+
+test('les questions ne s’ouvrent que pendant un direct du Studio, une prise de parole ou un temps fort', () => {
+  const now = new Date('2026-11-20T10:30:00Z');
+  const event = (values) => ({ type: 'studio', startsAt: '2026-11-20T10:00:00Z', endsAt: '2026-11-20T11:00:00Z', ...values });
+  assert.equal(liveQuestionService.isLive(event(), now), true);
+  assert.equal(liveQuestionService.isLive(event({ startsAt: '2026-11-20T10:45:00Z' }), now), false);
+  assert.equal(liveQuestionService.isLive(event({ endsAt: '2026-11-20T10:25:00Z' }), now), true);
+  assert.equal(liveQuestionService.isLive(event({ endsAt: '2026-11-20T10:15:00Z' }), now), false);
+  assert.equal(liveQuestionService.isLive(event({ endsAt: null, startsAt: '2026-11-20T09:00:00Z' }), now), true);
+  assert.equal(liveQuestionService.isLive(event({ type: 'spotlight' }), now), false);
+});
+
+test('une question du public arrive à l’animateur seulement pendant le direct', async (context) => {
+  const now = new Date('2026-11-20T10:30:00Z');
+  let saved;
+  context.mock.method(liveQuestionRepository, 'findEvent', async (id) => (id === 'live' ? { id, type: 'talk', startsAt: '2026-11-20T10:00:00Z', endsAt: null } : { id, type: 'talk', startsAt: '2026-11-20T15:00:00Z', endsAt: null }));
+  context.mock.method(liveQuestionRepository, 'create', async (values) => { saved = values; return { id: 'q1', ...values }; });
+
+  const created = await liveQuestionService.createPublic('live', { question: 'Quels avantages fiscaux ?', authorName: '' }, now);
+  assert.equal(created.id, 'q1');
+  assert.equal(saved.status, 'new');
+  assert.equal(saved.authorName, null);
+  await assert.rejects(liveQuestionService.createPublic('later', { question: 'Trop tôt ?' }, now), (error) => error.code === 'LIVE_NOT_OPEN');
+});

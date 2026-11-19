@@ -12,8 +12,8 @@ import { useRealtimeConnection, useRealtimeEvent } from '../lib/realtime';
 import { isAdminRole, linksForRole, roleLabels, tabsForRole } from '../navigation';
 import { useSession } from '../session';
 
-const adminTopics = ['occupants', 'users', 'program', 'contacts', 'investor-requests', 'b2b', 'studio', 'challenge', 'wheel', 'settings', 'account'];
-const teamTopics = ['contacts', 'challenge', 'occupants', 'account'];
+const adminTopics = ['occupants', 'users', 'program', 'contacts', 'investor-requests', 'b2b', 'studio', 'challenge', 'wheel', 'settings', 'live-questions', 'account'];
+const teamTopics = ['contacts', 'challenge', 'occupants', 'live-questions', 'account'];
 
 // Liens de navigation : NavLink marque la rubrique ouverte, y compris ses sous-pages (/contacts/nouveau…).
 // La pastille donne le nombre exact d'éléments qui attendent une action dans la rubrique.

@@ -200,4 +200,15 @@ export default {
     challenge: "Les Défis sont terminés. Merci d’avoir joué !",
     wheel: "La roue est fermée pour le moment.",
   },
+  live: {
+    ask: "Poser une question",
+    title: "Votre question",
+    question: "Votre question",
+    name: "Votre nom",
+    send: "Envoyer à l’animateur",
+    sent: "Question envoyée ! L’animateur la voit en direct.",
+    another: "Poser une autre question",
+    notOpen: "Les questions sont fermées : ce direct est terminé.",
+    rateLimited: "Vous avez envoyé plusieurs questions. Patientez quelques minutes.",
+  },
 };

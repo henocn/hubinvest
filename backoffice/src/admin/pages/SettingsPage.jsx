@@ -9,6 +9,7 @@ const modules = [
   { key: 'b2bOpen', title: 'Propositions B2B', text: 'Réponses des visiteurs aux besoins publiés.' },
   { key: 'challengeOpen', title: 'Défis', text: 'Inscription des joueurs et scans sur les stands.' },
   { key: 'wheelOpen', title: 'Roue des opportunités', text: 'Codes de jeu et tirages.' },
+  { key: 'liveQuestionsOpen', title: 'Questions en direct', text: 'Questions du public à l’animateur pendant le Studio et les prises de parole.' },
 ];
 
 // Réglages du site, appliqués aussitôt : ouvrir ou fermer chaque module, nombre de stands requis pour les Défis.

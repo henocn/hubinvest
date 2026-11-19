@@ -573,3 +573,120 @@ a.contact-row {
   color: var(--muted);
   font-size: 0.85rem;
 }
+
+/* Questions du public pendant les directs : lisibles d'un coup d'œil sur le téléphone de l'animateur. */
+.live-questions-workspace h1 {
+  margin-bottom: 16px;
+}
+
+.live-questions-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-bottom: 18px;
+  padding: 4px;
+  border-radius: 10px;
+  background: #e9ecea;
+}
+
+.live-questions-tabs button {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--muted);
+  background: transparent;
+  font-weight: 700;
+}
+
+.live-questions-tabs button.is-active {
+  color: var(--ink);
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(15, 24, 34, 0.14);
+}
+
+.live-questions-tabs span {
+  min-width: 22px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  color: #fff;
+  background: var(--green);
+  font-size: 0.75rem;
+}
+
+.live-questions-group {
+  margin-bottom: 22px;
+}
+
+.live-questions-group > header {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.live-questions-group > header span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.live-pill {
+  padding: 2px 8px;
+  border-radius: 10px;
+  color: #fff;
+  background: var(--red);
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+}
+
+.live-questions-group ul {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.live-question {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--green);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.live-question.is-asked,
+.live-question.is-dismissed {
+  border-left-color: var(--border);
+  opacity: 0.8;
+}
+
+.live-question p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1.12rem;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.live-question small {
+  color: var(--muted);
+}
+
+.live-question-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.live-question-actions .button {
+  min-height: 44px;
+  flex: 1;
+}

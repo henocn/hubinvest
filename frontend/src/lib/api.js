@@ -46,5 +46,6 @@ export const api = {
   respondStudioInvitation: (token, status) => request(`/studio-invitations/public/${encodeURIComponent(token)}`, { method: 'PATCH', body: JSON.stringify({ status }) }),
   createChallengePassport: (values) => request('/challenge-passports/public', { method: 'POST', body: JSON.stringify(values) }),
   publicChallengePassport: (token) => request(`/challenge-passports/public/${encodeURIComponent(token)}`),
+  askLiveQuestion: (eventId, values) => request(`/live-questions/public/${encodeURIComponent(eventId)}`, { method: 'POST', body: JSON.stringify(values) }),
   challengePassportStreamUrl: (personalToken) => `${API_URL}/realtime/passports/${encodeURIComponent(personalToken)}`,
 };

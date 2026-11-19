@@ -9,6 +9,8 @@ const errorKeys = {
   WHEEL_PLAYER_REQUIRED: 'play.identifyFirst',
   MODULE_CLOSED: 'closed.generic',
   WHEEL_DAILY_LIMIT: 'wheel.errors.dailyLimit',
+  LIVE_NOT_OPEN: 'live.notOpen',
+  LIVE_QUESTION_RATE_LIMITED: 'live.rateLimited',
 };
 
 export const publicErrorMessage = (t, error) => t(errorKeys[error?.code] || 'common.requestFailed');

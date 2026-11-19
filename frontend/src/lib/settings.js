@@ -9,6 +9,7 @@ const DEFAULTS = {
   b2bOpen: true,
   challengeOpen: true,
   wheelOpen: true,
+  liveQuestionsOpen: true,
 };
 
 let cached = null;

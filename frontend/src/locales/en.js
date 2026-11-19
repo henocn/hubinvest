@@ -200,4 +200,15 @@ export default {
     challenge: "The challenges are over. Thanks for playing!",
     wheel: "The wheel is closed for now.",
   },
+  live: {
+    ask: "Ask a question",
+    title: "Your question",
+    question: "Your question",
+    name: "Your name",
+    send: "Send to the host",
+    sent: "Question sent! The host sees it live.",
+    another: "Ask another question",
+    notOpen: "Questions are closed: this live session has ended.",
+    rateLimited: "You have sent several questions. Please wait a few minutes.",
+  },
 };

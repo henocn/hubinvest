@@ -10,6 +10,7 @@ const MODULES = Object.freeze({
   b2bOpen: 'Les propositions de rencontre B2B sont closes.',
   challengeOpen: 'Les Défis sont terminés.',
   wheelOpen: 'La roue des opportunités est fermée.',
+  liveQuestionsOpen: 'Les questions en direct sont fermées.',
 });
 
 const defaults = () => ({
