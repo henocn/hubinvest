@@ -21,6 +21,14 @@ const listPlays = async (request, response) => response.json({
   data: await wheelService.listPlays(),
 });
 
+const findPrize = async (request, response) => response.json({
+  data: await wheelService.findPrize(request.params.code),
+});
+
+const claimPrize = async (request, response) => response.json({
+  data: await wheelService.claimPrize(request.user, request.params.code),
+});
+
 const generateCode = async (request, response) => response.status(201).json({
   data: await wheelService.generateCode(request.user),
 });
@@ -40,4 +48,4 @@ const removeSegment = async (request, response) => {
   response.json({ message: 'Case retirée de la roue.' });
 };
 
-module.exports = { getPublic, spin, overview, listPlays, generateCode, createSegment, updateSegment, removeSegment };
+module.exports = { getPublic, spin, overview, listPlays, findPrize, claimPrize, generateCode, createSegment, updateSegment, removeSegment };

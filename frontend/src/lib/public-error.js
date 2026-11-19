@@ -8,6 +8,7 @@ const errorKeys = {
   WHEEL_RATE_LIMITED: 'wheel.errors.rateLimited',
   WHEEL_PLAYER_REQUIRED: 'play.identifyFirst',
   MODULE_CLOSED: 'closed.generic',
+  WHEEL_DAILY_LIMIT: 'wheel.errors.dailyLimit',
 };
 
 export const publicErrorMessage = (t, error) => t(errorKeys[error?.code] || 'common.requestFailed');

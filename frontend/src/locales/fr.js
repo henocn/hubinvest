@@ -181,10 +181,11 @@ export default {
     spinning: "Relâchez pour arrêter la roue…",
     won: "Bravo, vous gagnez",
     sponsor: "Offert par {{sponsor}}",
-    claim: "Montrez cet écran à l’équipe du stand pour recevoir votre lot.",
+    claim: "Donnez ce code à l’équipe d’un stand ou à un animateur pour recevoir votre lot.",
     lost: "Merci d’avoir joué. Bonne visite au Hub !",
     playAgain: "Jouer avec un autre code",
     errors: {
+      dailyLimit: "Vous avez déjà joué aujourd’hui. Revenez demain !",
       invalid: "Ce code n’existe pas. Vérifiez-le auprès de l’équipe du stand.",
       used: "Ce code a déjà servi. Demandez-en un nouveau à l’équipe du stand.",
       expired: "Ce code a expiré. Demandez-en un nouveau à l’équipe du stand.",

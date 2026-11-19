@@ -27,13 +27,14 @@ export default function WheelCodesTable({ codes }) {
   return (
     <div className="table-scroll">
       <table>
-        <thead><tr><th>Code</th><th>Délivré</th><th>Joueur</th><th>Résultat</th></tr></thead>
+        <thead><tr><th>Code</th><th>Délivré</th><th>Joueur</th><th>Résultat</th><th>Lot remis</th></tr></thead>
         <tbody>{codes.map((item) => (
           <tr key={item.id} className={`wheel-code-row is-${item.status}${item.result?.kind === 'prize' ? ' is-won' : ''}`}>
             <td className="challenge-table-code">{item.code}</td>
             <td><strong>{timeFormatter.format(new Date(item.createdAt))}</strong><small>{item.createdBy ? `${item.createdBy.firstName} ${item.createdBy.lastName}` : '—'}</small></td>
             <td>{item.player ? <><strong>{item.player.displayName}</strong><PlayerContact player={item.player} /></> : '—'}</td>
             <td>{resultLabel(item)}</td>
+            <td>{item.result?.kind !== 'prize' ? '—' : item.claimedAt ? <><strong>{shortTime.format(new Date(item.claimedAt))}</strong><small>{item.claimedBy ? `${item.claimedBy.firstName} ${item.claimedBy.lastName}` : ''}</small></> : <span className="wheel-unclaimed">À remettre</span>}</td>
           </tr>
         ))}</tbody>
       </table>

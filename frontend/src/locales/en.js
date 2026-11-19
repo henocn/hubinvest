@@ -181,10 +181,11 @@ export default {
     spinning: "Let go to stop the wheel…",
     won: "Congratulations, you win",
     sponsor: "Offered by {{sponsor}}",
-    claim: "Show this screen to the stand team to collect your prize.",
+    claim: "Give this code to a stand team or an animator to collect your prize.",
     lost: "Thanks for playing. Enjoy your visit to the Hub!",
     playAgain: "Play with another code",
     errors: {
+      dailyLimit: "You have already played today. Come back tomorrow!",
       invalid: "This code does not exist. Please check it with the stand team.",
       used: "This code has already been used. Ask the stand team for a new one.",
       expired: "This code has expired. Ask the stand team for a new one.",

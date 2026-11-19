@@ -266,3 +266,4 @@
   .admin-app .settings-number { width: 100%; }
   .admin-app .settings-number input { flex: 1; width: auto; }
 }
+.admin-app .wheel-unclaimed { color: #b70f2c; font-weight: 700; }

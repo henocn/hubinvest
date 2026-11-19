@@ -985,7 +985,8 @@ test('la liste des remises signale seulement celles de l’animateur connecté, 
 });
 
 const PLAYER = 'a'.repeat(64);
-const wheelSetup = (context, { segments, code }) => {
+const wheelSetup = (context, { segments, code, playsToday = 0 }) => {
+  context.mock.method(wheelRepository, 'countPlayerPlaysSince', async () => playsToday);
   context.mock.method(wheelRepository.sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));
   context.mock.method(wheelRepository, 'findPlayerByToken', async (token) => (token === PLAYER ? { id: 'passport-a' } : null));
   context.mock.method(wheelRepository, 'findCodeForUpdate', async (value) => (code && code.code === value ? code : null));
@@ -1103,4 +1104,30 @@ test('les réglages refusent un nombre de stands hors limites et une clé inconn
   assert.ok(settingsValidation.update.validate({ inconnu: true }).error);
   assert.ok(settingsValidation.update.validate({}).error);
   assert.equal(settingsValidation.update.validate({ wheelOpen: false, requiredPassages: 4 }).error, undefined);
+});
+
+test('un joueur ne tourne la roue qu’une fois par jour et le code reste valable', async (context) => {
+  const prize = { id: 'p1', kind: 'prize', label: 'T-shirt', sponsor: null, quantity: 2, awarded: 0, isActive: true };
+  const code = { code: 'AB23', usedAt: null, expiresAt: new Date(Date.now() + 60000) };
+  wheelSetup(context, { segments: [prize], code, playsToday: 1 });
+  await assert.rejects(wheelService.spin({ code: 'AB23', player: PLAYER }, 'fr', () => 0), (error) => error.status === 429 && error.code === 'WHEEL_DAILY_LIMIT');
+  assert.equal(code.usedAt, null);
+  assert.equal(prize.awarded, 0);
+});
+
+test('un lot gagné ne se remet qu’une fois, et seulement s’il a été gagné', async (context) => {
+  const won = { code: 'WIN2', usedAt: new Date(), resultKind: 'prize', resultLabel: 'Casquette', claimedAt: null, player: { displayName: 'Ama' } };
+  const lost = { code: 'LOS3', usedAt: new Date(), resultKind: 'lose', resultLabel: 'Presque !', claimedAt: null };
+  context.mock.method(wheelRepository.sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));
+  context.mock.method(wheelRepository, 'findPlayedCodeForClaim', async (value) => ({ WIN2: won, LOS3: lost })[value] || null);
+  context.mock.method(wheelRepository, 'updateCode', async (wheelCode, values) => Object.assign(wheelCode, values));
+  const user = { id: 'animateur-a', firstName: 'Kossi', lastName: 'A.' };
+
+  const claimed = await wheelService.claimPrize(user, 'win2');
+  assert.equal(claimed.result.label, 'Casquette');
+  assert.ok(won.claimedAt);
+  assert.equal(won.claimedByUserId, 'animateur-a');
+  await assert.rejects(wheelService.claimPrize(user, 'WIN2'), (error) => error.code === 'WHEEL_PRIZE_ALREADY_CLAIMED');
+  await assert.rejects(wheelService.claimPrize(user, 'LOS3'), (error) => error.code === 'WHEEL_NO_PRIZE');
+  await assert.rejects(wheelService.claimPrize(user, 'NOPE'), (error) => error.code === 'WHEEL_CODE_INVALID');
 });

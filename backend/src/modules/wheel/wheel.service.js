@@ -55,6 +55,15 @@ const spin = async ({ code: rawCode, player }, language, randomIndex = crypto.ra
   const outcome = await wheelRepository.sequelize.transaction(async (transaction) => {
     const passport = await wheelRepository.findPlayerByToken(player, transaction);
     if (!passport) throw new AppError(422, 'WHEEL_PLAYER_REQUIRED', 'Identifiez-vous avant de jouer.');
+    // Limite de parties par joueur et par jour (heure de Lomé, UTC) : vérifiée avant de consommer le code, qui reste valable.
+    const perDay = settingsService.wheelPlaysPerDay();
+    if (perDay > 0) {
+      const today = new Date();
+      today.setUTCHours(0, 0, 0, 0);
+      if (await wheelRepository.countPlayerPlaysSince(passport.id, today, transaction) >= perDay) {
+        throw new AppError(429, 'WHEEL_DAILY_LIMIT', 'Vous avez déjà joué aujourd’hui. Revenez demain !');
+      }
+    }
     const wheelCode = await wheelRepository.findCodeForUpdate(code, transaction);
     if (!wheelCode) throw new AppError(404, 'WHEEL_CODE_INVALID', 'Ce code n’existe pas. Vérifiez-le auprès de l’équipe du stand.');
     if (wheelCode.usedAt) throw new AppError(409, 'WHEEL_CODE_USED', 'Ce code a déjà servi. Demandez-en un nouveau à l’équipe du stand.');
@@ -117,6 +126,8 @@ const adminCode = (item) => {
     result: values.usedAt ? { kind: values.resultKind, label: values.resultLabel, sponsor: values.resultSponsor } : null,
     createdBy: values.createdBy ? { firstName: values.createdBy.firstName, lastName: values.createdBy.lastName } : null,
     player: values.player ? { displayName: values.player.displayName, email: values.player.email, phone: values.player.phone } : null,
+    claimedAt: values.claimedAt || null,
+    claimedBy: values.claimedBy ? { firstName: values.claimedBy.firstName, lastName: values.claimedBy.lastName } : null,
   };
 };
 
@@ -179,6 +190,33 @@ const removeSegment = async (id) => {
   realtime.wheelChanged();
 };
 
+// Lot gagné à partir de son code de jeu : ce qu'il faut remettre, à qui, et s'il l'a déjà été.
+const prizeFor = (wheelCode) => {
+  if (!wheelCode) throw new AppError(404, 'WHEEL_CODE_INVALID', 'Ce code n’existe pas.');
+  if (!wheelCode.usedAt) throw new AppError(409, 'WHEEL_NOT_PLAYED', 'Ce code n’a pas encore été joué.');
+  if (wheelCode.resultKind !== 'prize') throw new AppError(409, 'WHEEL_NO_PRIZE', 'Cette partie n’a pas gagné de lot.');
+  return adminCode(wheelCode);
+};
+
+const findPrize = async (rawCode) => prizeFor(await wheelRepository.findPlayedCodeForClaim(normalizeCode(rawCode)));
+
+// Marque le lot comme remis, une seule fois : une capture d'écran ne permet pas de le réclamer deux fois.
+const claimPrize = async (user, rawCode) => {
+  const prize = await wheelRepository.sequelize.transaction(async (transaction) => {
+    const wheelCode = await wheelRepository.findPlayedCodeForClaim(normalizeCode(rawCode), transaction);
+    const current = prizeFor(wheelCode);
+    if (current.claimedAt) {
+      const error = new AppError(409, 'WHEEL_PRIZE_ALREADY_CLAIMED', 'Ce lot a déjà été remis.');
+      error.details = current;
+      throw error;
+    }
+    await wheelRepository.updateCode(wheelCode, { claimedAt: new Date(), claimedByUserId: user.id }, transaction);
+    return { ...current, claimedAt: wheelCode.claimedAt, claimedBy: { firstName: user.firstName, lastName: user.lastName } };
+  });
+  realtime.wheelChanged();
+  return prize;
+};
+
 // Toutes les parties jouées, pour l'export Excel.
 const listPlays = async () => (await wheelRepository.findPlayedCodes()).map(adminCode);
 
@@ -194,4 +232,6 @@ module.exports = {
   isDrawable,
   normalizeCode,
   listPlays,
+  findPrize,
+  claimPrize,
 };

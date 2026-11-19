@@ -26,4 +26,6 @@ const createSegment = Joi.object({
 
 const updateSegment = Joi.object({ ...fields, sponsor: Joi.string().trim().max(120).allow('', null).empty('') }).min(1);
 
-module.exports = { idParams, spin, createSegment, updateSegment };
+const codeParams = Joi.object({ code: Joi.string().trim().pattern(/^[A-Za-z0-9-]{3,16}$/).required() });
+
+module.exports = { idParams, codeParams, spin, createSegment, updateSegment };

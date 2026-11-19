@@ -18,12 +18,14 @@ export default function SettingsPage({ session, onLogout }) {
   const [savingKey, setSavingKey] = useState('');
   const [savedKey, setSavedKey] = useState('');
   const [passages, setPassages] = useState('');
+  const [playsPerDay, setPlaysPerDay] = useState('');
 
   const load = useCallback(async () => {
     try {
       const data = await api.settings(session.token);
       setSettings(data);
       setPassages(String(data.requiredPassages));
+      setPlaysPerDay(String(data.wheelPlaysPerDay));
     } catch (requestError) {
       if (requestError.status === 401 || requestError.status === 403) onLogout();
       else setError(requestError.message);
@@ -40,6 +42,7 @@ export default function SettingsPage({ session, onLogout }) {
       const data = await api.updateSettings(session.token, { [key]: value });
       setSettings(data);
       setPassages(String(data.requiredPassages));
+      setPlaysPerDay(String(data.wheelPlaysPerDay));
       setSavedKey(key);
       window.setTimeout(() => setSavedKey((current) => (current === key ? '' : current)), 1800);
     } catch (requestError) {
@@ -53,6 +56,12 @@ export default function SettingsPage({ session, onLogout }) {
     event.preventDefault();
     const value = Number.parseInt(passages, 10);
     if (Number.isInteger(value) && value >= 1 && value !== settings.requiredPassages) void save('requiredPassages', value);
+  };
+
+  const savePlaysPerDay = (event) => {
+    event.preventDefault();
+    const value = Number.parseInt(playsPerDay, 10);
+    if (Number.isInteger(value) && value >= 0 && value !== settings.wheelPlaysPerDay) void save('wheelPlaysPerDay', value);
   };
 
   return (
@@ -86,7 +95,7 @@ export default function SettingsPage({ session, onLogout }) {
           </section>
 
           <section className="data-panel settings-panel">
-            <h2>Défis</h2>
+            <h2>Défis et roue</h2>
             <form className="settings-row" onSubmit={savePassages}>
               <span>
                 <strong>Stands à visiter pour terminer le parcours</strong>
@@ -96,6 +105,17 @@ export default function SettingsPage({ session, onLogout }) {
               <span className="settings-number">
                 <input type="number" min="1" max="50" value={passages} onChange={(event) => setPassages(event.target.value)} aria-label="Nombre de stands" />
                 <button className="button button-secondary" type="submit" disabled={savingKey === 'requiredPassages' || Number(passages) === settings.requiredPassages}>Enregistrer</button>
+              </span>
+            </form>
+            <form className="settings-row" onSubmit={savePlaysPerDay}>
+              <span>
+                <strong>Parties de roue par personne et par jour</strong>
+                <small>0 = sans limite. Le code d’un joueur qui a atteint la limite reste valable pour quelqu’un d’autre.</small>
+              </span>
+              {savedKey === 'wheelPlaysPerDay' && <Check className="settings-saved" size={18} aria-label="Enregistré" />}
+              <span className="settings-number">
+                <input type="number" min="0" max="20" value={playsPerDay} onChange={(event) => setPlaysPerDay(event.target.value)} aria-label="Parties par jour" />
+                <button className="button button-secondary" type="submit" disabled={savingKey === 'wheelPlaysPerDay' || Number(playsPerDay) === settings.wheelPlaysPerDay}>Enregistrer</button>
               </span>
             </form>
           </section>

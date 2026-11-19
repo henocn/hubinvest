@@ -164,6 +164,8 @@ export const tableSettings = {
       { header: 'Gagné', value: (item) => item.result?.kind === 'prize', width: 10 },
       { header: 'Partenaire', value: (item) => item.result?.sponsor, width: 24 },
       { header: 'Code délivré par', value: (item) => fullName(item.createdBy), width: 24 },
+      { header: 'Lot remis le', value: (item) => formatDate(item.claimedAt), width: 18 },
+      { header: 'Remis par', value: (item) => fullName(item.claimedBy), width: 24 },
     ],
   },
 };
