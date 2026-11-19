@@ -5,6 +5,7 @@ const contactRepository = require('./contact.repository');
 const occupantRepository = require('../occupant/occupant.repository');
 const notificationService = require('../notification/notification.service');
 const { events: realtime } = require('../realtime/realtime.service');
+const settingsService = require('../settings/settings.service');
 
 const requireOccupant = (user) => {
   if (!user.occupantId) {
@@ -77,6 +78,7 @@ const create = async (user, values) => {
 };
 
 const createPublic = async (slug, values) => {
+  settingsService.assertOpen('contactRequestsOpen');
   if (values.consentOccupant !== true) {
     throw new AppError(422, 'CONSENT_REQUIRED', 'Votre accord est nécessaire pour cette demande.');
   }

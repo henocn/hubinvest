@@ -5,10 +5,12 @@ import { useTranslation } from 'react-i18next';
 import ContactRequestForm from '../components/ContactRequestForm';
 import { SITE_NAME, setPageTitle } from '../lib/page-title';
 import { api, resolveAssetUrl } from '../lib/api';
+import { useSiteSettings } from '../lib/settings';
 import { publicErrorMessage } from '../lib/public-error';
 
 export default function StandDetailPage({ slug }) {
   const { t } = useTranslation();
+  const settings = useSiteSettings();
   const [stand, setStand] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -38,7 +40,7 @@ export default function StandDetailPage({ slug }) {
           {stand.activity && <section className="stand-profile-section"><p>{stand.activity}</p></section>}
         </article>
       )}
-      {stand && <ContactRequestForm stand={stand} />}
+      {stand && (settings.contactRequestsOpen ? <ContactRequestForm stand={stand} /> : <p className="public-message is-closed">{t('closed.contact')}</p>)}
     </main>
   );
 }

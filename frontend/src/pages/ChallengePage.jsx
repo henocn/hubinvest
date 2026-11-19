@@ -11,6 +11,7 @@ import NotFoundPage from './NotFoundPage';
 import { api } from '../lib/api';
 import { clearChallengePassportToken, readChallengePassportToken, saveChallengePassportToken } from '../lib/challenge-passport-store';
 import { publicErrorMessage } from '../lib/public-error';
+import { useSiteSettings } from '../lib/settings';
 import { useRealtimeConnected, useRealtimeConnection, useRealtimeEvent } from '../lib/realtime';
 
 // Présente un jeu des Défis : ce qu'on y gagne et comment y jouer.
@@ -42,6 +43,7 @@ export default function ChallengePage({ token, openWheel = false }) {
   const [wheelOpen, setWheelOpen] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
   const wantsWheel = useRef(openWheel);
+  const settings = useSiteSettings();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -85,16 +87,20 @@ export default function ChallengePage({ token, openWheel = false }) {
     }
   };
 
-  // Le lien /roue ouvre directement la roue, après l'identification si besoin.
+  // Le lien /roue ouvre directement la roue, après l'identification si besoin ; rien ne s'ouvre si les jeux sont fermés.
   useEffect(() => {
     if (loading || !wantsWheel.current) return;
+    if (!settings.challengeOpen || !settings.wheelOpen) {
+      wantsWheel.current = false;
+      return;
+    }
     if (passport?.code) {
       wantsWheel.current = false;
       setWheelOpen(true);
     } else {
       setIdentifying(true);
     }
-  }, [loading, passport]);
+  }, [loading, passport, settings.challengeOpen, settings.wheelOpen]);
 
   const closeWheel = () => {
     setWheelOpen(false);
@@ -149,7 +155,7 @@ export default function ChallengePage({ token, openWheel = false }) {
     <main className="public-container challenge-page">
       <section className="play-intro">
         <h1>{hasPassport ? t('play.welcome', { name: passport.displayName }) : t('play.title')}</h1>
-        <p>{hasPassport ? t('play.readyIntro') : t('play.intro')}</p>
+        <p>{!settings.challengeOpen ? t('closed.challenge') : hasPassport ? t('play.readyIntro') : t('play.intro')}</p>
       </section>
 
       {loading && <p className="public-message">{t('challenge.loading')}</p>}
@@ -176,12 +182,14 @@ export default function ChallengePage({ token, openWheel = false }) {
             text={t('play.wheelText')}
             steps={[t('play.wheelStep1'), t('play.wheelStep2'), t('play.wheelStep3')]}
             doneSteps={hasPassport ? 1 : 0}
-            action={hasPassport && <button className="button button-primary" type="button" onClick={() => setWheelOpen(true)}><Disc3 size={18} />{t('play.wheelAction')}</button>}
+            action={hasPassport && (settings.wheelOpen
+              ? <button className="button button-primary" type="button" onClick={() => setWheelOpen(true)}><Disc3 size={18} />{t('play.wheelAction')}</button>
+              : <p className="play-closed">{t('closed.wheel')}</p>)}
           />
         </div>
       )}
 
-      {!loading && !hasPassport && <PlayCta onClick={() => setIdentifying(true)} />}
+      {!loading && !hasPassport && settings.challengeOpen && <PlayCta onClick={() => setIdentifying(true)} />}
       {identifying && <PlayerIdentifyDialog onClose={() => { setIdentifying(false); wantsWheel.current = false; }} onIdentified={identified} />}
       {scanOpen && hasPassport && <ScanMeDialog passport={passport} onClose={() => setScanOpen(false)} />}
       {wheelOpen && hasPassport && <WheelDialog player={personalToken} onClose={closeWheel} onPlayerLost={playerLost} />}

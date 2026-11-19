@@ -1,4 +1,4 @@
-import { Building2, BriefcaseBusiness, CalendarDays, CircleUserRound, Disc3, Gift, Handshake, ScanLine, Trophy, Users, Video } from 'lucide-react';
+import { Building2, BriefcaseBusiness, CalendarDays, CircleUserRound, Disc3, Gift, Handshake, ScanLine, SlidersHorizontal, Trophy, Users, Video } from 'lucide-react';
 
 // Rubriques de l'administration : chaque section a sa propre adresse.
 // « tab » place la rubrique dans la barre du bas sur téléphone (quatre au plus) ; les autres restent dans le menu.
@@ -16,7 +16,7 @@ export const adminSections = [
 const profileLink = { path: '/profil', label: 'Profil', Icon: CircleUserRound, tab: true };
 
 const roleLinks = {
-  'super-admin': [...adminSections, { ...profileLink, tab: false }],
+  'super-admin': [...adminSections, { path: '/parametres', label: 'Paramètres', Icon: SlidersHorizontal }, { ...profileLink, tab: false }],
   admin: [...adminSections.filter((item) => !item.superOnly), { ...profileLink, tab: false }],
   occupant: [
     { path: '/contacts', label: 'Contacts', Icon: Users, tab: true },

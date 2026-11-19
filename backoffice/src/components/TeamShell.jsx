@@ -11,7 +11,7 @@ import { useRealtimeConnection, useRealtimeEvent } from '../lib/realtime';
 import { isAdminRole, linksForRole, roleLabels, tabsForRole } from '../navigation';
 import { useSession } from '../session';
 
-const adminTopics = ['occupants', 'users', 'program', 'contacts', 'investor-requests', 'b2b', 'studio', 'challenge', 'wheel', 'account'];
+const adminTopics = ['occupants', 'users', 'program', 'contacts', 'investor-requests', 'b2b', 'studio', 'challenge', 'wheel', 'settings', 'account'];
 const teamTopics = ['contacts', 'challenge', 'occupants', 'account'];
 
 // Liens de navigation : NavLink marque la rubrique ouverte, y compris ses sous-pages (/contacts/nouveau…).

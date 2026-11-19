@@ -191,4 +191,12 @@ export default {
       rateLimited: "Trop de codes erronés. Réessayez dans quelques minutes.",
     },
   },
+  closed: {
+    generic: "Ce service est fermé pour le moment.",
+    contact: "Les demandes de contact sont closes.",
+    investor: "L’Investor Desk ne reçoit plus de nouvelles demandes.",
+    b2b: "Les propositions de rencontre sont closes.",
+    challenge: "Les Défis sont terminés. Merci d’avoir joué !",
+    wheel: "La roue est fermée pour le moment.",
+  },
 };

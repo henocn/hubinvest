@@ -1992,3 +1992,18 @@
 .wheel-result .button {
   margin-top: 8px;
 }
+
+/* Module fermé depuis l'administration : message calme à la place du formulaire ou du jeu. */
+.public-message.is-closed {
+  border-left: 3px solid var(--green);
+  color: #0f1822;
+  background: #fff;
+  font-weight: 650;
+}
+
+.play-closed {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 650;
+  text-align: center;
+}

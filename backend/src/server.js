@@ -3,10 +3,13 @@ const env = require('./config/env');
 const sequelize = require('./database/sequelize');
 const notificationWorker = require('./modules/notification/notification.worker');
 const realtimeService = require('./modules/realtime/realtime.service');
+const settingsService = require('./modules/settings/settings.service');
 
 const server = app.listen(env.port, () => {
   console.log(`HubInvest API ecoute sur le port ${env.port}`);
   if (env.notifications.enabled && env.notifications.workerEnabled) notificationWorker.start();
+  // Réglages de l'administration chargés en mémoire ; sans table (migration pas encore passée), les valeurs par défaut restent.
+  settingsService.load().catch((error) => console.error('Réglages non chargés, valeurs par défaut utilisées.', error.message));
 });
 
 // Arrête proprement le serveur, le traitement des notifications puis la base.

@@ -1,14 +1,13 @@
 const crypto = require('node:crypto');
 const AppError = require('../../shared/app-error');
-const env = require('../../config/env');
 const roles = require('../../shared/roles');
 const { translatePublicContent } = require('../../shared/translation.service');
 const { sequelize } = require('../../models');
 const challengePassportRepository = require('./challenge-passport.repository');
 const { events: realtime } = require('../realtime/realtime.service');
+const settingsService = require('../settings/settings.service');
 
 const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-const requiredPassages = Math.max(1, env.challenge.requiredPassages);
 
 // Code participant de 6 caractères (les anciens codes de 8 restent acceptés aux stands).
 const CODE_LENGTH = 6;
@@ -23,7 +22,7 @@ const publicPayload = (passport, includeToken = false) => {
     code: values.code,
     status: values.status,
     passageCount: passages.length,
-    requiredPassages,
+    requiredPassages: settingsService.requiredPassages(),
     completedAt: values.completedAt,
     redeemedAt: values.redeemedAt,
     passages: passages.map((passage) => ({
@@ -38,11 +37,12 @@ const managerPayload = (passport) => {
   return {
     ...values,
     passageCount: (values.passages || []).length,
-    requiredPassages,
+    requiredPassages: settingsService.requiredPassages(),
   };
 };
 
 const createPublic = async (values) => {
+  settingsService.assertOpen('challengeOpen');
   const passport = await challengePassportRepository.create({
     token: crypto.randomBytes(32).toString('hex'),
     code: createCode(),

@@ -1083,3 +1083,24 @@ test('pour jouer, un nom complet et un e-mail ou un téléphone suffisent', () =
   assert.ok(createPublic.validate({ fullName: 'Afi Mensah', contact: 'pas un contact' }).error);
   assert.ok(createPublic.validate({ fullName: 'Afi Mensah' }).error);
 });
+
+const settingsService = require('../src/modules/settings/settings.service');
+const settingsValidation = require('../src/modules/settings/settings.validation');
+const { AppSetting } = require('../src/models');
+
+test('un module fermé depuis l’administration refuse les actions publiques', async (context) => {
+  context.after(() => settingsService._reset());
+  context.mock.method(AppSetting, 'findAll', async () => [{ key: 'investorDeskOpen', value: false }, { key: 'requiredPassages', value: 5 }]);
+  await settingsService.load();
+  await assert.rejects(investorRequestService.createPublic({ occupantId: 'stand-a' }), (error) => error.code === 'MODULE_CLOSED' && error.status === 403);
+  assert.doesNotThrow(() => settingsService.assertOpen('b2bOpen'));
+  assert.equal(settingsService.requiredPassages(), 5);
+  assert.equal(settingsService.publicSettings().investorDeskOpen, false);
+});
+
+test('les réglages refusent un nombre de stands hors limites et une clé inconnue', () => {
+  assert.ok(settingsValidation.update.validate({ requiredPassages: 0 }).error);
+  assert.ok(settingsValidation.update.validate({ inconnu: true }).error);
+  assert.ok(settingsValidation.update.validate({}).error);
+  assert.equal(settingsValidation.update.validate({ wheelOpen: false, requiredPassages: 4 }).error, undefined);
+});

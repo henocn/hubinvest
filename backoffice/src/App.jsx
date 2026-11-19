@@ -4,6 +4,7 @@ import AuthLayout from './components/AuthLayout';
 import PasswordField from './components/PasswordField';
 import TeamShell from './components/TeamShell';
 import BackofficePage from './admin/pages/BackofficePage';
+import SettingsPage from './admin/pages/SettingsPage';
 import AnimatorRewardsPage from './pages/AnimatorRewardsPage';
 import AnimatorScanPage from './pages/AnimatorScanPage';
 import ContactsPage from './pages/ContactsPage';
@@ -110,6 +111,7 @@ function TeamRoutes() {
           </>
         )}
         <Route path="/profil" element={<OccupantProfilePage {...props} />} />
+        {role === 'super-admin' && <Route path="/parametres" element={<SettingsPage {...props} />} />}
         {isAdminRole(role) && <Route path="/*" element={<AdminSection />} />}
       </Route>
       <Route path="*" element={session ? <Navigate to={homeForRole(role)} replace /> : <RequireSession />} />

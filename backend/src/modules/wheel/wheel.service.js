@@ -5,6 +5,7 @@ const AppError = require('../../shared/app-error');
 const { translatePublicContent } = require('../../shared/translation.service');
 const wheelRepository = require('./wheel.repository');
 const { events: realtime } = require('../realtime/realtime.service');
+const settingsService = require('../settings/settings.service');
 
 // Lettres et chiffres sans ambiguïté à l'oral ou à l'écrit (pas de 0/O, 1/I/L).
 const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -49,6 +50,7 @@ const normalizeCode = (value) => String(value || '').trim().toUpperCase().replac
 // Tire une case au hasard parmi celles visibles : le code est consommé et le stock décompté dans la même transaction.
 // Seul un joueur identifié peut jouer ; sa partie lui est rattachée.
 const spin = async ({ code: rawCode, player }, language, randomIndex = crypto.randomInt) => {
+  settingsService.assertOpen('wheelOpen');
   const code = normalizeCode(rawCode);
   const outcome = await wheelRepository.sequelize.transaction(async (transaction) => {
     const passport = await wheelRepository.findPlayerByToken(player, transaction);
@@ -87,6 +89,7 @@ const generateCodeValue = () => Array.from({ length: CODE_LENGTH }, () => CODE_A
 
 // Délivre un code à usage unique, valable pendant la durée configurée.
 const generateCode = async (user) => {
+  settingsService.assertOpen('wheelOpen');
   const expiresAt = new Date(Date.now() + env.wheel.codeTtl);
   for (let attempt = 0; attempt < 5; attempt += 1) {
     try {

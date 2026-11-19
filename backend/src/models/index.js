@@ -14,6 +14,7 @@ const definePushSubscription = require('./push-subscription.model');
 const defineProgramEvent = require('./program-event.model');
 const defineWheelSegment = require('./wheel-segment.model');
 const defineWheelCode = require('./wheel-code.model');
+const defineAppSetting = require('./app-setting.model');
 
 const Occupant = defineOccupant(sequelize, DataTypes);
 const User = defineUser(sequelize, DataTypes);
@@ -29,6 +30,7 @@ const PushSubscription = definePushSubscription(sequelize, DataTypes);
 const ProgramEvent = defineProgramEvent(sequelize, DataTypes);
 const WheelSegment = defineWheelSegment(sequelize, DataTypes);
 const WheelCode = defineWheelCode(sequelize, DataTypes);
+const AppSetting = defineAppSetting(sequelize, DataTypes);
 
 Occupant.hasMany(User, { foreignKey: 'occupantId', as: 'users' });
 User.belongsTo(Occupant, { foreignKey: 'occupantId', as: 'occupant' });
@@ -102,4 +104,5 @@ module.exports = {
   ProgramEvent,
   WheelSegment,
   WheelCode,
+  AppSetting,
 };
