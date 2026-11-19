@@ -51,6 +51,7 @@ export default {
     showPast_other: "Voir les {{count}} rendez-vous passés",
     hidePast: "Masquer les rendez-vous passés",
     clock: "Il est {{time}}",
+    break: "Pause",
     dayOver: "La journée est terminée. À demain !",
   },
   program: {

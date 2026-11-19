@@ -2320,3 +2320,225 @@
   font-weight: 650;
 }
 
+
+/* Bandeau sur ordinateur : titre à gauche, « En ce moment » à droite dans un panneau vert plus sombre. */
+.home-hero .public-container {
+  display: grid;
+  gap: clamp(20px, 4vw, 36px);
+}
+
+@media (min-width: 900px) {
+  .home-hero .public-container {
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 440px);
+    align-items: end;
+  }
+
+  .home-hero-now {
+    margin-top: 0;
+    padding: 24px 26px;
+    border-top: 0;
+    border-radius: 14px;
+    background: rgba(0, 0, 0, 0.18);
+  }
+}
+
+/* Grille horaire du jour : heures à gauche, rendez-vous posés à leur heure, ligne rouge à l'heure actuelle. */
+.day-timeline {
+  position: relative;
+  margin: 8px 0 0 56px;
+}
+
+.day-hour {
+  position: absolute;
+  right: 0;
+  left: -56px;
+  height: 0;
+  border-top: 1px solid rgba(15, 24, 34, 0.09);
+}
+
+.day-hour span {
+  position: absolute;
+  top: -9px;
+  left: 0;
+  width: 46px;
+  color: #6b7378;
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: #f4f5f5;
+}
+
+.day-blocks {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.day-block {
+  --type: var(--green);
+  --tint: #e6f2ed;
+  --ink: #0f1822;
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+  padding: 8px 12px 8px 14px;
+  border-left: 4px solid var(--type);
+  border-radius: 4px 10px 10px 4px;
+  color: var(--ink);
+  background: var(--tint);
+}
+
+.day-block.type-studio { --type: var(--red); --tint: #fcebee; }
+.day-block.type-talk { --type: var(--green); --tint: #e6f2ed; }
+.day-block.type-highlight { --type: #e2a700; --tint: #fff4cf; }
+.day-block.type-animation { --type: #0f1822; --tint: #e9ecee; }
+
+.day-block-time {
+  color: var(--type);
+  font-size: 0.74rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.day-block.type-highlight .day-block-time {
+  color: #8a6200;
+}
+
+.day-block strong {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  font-size: 0.95rem;
+  line-height: 1.25;
+}
+
+.day-block-meta {
+  overflow: hidden;
+  color: #4d555a;
+  font-size: 0.8rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.day-block-meta a {
+  color: inherit;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.day-block-meta a:hover {
+  text-decoration: underline;
+}
+
+/* Court : titre sur deux lignes, sans lieu. */
+.day-block.is-short .day-block-meta {
+  display: none;
+}
+
+/* En cours : le bloc passe en couleur pleine. */
+.day-block.is-live {
+  --ink: #fff;
+  color: #fff;
+  background: var(--type);
+  box-shadow: 0 8px 22px rgba(15, 24, 34, 0.18);
+}
+
+.day-block.is-live .day-block-time,
+.day-block.is-live .day-block-meta {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.day-block.type-highlight.is-live {
+  --ink: #0f1822;
+  color: #0f1822;
+}
+
+.day-block.type-highlight.is-live .day-block-time,
+.day-block.type-highlight.is-live .day-block-meta {
+  color: rgba(15, 24, 34, 0.75);
+}
+
+/* Passé : effacé, sans couleur. */
+.day-block.is-done {
+  opacity: 0.5;
+  filter: saturate(0.2);
+}
+
+/* L'heure actuelle : un trait rouge sur toute la grille, l'heure dans la colonne de gauche. */
+.day-now {
+  position: absolute;
+  z-index: 0;
+  right: 0;
+  left: -56px;
+  height: 0;
+  border-top: 2px solid var(--red);
+  pointer-events: none;
+}
+
+.day-now span {
+  position: absolute;
+  z-index: 2;
+  top: -11px;
+  left: 0;
+  padding: 2px 6px;
+  border-radius: 6px;
+  color: #fff;
+  background: var(--red);
+  font-size: 0.74rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Pause resserrée : une bande hachurée discrète au lieu de deux heures vides. */
+.day-gap {
+  position: absolute;
+  right: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: repeating-linear-gradient(135deg, rgba(15, 24, 34, 0.05) 0 6px, transparent 6px 12px);
+}
+
+.day-gap span {
+  color: #7a8287;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.home-schedule .program-past-toggle + .day-timeline,
+.home-schedule .program-past-toggle + .home-schedule-empty {
+  margin-top: 4px;
+}
+
+/* Deux rendez-vous côte à côte : seulement les heures, et le titre sur trois lignes. */
+.day-block.is-narrow .day-block-now,
+.day-block.is-narrow .day-block-type {
+  display: none;
+}
+
+.day-block.is-narrow strong {
+  -webkit-line-clamp: 3;
+}
+
+.home-hero h1 {
+  text-wrap: balance;
+}
+
+@media (min-width: 900px) {
+  .home-hero h1 {
+    font-size: clamp(2.6rem, 5vw, 3.8rem);
+  }
+}
+
+.day-block.is-narrow .day-block-meta {
+  display: none;
+}

@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { ArrowRight, ChevronDown, MessageCircleQuestion } from 'lucide-react';
+import { ArrowRight, MessageCircleQuestion } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { api, resolveAssetUrl } from '../lib/api';
 import { publicErrorMessage } from '../lib/public-error';
 import { useSiteSettings } from '../lib/settings';
 import LiveQuestionDialog from '../components/LiveQuestionDialog';
+import DayTimeline from '../components/DayTimeline';
 
 const HUB_TIME_ZONE = 'Africa/Lome';
 
@@ -74,8 +75,10 @@ function HomeHero({ data, formats, now }) {
   return (
     <section className="home-hero">
       <div className="public-container">
-        <p className="home-hero-date">{formats.day.format(data ? new Date(data.date) : new Date(now))}</p>
-        <h1>{t('home.title')}</h1>
+        <div className="home-hero-heading">
+          <p className="home-hero-date">{formats.day.format(data ? new Date(data.date) : new Date(now))}</p>
+          <h1>{t('home.title')}</h1>
+        </div>
         {featured && (
           <div className={`home-hero-now${live ? ' is-live' : ''}`}>
             <span className="home-hero-label">
@@ -116,12 +119,12 @@ function SpotlightCard({ spotlight }) {
 }
 
 // Un rendez-vous sur le rail : grande heure, rail coloré selon le type, titre puis lieu et stand.
-function ProgramItem({ event, formats, now, upcoming = false, featuredId = null }) {
+function ProgramItem({ event, formats, now, upcoming = false }) {
   const { t } = useTranslation();
   const settings = useSiteSettings();
   const state = upcoming ? 'next' : eventState(event, now);
-  // Le direct mis en avant dans le bandeau y a déjà son bouton : pas de doublon dans la grille.
-  const canAsk = !upcoming && state === 'live' && event.id !== featuredId && settings.liveQuestionsOpen !== false && acceptsQuestions(event, now);
+
+  const canAsk = !upcoming && state === 'live' && settings.liveQuestionsOpen !== false && acceptsQuestions(event, now);
   const location = event.location || event.occupant?.standLabel;
 
   return (
@@ -146,46 +149,16 @@ function ProgramItem({ event, formats, now, upcoming = false, featuredId = null 
   );
 }
 
-// Programme du jour : les rendez-vous passés sont repliés, une ligne rouge marque l'heure qu'il est.
-function TodaySchedule({ events, formats, now, featuredId }) {
+// Programme du jour : la grille horaire de la journée.
+function TodaySchedule({ events, formats, now }) {
   const { t } = useTranslation();
-  const [showPast, setShowPast] = useState(false);
-  const past = events.filter((event) => eventState(event, now) === 'done');
-  const visible = showPast ? events : events.filter((event) => eventState(event, now) !== 'done');
-  const clockBefore = visible.find((event) => eventState(event, now) === 'next');
-  const hasLive = events.some((event) => eventState(event, now) === 'live');
-
   return (
     <section className="home-schedule" aria-labelledby="home-today-title">
       <h2 id="home-today-title">{t('home.today')}</h2>
-      {past.length > 0 && (
-        <button className={`program-past-toggle${showPast ? ' is-open' : ''}`} type="button" onClick={() => setShowPast((current) => !current)}>
-          {showPast ? t('home.hidePast') : t('home.showPast', { count: past.length })}
-          <ChevronDown size={16} aria-hidden="true" />
-        </button>
-      )}
-      {events.length === 0 && <p className="home-schedule-empty">{t('home.noToday')}</p>}
-      {visible.length > 0 ? (
-        <ol className="program-list">
-          {visible.map((event) => (
-            <FragmentWithClock key={event.id} showClock={!hasLive && clockBefore === event} now={now} formats={formats}>
-              <ProgramItem event={event} formats={formats} now={now} featuredId={featuredId} />
-            </FragmentWithClock>
-          ))}
-        </ol>
-      ) : events.length > 0 && <p className="home-schedule-empty">{t('home.dayOver')}</p>}
+      {events.length > 0
+        ? <DayTimeline events={events} formats={formats} now={now} />
+        : <p className="home-schedule-empty">{t('home.noToday')}</p>}
     </section>
-  );
-}
-
-// Insère la ligne « Il est 16:42 » juste avant le prochain rendez-vous quand rien n'est en cours.
-function FragmentWithClock({ showClock, now, formats, children }) {
-  const { t } = useTranslation();
-  return (
-    <>
-      {showClock && <li className="program-clock" aria-hidden="true"><span>{t('home.clock', { time: formats.time.format(new Date(now)) })}</span></li>}
-      {children}
-    </>
   );
 }
 
@@ -251,7 +224,7 @@ export default function HomePage() {
           <>
             {data.spotlight && <SpotlightCard spotlight={data.spotlight} />}
             <div className="home-columns">
-              <TodaySchedule events={data.today} formats={formats} now={now} featuredId={data.today.find((event) => eventState(event, now) === 'live')?.id} />
+              <TodaySchedule events={data.today} formats={formats} now={now} />
               {data.upcoming.length > 0 && <UpcomingSchedule events={data.upcoming} formats={formats} now={now} />}
             </div>
             <Link className="home-explore-link" to="/stands">{t('home.exploreStands')} <ArrowRight size={16} aria-hidden="true" /></Link>

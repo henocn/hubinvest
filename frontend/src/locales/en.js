@@ -51,6 +51,7 @@ export default {
     showPast_other: "Show the {{count}} past sessions",
     hidePast: "Hide past sessions",
     clock: "It’s {{time}}",
+    break: "Break",
     dayOver: "Today is over. See you tomorrow!",
   },
   program: {
