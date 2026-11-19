@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Check, Clock3, Cloud, Download, Pencil, Phone, Plus, RefreshCw, Search, UserRound } from 'lucide-react';
 import { api } from '../lib/api';
 import { exportToExcel, formatDate } from '../lib/excel';
+import { formatPhoneInput, isValidPhone, toInternationalPhone } from '../lib/phone';
 import { useRealtimeEvent } from '../lib/realtime';
 import { listStoredContacts, mergeServerContacts, queueContact, syncPendingContacts } from '../lib/contact-store';
 
@@ -40,12 +41,17 @@ function ContactForm({ onCancel, onCreated }) {
 
   const submit = async (event) => {
     event.preventDefault();
+    if (!isValidPhone(form.phone)) {
+      setError('Numéro invalide. Ajoutez l’indicatif pour un numéro étranger (ex. +33…).');
+      return;
+    }
     setLoading(true);
     setError('');
 
     try {
       await onCreated({
         ...form,
+        phone: toInternationalPhone(form.phone),
         id: crypto.randomUUID(),
         nextActionAt: form.nextActionAt || null,
       });
@@ -78,7 +84,9 @@ function ContactForm({ onCancel, onCreated }) {
             type="tel"
             inputMode="tel"
             value={form.phone}
-            onChange={(event) => field('phone', event.target.value)}
+            onChange={(event) => field('phone', formatPhoneInput(event.target.value))}
+            placeholder="+228 90 12 34 56"
+            autoComplete="tel"
             required
           />
         </label>

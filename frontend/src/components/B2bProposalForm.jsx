@@ -3,12 +3,15 @@ import { ArrowRight, Handshake } from 'lucide-react';
 import { api } from '../lib/api';
 import { useTranslation } from 'react-i18next';
 import { publicErrorMessage } from '../lib/public-error';
+import PhoneField from './PhoneField';
+import { isValidPhone, toInternationalPhone } from '../lib/phone';
 
 export default function B2bProposalForm({ need }) {
   const { t } = useTranslation();
   const [form, setForm] = useState({ message: '', fullName: '', email: '', phone: '', consentOccupant: false });
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [phoneChecked, setPhoneChecked] = useState(false);
   const [error, setError] = useState('');
   const [received, setReceived] = useState(false);
   const field = (name, value) => setForm((current) => ({ ...current, [name]: value }));
@@ -20,10 +23,12 @@ export default function B2bProposalForm({ need }) {
       return;
     }
 
+    setPhoneChecked(true);
+    if (!isValidPhone(form.phone)) return;
     setLoading(true);
     setError('');
     try {
-      await api.createB2bProposal(need.id, form);
+      await api.createB2bProposal(need.id, { ...form, phone: toInternationalPhone(form.phone) });
       setReceived(true);
     } catch (requestError) {
       setError(publicErrorMessage(t, requestError));
@@ -50,7 +55,7 @@ export default function B2bProposalForm({ need }) {
           <label>{t('fields.fullName')}<input value={form.fullName} onChange={(event) => field('fullName', event.target.value)} minLength={2} maxLength={160} autoComplete="name" autoFocus required /></label>
           <div className="public-field-row">
             <label>{t('fields.email')}<input type="email" value={form.email} onChange={(event) => field('email', event.target.value)} maxLength={180} autoComplete="email" required /></label>
-            <label><span className="public-field-label">{t('fields.phone')} <small>{t('common.optional')}</small></span><input type="tel" inputMode="tel" value={form.phone} onChange={(event) => field('phone', event.target.value)} maxLength={32} autoComplete="tel" /></label>
+            <PhoneField value={form.phone} onChange={(phone) => field('phone', phone)} showError={phoneChecked} />
           </div>
           <label className="request-consent investor-consent"><input type="checkbox" checked={form.consentOccupant} onChange={(event) => field('consentOccupant', event.target.checked)} required /><span>{t('b2b.consent', { name: need.occupant.name })}</span></label>
           {error && <p className="request-error" role="alert">{error}</p>}

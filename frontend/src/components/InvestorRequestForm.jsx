@@ -3,6 +3,8 @@ import { ArrowRight, BriefcaseBusiness } from 'lucide-react';
 import { api } from '../lib/api';
 import { useTranslation } from 'react-i18next';
 import { publicErrorMessage } from '../lib/public-error';
+import PhoneField from './PhoneField';
+import { isValidPhone, toInternationalPhone } from '../lib/phone';
 
 export default function InvestorRequestForm() {
   const { t } = useTranslation();
@@ -17,6 +19,7 @@ export default function InvestorRequestForm() {
   const [occupants, setOccupants] = useState([]);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [phoneChecked, setPhoneChecked] = useState(false);
   const [error, setError] = useState('');
   const [received, setReceived] = useState(false);
 
@@ -36,10 +39,12 @@ export default function InvestorRequestForm() {
       return;
     }
 
+    setPhoneChecked(true);
+    if (!isValidPhone(form.phone)) return;
     setLoading(true);
     setError('');
     try {
-      await api.createInvestorRequest(form);
+      await api.createInvestorRequest({ ...form, phone: toInternationalPhone(form.phone) });
       setReceived(true);
     } catch (requestError) {
       setError(publicErrorMessage(t, requestError));
@@ -77,7 +82,7 @@ export default function InvestorRequestForm() {
           <label>{t('fields.fullName')}<input value={form.fullName} onChange={(event) => field('fullName', event.target.value)} minLength={2} maxLength={160} autoComplete="name" autoFocus required /></label>
           <div className="public-field-row">
             <label>{t('fields.email')}<input type="email" value={form.email} onChange={(event) => field('email', event.target.value)} maxLength={180} autoComplete="email" required /></label>
-            <label><span className="public-field-label">{t('fields.phone')} <small>{t('common.optional')}</small></span><input type="tel" inputMode="tel" value={form.phone} onChange={(event) => field('phone', event.target.value)} maxLength={32} autoComplete="tel" /></label>
+            <PhoneField value={form.phone} onChange={(phone) => field('phone', phone)} showError={phoneChecked} />
           </div>
           <label className="request-consent investor-consent">
             <input type="checkbox" checked={form.consentApizf} onChange={(event) => field('consentApizf', event.target.checked)} required />
