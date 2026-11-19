@@ -1,0 +1,2 @@
+# Les scripts shell restent en fin de ligne Unix, même extraits sous Windows.
+*.sh text eol=lf

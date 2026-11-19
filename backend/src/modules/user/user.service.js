@@ -3,6 +3,9 @@ const AppError = require('../../shared/app-error');
 const roles = require('../../shared/roles');
 const userRepository = require('./user.repository');
 const { events: realtime } = require('../realtime/realtime.service');
+const env = require('../../config/env');
+const userMailer = require('./user.mailer');
+const mailer = require('../../shared/mailer');
 
 const protectSuperAdmin = (actor, targetRole) => {
   if (actor.role !== roles.SUPER_ADMIN && targetRole === roles.SUPER_ADMIN) {
@@ -69,6 +72,10 @@ const create = async (actor, values) => {
   delete normalized.password;
   const user = await userRepository.create(normalized);
   realtime.usersChanged();
+  // E-mail de bienvenue envoyé en arrière-plan : un échec d'envoi n'empêche pas la création du compte.
+  if (env.nodeEnv !== 'test' && mailer.isConfigured()) {
+    userMailer.sendWelcome(user).catch((error) => console.error('E-mail de bienvenue non envoyé.', error.message));
+  }
   return serialize(user);
 };
 

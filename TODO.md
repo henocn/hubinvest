@@ -12,7 +12,6 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 - [x] Roue des opportunités : confirmée sur téléphone, avec un code à usage unique remis par un administrateur.
 - [x] Défis : page des deux jeux, identification commune (nom, prénom, e-mail, téléphone validé par libphonenumber-js), parties de roue rattachées au joueur.
 - [x] Logo du Hub, favicon et icônes de l’application issus de la charte.
-- [ ] Appliquer le champ téléphone obligatoire (`PhoneField`) aux autres formulaires : Investor Desk, B2B, recontact.
 - [ ] Le positionnement passe de « La preuve par le Togo » à « Avec vous, à chaque étape » et à la série « Ils avancent avec l’API-ZF » : la fiche occupant doit-elle porter la success story (parcours avec l’Agence) ?
 - [ ] Formats du Studio : « 21 secondes avec… » (CDC) remplacé par « 2 min avec… », « API-ZF en 60 secondes » et Face-à-face (PDF).
 - [ ] Rencontres B2B : tables de 20 minutes (CDC) et « Rencontres express » de 10 minutes pendant la Journée API-ZF (PDF).
@@ -30,6 +29,19 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 - [x] Cloisonnement des contacts par occupant vérifié côté API et couvert par les tests critiques.
 - [x] Interface publique FR/EN avec détection de la langue et choix mémorisé ; traduction DeepL des contenus publics.
 - [x] Accès occupant retiré de l’interface publique ; routes protégées et redirections de session.
+
+## Exploitation pendant la Foire (branche feat/foire-anticipation)
+
+- [x] Export Excel de chaque tableau de l'administration (lignes affichées), des contacts de l'occupant et des remises de l'animateur ; export de toutes les parties de la roue.
+- [x] Filtre par statut, tri (plus récent, plus ancien, A → Z) et nombre de lignes sur chaque tableau.
+- [x] Tableau de bord des administrateurs : ce qui attend une action, puis les chiffres ; pastilles « à traiter » au nombre exact dans le menu.
+- [x] Paramètres (super administrateur) : ouvrir ou fermer recontact, Investor Desk, B2B, Défis et roue, avec message « fermé » sur le site ; nombre de stands requis et parties de roue par jour.
+- [x] Roue : lot remis une seule fois (anti-capture d'écran), limite de parties par joueur et par jour, codes donnés aussi par les occupants, lots remis par les occupants et animateurs.
+- [x] Code perdu : recherche d'un joueur par nom, téléphone ou e-mail (animateur, occupant).
+- [x] Téléphone obligatoire et vérifié dans les formulaires de recontact, Investor Desk, B2B et la saisie de contact de l'occupant.
+- [x] E-mail de bienvenue à la création d'un compte (adresse de l'espace équipe, sans mot de passe).
+- [ ] Installer la sauvegarde quotidienne de la base sur le VPS :  (instructions en tête du fichier).
+- [ ] Suivi des notifications envoyées (reçu ou non, relance) si l'équipe le demande.
 
 ## Référencement (SEO)
 
