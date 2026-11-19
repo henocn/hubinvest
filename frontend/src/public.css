@@ -2542,3 +2542,75 @@
 .day-block.is-narrow .day-block-meta {
   display: none;
 }
+
+/* Blocs pleins pour tout le programme : la couleur du type en fond, texte blanc (encre sur le jaune).
+   Le rendez-vous en cours se distingue par son ombre et un liseré blanc, les passés passent au gris. */
+.day-block {
+  color: #fff;
+  background: var(--type);
+  border-left: 0;
+  border-radius: 10px;
+  padding: 9px 14px;
+}
+
+.day-block.type-studio { --type: var(--red); }
+.day-block.type-talk { --type: var(--green); }
+.day-block.type-highlight { --type: #f2b705; }
+.day-block.type-animation { --type: #2b3640; }
+
+.day-block .day-block-time,
+.day-block .day-block-meta {
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.day-block.type-highlight,
+.day-block.type-highlight.is-live {
+  color: #0f1822;
+}
+
+.day-block.type-highlight .day-block-time,
+.day-block.type-highlight .day-block-meta {
+  color: rgba(15, 24, 34, 0.72);
+}
+
+.day-block.is-live {
+  outline: 3px solid #fff;
+  box-shadow: 0 10px 26px rgba(15, 24, 34, 0.24);
+}
+
+.day-block.is-done,
+.day-block.type-highlight.is-done {
+  color: #4d555a;
+  background: #dfe3e5;
+  filter: none;
+  opacity: 1;
+}
+
+.day-block.is-done .day-block-time,
+.day-block.is-done .day-block-meta {
+  color: #6b7378;
+}
+
+/* À venir : les mêmes blocs, empilés sous leur jour. */
+.day-stack {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.day-block.is-static {
+  position: relative;
+  gap: 3px;
+  padding: 12px 16px;
+}
+
+.day-block.is-static strong {
+  -webkit-line-clamp: 3;
+}
+
+/* Dans un bloc, le titre ne se tasse pas : le clamp coupe proprement en fin de deuxième ligne. */
+.day-block > * {
+  flex-shrink: 0;
+}

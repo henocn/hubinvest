@@ -118,33 +118,25 @@ function SpotlightCard({ spotlight }) {
   );
 }
 
-// Un rendez-vous sur le rail : grande heure, rail coloré selon le type, titre puis lieu et stand.
-function ProgramItem({ event, formats, now, upcoming = false }) {
+// Un rendez-vous à venir : même bloc de couleur que dans la grille du jour, empilé sous son jour.
+function UpcomingBlock({ event, formats }) {
   const { t } = useTranslation();
-  const settings = useSiteSettings();
-  const state = upcoming ? 'next' : eventState(event, now);
-
-  const canAsk = !upcoming && state === 'live' && settings.liveQuestionsOpen !== false && acceptsQuestions(event, now);
   const location = event.location || event.occupant?.standLabel;
-
   return (
-    <li className={`program-item is-${state} type-${event.type}`}>
-      <time dateTime={event.startsAt}>
-        <strong>{formats.time.format(new Date(event.startsAt))}</strong>
-        {event.endsAt && <small>{formats.time.format(new Date(event.endsAt))}</small>}
-      </time>
-      <div className="program-body">
-        <span className="program-type">{state === 'live' ? `${t('home.now')} · ` : ''}{t(`program.types.${event.type}`)}</span>
-        <strong>{event.title}</strong>
-        {(location || event.occupant) && (
-          <span className="program-meta">
-            {location}
-            {location && event.occupant && ' · '}
-            {event.occupant && <Link to={`/stands/${event.occupant.slug}`}>{event.occupant.name}</Link>}
-          </span>
-        )}
-        {canAsk && <AskButton event={event} className="live-question-button" />}
-      </div>
+    <li className={`day-block is-static type-${event.type}`}>
+      <span className="day-block-time">
+        {formats.time.format(new Date(event.startsAt))}
+        {event.endsAt && `–${formats.time.format(new Date(event.endsAt))}`}
+        <span className="day-block-type"> · {t(`program.types.${event.type}`)}</span>
+      </span>
+      <strong>{event.title}</strong>
+      {(location || event.occupant) && (
+        <span className="day-block-meta">
+          {location}
+          {location && event.occupant && ' · '}
+          {event.occupant && <Link to={`/stands/${event.occupant.slug}`}>{event.occupant.name}</Link>}
+        </span>
+      )}
     </li>
   );
 }
@@ -163,7 +155,7 @@ function TodaySchedule({ events, formats, now }) {
 }
 
 // À venir : regroupé par jour.
-function UpcomingSchedule({ events, formats, now }) {
+function UpcomingSchedule({ events, formats }) {
   const { t } = useTranslation();
   const days = events.reduce((groups, event) => {
     const day = formats.weekday.format(new Date(event.startsAt));
@@ -179,8 +171,8 @@ function UpcomingSchedule({ events, formats, now }) {
       {days.map(({ day, events: dayEvents }) => (
         <div className="program-day" key={day}>
           <h3>{day}</h3>
-          <ol className="program-list">
-            {dayEvents.map((event) => <ProgramItem event={event} formats={formats} now={now} upcoming key={event.id} />)}
+          <ol className="day-stack">
+            {dayEvents.map((event) => <UpcomingBlock event={event} formats={formats} key={event.id} />)}
           </ol>
         </div>
       ))}
@@ -225,7 +217,7 @@ export default function HomePage() {
             {data.spotlight && <SpotlightCard spotlight={data.spotlight} />}
             <div className="home-columns">
               <TodaySchedule events={data.today} formats={formats} now={now} />
-              {data.upcoming.length > 0 && <UpcomingSchedule events={data.upcoming} formats={formats} now={now} />}
+              {data.upcoming.length > 0 && <UpcomingSchedule events={data.upcoming} formats={formats} />}
             </div>
             <Link className="home-explore-link" to="/stands">{t('home.exploreStands')} <ArrowRight size={16} aria-hidden="true" /></Link>
           </>
