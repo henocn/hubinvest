@@ -286,3 +286,15 @@
   .admin-app .dashboard-stat strong { font-size: 28px; }
   .admin-app .dashboard-arrow { display: none; }
 }
+
+/* Galerie d'un stand : vignettes carrées, retrait d'un clic, case d'ajout tant qu'il reste de la place. */
+.admin-app .gallery-field { margin: 0; padding: 0; border: 0; display: grid; gap: 8px; }
+.admin-app .gallery-field legend { display: flex; align-items: baseline; gap: 8px; padding: 0; margin-bottom: 8px; color: #43464a; font-size: 13px; font-weight: 650; }
+.admin-app .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+.admin-app .gallery-grid figure { position: relative; margin: 0; aspect-ratio: 1; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: #eef0ee; }
+.admin-app .gallery-grid figure.is-new { border-style: dashed; border-color: var(--green); }
+.admin-app .gallery-grid img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.admin-app .gallery-grid figure button { position: absolute; top: 5px; right: 5px; width: 26px; height: 26px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 8px; color: #fff; background: rgba(15, 24, 34, .7); }
+.admin-app .gallery-add { aspect-ratio: 1; display: grid; place-items: center; align-content: center; gap: 4px; border: 1px dashed #b9bdc0; border-radius: 10px; color: var(--green); background: #fafafa; font-size: 12px; font-weight: 700; cursor: pointer; }
+.admin-app .gallery-add input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.admin-app .gallery-add:hover { border-color: var(--green); background: var(--tint); }

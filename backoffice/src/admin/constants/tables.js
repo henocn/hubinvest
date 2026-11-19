@@ -33,7 +33,11 @@ export const tableSettings = {
     columns: (context) => [
       { header: 'Stand', value: (item) => item.name, width: 30 },
       { header: 'Emplacement', value: (item) => item.standLabel, width: 24 },
-      { header: 'Activité', value: (item) => item.activity, width: 60 },
+      { header: 'Activités', value: (item) => item.activity, width: 60 },
+      { header: 'Produits', value: (item) => item.products, width: 40 },
+      { header: 'Services', value: (item) => item.services, width: 40 },
+      { header: 'Site web', value: (item) => item.website, width: 30 },
+      { header: 'Photos', value: (item) => (item.gallery || []).length, width: 10 },
       { header: 'Statut', value: (item) => (item.status === 'active' ? 'Actif' : 'Inactif'), width: 12 },
       { header: 'Contacts enregistrés', value: (item) => context.contactStats?.byOccupant?.[item.id] || 0, width: 20 },
       { header: 'Fiche publique', value: (item) => `${context.publicBaseUrl}/stands/${item.slug}`, width: 45 },

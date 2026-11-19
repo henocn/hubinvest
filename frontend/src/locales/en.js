@@ -46,6 +46,13 @@ export default {
     empty: "The Hub programme will be published soon. In the meantime, discover the stands.",
     exploreStands: "Explore the stands",
     now: "Happening now",
+    next: "Up next",
+    showPast_one: "Show the past session",
+    showPast_other: "Show the {{count}} past sessions",
+    hidePast: "Hide past sessions",
+    clock: "It’s {{time}}",
+    break: "Break",
+    dayOver: "Today is over. See you tomorrow!",
   },
   program: {
     types: {
@@ -57,6 +64,12 @@ export default {
     },
   },
   stands: {
+    activities: "Activities",
+    products: "Products",
+    services: "Services",
+    gallery: "Pictures",
+    previousImage: "Previous image",
+    nextImage: "Next image",
     title: "The Hub stands",
     searchLabel: "Search for a stand",
     searchPlaceholder: "Search for an organisation or activity",

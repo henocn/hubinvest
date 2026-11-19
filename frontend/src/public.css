@@ -357,37 +357,143 @@
   line-height: 1.65;
 }
 
-.home-intro {
-  padding: clamp(34px, 6vw, 64px) 0 clamp(30px, 5vw, 52px);
+/* Bandeau d'ouverture : vert du Hub, date en jaune, symbole en filigrane, et ce qui se passe maintenant en grand. */
+.home-hero {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(30px, 6vw, 64px) 0 clamp(30px, 5vw, 56px);
+  color: #fff;
+  /* Vert du Hub un peu éclairci, pour que le bandeau ne se confonde pas avec l’en-tête. */
+  background: rgba(21, 108, 83, 0.72);
 }
 
-.home-intro h1 {
-  margin: 12px 0 8px;
-  font-size: clamp(2.2rem, 6vw, 3.8rem);
+.home-hero::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -12%;
+  width: min(78vw, 560px);
+  aspect-ratio: 1;
+  transform: translateY(-50%);
+  background: url('./assets/brand/hub-symbol-white.png') center / contain no-repeat;
+  opacity: 0.07;
+  pointer-events: none;
 }
 
-.home-intro .home-date {
-  color: var(--green);
-  font-size: clamp(0.98rem, 2.2vw, 1.12rem);
+.home-hero .public-container {
+  position: relative;
+  z-index: 1;
+}
+
+.home-hero-date {
+  margin: 0 0 6px;
+  color: var(--yellow);
+  font-size: clamp(0.98rem, 2.2vw, 1.15rem);
   font-weight: 700;
 }
 
-.home-intro .home-date::first-letter {
+.home-hero-date::first-letter {
   text-transform: uppercase;
+}
+
+.home-hero h1 {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(2.3rem, 7vw, 4.4rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.home-hero-now {
+  max-width: 760px;
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  margin-top: clamp(24px, 4vw, 40px);
+  padding-top: clamp(18px, 3vw, 24px);
+  border-top: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.home-hero-label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  color: var(--yellow);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.home-hero-label span {
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.home-hero-now.is-live .home-hero-label::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  align-self: center;
+  border-radius: 50%;
+  background: var(--yellow);
+  animation: home-pulse 1.6s ease-in-out infinite;
+}
+
+.home-hero-now strong {
+  font-family: var(--font-display);
+  font-size: clamp(1.45rem, 4.2vw, 2.4rem);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+}
+
+.home-hero-meta {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.95rem;
+}
+
+.home-hero-ask {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  margin-top: 10px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 10px;
+  color: #0f1822;
+  background: var(--yellow);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.home-hero-ask:hover {
+  background: #ffd94a;
+}
+
+@keyframes home-pulse {
+  50% { opacity: 0.35; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero-now.is-live .home-hero-label::before { animation: none; }
 }
 
 .home-main {
   display: grid;
-  gap: 22px;
-  padding-top: clamp(24px, 4vw, 40px);
+  gap: 26px;
+  padding-top: clamp(20px, 4vw, 36px);
+  padding-bottom: clamp(30px, 5vw, 56px);
 }
 
+/* Stand à l'affiche : un bandeau discret, pas une grande carte. */
 .home-spotlight {
   min-width: 0;
   display: grid;
-  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
-  overflow: hidden;
-  border: 1px solid rgba(0, 0, 0, 0.16);
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px 10px 10px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 10px;
   color: inherit;
   background: #fff;
@@ -396,55 +502,72 @@
 }
 
 .home-spotlight:hover {
-  border-color: rgba(21, 108, 83, 0.7);
+  border-color: rgba(21, 108, 83, 0.6);
 }
 
-.home-spotlight-cover {
-  min-height: 230px;
+.home-spotlight-thumb {
+  width: 56px;
+  height: 56px;
   display: grid;
   place-items: center;
   overflow: hidden;
-  border-right: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
   background: #eef0ee;
 }
 
-.home-spotlight-cover img {
+.home-spotlight-thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.home-spotlight-cover span {
-  color: rgba(21, 108, 83, 0.35);
-  font-size: 4.5rem;
+.home-spotlight-thumb.is-logo {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #fff;
+}
+
+.home-spotlight-thumb.is-logo img {
+  padding: 6px;
+  object-fit: contain;
+}
+
+.home-spotlight-thumb > span {
+  color: var(--green);
+  font-family: var(--font-display);
+  font-size: 1.5rem;
   font-weight: 800;
 }
 
-.home-spotlight-content {
+.home-spotlight-text {
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: start;
-  justify-content: center;
-  padding: clamp(22px, 4vw, 40px);
+  display: grid;
+  gap: 1px;
 }
 
-.home-spotlight-content h2 {
-  margin: 10px 0 0;
-  font-size: clamp(1.5rem, 3.4vw, 2.2rem);
-  line-height: 1.15;
-  letter-spacing: -0.015em;
+.home-spotlight-text small {
+  color: var(--green);
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
-.home-spotlight-content p {
-  display: -webkit-box;
+.home-spotlight-text strong {
   overflow: hidden;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  margin: 14px 0 0;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-spotlight-text span {
+  overflow: hidden;
   color: var(--muted);
-  font-size: 0.92rem;
-  line-height: 1.55;
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-spotlight-arrow {
+  color: var(--green);
 }
 
 .home-columns {
@@ -454,144 +577,196 @@
   gap: 22px;
 }
 
-/* Programme : une grille horaire sobre, comme un programme imprimé. Le titre est hors du cadre,
-   un seul bloc blanc à lignes fines, l'heure en colonne, le titre d'abord puis une ligne discrète. */
+/* Programme sur un rail : grande heure à gauche, rail vertical continu dont chaque tronçon prend la couleur
+   du type de rendez-vous (Studio rouge, prise de parole verte, temps fort jaune, animation encre). */
 .home-schedule {
   min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 12px;
 }
 
 .home-schedule > h2 {
-  margin: 0 0 10px;
-  font-size: 1.2rem;
-  letter-spacing: -0.015em;
+  margin: 0;
+  font-size: clamp(1.3rem, 3vw, 1.6rem);
+  letter-spacing: -0.02em;
 }
 
 .home-schedule-empty {
   margin: 0;
-  padding: 18px 20px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 10px;
   color: var(--muted);
-  background: #fff;
   line-height: 1.5;
+}
+
+.program-past-toggle {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0;
+  border: 0;
+  color: var(--muted);
+  background: none;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.program-past-toggle svg {
+  transition: transform 160ms ease;
+}
+
+.program-past-toggle.is-open svg {
+  transform: rotate(180deg);
 }
 
 .program-list {
   margin: 0;
   padding: 0;
-  overflow: hidden;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 10px;
-  background: #fff;
   list-style: none;
 }
 
 .program-item {
-  position: relative;
+  --rail: var(--green);
   display: grid;
-  grid-template-columns: 58px minmax(0, 1fr);
-  gap: 16px;
-  padding: 16px 18px;
+  grid-template-columns: 4.6rem minmax(0, 1fr);
+  column-gap: 14px;
 }
 
-.program-item + .program-item {
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
-}
+.program-item.type-studio { --rail: var(--red); }
+.program-item.type-talk { --rail: var(--green); }
+.program-item.type-highlight { --rail: var(--yellow); }
+.program-item.type-animation { --rail: #0f1822; }
 
 .program-item time {
   display: grid;
   align-content: start;
-  gap: 2px;
+  padding-top: 14px;
+  text-align: right;
 }
 
 .program-item time strong {
-  font-size: 1rem;
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
 
 .program-item time small {
+  margin-top: 5px;
   color: var(--muted);
   font-size: 0.76rem;
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
 }
 
-.program-item > div {
+.program-body {
   min-width: 0;
   display: grid;
   justify-items: start;
-  gap: 4px;
+  gap: 3px;
+  padding: 12px 0 18px 16px;
+  border-left: 4px solid var(--rail);
 }
 
-.program-item > div > strong {
-  font-size: 0.98rem;
-  line-height: 1.4;
+.program-type {
+  color: var(--rail);
+  font-size: 0.8rem;
+  font-weight: 800;
 }
 
-/* Type, lieu et stand sur une ligne, séparés par un point médian. */
+.program-item.type-highlight .program-type {
+  color: #8a6200;
+}
+
+.program-body > strong {
+  font-size: 1.02rem;
+  line-height: 1.35;
+}
+
 .program-meta {
-  display: flex;
-  flex-wrap: wrap;
   color: var(--muted);
-  font-size: 0.82rem;
-  line-height: 1.5;
-}
-
-.program-meta > * + *::before {
-  content: '·';
-  margin: 0 7px;
-  color: #b5b9b7;
+  font-size: 0.85rem;
+  line-height: 1.45;
 }
 
 .program-meta a {
-  color: var(--green);
+  color: inherit;
   font-weight: 700;
   text-decoration: none;
 }
 
 .program-meta a:hover {
+  color: var(--green);
   text-decoration: underline;
 }
 
-/* En ce moment : un trait vert à gauche et l'heure en vert, sans fond ni pastille. */
-.program-item.is-live::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 3px;
-  background: var(--green);
+/* En cours : le tronçon s'épaissit, l'heure prend la couleur du rail. */
+.program-item.is-live .program-body {
+  border-left-width: 8px;
+  padding-left: 12px;
 }
 
 .program-item.is-live time strong {
   color: var(--green);
 }
 
-.program-meta .program-now {
-  color: var(--green);
-  font-weight: 700;
+/* Passé (quand on le déplie) : effacé. */
+.program-item.is-done {
+  opacity: 0.45;
 }
 
-/* Passé : grisé, pour que l'œil aille au prochain rendez-vous. */
-.program-item.is-done time strong,
-.program-item.is-done time small,
-.program-item.is-done > div > strong,
-.program-item.is-done .program-meta {
-  color: #9aa09d;
+/* L'heure qu'il est, posée sur le rail entre deux rendez-vous. */
+.program-clock {
+  position: relative;
+  height: 26px;
+  margin-left: calc(4.6rem + 14px);
 }
 
-.program-item.is-done .program-meta a {
-  color: inherit;
-  font-weight: 400;
+.program-clock::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: -6px;
+  border-top: 2px dashed var(--red);
 }
 
-/* À venir : le jour au-dessus de l'heure. */
-.home-schedule.is-upcoming .program-item time small:first-child {
-  text-transform: capitalize;
+.program-clock span {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  padding: 0 8px;
+  transform: translateY(-50%);
+  color: var(--red);
+  background: #f4f5f5;
+  font-size: 0.78rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }
 
-.home-explore-link,
+/* À venir : un titre par jour. */
+.program-day {
+  display: grid;
+  gap: 4px;
+}
+
+.program-day + .program-day {
+  margin-top: 10px;
+}
+
+.program-day h3 {
+  margin: 0;
+  color: #0f1822;
+  font-size: 0.95rem;
+}
+
+.program-day h3::first-letter {
+  text-transform: uppercase;
+}
+
+
 .home-empty a {
   display: inline-flex;
   align-items: center;
@@ -826,7 +1001,7 @@
 }
 
 .stand-profile {
-  padding: clamp(26px, 5vw, 58px);
+  padding: clamp(20px, 4vw, 48px);
   border: 1px solid var(--border);
   border-radius: 10px;
   background: #fff;
@@ -834,41 +1009,71 @@
 
 .stand-profile-cover {
   width: 100%;
-  height: clamp(210px, 38vw, 390px);
+  height: clamp(190px, 34vw, 360px);
   display: block;
-  margin-bottom: clamp(26px, 4vw, 42px);
+  margin-bottom: clamp(20px, 3vw, 32px);
   border-radius: 10px;
   object-fit: cover;
   background: #eef0ee;
 }
 
-.stand-profile-top {
+.stand-profile-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 15px;
+  gap: 16px;
+}
+
+.stand-profile-logo {
+  width: 64px;
+  height: 64px;
+  flex: 0 0 auto;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  object-fit: contain;
+  background: #fff;
 }
 
 .stand-profile h1 {
-  margin: 17px 0 12px;
-  font-size: clamp(2rem, 5vw, 3.5rem);
+  margin: 0 0 6px;
+  font-size: clamp(1.8rem, 4.5vw, 3rem);
 }
 
-.stand-profile-location {
+.stand-profile-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0;
+}
+
+.stand-profile-facts span,
+.stand-profile-facts a {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  color: var(--green);
+  gap: 6px;
   font-weight: 700;
 }
 
+.stand-profile-facts span {
+  color: var(--green);
+}
+
+.stand-profile-facts a {
+  color: #0f1822;
+  text-decoration: underline;
+  text-decoration-color: rgba(0, 0, 0, 0.25);
+  text-underline-offset: 3px;
+}
+
 .stand-profile-section {
-  max-width: 700px;
-  margin-top: 18px;
+  max-width: 760px;
+  margin-top: clamp(24px, 3.5vw, 36px);
 }
 
 .stand-profile-section h2 {
-  margin: 0 0 13px;
+  margin: 0 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
   font-size: 1.05rem;
 }
 
@@ -877,6 +1082,90 @@
   color: #4d4d4d;
   line-height: 1.75;
   white-space: pre-line;
+}
+
+.stand-profile-section ul {
+  margin: 0;
+  padding-left: 1.1em;
+  color: #2b3236;
+  line-height: 1.8;
+}
+
+.stand-profile-section li::marker {
+  color: var(--green);
+}
+
+/* Produits et services côte à côte sur ordinateur. */
+.stand-profile-offer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0 clamp(24px, 4vw, 48px);
+  max-width: 900px;
+}
+
+.stand-profile-gallery {
+  max-width: none;
+}
+
+/* Carrousel : une image à la fois, défilement au doigt, flèches et compteur sous l'image. */
+.image-carousel {
+  display: grid;
+  gap: 10px;
+}
+
+.image-carousel-track {
+  display: grid;
+  grid-auto-columns: 100%;
+  grid-auto-flow: column;
+  overflow-x: auto;
+  border-radius: 10px;
+  background: #eef0ee;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.image-carousel-track::-webkit-scrollbar {
+  display: none;
+}
+
+.image-carousel-track figure {
+  margin: 0;
+  scroll-snap-align: start;
+}
+
+.image-carousel-track img {
+  width: 100%;
+  height: clamp(220px, 42vw, 440px);
+  display: block;
+  object-fit: cover;
+}
+
+.image-carousel-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.image-carousel-controls button {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: #0f1822;
+  background: #fff;
+  cursor: pointer;
+}
+
+.image-carousel-controls button:disabled {
+  cursor: default;
+  opacity: 0.35;
 }
 
 .request-panel {
@@ -1774,8 +2063,6 @@
   .meetings-page > header { margin-bottom: 20px; }
   .meeting-choices > a { grid-template-columns: 32px minmax(0, 1fr); padding: 19px 18px; }
   .stand-grid { grid-template-columns: 1fr; }
-  .home-spotlight { grid-template-columns: 1fr; }
-  .home-spotlight-cover { min-height: 0; aspect-ratio: 16 / 9; border-right: 0; border-bottom: 1px solid rgba(0, 0, 0, 0.12); }
   .home-columns { grid-template-columns: 1fr; }
   .public-section-heading { align-items: start; }
   .stand-count { text-align: right; }
@@ -2007,19 +2294,16 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-top: 6px;
-  padding: 7px 12px;
-  border: 1px solid rgba(21, 108, 83, 0.35);
-  border-radius: 10px;
+  margin-top: 4px;
+  padding: 0;
+  border: 0;
   color: var(--green);
-  background: #fff;
-  font-size: 0.85rem;
+  background: none;
+  font-size: 0.9rem;
   font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
   cursor: pointer;
-}
-
-.live-question-button:hover {
-  background: var(--tint);
 }
 
 .live-question-sent {
@@ -2037,9 +2321,297 @@
   font-weight: 650;
 }
 
-/* À l'affiche : surtitre en écriture normale, sans majuscules espacées. */
-.home-spotlight .public-eyebrow {
-  font-size: 0.85rem;
-  letter-spacing: 0;
-  text-transform: none;
+
+/* Bandeau sur ordinateur : titre à gauche, « En ce moment » à droite dans un panneau vert plus sombre. */
+.home-hero .public-container {
+  display: grid;
+  gap: clamp(20px, 4vw, 36px);
+}
+
+@media (min-width: 900px) {
+  .home-hero .public-container {
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 440px);
+    align-items: end;
+  }
+
+  .home-hero-now {
+    margin-top: 0;
+    padding: 24px 26px;
+    border-top: 0;
+    border-radius: 14px;
+    background: rgba(0, 0, 0, 0.18);
+  }
+}
+
+/* Grille horaire du jour : heures à gauche, rendez-vous posés à leur heure, ligne rouge à l'heure actuelle. */
+.day-timeline {
+  position: relative;
+  margin: 8px 0 0 56px;
+}
+
+.day-hour {
+  position: absolute;
+  right: 0;
+  left: -56px;
+  height: 0;
+  border-top: 1px solid rgba(15, 24, 34, 0.09);
+}
+
+.day-hour span {
+  position: absolute;
+  top: -9px;
+  left: 0;
+  width: 46px;
+  color: #6b7378;
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: #f4f5f5;
+}
+
+.day-blocks {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.day-block {
+  --type: var(--green);
+  --tint: #e6f2ed;
+  --ink: #0f1822;
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+  padding: 8px 12px 8px 14px;
+  border-left: 4px solid var(--type);
+  border-radius: 4px 10px 10px 4px;
+  color: var(--ink);
+  background: var(--tint);
+}
+
+.day-block.type-studio { --type: var(--red); --tint: #fcebee; }
+.day-block.type-talk { --type: var(--green); --tint: #e6f2ed; }
+.day-block.type-highlight { --type: #e2a700; --tint: #fff4cf; }
+.day-block.type-animation { --type: #0f1822; --tint: #e9ecee; }
+
+.day-block-time {
+  color: var(--type);
+  font-size: 0.74rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.day-block.type-highlight .day-block-time {
+  color: #8a6200;
+}
+
+.day-block strong {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  font-size: 0.95rem;
+  line-height: 1.25;
+}
+
+.day-block-meta {
+  overflow: hidden;
+  color: #4d555a;
+  font-size: 0.8rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.day-block-meta a {
+  color: inherit;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.day-block-meta a:hover {
+  text-decoration: underline;
+}
+
+/* Court : titre sur deux lignes, sans lieu. */
+.day-block.is-short .day-block-meta {
+  display: none;
+}
+
+/* En cours : le bloc passe en couleur pleine. */
+.day-block.is-live {
+  --ink: #fff;
+  color: #fff;
+  background: var(--type);
+  box-shadow: 0 8px 22px rgba(15, 24, 34, 0.18);
+}
+
+.day-block.is-live .day-block-time,
+.day-block.is-live .day-block-meta {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.day-block.type-highlight.is-live {
+  --ink: #0f1822;
+  color: #0f1822;
+}
+
+.day-block.type-highlight.is-live .day-block-time,
+.day-block.type-highlight.is-live .day-block-meta {
+  color: rgba(15, 24, 34, 0.75);
+}
+
+/* Passé : effacé, sans couleur. */
+.day-block.is-done {
+  opacity: 0.5;
+  filter: saturate(0.2);
+}
+
+/* L'heure actuelle : un trait rouge sur toute la grille, l'heure dans la colonne de gauche. */
+.day-now {
+  position: absolute;
+  z-index: 0;
+  right: 0;
+  left: -56px;
+  height: 0;
+  border-top: 2px solid var(--red);
+  pointer-events: none;
+}
+
+.day-now span {
+  position: absolute;
+  z-index: 2;
+  top: -11px;
+  left: 0;
+  padding: 2px 6px;
+  border-radius: 6px;
+  color: #fff;
+  background: var(--red);
+  font-size: 0.74rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Pause resserrée : une bande hachurée discrète au lieu de deux heures vides. */
+.day-gap {
+  position: absolute;
+  right: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: repeating-linear-gradient(135deg, rgba(15, 24, 34, 0.05) 0 6px, transparent 6px 12px);
+}
+
+.day-gap span {
+  color: #7a8287;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.home-schedule .program-past-toggle + .day-timeline,
+.home-schedule .program-past-toggle + .home-schedule-empty {
+  margin-top: 4px;
+}
+
+/* Deux rendez-vous côte à côte : seulement les heures, et le titre sur trois lignes. */
+.day-block.is-narrow .day-block-now,
+.day-block.is-narrow .day-block-type {
+  display: none;
+}
+
+.day-block.is-narrow strong {
+  -webkit-line-clamp: 3;
+}
+
+.home-hero h1 {
+  text-wrap: balance;
+}
+
+@media (min-width: 900px) {
+  .home-hero h1 {
+    font-size: clamp(2.6rem, 5vw, 3.8rem);
+  }
+}
+
+.day-block.is-narrow .day-block-meta {
+  display: none;
+}
+
+/* Blocs pleins pour tout le programme : la couleur du type en fond, texte blanc (encre sur le jaune).
+   Le rendez-vous en cours se distingue par son ombre et un liseré blanc, les passés passent au gris. */
+.day-block {
+  color: #fff;
+  background: var(--type);
+  border-left: 0;
+  border-radius: 10px;
+  padding: 9px 14px;
+}
+
+.day-block.type-studio { --type: var(--red); }
+.day-block.type-talk { --type: var(--green); }
+.day-block.type-highlight { --type: #f2b705; }
+.day-block.type-animation { --type: #2b3640; }
+
+.day-block .day-block-time,
+.day-block .day-block-meta {
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.day-block.type-highlight,
+.day-block.type-highlight.is-live {
+  color: #0f1822;
+}
+
+.day-block.type-highlight .day-block-time,
+.day-block.type-highlight .day-block-meta {
+  color: rgba(15, 24, 34, 0.72);
+}
+
+.day-block.is-live {
+  outline: 3px solid #fff;
+  box-shadow: 0 10px 26px rgba(15, 24, 34, 0.24);
+}
+
+.day-block.is-done,
+.day-block.type-highlight.is-done {
+  color: #4d555a;
+  background: #dfe3e5;
+  filter: none;
+  opacity: 1;
+}
+
+.day-block.is-done .day-block-time,
+.day-block.is-done .day-block-meta {
+  color: #6b7378;
+}
+
+/* À venir : les mêmes blocs, empilés sous leur jour. */
+.day-stack {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.day-block.is-static {
+  position: relative;
+  gap: 3px;
+  padding: 12px 16px;
+}
+
+.day-block.is-static strong {
+  -webkit-line-clamp: 3;
+}
+
+/* Dans un bloc, le titre ne se tasse pas : le clamp coupe proprement en fin de deuxième ligne. */
+.day-block > * {
+  flex-shrink: 0;
 }

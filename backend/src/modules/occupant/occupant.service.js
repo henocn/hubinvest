@@ -8,6 +8,17 @@ const { events: realtime } = require('../realtime/realtime.service');
 
 const coverDirectory = path.resolve(__dirname, '..', '..', '..', 'uploads', 'covers');
 const logoDirectory = path.resolve(__dirname, '..', '..', '..', 'uploads', 'logos');
+const galleryDirectory = path.resolve(__dirname, '..', '..', '..', 'uploads', 'gallery');
+const GALLERY_LIMIT = 5;
+
+const removeGalleryFile = async (url) => {
+  if (!url?.startsWith('/uploads/gallery/')) return;
+  try {
+    await fs.unlink(path.join(galleryDirectory, path.basename(url)));
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
+};
 
 const removeCoverFile = async (coverImageUrl) => {
   if (!coverImageUrl?.startsWith('/uploads/covers/')) return;
@@ -55,7 +66,7 @@ const getPublic = async (slug, language) => {
   if (!occupant) {
     throw new AppError(404, 'OCCUPANT_NOT_FOUND', 'Occupant introuvable.');
   }
-  return translatePublicContent(occupant, ['name', 'standLabel', 'activity'], language);
+  return translatePublicContent(occupant, ['name', 'standLabel', 'activity', 'products', 'services'], language);
 };
 
 const create = async (values) => {
@@ -128,12 +139,43 @@ const updateLogo = async (id, file) => {
   }
 };
 
+// Ajoute une photo à la galerie du stand (5 au plus) ; le fichier est retiré si l'ajout échoue.
+const addGalleryImage = async (id, file) => {
+  if (!file) throw new AppError(422, 'GALLERY_IMAGE_REQUIRED', 'Choisissez une image.');
+  const url = `/uploads/gallery/${file.filename}`;
+  try {
+    const occupant = await get(id);
+    const gallery = Array.isArray(occupant.gallery) ? occupant.gallery : [];
+    if (gallery.length >= GALLERY_LIMIT) {
+      throw new AppError(422, 'GALLERY_FULL', `La galerie contient déjà ${GALLERY_LIMIT} images. Retirez-en une avant d’en ajouter.`);
+    }
+    const updated = await occupantRepository.update(occupant, { gallery: [...gallery, url] });
+    realtime.occupantsChanged(id);
+    return updated;
+  } catch (error) {
+    await removeGalleryFile(url);
+    throw error;
+  }
+};
+
+// Retire une photo de la galerie et supprime son fichier.
+const removeGalleryImage = async (id, url) => {
+  const occupant = await get(id);
+  const gallery = Array.isArray(occupant.gallery) ? occupant.gallery : [];
+  if (!gallery.includes(url)) throw new AppError(404, 'GALLERY_IMAGE_NOT_FOUND', 'Cette image n’est plus dans la galerie.');
+  const updated = await occupantRepository.update(occupant, { gallery: gallery.filter((item) => item !== url) });
+  await removeGalleryFile(url);
+  realtime.occupantsChanged(id);
+  return updated;
+};
+
 const remove = async (id) => {
   const occupant = await get(id);
   await occupantRepository.remove(occupant);
   await removeCoverFile(occupant.coverImageUrl);
   await removeLogoFile(occupant.logoUrl);
+  await Promise.all((occupant.gallery || []).map(removeGalleryFile));
   realtime.occupantsChanged(id);
 };
 
-module.exports = { list, listPublic, get, getPublic, create, update, updateCover, updateLogo, remove };
+module.exports = { list, listPublic, get, getPublic, create, update, updateCover, updateLogo, addGalleryImage, removeGalleryImage, remove, GALLERY_LIMIT };

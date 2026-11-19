@@ -35,6 +35,25 @@ module.exports = (sequelize, DataTypes) =>
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      // Produits et services : une entrée par ligne, affichées en liste sur la fiche publique.
+      products: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      services: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      website: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+      },
+      // Photos des produits ou du stand (adresses /uploads/gallery/…), 5 au plus.
+      gallery: {
+        type: DataTypes.JSONB,
+        allowNull: false,
+        defaultValue: [],
+      },
       status: {
         type: DataTypes.STRING(20),
         allowNull: false,

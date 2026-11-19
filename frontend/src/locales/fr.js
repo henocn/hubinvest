@@ -46,6 +46,13 @@ export default {
     empty: "Le programme du Hub sera bientôt publié. En attendant, découvrez les stands présents.",
     exploreStands: "Explorer les stands",
     now: "En ce moment",
+    next: "Ensuite",
+    showPast_one: "Voir le rendez-vous passé",
+    showPast_other: "Voir les {{count}} rendez-vous passés",
+    hidePast: "Masquer les rendez-vous passés",
+    clock: "Il est {{time}}",
+    break: "Pause",
+    dayOver: "La journée est terminée. À demain !",
   },
   program: {
     types: {
@@ -57,6 +64,12 @@ export default {
     },
   },
   stands: {
+    activities: "Activités",
+    products: "Produits",
+    services: "Services",
+    gallery: "En images",
+    previousImage: "Image précédente",
+    nextImage: "Image suivante",
     title: "Les stands du Hub",
     searchLabel: "Rechercher un stand",
     searchPlaceholder: "Rechercher une structure ou une activité",

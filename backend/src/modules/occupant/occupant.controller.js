@@ -37,9 +37,19 @@ const updateLogo = async (request, response) => {
   response.json({ data: occupant, message: 'Logo de la structure modifié.' });
 };
 
+const addGalleryImage = async (request, response) => {
+  const occupant = await occupantService.addGalleryImage(request.params.id, request.file);
+  response.json({ data: occupant, message: 'Image ajoutée à la galerie.' });
+};
+
+const removeGalleryImage = async (request, response) => {
+  const occupant = await occupantService.removeGalleryImage(request.params.id, request.body.url);
+  response.json({ data: occupant, message: 'Image retirée de la galerie.' });
+};
+
 const remove = async (request, response) => {
   await occupantService.remove(request.params.id);
   response.status(204).send();
 };
 
-module.exports = { list, listPublic, get, getPublic, create, update, updateCover, updateLogo, remove };
+module.exports = { list, listPublic, get, getPublic, create, update, updateCover, updateLogo, remove, addGalleryImage, removeGalleryImage };
