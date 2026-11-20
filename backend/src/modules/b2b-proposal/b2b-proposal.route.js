@@ -11,6 +11,7 @@ const b2bAdminOnly = requireRoles(roles.SUPER_ADMIN, roles.ADMIN);
 
 router.post('/public/:needId', validate(validation.needParams, 'params'), validate(validation.createPublic), asyncHandler(controller.createPublic));
 router.use(asyncHandler(authenticate), b2bAdminOnly);
+router.get('/', asyncHandler(controller.listAll));
 router.get('/need/:needId', validate(validation.needParams, 'params'), asyncHandler(controller.list));
 router.patch('/:id', validate(validation.params, 'params'), validate(validation.update), asyncHandler(controller.update));
 

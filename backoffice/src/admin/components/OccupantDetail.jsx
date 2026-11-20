@@ -103,7 +103,7 @@ export default function OccupantDetail({ occupant, users, contactCount, programE
       <Related
         title="Besoins B2B"
         head={['Besoin', 'Demandes', 'Statut', 'Publié le']}
-        rows={needs.map((need) => <tr key={need.id}><td><Link to={`/b2b/${need.id}`}>{need.title}</Link></td><td><ProposalCount need={need} /></td><td>{need.status === 'open' ? 'Ouvert' : 'Fermé'}</td><td className="stand-nowrap">{day.format(new Date(need.createdAt))}</td></tr>)}
+        rows={needs.map((need) => <tr key={need.id}><td>{need.title}</td><td><ProposalCount need={need} /></td><td>{need.status === 'open' ? 'Ouvert' : 'Fermé'}</td><td className="stand-nowrap">{day.format(new Date(need.createdAt))}</td></tr>)}
       />
       <Related
         title="Investor Desk"

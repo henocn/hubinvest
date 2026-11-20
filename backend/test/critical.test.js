@@ -437,6 +437,16 @@ test('une proposition B2B sans consentement est refusée avant toute écriture',
   );
 });
 
+test('la liste des demandes B2B se limite au stand d’un administrateur de stand', async (context) => {
+  const scopes = [];
+  context.mock.method(b2bProposalRepository, 'findAllVisible', async (occupantId = null) => { scopes.push(occupantId); return []; });
+
+  await b2bProposalService.listAll({ role: 'admin', occupantId: 'occupant-b' });
+  await b2bProposalService.listAll({ role: 'super-admin' });
+  assert.deepEqual(scopes, ['occupant-b', null]);
+  await assert.rejects(b2bProposalService.listAll({ role: 'admin', occupantId: null }), (error) => error.code === 'STAND_REQUIRED');
+});
+
 test('le backoffice B2B peut lire les propositions d’un besoin existant', async (context) => {
   context.mock.method(b2bNeedRepository, 'findById', async () => ({ id: 'need-b', occupantId: 'occupant-b' }));
   context.mock.method(b2bProposalRepository, 'findAllByNeed', async (needId) => [{ id: 'proposal-a', b2bNeedId: needId }]);

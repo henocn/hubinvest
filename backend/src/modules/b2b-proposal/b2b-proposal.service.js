@@ -1,4 +1,5 @@
 const AppError = require('../../shared/app-error');
+const roles = require('../../shared/roles');
 const b2bNeedService = require('../b2b-need/b2b-need.service');
 const b2bProposalRepository = require('./b2b-proposal.repository');
 const notificationService = require('../notification/notification.service');
@@ -31,6 +32,13 @@ const list = async (user, needId) => {
   return b2bProposalRepository.findAllByNeed(needId);
 };
 
+// Toutes les demandes que l’utilisateur peut traiter : toutes pour le super-admin, celles de son stand sinon.
+const listAll = async (user) => {
+  if (user.role === roles.SUPER_ADMIN) return b2bProposalRepository.findAllVisible();
+  if (!user.occupantId) throw new AppError(403, 'STAND_REQUIRED', 'Cet administrateur n’est rattaché à aucun stand.');
+  return b2bProposalRepository.findAllVisible(user.occupantId);
+};
+
 const update = async (user, id, values) => {
   const proposal = await b2bProposalRepository.findById(id);
   if (!proposal) throw new AppError(404, 'B2B_PROPOSAL_NOT_FOUND', 'Proposition B2B introuvable.');
@@ -46,4 +54,4 @@ const update = async (user, id, values) => {
   return updated;
 };
 
-module.exports = { createPublic, list, update };
+module.exports = { createPublic, list, listAll, update };

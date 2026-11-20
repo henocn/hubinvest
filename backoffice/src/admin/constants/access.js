@@ -7,6 +7,7 @@ export const roleLabels = {
 
 export const backofficeRoles = new Set(['super-admin', 'admin']);
 export const availableRoles = new Set(['super-admin', 'admin', 'occupant', 'animateur']);
+export const b2bProposalLabels = { pending: 'À traiter', accepted: 'Acceptée', declined: 'Refusée' };
 export const investorStatusLabels = { new: 'Nouvelle', in_progress: 'En cours', closed: 'Clôturée' };
 export const programTypeLabels = { spotlight: 'À l’affiche', highlight: 'Temps fort', animation: 'Animation', studio: 'Studio', talk: 'Prise de parole' };
 export const challengeStatusLabels = { active: 'En cours', completed: 'Terminé', redeemed: 'Récompensé(e)' };

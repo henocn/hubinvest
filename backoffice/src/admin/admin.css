@@ -220,6 +220,10 @@
 /* Paramètres : une ligne par réglage, interrupteur à droite. */
 .admin-app .settings-panel { margin-bottom: 14px; }
 .admin-app .settings-panel > h2 { margin: 0; padding: 8px 12px; border-bottom: 1px solid var(--frame); background: #fafafa; font-size: 14px; }
+.admin-app .settings-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 8px 6px 12px; border-bottom: 1px solid var(--frame); background: #fafafa; }
+.admin-app .settings-panel-head h2 { margin: 0; font-size: 14px; }
+.admin-app .settings-panel-head h2 span { margin-left: 4px; color: #8a8e92; font-weight: 600; }
+.admin-app .b2b-need-name { display: block; max-width: 280px; font-weight: 600; }
 .admin-app .settings-row { display: flex; flex-direction: row; align-items: center; gap: 12px; padding: 9px 12px; border-bottom: 1px solid var(--grid); color: var(--ink); font-size: 14px; cursor: pointer; }
 .admin-app .settings-row:last-child { border-bottom: 0; }
 .admin-app .settings-row > span:first-child { flex: 1; min-width: 0; display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; }

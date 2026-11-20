@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Check } from 'lucide-react';
 import { api } from '../lib/api';
 import { useRealtimeEvent } from '../../lib/realtime';
+import B2bNeedsSettings from '../components/B2bNeedsSettings';
 
 const modules = [
   { key: 'contactRequestsOpen', title: 'Demandes de contact aux stands' },
@@ -12,8 +13,10 @@ const modules = [
   { key: 'liveQuestionsOpen', title: 'Questions en direct' },
 ];
 
-// Réglages du site, appliqués aussitôt : ouvrir ou fermer chaque module, nombre de stands requis pour les Défis.
+// Réglages du site, appliqués aussitôt : ouvrir ou fermer chaque module, nombre de stands requis pour les Défis,
+// et besoins B2B publiés. Un administrateur de stand n'y voit que les besoins B2B de son stand.
 export default function SettingsPage({ session, onLogout }) {
+  const isSuperAdmin = session.user.role === 'super-admin';
   const [settings, setSettings] = useState(null);
   const [error, setError] = useState('');
   const [savingKey, setSavingKey] = useState('');
@@ -33,8 +36,8 @@ export default function SettingsPage({ session, onLogout }) {
     }
   }, [onLogout, session.token]);
 
-  useEffect(() => { void load(); }, [load]);
-  useRealtimeEvent('settings', () => { void load(); });
+  useEffect(() => { if (isSuperAdmin) void load(); }, [isSuperAdmin, load]);
+  useRealtimeEvent('settings', () => { if (isSuperAdmin) void load(); });
 
   const save = async (key, value) => {
     setSavingKey(key);
@@ -69,7 +72,7 @@ export default function SettingsPage({ session, onLogout }) {
     <main className="admin-workspace">
       <header className="workspace-header"><h1>Paramètres</h1></header>
       {error && <p className="admin-form-error">{error}</p>}
-      {!settings && !error && <p className="panel-message">Chargement…</p>}
+      {isSuperAdmin && !settings && !error && <p className="panel-message">Chargement…</p>}
       {settings && (
         <>
           <section className="data-panel settings-panel">
@@ -119,6 +122,7 @@ export default function SettingsPage({ session, onLogout }) {
           </section>
         </>
       )}
+      <B2bNeedsSettings session={session} onLogout={onLogout} />
     </main>
   );
 }

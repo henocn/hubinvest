@@ -1,5 +1,5 @@
 import { formatDate } from '../../lib/excel';
-import { challengeStatusLabels, investorStatusLabels, programTypeLabels, roleLabels } from './access';
+import { b2bProposalLabels, challengeStatusLabels, investorStatusLabels, programTypeLabels, roleLabels } from './access';
 
 const fullName = (person) => (person ? [person.firstName, person.lastName].filter(Boolean).join(' ') : '');
 const byText = (value) => (a, b) => String(value(a) || '').localeCompare(String(value(b) || ''), 'fr', { sensitivity: 'base' });
@@ -81,17 +81,18 @@ export const tableSettings = {
     ],
   },
   b2b: {
-    sorts: sorts((item) => item.createdAt, (item) => item.title),
-    exportName: 'besoins-b2b',
+    sorts: sorts((item) => item.createdAt, (item) => item.fullName),
+    exportName: 'demandes-b2b',
     columns: () => [
-      { header: 'Publié le', value: (item) => formatDate(item.createdAt), width: 18 },
-      { header: 'Besoin', value: (item) => item.title, width: 40 },
-      { header: 'Description', value: (item) => item.description, width: 60 },
-      { header: 'Stand', value: (item) => item.occupant?.name, width: 26 },
-      { header: 'Demandes reçues', value: (item) => item.proposalCount || 0, width: 16 },
-      { header: 'Demandes traitées', value: (item) => item.handledCount || 0, width: 16 },
-      { header: 'Statut', value: (item) => (item.status === 'open' ? 'Ouvert' : 'Fermé'), width: 12 },
-      { header: 'Publié par', value: (item) => fullName(item.createdBy), width: 24 },
+      { header: 'Reçue le', value: (item) => formatDate(item.createdAt), width: 18 },
+      { header: 'Nom', value: (item) => item.fullName, width: 26 },
+      { header: 'E-mail', value: (item) => item.email, width: 30 },
+      { header: 'Téléphone', value: (item) => item.phone, width: 18 },
+      { header: 'Besoin', value: (item) => item.need?.title, width: 40 },
+      { header: 'Stand', value: (item) => item.need?.occupant?.name, width: 26 },
+      { header: 'Message', value: (item) => item.message, width: 60 },
+      { header: 'Statut', value: (item) => b2bProposalLabels[item.status] || item.status, width: 14 },
+      { header: 'Traitée par', value: (item) => fullName(item.handledBy), width: 24 },
     ],
   },
   challenges: {

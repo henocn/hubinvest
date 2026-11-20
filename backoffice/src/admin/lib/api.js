@@ -77,6 +77,7 @@ export const api = {
     request('/b2b-needs', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   updateB2bNeed: (token, id, values) =>
     request(`/b2b-needs/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
+  b2bAllProposals: (token) => request('/b2b-proposals', authorized(token)),
   b2bProposals: (token, needId) => request(`/b2b-proposals/need/${needId}`, authorized(token)),
   updateB2bProposal: (token, id, values) =>
     request(`/b2b-proposals/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),

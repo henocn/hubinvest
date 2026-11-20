@@ -8,6 +8,22 @@ const findAllByNeed = (b2bNeedId) => B2bProposal.findAll({
   order: [['createdAt', 'DESC']],
 });
 
+// Toutes les demandes, avec le besoin et le stand concernés ; limitées à un stand quand occupantId est donné.
+const findAllVisible = (occupantId = null) => B2bProposal.findAll({
+  include: [
+    ...handlerInclude,
+    {
+      model: B2bNeed,
+      as: 'need',
+      attributes: ['id', 'occupantId', 'title', 'status'],
+      required: true,
+      ...(occupantId && { where: { occupantId } }),
+      include: [{ model: Occupant, as: 'occupant', attributes: ['id', 'name'] }],
+    },
+  ],
+  order: [['createdAt', 'DESC']],
+});
+
 const findById = (id) => B2bProposal.findOne({
   where: { id },
   include: [
@@ -25,4 +41,4 @@ const findById = (id) => B2bProposal.findOne({
 const create = (values) => B2bProposal.create(values);
 const update = (proposal, values) => proposal.update(values);
 
-module.exports = { findAllByNeed, findById, create, update };
+module.exports = { findAllByNeed, findAllVisible, findById, create, update };

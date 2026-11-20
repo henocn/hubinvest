@@ -26,11 +26,13 @@ const profileLink = { path: '/profil', label: 'Profil', Icon: CircleUserRound, t
 // Accueil de l'administration : ce qui attend une action et les chiffres du Hub.
 const dashboardLink = { path: '/tableau-de-bord', label: 'Tableau de bord', tabLabel: 'Accueil', Icon: LayoutDashboard, tab: true };
 // Questions du public pendant les directs, reçues par l'animateur.
+// Réglages du site ; un administrateur de stand y gère seulement ses besoins B2B.
+const settingsLink = { path: '/parametres', label: 'Paramètres', Icon: SlidersHorizontal };
 const questionsLink = { path: '/questions', label: 'Questions', Icon: MessageCircleQuestion, tab: true };
 
 const roleLinks = {
-  'super-admin': [dashboardLink, ...menuSections(adminSections), { ...questionsLink, tab: false }, { path: '/parametres', label: 'Paramètres', Icon: SlidersHorizontal }, { ...profileLink, tab: false }],
-  admin: [dashboardLink, ...menuSections(adminSections.filter((item) => !item.superOnly)), { ...profileLink, tab: false }],
+  'super-admin': [dashboardLink, ...menuSections(adminSections), { ...questionsLink, tab: false }, settingsLink, { ...profileLink, tab: false }],
+  admin: [dashboardLink, ...menuSections(adminSections.filter((item) => !item.superOnly)), settingsLink, { ...profileLink, tab: false }],
   occupant: [
     { path: '/contacts', label: 'Contacts', Icon: Users, tab: true },
     { path: '/defis', label: 'Défis', Icon: Trophy, tab: true },

@@ -1,5 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { Handshake, Pencil } from 'lucide-react';
+import { Pencil } from 'lucide-react';
 import EmptyState from '../EmptyState';
 import { SelectAllHeader, SelectCell } from '../RowSelection';
 
@@ -10,11 +9,10 @@ export function ProposalCount({ need }) {
   return <span className={`proposal-count${handled < total ? ' is-pending' : ''}`}>{handled}/{total}</span>;
 }
 
-// Besoins B2B : un clic sur une ligne ouvre la fiche du besoin et ses demandes.
-export default function B2bNeedsTable({ selection, needs, query, onEdit, showStand = true }) {
-  const navigate = useNavigate();
+// Besoins B2B publiés sur le site (dans les Paramètres) : un clic sur une ligne ouvre sa modification.
+export default function B2bNeedsTable({ selection, needs, onEdit, showStand = true }) {
   if (!needs.length) {
-    return <EmptyState icon={Handshake} title="Aucun besoin B2B" copy={query ? 'Aucun résultat ne correspond à la recherche.' : 'Créez le premier besoin à publier.'} />;
+    return <EmptyState title="Aucun besoin B2B" copy="Créez le premier besoin à publier." />;
   }
 
   return (
@@ -22,9 +20,9 @@ export default function B2bNeedsTable({ selection, needs, query, onEdit, showSta
       <table>
         <thead><tr><SelectAllHeader selection={selection} />{showStand && <th>Stand</th>}<th>Besoin</th><th>Demandes</th><th>Statut</th><th className="actions-heading">Action</th></tr></thead>
         <tbody>{needs.map((need) => (
-          <tr key={need.id} className={`b2b-admin-row is-link is-${need.status}`} onClick={() => navigate(`/b2b/${need.id}`)}><SelectCell selection={selection} id={need.id} />
+          <tr key={need.id} className={`b2b-admin-row is-link is-${need.status}`} onClick={() => onEdit(need)}><SelectCell selection={selection} id={need.id} />
             {showStand && <td><strong>{need.occupant?.name || '—'}</strong></td>}
-            <td><Link className="b2b-admin-title" to={`/b2b/${need.id}`} onClick={(event) => event.stopPropagation()}>{need.title}</Link></td>
+            <td><span className="b2b-admin-title">{need.title}</span></td>
             <td><ProposalCount need={need} /></td>
             <td>{need.status === 'open' ? 'Ouvert' : 'Fermé'}</td>
             <td><div className="row-actions"><button className="table-action is-icon" type="button" onClick={(event) => { event.stopPropagation(); onEdit(need); }} aria-label={`Modifier ${need.title}`} title="Modifier"><Pencil size={16} /></button></div></td>

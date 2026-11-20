@@ -115,7 +115,7 @@ function TeamRoutes() {
         {(role === 'animateur' || role === 'super-admin') && <Route path="/questions" element={<LiveQuestionsPage {...props} />} />}
         <Route path="/profil" element={<OccupantProfilePage {...props} />} />
         {isAdminRole(role) && <Route path="/tableau-de-bord" element={<DashboardPage {...props} />} />}
-        {role === 'super-admin' && <Route path="/parametres" element={<SettingsPage {...props} />} />}
+        {isAdminRole(role) && <Route path="/parametres" element={<SettingsPage {...props} />} />}
         {isAdminRole(role) && <Route path="/*" element={<AdminSection />} />}
       </Route>
       <Route path="*" element={session ? <Navigate to={homeForRole(role)} replace /> : <RequireSession />} />
