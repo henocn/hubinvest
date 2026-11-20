@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Download, Plus, QrCode, Search, Ticket } from 'lucide-react';
 import ConfirmDelete from '../components/ConfirmDelete';
+import OccupantDetail from '../components/OccupantDetail';
 import ConfirmReward from '../components/ConfirmReward';
 import QrCodeDialog from '../components/QrCodeDialog';
 import InvestorRequestDrawer from '../components/drawers/InvestorRequestDrawer';
@@ -41,6 +43,9 @@ const sectionMeta = {
 export default function BackofficePage({ session, onLogout, section }) {
   const isSuperAdmin = session.user.role === 'super-admin';
   const isAdmin = session.user.role === 'admin';
+  const location = useLocation();
+  const navigate = useNavigate();
+  const detailId = section === 'occupants' ? location.pathname.split('/')[2] || null : null;
   const [occupants, setOccupants] = useState([]);
   const [users, setUsers] = useState([]);
   const [investorRequests, setInvestorRequests] = useState([]);
@@ -208,7 +213,7 @@ export default function BackofficePage({ session, onLogout, section }) {
   // Repères qu'aucun filtre ne donne, affichés en une ligne discrète.
   const toolbarNote = loading || error ? '' : section === 'wheel'
     ? `${wheel.stats.played} partie${wheel.stats.played > 1 ? 's' : ''} · ${wheel.stats.awarded} lot${wheel.stats.awarded > 1 ? 's' : ''} gagné${wheel.stats.awarded > 1 ? 's' : ''} · ${wheel.stats.remaining} restant${wheel.stats.remaining > 1 ? 's' : ''}`
-    : section === 'occupants' ? `${contactStats.total} contact${contactStats.total > 1 ? 's' : ''} enregistré${contactStats.total > 1 ? 's' : ''}` : '';
+    : '';
 
   // Exporte exactement les lignes affichées ; pour la roue, toutes les parties jouées.
   const exportRows = async () => {
@@ -294,6 +299,7 @@ export default function BackofficePage({ session, onLogout, section }) {
       else if (pendingDelete.type === 'wheel') await api.deleteWheelSegment(session.token, pendingDelete.item.id);
       else await api.deleteUser(session.token, pendingDelete.item.id);
       setPendingDelete(null);
+      if (pendingDelete.type === 'occupant' && detailId) navigate('/stands', { replace: true });
       await loadData();
     } catch (requestError) {
       setDeleteError(requestError.message);
@@ -304,27 +310,44 @@ export default function BackofficePage({ session, onLogout, section }) {
 
   return (
     <>
+      {detailId ? (
+        loading ? <main className="admin-workspace"><p className="panel-message">Chargement…</p></main>
+          : occupants.find((item) => item.id === detailId) ? (
+            <OccupantDetail
+              occupant={occupants.find((item) => item.id === detailId)}
+              users={users}
+              contactCount={contactStats.byOccupant[detailId] || 0}
+              programEvents={programEvents}
+              b2bNeeds={b2bNeeds}
+              studioInvitations={studioInvitations}
+              investorRequests={investorRequests}
+              challengePassports={challengePassports}
+              onEdit={() => setDrawer({ type: 'occupant', item: occupants.find((item) => item.id === detailId) })}
+              onDelete={() => requestOccupantDelete(occupants.find((item) => item.id === detailId))}
+              onQrCode={setQrCode}
+            />
+          ) : <main className="admin-workspace"><p className="panel-message">Ce stand n’existe plus. <a href="/stands" onClick={(event) => { event.preventDefault(); navigate('/stands'); }}>Retour aux stands</a></p></main>
+      ) : (
       <main className="admin-workspace">
         <header className="workspace-header">
           <h1>{sectionMeta[section].title}</h1>
           {(section === 'occupants' || section === 'users' || section === 'program' || section === 'b2b' || section === 'studio' || section === 'challenges' || section === 'wheel') && <div className="workspace-actions">
-            {section === 'occupants' && <button className="button button-secondary" type="button" onClick={() => setQrCode({ title: 'QR du Hub', url: `${publicBaseUrl}/stands`, fileName: 'hubinvest-hub' })}><QrCode size={16} /> QR du Hub</button>}
             {section === 'challenges' && <button className="button button-secondary" type="button" onClick={() => setQrCode({ title: 'QR des Défis', url: `${publicBaseUrl}/defis`, fileName: 'hubinvest-defis' })}><QrCode size={16} /> QR des Défis</button>}
             {section === 'program' && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: 'program', item: null })}><Plus size={16} /> Ajouter au programme</button>}
             {section === 'wheel' && <><button className="button button-secondary" type="button" onClick={() => setDrawer({ type: 'wheel', item: null })}><Plus size={16} /> Nouvelle case</button><button className="button button-primary" type="button" onClick={generateWheelCode}><Ticket size={16} /> Générer un code</button></>}
-            {section !== 'challenges' && section !== 'program' && section !== 'wheel' && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: section === 'occupants' ? 'occupant' : section === 'users' ? 'user' : section === 'b2b' ? 'b2b' : 'studio', item: null })}><Plus size={16} /> {section === 'occupants' ? 'Nouveau stand' : section === 'users' ? 'Nouvel utilisateur' : section === 'b2b' ? 'Nouveau besoin' : 'Nouvelle invitation'}</button>}
+            {section !== 'challenges' && section !== 'program' && section !== 'wheel' && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: section === 'occupants' ? 'occupant' : section === 'users' ? 'user' : section === 'b2b' ? 'b2b' : 'studio', item: null })}><Plus size={16} /> {section === 'occupants' ? 'Stand' : section === 'users' ? 'Nouvel utilisateur' : section === 'b2b' ? 'Nouveau besoin' : 'Nouvelle invitation'}</button>}
           </div>}
         </header>
 
         <section className="data-panel">
           <header className="data-toolbar">
-            <div className="filter-chips" role="group" aria-label={settings.filterLabel}>
+            {section !== 'occupants' && <div className="filter-chips" role="group" aria-label={settings.filterLabel}>
               {filterChips.map((item) => (
                 <button key={item.value || 'all'} type="button" className={item.value === filterValue ? 'is-active' : ''} aria-pressed={item.value === filterValue} onClick={() => setFilterValue(item.value)}>
                   {item.label} <span>{loading ? '—' : item.count}</span>
                 </button>
               ))}
-            </div>
+            </div>}
             {toolbarNote && <span className="data-note">{toolbarNote}</span>}
             <div className="data-toolbar-controls">
               <label className="admin-search-field"><Search size={15} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Rechercher" aria-label={section === 'occupants' ? 'Rechercher un occupant' : section === 'users' ? 'Rechercher un utilisateur' : section === 'program' ? 'Rechercher dans le programme' : section === 'b2b' ? 'Rechercher un besoin' : section === 'studio' ? 'Rechercher une invitation' : section === 'challenges' ? 'Rechercher un participant' : section === 'wheel' ? 'Rechercher un lot' : 'Rechercher une demande'} /></label>
@@ -338,7 +361,7 @@ export default function BackofficePage({ session, onLogout, section }) {
           </header>
           {error && <p className="panel-message is-error">{error}</p>}
           {loading && <p className="panel-message">Chargement des données...</p>}
-          {!loading && !error && section === 'occupants' && <OccupantsTable occupants={rows} contactStats={contactStats} query={query} onQrCode={setQrCode} onEdit={(item) => setDrawer({ type: 'occupant', item })} onDelete={requestOccupantDelete} />}
+          {!loading && !error && section === 'occupants' && <OccupantsTable occupants={rows} contactStats={contactStats} query={query} onEdit={(item) => setDrawer({ type: 'occupant', item })} onDelete={requestOccupantDelete} />}
           {!loading && !error && section === 'users' && <UsersTable users={rows} query={query} currentUserId={session.user.id} onEdit={(item) => setDrawer({ type: 'user', item })} onDelete={requestUserDelete} />}
           {!loading && !error && section === 'program' && <ProgramEventsTable events={rows} query={query} onEdit={(item) => setDrawer({ type: 'program', item })} onDelete={requestProgramDelete} />}
           {!loading && !error && section === 'investor-requests' && <InvestorRequestsTable requests={rows} query={query} showStand={isSuperAdmin} onEdit={(item) => setDrawer({ type: 'investor-request', item })} />}
@@ -349,6 +372,7 @@ export default function BackofficePage({ session, onLogout, section }) {
         </section>
         {section === 'wheel' && !loading && !error && <section className="data-panel wheel-codes-panel"><h2>Derniers codes</h2><WheelCodesTable codes={wheel.codes} /></section>}
       </main>
+      )}
 
       {drawer?.type === 'occupant' && <OccupantDrawer occupant={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'user' && <UserDrawer user={drawer.item} occupants={occupants} token={session.token} currentRole={session.user.role} currentUserId={session.user.id} onClose={() => setDrawer(null)} onSaved={saved} />}

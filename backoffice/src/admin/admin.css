@@ -280,3 +280,33 @@
 .admin-app .gallery-add { aspect-ratio: 1; display: grid; place-items: center; align-content: center; gap: 4px; border: 1px dashed #b9bdc0; border-radius: 10px; color: var(--green); background: #fafafa; font-size: 12px; font-weight: 700; cursor: pointer; }
 .admin-app .gallery-add input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .admin-app .gallery-add:hover { border-color: var(--green); background: var(--tint); }
+
+/* Fiche d'un stand : en-tête avec retour, champs « libellé : valeur », images en vignettes, tableaux rattachés. */
+.admin-app .occupant-row.is-link { cursor: pointer; }
+.admin-app .occupant-row a { color: inherit; text-decoration: none; }
+.admin-app .occupant-row a:hover strong { text-decoration: underline; }
+.admin-app .stand-title { min-width: 0; display: flex; align-items: center; gap: 10px; }
+.admin-app .stand-title h1 { min-width: 0; overflow-wrap: anywhere; }
+.admin-app .stand-panel { margin-bottom: 14px; }
+.admin-app .stand-panel > h2 { margin: 0; padding: 8px 12px; border-bottom: 1px solid var(--frame); background: #fafafa; font-size: 14px; }
+.admin-app .stand-panel > h2 span { margin-left: 4px; color: #8a8e92; font-weight: 600; }
+.admin-app .stand-fields { margin: 0; }
+.admin-app .stand-field { display: grid; grid-template-columns: 180px minmax(0, 1fr); border-bottom: 1px solid var(--grid); }
+.admin-app .stand-field:last-child { border-bottom: 0; }
+.admin-app .stand-field dt { padding: 9px 12px; border-right: 1px solid var(--grid); color: var(--muted); background: #fafafa; font-size: 13px; font-weight: 600; }
+.admin-app .stand-field dd { min-width: 0; margin: 0; padding: 9px 12px; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.admin-app .stand-field ul { margin: 0; padding-left: 18px; }
+.admin-app .stand-field a { color: var(--green); }
+.admin-app .stand-text { margin: 0; white-space: pre-line; }
+.admin-app .stand-empty { color: #9a9d9b; }
+.admin-app .stand-nowrap { white-space: nowrap; }
+.admin-app .stand-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; padding: 10px; }
+.admin-app .stand-photos a { display: grid; gap: 4px; color: var(--muted); font-size: 12px; text-decoration: none; }
+.admin-app .stand-photos img { width: 100%; aspect-ratio: 4 / 3; display: block; object-fit: cover; border: 1px solid var(--grid); background: #f3f4f4; }
+.admin-app .stand-photos a.is-logo img { object-fit: contain; padding: 10px; background: #fff; }
+@media (max-width: 620px) {
+  .admin-app .stand-field { grid-template-columns: 1fr; }
+  .admin-app .stand-field dt { padding-bottom: 2px; border-right: 0; background: none; }
+  .admin-app .stand-field dd { padding-top: 0; }
+  .admin-app .stand-photos { grid-template-columns: repeat(2, 1fr); }
+}
