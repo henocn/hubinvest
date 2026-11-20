@@ -185,12 +185,35 @@ body {
 
 .team-user {
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
   margin: auto 10px 0;
   padding: 14px 4px calc(16px + env(safe-area-inset-bottom));
   border-top: 1px solid var(--border);
+}
+
+/* Nom et avatar : lien vers le profil. */
+.team-user-link {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  margin: -4px;
+  padding: 4px;
+  border-radius: 10px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.team-user-link:hover,
+.team-user-link.is-active {
+  background: var(--tint);
+}
+
+.team-user-link.is-active strong {
+  color: var(--green);
 }
 
 .team-user-avatar {

@@ -27,7 +27,7 @@ import { tableSettings } from '../constants/tables';
 import { exportToExcel } from '../../lib/excel';
 import { api } from '../lib/api';
 import { useRealtimeEvent } from '../../lib/realtime';
-import { meetingTabs } from '../../navigation';
+import { adminSections, groupTabs, sectionGroups } from '../../navigation';
 import { useDashboard } from '../dashboard';
 
 const sectionMeta = {
@@ -44,7 +44,9 @@ const sectionMeta = {
 export default function BackofficePage({ session, onLogout, section }) {
   const isSuperAdmin = session.user.role === 'super-admin';
   const todo = useDashboard()?.data?.todo || {};
-  const visibleMeetingTabs = meetingTabs.filter((item) => isSuperAdmin || !item.superOnly);
+  // Onglets de la rubrique quand elle fait partie d'un groupe (Rencontres, Jeux).
+  const group = adminSections.find((item) => item.section === section)?.group;
+  const tabs = group ? groupTabs(group, session.user.role) : [];
   const location = useLocation();
   const navigate = useNavigate();
   // Fiche d'un stand : /stands/<id>.
@@ -354,13 +356,13 @@ export default function BackofficePage({ session, onLogout, section }) {
       ) : (
       <main className="admin-workspace">
         <header className="workspace-header">
-          {meetingTabs.some((item) => item.section === section) && visibleMeetingTabs.length > 1 ? (
-            // Rencontres : un titre et deux onglets, B2B et Investor Desk, avec ce qui attend une action.
-            // Un administrateur de stand n'a que la Rencontre B2B : un simple titre.
+          {tabs.length > 1 ? (
+            // Groupe de rubriques : un titre et ses onglets, avec ce qui attend une action.
+            // Un administrateur de stand n'a que la Rencontre B2B dans Rencontres : un simple titre.
             <div className="section-heading">
-              <h1>Rencontres</h1>
-              <nav className="section-tabs" aria-label="Rencontres">
-                {visibleMeetingTabs.map((item) => (
+              <h1>{sectionGroups[group].label}</h1>
+              <nav className="section-tabs" aria-label={sectionGroups[group].label}>
+                {tabs.map((item) => (
                   <NavLink key={item.path} to={item.path} className={({ isActive }) => (isActive ? 'is-active' : '')}>
                     {item.label}{todo[item.section] > 0 && <b>{todo[item.section]}</b>}
                   </NavLink>

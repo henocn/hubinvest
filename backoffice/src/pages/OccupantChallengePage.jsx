@@ -49,7 +49,7 @@ export default function OccupantChallengePage({ session, onLogout }) {
   }, [realtimeConnected, refreshStats]);
 
   const prepareClassification = useCallback((value) => {
-    const normalized = value.trim().toUpperCase().replace(/[s-]/g, '');
+    const normalized = value.trim().toUpperCase().replace(/[\s-]/g, '');
     // Un code de 4 caractères est un code de jeu de la roue : on retrouve le lot gagné pour le remettre.
     if (wheelCodePattern.test(normalized)) {
       setError('');

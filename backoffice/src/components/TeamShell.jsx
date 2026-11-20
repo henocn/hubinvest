@@ -122,11 +122,14 @@ function TeamShellLayout() {
         </nav>
 
         <div className="team-user">
-          <span className="team-user-avatar"><UserRound size={18} /></span>
-          <div>
-            <strong>{user.firstName} {user.lastName}</strong>
-            <span>{roleLabels[user.role]}</span>
-          </div>
+          {/* Le nom et l'avatar mènent au profil (il n'y a pas d'entrée « Profil » dans le menu). */}
+          <NavLink className={({ isActive }) => `team-user-link${isActive ? ' is-active' : ''}`} to="/profil" aria-label={`Mon profil, ${user.firstName} ${user.lastName}`} title="Mon profil">
+            <span className="team-user-avatar"><UserRound size={18} /></span>
+            <div>
+              <strong>{user.firstName} {user.lastName}</strong>
+              <span>{roleLabels[user.role]}</span>
+            </div>
+          </NavLink>
           <span className="team-user-actions admin-app">
             <PushToggleButton token={token} />
             <button className="admin-icon-button" type="button" onClick={signOut} aria-label="Se déconnecter" title="Se déconnecter"><LogOut size={18} /></button>
