@@ -9,7 +9,7 @@ const modules = [
   { key: 'contactRequestsOpen', title: 'Demandes de contact aux stands' },
   { key: 'investorDeskOpen', title: 'Investor Desk' },
   { key: 'b2bOpen', title: 'Propositions B2B' },
-  { key: 'challengeOpen', title: 'Défis' },
+  { key: 'challengeOpen', title: 'Défi de passage' },
   { key: 'wheelOpen', title: 'Roue des opportunités' },
   { key: 'liveQuestionsOpen', title: 'Questions en direct' },
 ];
@@ -98,7 +98,7 @@ export default function SettingsPage({ session, onLogout }) {
           </section>
 
           <section className="data-panel settings-panel">
-            <h2>Défis</h2>
+            <h2>Défi de passage</h2>
             <form className="settings-row" onSubmit={savePassages}>
               <span>
                 <strong>Stands à visiter pour terminer le parcours</strong>

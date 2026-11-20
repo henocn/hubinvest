@@ -9,7 +9,7 @@ export const adminSections = [
   { section: 'b2b', path: '/b2b', label: 'Rencontre B2B', Icon: Handshake, group: 'meetings' },
   // Guichet de l'API-ZF : réservé à son équipe (super administrateurs).
   { section: 'investor-requests', path: '/investor-desk', label: 'Investor Desk', Icon: Handshake, group: 'meetings', superOnly: true },
-  { section: 'challenges', path: '/participants', label: 'Défis', Icon: Trophy, group: 'games' },
+  { section: 'challenges', path: '/participants', label: 'Défi de passage', Icon: Trophy, group: 'games' },
   { section: 'wheel', path: '/roue', label: 'Roue des opportunités', Icon: Disc3, group: 'games' },
 ];
 

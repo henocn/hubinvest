@@ -34,7 +34,7 @@ const sectionMeta = {
   program: { title: 'Programme' },
   'investor-requests': { title: 'Investor Desk' },
   b2b: { title: 'Rencontre B2B' },
-  challenges: { title: 'Participants aux défis' },
+  challenges: { title: 'Défi de passage' },
   wheel: { title: 'Roue des opportunités' },
 };
 
