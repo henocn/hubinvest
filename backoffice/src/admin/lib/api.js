@@ -68,6 +68,8 @@ export const api = {
   deleteOccupant: (token, id) =>
     request(`/occupants/${id}`, authorized(token, { method: 'DELETE' })),
   investorRequests: (token) => request('/investor-requests', authorized(token)),
+  createInvestorRequest: (token, values) =>
+    request('/investor-requests', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   updateInvestorRequest: (token, id, values) =>
     request(`/investor-requests/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
   b2bNeeds: (token) => request('/b2b-needs', authorized(token)),

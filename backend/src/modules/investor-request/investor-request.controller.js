@@ -13,9 +13,14 @@ const createPublic = async (request, response) => {
   });
 };
 
+const createManual = async (request, response) => {
+  const investorRequest = await investorRequestService.createManual(request.user, request.body);
+  response.status(201).json({ data: investorRequest, message: 'Demande ajoutée.' });
+};
+
 const update = async (request, response) => {
   const investorRequest = await investorRequestService.update(request.user, request.params.id, request.body);
   response.json({ data: investorRequest, message: 'Suivi mis à jour.' });
 };
 
-module.exports = { list, createPublic, update };
+module.exports = { list, createPublic, createManual, update };

@@ -17,6 +17,7 @@ router.post(
 
 router.use(asyncHandler(authenticate), investorDeskOnly);
 router.get('/', validate(investorRequestValidation.query, 'query'), asyncHandler(investorRequestController.list));
+router.post('/', validate(investorRequestValidation.createManual), asyncHandler(investorRequestController.createManual));
 router.patch(
   '/:id',
   validate(investorRequestValidation.params, 'params'),

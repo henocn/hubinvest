@@ -1173,3 +1173,21 @@ test('la galerie d’un stand garde 5 images au plus et retire le fichier refus�
   assert.deepEqual(occupant.gallery, ['/uploads/gallery/b.jpg', '/uploads/gallery/c.jpg', '/uploads/gallery/d.jpg', '/uploads/gallery/e.jpg']);
   await assert.rejects(occupantService.removeGalleryImage('stand-a', '/uploads/gallery/zz.jpg'), (error) => error.code === 'GALLERY_IMAGE_NOT_FOUND');
 });
+
+test('une demande Investor Desk saisie par un administrateur de stand reste sur son stand, même module fermé', async (context) => {
+  const created = [];
+  context.mock.method(investorRequestRepository, 'findActiveOccupantById', async (id) => ({ id, name: 'Stand' }));
+  context.mock.method(investorRequestRepository, 'create', async (values) => { created.push(values); return values; });
+  const values = { fullName: 'Ama Kodjo', email: 'Ama@Example.com', projectSummary: 'Projet de transformation du soja.', status: 'new', consentApizf: false };
+
+  await investorRequestService.createManual({ id: 'admin-a', role: 'admin', occupantId: 'stand-a' }, { ...values, occupantId: 'stand-b' });
+  assert.equal(created[0].occupantId, 'stand-a');
+  assert.equal(created[0].assignedToUserId, 'admin-a');
+  assert.equal(created[0].email, 'ama@example.com');
+
+  await assert.rejects(
+    investorRequestService.createManual({ id: 'super', role: 'super-admin' }, values),
+    (error) => error.status === 422 && error.code === 'OCCUPANT_REQUIRED',
+  );
+  assert.equal(investorRequestValidation.createManual.validate({ ...values, email: 'pas-un-email' }).error?.details[0].path[0], 'email');
+});

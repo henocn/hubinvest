@@ -45,6 +45,29 @@ const createPublic = async (values, language = 'fr') => {
   return investorRequest;
 };
 
+// Demande saisie dans le back office : pas de module à ouvrir ni de notification, la personne qui saisit en est responsable.
+const createManual = async (user, values) => {
+  const occupantId = standFor(user) || values.occupantId;
+  if (!occupantId) throw new AppError(422, 'OCCUPANT_REQUIRED', 'Choisissez le stand concerné.');
+  const occupant = await investorRequestRepository.findActiveOccupantById(occupantId);
+  if (!occupant) throw new AppError(422, 'OCCUPANT_NOT_FOUND', 'Le stand choisi n’est pas disponible.');
+  const investorRequest = await investorRequestRepository.create({
+    occupantId,
+    fullName: values.fullName,
+    email: values.email.toLowerCase(),
+    phone: values.phone || null,
+    projectSummary: values.projectSummary,
+    status: values.status,
+    nextAction: values.nextAction || null,
+    assignedToUserId: user.id,
+    language: 'fr',
+    consentApizf: values.consentApizf,
+    consentCapturedAt: new Date(),
+  });
+  realtime.investorRequestsChanged(occupantId);
+  return investorRequest;
+};
+
 const update = async (user, id, values) => {
   const investorRequest = await investorRequestRepository.findById(id, standFor(user));
   if (!investorRequest) {
@@ -59,4 +82,4 @@ const update = async (user, id, values) => {
   return updated;
 };
 
-module.exports = { list, createPublic, update };
+module.exports = { list, createPublic, createManual, update };
