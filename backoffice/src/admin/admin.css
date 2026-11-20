@@ -16,6 +16,8 @@
   --muted: #4d4d4d;
   --line: #d9dcde;
   --surface: #ffffff;
+  --frame: rgba(15, 24, 34, .2);
+  --grid: rgba(15, 24, 34, .1);
 }
 
 .admin-app h1, .admin-app h2, .admin-app h3, .admin-app h4 { font-family: var(--font-display); font-weight: 700; }
@@ -57,7 +59,7 @@
 .admin-app .button:disabled { cursor: wait; opacity: .65; }
 .admin-app .button-primary { color: #fff; background: var(--red); }
 .admin-app .button-primary:hover { filter: none; background: var(--red-dark); }
-.admin-app .button-secondary { color: var(--ink); border-color: #111; background: #fff; }
+.admin-app .button-secondary { color: var(--ink); border-color: var(--frame); background: #fff; }
 .admin-app .button-danger { color: var(--red-dark); border-color: var(--red); background: #fff; }
 .admin-app .button-danger:hover { filter: none; background: #fff4f6; }
 .admin-app .button-large { padding: 12px 16px; margin-top: 3px; }
@@ -72,15 +74,16 @@
 .admin-app .workspace-header h1 { font-size: 20px; font-weight: 700; }
 .admin-app .workspace-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 .admin-app .eyebrow { display: block; color: var(--green); font-size: 11px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
-.admin-app .data-panel { overflow: hidden; border: 1px solid #111; background: #fff; }
-.admin-app .data-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; padding: 8px 10px; border-bottom: 1px solid #111; }
+.admin-app .data-panel { overflow: hidden; border: 1px solid var(--frame); background: #fff; }
+.admin-app .data-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; padding: 8px 10px; border-bottom: 1px solid var(--frame); }
 .admin-app .admin-search-field { position: relative; width: 200px; display: block; }
 .admin-app .admin-search-field svg { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: #8b8f94; }
 .admin-app .admin-search-field input { padding: 6px 10px 6px 30px; font-size: 13px; }
 .admin-app .table-scroll { overflow-x: auto; }
 .admin-app table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.admin-app th, .admin-app td { padding: .55rem .75rem; border-bottom: 1px solid #e3e4e5; text-align: left; vertical-align: middle; }
-.admin-app th { color: #111; background: #fafafa; border-bottom-color: #111; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.admin-app th, .admin-app td { padding: .55rem .75rem; border-right: 1px solid var(--grid); border-bottom: 1px solid var(--grid); text-align: left; vertical-align: middle; }
+.admin-app th:last-child, .admin-app td:last-child { border-right: 0; }
+.admin-app th { color: #111; background: #fafafa; border-bottom-color: var(--frame); font-size: 12px; font-weight: 700; white-space: nowrap; }
 .admin-app tbody tr:last-child td { border-bottom: 0; }
 .admin-app tbody tr:hover { background: #fdfdfc; }
 .admin-app .occupant-row.is-active { background: rgba(21, 108, 83, .045); }
@@ -155,11 +158,11 @@
 .admin-app .admin-empty-state { margin: 0; padding: 14px 12px; color: var(--muted); font-size: 13px; }
 
 .admin-app .drawer-backdrop { position: fixed; inset: 0; z-index: 20; display: flex; justify-content: flex-end; background: rgba(15, 24, 34, .34); backdrop-filter: blur(2px); }
-.admin-app .drawer { width: min(480px, 100%); height: 100%; overflow-y: auto; padding: 22px; border-left: 1px solid #111; background: #fff; animation: drawer-in .2s ease-out; }
+.admin-app .drawer { width: min(480px, 100%); height: 100%; overflow-y: auto; padding: 22px; border-left: 1px solid var(--frame); background: #fff; animation: drawer-in .2s ease-out; }
 .admin-app .drawer-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 20px; }
 .admin-app .drawer-header h2 { margin: 2px 0 0; font-size: 19px; }
 .admin-app .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.admin-app .drawer-actions { position: sticky; bottom: -22px; margin: 9px -22px -22px; padding: 12px 22px; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid #111; background: #fff; }
+.admin-app .drawer-actions { position: sticky; bottom: -22px; margin: 9px -22px -22px; padding: 12px 22px; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--frame); background: #fff; }
 .admin-app .investor-request-detail { display: grid; gap: 18px; margin-bottom: 28px; padding-bottom: 26px; border-bottom: 1px solid var(--line); }
 .admin-app .investor-request-detail > div { display: grid; gap: 5px; }
 .admin-app .investor-request-detail span { color: var(--muted); font-size: 11px; font-weight: 750; text-transform: uppercase; letter-spacing: .05em; }
@@ -173,14 +176,14 @@
 @keyframes drawer-in { from { transform: translateX(22px); opacity: .6; } }
 
 .admin-app .dialog-backdrop { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: 20px; background: rgba(15, 24, 34, .45); backdrop-filter: blur(2px); }
-.admin-app .qr-dialog { width: min(400px, 100%); padding: 18px; border: 1px solid #111; background: #fff; }
+.admin-app .qr-dialog { width: min(400px, 100%); padding: 18px; border: 1px solid var(--frame); background: #fff; }
 .admin-app .qr-dialog > header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .admin-app .qr-dialog h2 { margin: 0; font-size: 19px; }
 .admin-app .qr-dialog > img { width: min(240px, 100%); display: block; margin: 22px auto 16px; }
 .admin-app .qr-address { display: block; overflow: hidden; color: var(--muted); font-size: 11px; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
 .admin-app .qr-dialog > footer { display: flex; justify-content: flex-end; gap: 9px; margin-top: 22px; }
 .admin-app .qr-dialog a.button { text-decoration: none; }
-.admin-app .confirm-dialog { width: min(430px, 100%); display: grid; grid-template-columns: 1fr; gap: 10px; padding: 18px; border: 1px solid #111; background: #fff; }
+.admin-app .confirm-dialog { width: min(430px, 100%); display: grid; grid-template-columns: 1fr; gap: 10px; padding: 18px; border: 1px solid var(--frame); background: #fff; }
 .admin-app .danger-icon, .admin-app .reward-icon { display: none; }
 .admin-app .confirm-dialog h2 { margin: 0; font-size: 19px; letter-spacing: -0.015em; }
 .admin-app .confirm-dialog p { margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
@@ -207,7 +210,7 @@
 .admin-app .wheel-code-row.is-won { background: rgba(21, 108, 83, .045); }
 .admin-app .wheel-code-row.is-expired td { color: #8a8f94; }
 .admin-app .wheel-codes-panel { margin-top: 14px; }
-.admin-app .wheel-codes-panel > h2 { margin: 0; padding: 8px 10px; border-bottom: 1px solid #111; font-size: 14px; }
+.admin-app .wheel-codes-panel > h2 { margin: 0; padding: 8px 10px; border-bottom: 1px solid var(--frame); font-size: 14px; }
 .admin-app .wheel-code-value { display: block; margin: 26px 0 10px; color: var(--ink); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: clamp(40px, 12vw, 56px); font-weight: 800; letter-spacing: .16em; text-align: center; }
 .admin-app .wheel-code-hint { margin: 0; color: var(--muted); font-size: 13px; text-align: center; }
 
@@ -231,8 +234,8 @@
 
 /* Paramètres : une ligne par réglage, interrupteur à droite. */
 .admin-app .settings-panel { margin-bottom: 14px; }
-.admin-app .settings-panel > h2 { margin: 0; padding: 8px 12px; border-bottom: 1px solid #111; background: #fafafa; font-size: 14px; }
-.admin-app .settings-row { display: flex; flex-direction: row; align-items: center; gap: 12px; padding: 9px 12px; border-bottom: 1px solid #e3e4e5; color: var(--ink); font-size: 14px; cursor: pointer; }
+.admin-app .settings-panel > h2 { margin: 0; padding: 8px 12px; border-bottom: 1px solid var(--frame); background: #fafafa; font-size: 14px; }
+.admin-app .settings-row { display: flex; flex-direction: row; align-items: center; gap: 12px; padding: 9px 12px; border-bottom: 1px solid var(--grid); color: var(--ink); font-size: 14px; cursor: pointer; }
 .admin-app .settings-row:last-child { border-bottom: 0; }
 .admin-app .settings-row > span:first-child { flex: 1; min-width: 0; display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; }
 .admin-app .settings-row small { color: var(--red); font-size: 12px; font-weight: 600; }
@@ -252,10 +255,10 @@
 .admin-app .wheel-unclaimed { color: #b70f2c; font-weight: 700; }
 
 /* Tableau de bord : d'abord ce qui attend une action, puis les chiffres. */
-.admin-app .dashboard-group { margin-bottom: 14px; overflow: hidden; border: 1px solid #111; background: #fff; }
-.admin-app .dashboard-group > h2 { margin: 0; padding: 8px 12px; border-bottom: 1px solid #111; background: #fafafa; font-size: 14px; }
+.admin-app .dashboard-group { margin-bottom: 14px; overflow: hidden; border: 1px solid var(--frame); background: #fff; }
+.admin-app .dashboard-group > h2 { margin: 0; padding: 8px 12px; border-bottom: 1px solid var(--frame); background: #fafafa; font-size: 14px; }
 .admin-app .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); margin: 0 -1px -1px 0; }
-.admin-app .dashboard-stat { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 12px; border-right: 1px solid #e3e4e5; border-bottom: 1px solid #e3e4e5; color: var(--ink); text-decoration: none; }
+.admin-app .dashboard-stat { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 12px; border-right: 1px solid var(--grid); border-bottom: 1px solid var(--grid); color: var(--ink); text-decoration: none; }
 .admin-app a.dashboard-stat:hover { background: #f6f7f7; }
 .admin-app .dashboard-stat strong { font-size: 16px; font-variant-numeric: tabular-nums; }
 .admin-app .dashboard-stat span { min-width: 0; font-size: 13px; font-weight: 600; }
