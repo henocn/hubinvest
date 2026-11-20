@@ -1,6 +1,7 @@
 const errorKeys = {
   CONSENT_REQUIRED: 'common.consentRequired',
   VALIDATION_ERROR: 'common.validationFailed',
+  RATE_LIMITED: 'common.rateLimited',
   WHEEL_CODE_INVALID: 'wheel.errors.invalid',
   WHEEL_CODE_USED: 'wheel.errors.used',
   WHEEL_CODE_TAKEN: 'wheel.errors.taken',

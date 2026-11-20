@@ -26,6 +26,7 @@ export default {
     optional: "optional",
     loading: "Loading…",
     requestFailed: "Something went wrong. Please try again.",
+    rateLimited: "You have sent several requests. Please wait a few minutes.",
     validationFailed: "Some information is invalid. Check the fields.",
     consentRequired: "Your consent is required to continue.",
     send: "Submit",

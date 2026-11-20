@@ -5,6 +5,7 @@ const { authenticate, requireRoles } = require('../../middlewares/auth.middlewar
 const roles = require('../../shared/roles');
 const investorRequestValidation = require('./investor-request.validation');
 const investorRequestController = require('./investor-request.controller');
+const rateLimit = require('../../middlewares/rate-limit.middleware');
 
 const router = express.Router();
 // Guichet de l'API-ZF : réservé à son équipe (super administrateurs), pas aux administrateurs de stand.
@@ -12,6 +13,7 @@ const investorDeskOnly = requireRoles(roles.SUPER_ADMIN);
 
 router.post(
   '/public',
+  rateLimit.publicForm('investor-desk'),
   validate(investorRequestValidation.createPublic),
   asyncHandler(investorRequestController.createPublic),
 );

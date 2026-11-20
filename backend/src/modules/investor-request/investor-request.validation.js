@@ -31,7 +31,8 @@ const params = Joi.object({ id: uuid.required() });
 const query = Joi.object({
   status: Joi.string().valid('new', 'in_progress', 'closed'),
   search: Joi.string().trim().max(100).allow(''),
-  limit: Joi.number().integer().min(1).max(100).default(50),
+  // Sans limite, toutes les lignes : le back office et les exports Excel doivent tout voir.
+  limit: Joi.number().integer().min(1).max(5000),
   offset: Joi.number().integer().min(0).default(0),
 });
 

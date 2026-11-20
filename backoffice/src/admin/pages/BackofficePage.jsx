@@ -65,6 +65,8 @@ export default function BackofficePage({ session, onLogout, section }) {
   const [search, setSearch] = useState('');
   const [sortValue, setSortValue] = useState('');
   const [exporting, setExporting] = useState(false);
+  // Une erreur d'export s'affiche au-dessus du tableau, sans le masquer.
+  const [exportError, setExportError] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [drawer, setDrawer] = useState(null);
@@ -186,6 +188,7 @@ export default function BackofficePage({ session, onLogout, section }) {
   useEffect(() => {
     setSearch('');
     setSortValue('');
+    setExportError('');
   }, [section]);
 
   // Tri du tableau affiché : le premier tri proposé est celui par défaut.
@@ -217,6 +220,7 @@ export default function BackofficePage({ session, onLogout, section }) {
   // Exporte les lignes cochées, sinon toutes les lignes affichées.
   const exportRows = async () => {
     setExporting(true);
+    setExportError('');
     try {
       const data = checkedCount ? selection.selected : rows;
       await exportToExcel({
@@ -225,8 +229,8 @@ export default function BackofficePage({ session, onLogout, section }) {
         columns: settings.columns({ contactStats, publicBaseUrl }),
         rows: data,
       });
-    } catch (requestError) {
-      setError(requestError.message);
+    } catch (exportFailure) {
+      setExportError(`Export impossible : ${exportFailure.message}`);
     } finally {
       setExporting(false);
     }
@@ -377,6 +381,7 @@ export default function BackofficePage({ session, onLogout, section }) {
               </button>
             </div>
           </header>
+          {exportError && <p className="panel-message is-error" role="alert">{exportError}</p>}
           {error && <p className="panel-message is-error">{error}</p>}
           {loading && <p className="panel-message">Chargement des données...</p>}
           {!loading && !error && section === 'occupants' && <OccupantsTable selection={selection} occupants={rows} contactStats={contactStats} query={query} onEdit={(item) => setDrawer({ type: 'occupant', item })} onDelete={requestOccupantDelete} />}

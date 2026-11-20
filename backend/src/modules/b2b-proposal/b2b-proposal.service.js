@@ -23,7 +23,8 @@ const createPublic = async (needId, values, language = 'fr') => {
     handledByUserId: null,
   });
   notificationService.b2bProposalReceived(proposal, need);
-  realtime.b2bChanged(need.occupantId);
+  // Le besoin public ne porte pas occupantId : le stand se lit sur need.occupant.
+  realtime.b2bChanged(need.occupant.id);
   return proposal;
 };
 

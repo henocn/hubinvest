@@ -5,12 +5,13 @@ const { authenticate, requireRoles } = require('../../middlewares/auth.middlewar
 const roles = require('../../shared/roles');
 const challengePassportValidation = require('./challenge-passport.validation');
 const challengePassportController = require('./challenge-passport.controller');
+const rateLimit = require('../../middlewares/rate-limit.middleware');
 
 const router = express.Router();
 const challengeManagers = requireRoles(roles.SUPER_ADMIN, roles.ADMIN);
 const rewardTeamOnly = requireRoles(roles.SUPER_ADMIN, roles.ANIMATOR);
 
-router.post('/public', validate(challengePassportValidation.createPublic), asyncHandler(challengePassportController.createPublic));
+router.post('/public', rateLimit.publicForm('challenge'), validate(challengePassportValidation.createPublic), asyncHandler(challengePassportController.createPublic));
 router.get('/public/:token', validate(challengePassportValidation.tokenParams, 'params'), asyncHandler(challengePassportController.getPublic));
 
 router.use(asyncHandler(authenticate));

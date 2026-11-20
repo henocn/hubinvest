@@ -26,6 +26,7 @@ export default {
     optional: "facultatif",
     loading: "Chargement…",
     requestFailed: "Une erreur est survenue. Réessayez.",
+    rateLimited: "Vous avez envoyé plusieurs demandes. Patientez quelques minutes.",
     validationFailed: "Certaines informations sont invalides. Vérifiez les champs.",
     consentRequired: "Votre accord est nécessaire pour continuer.",
     send: "Transmettre",
