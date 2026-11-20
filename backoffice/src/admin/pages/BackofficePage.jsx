@@ -57,7 +57,6 @@ export default function BackofficePage({ session, onLogout, section }) {
   const [wheel, setWheel] = useState({ segments: [], codes: [], stats: { played: 0, awarded: 0, remaining: 0 } });
   const [wheelCode, setWheelCode] = useState(null);
   const [search, setSearch] = useState('');
-  const [filterValue, setFilterValue] = useState('');
   const [sortValue, setSortValue] = useState('');
   const [exporting, setExporting] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -182,19 +181,14 @@ export default function BackofficePage({ session, onLogout, section }) {
   // Chaque rubrique s'ouvre avec une recherche vide.
   useEffect(() => {
     setSearch('');
-    setFilterValue('');
     setSortValue('');
   }, [section]);
 
-  // Filtre et tri du tableau affiché : le premier tri proposé est celui par défaut.
+  // Tri du tableau affiché : le premier tri proposé est celui par défaut.
   const settings = tableSettings[section];
-  const matchesFilter = (item, value) => {
-    const result = settings.filterOf(item, value);
-    return result === true || result === value;
-  };
   const arrange = (items) => {
     const sorter = settings.sorts.find((item) => item.value === sortValue) || settings.sorts[0];
-    return (filterValue ? items.filter((item) => matchesFilter(item, filterValue)) : [...items]).sort(sorter.compare);
+    return [...items].sort(sorter.compare);
   };
   const sectionRows = {
     occupants: visibleOccupants,
@@ -206,11 +200,8 @@ export default function BackofficePage({ session, onLogout, section }) {
     challenges: visibleChallengePassports,
     wheel: visibleWheelSegments,
   };
-  const baseRows = sectionRows[section] || [];
-  const rows = arrange(baseRows);
-  // Les filtres portent leur nombre de lignes : plus besoin de tuiles de résumé au-dessus du tableau.
-  const filterChips = [{ value: '', label: 'Tous', count: baseRows.length }, ...settings.filters.map((item) => ({ ...item, count: baseRows.filter((row) => matchesFilter(row, item.value)).length }))];
-  // Repères qu'aucun filtre ne donne, affichés en une ligne discrète.
+  const rows = arrange(sectionRows[section] || []);
+  // Repères de la roue, affichés en une ligne discrète.
   const toolbarNote = loading || error ? '' : section === 'wheel'
     ? `${wheel.stats.played} partie${wheel.stats.played > 1 ? 's' : ''} · ${wheel.stats.awarded} lot${wheel.stats.awarded > 1 ? 's' : ''} gagné${wheel.stats.awarded > 1 ? 's' : ''} · ${wheel.stats.remaining} restant${wheel.stats.remaining > 1 ? 's' : ''}`
     : '';
@@ -341,16 +332,9 @@ export default function BackofficePage({ session, onLogout, section }) {
 
         <section className="data-panel">
           <header className="data-toolbar">
-            {section !== 'occupants' && <div className="filter-chips" role="group" aria-label={settings.filterLabel}>
-              {filterChips.map((item) => (
-                <button key={item.value || 'all'} type="button" className={item.value === filterValue ? 'is-active' : ''} aria-pressed={item.value === filterValue} onClick={() => setFilterValue(item.value)}>
-                  {item.label} <span>{loading ? '—' : item.count}</span>
-                </button>
-              ))}
-            </div>}
-            {toolbarNote && <span className="data-note">{toolbarNote}</span>}
             <div className="data-toolbar-controls">
               <label className="admin-search-field"><Search size={15} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Rechercher" aria-label={section === 'occupants' ? 'Rechercher un occupant' : section === 'users' ? 'Rechercher un utilisateur' : section === 'program' ? 'Rechercher dans le programme' : section === 'b2b' ? 'Rechercher un besoin' : section === 'studio' ? 'Rechercher une invitation' : section === 'challenges' ? 'Rechercher un participant' : section === 'wheel' ? 'Rechercher un lot' : 'Rechercher une demande'} /></label>
+              {toolbarNote && <span className="data-note">{toolbarNote}</span>}
               <select value={sortValue || settings.sorts[0].value} onChange={(event) => setSortValue(event.target.value)} aria-label="Trier">
                 {settings.sorts.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
               </select>

@@ -15,19 +15,13 @@ const sorts = (dateOf, nameOf) => [
   { value: 'az', label: 'A → Z', compare: byText(nameOf) },
 ];
 
-const options = (labels) => Object.entries(labels).map(([value, label]) => ({ value, label }));
-
 /**
  * Réglages de chaque tableau de l'administration :
- * - filters : filtre principal (statut, type…) ;
  * - sorts : ordres de tri ;
  * - exportName / columns : fichier Excel et ses colonnes.
  */
 export const tableSettings = {
   occupants: {
-    filterLabel: 'Statut',
-    filters: [{ value: 'active', label: 'Actifs' }, { value: 'inactive', label: 'Inactifs' }],
-    filterOf: (item) => item.status,
     sorts: [{ value: 'az', label: 'A → Z', compare: byText((item) => item.name) }, ...sorts((item) => item.createdAt, (item) => item.name).slice(0, 2)],
     exportName: 'stands',
     columns: (context) => [
@@ -44,9 +38,6 @@ export const tableSettings = {
     ],
   },
   users: {
-    filterLabel: 'Rôle',
-    filters: options(roleLabels),
-    filterOf: (item) => item.role,
     sorts: [{ value: 'az', label: 'A → Z', compare: byText((item) => fullName(item)) }, ...sorts((item) => item.createdAt, fullName).slice(0, 2)],
     exportName: 'acces',
     columns: () => [
@@ -58,9 +49,6 @@ export const tableSettings = {
     ],
   },
   program: {
-    filterLabel: 'Type',
-    filters: options(programTypeLabels),
-    filterOf: (item) => item.type,
     sorts: [
       { value: 'oldest', label: 'Chronologique', compare: byDate((item) => item.startsAt, 1) },
       { value: 'recent', label: 'Plus tard d’abord', compare: byDate((item) => item.startsAt, -1) },
@@ -77,9 +65,6 @@ export const tableSettings = {
     ],
   },
   'investor-requests': {
-    filterLabel: 'Statut',
-    filters: options(investorStatusLabels),
-    filterOf: (item) => item.status,
     sorts: sorts((item) => item.createdAt, (item) => item.fullName),
     exportName: 'investor-desk',
     columns: () => [
@@ -96,9 +81,6 @@ export const tableSettings = {
     ],
   },
   b2b: {
-    filterLabel: 'Statut',
-    filters: [{ value: 'open', label: 'Ouverts' }, { value: 'closed', label: 'Fermés' }],
-    filterOf: (item) => item.status,
     sorts: sorts((item) => item.createdAt, (item) => item.title),
     exportName: 'besoins-b2b',
     columns: () => [
@@ -111,9 +93,6 @@ export const tableSettings = {
     ],
   },
   studio: {
-    filterLabel: 'Réponse',
-    filters: options(studioStatusLabels),
-    filterOf: (item) => item.status,
     sorts: [
       { value: 'oldest', label: 'Chronologique', compare: byDate((item) => item.scheduledAt, 1) },
       { value: 'recent', label: 'Plus tard d’abord', compare: byDate((item) => item.scheduledAt, -1) },
@@ -131,9 +110,6 @@ export const tableSettings = {
     ],
   },
   challenges: {
-    filterLabel: 'Parcours',
-    filters: options(challengeStatusLabels),
-    filterOf: (item) => item.status,
     sorts: [...sorts((item) => item.createdAt, (item) => item.displayName), { value: 'scans', label: 'Plus de stands', compare: (a, b) => (b.passageCount || 0) - (a.passageCount || 0) }],
     exportName: 'participants',
     columns: () => [
@@ -149,9 +125,6 @@ export const tableSettings = {
     ],
   },
   wheel: {
-    filterLabel: 'Case',
-    filters: [{ value: 'prize', label: 'Lots' }, { value: 'lose', label: 'Cases perdantes' }, { value: 'hidden', label: 'Masquées' }],
-    filterOf: (item, value) => (value === 'hidden' ? !item.isActive : item.kind === value),
     sorts: [
       { value: 'az', label: 'A → Z', compare: byText((item) => item.label) },
       { value: 'remaining', label: 'Moins de stock', compare: (a, b) => (a.remaining ?? Infinity) - (b.remaining ?? Infinity) },
