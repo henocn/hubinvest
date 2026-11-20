@@ -1,7 +1,8 @@
 import { Handshake, Pencil } from 'lucide-react';
 import EmptyState from '../EmptyState';
+import { SelectAllHeader, SelectCell } from '../RowSelection';
 
-export default function B2bNeedsTable({ needs, query, onEdit, showStand = true }) {
+export default function B2bNeedsTable({ selection, needs, query, onEdit, showStand = true }) {
   if (!needs.length) {
     return <EmptyState icon={Handshake} title="Aucun besoin B2B" copy={query ? 'Aucun résultat ne correspond à la recherche.' : 'Créez le premier besoin à publier.'} />;
   }
@@ -9,9 +10,9 @@ export default function B2bNeedsTable({ needs, query, onEdit, showStand = true }
   return (
     <div className="table-scroll">
       <table>
-        <thead><tr>{showStand && <th>Stand</th>}<th>Besoin</th><th>Statut</th><th className="actions-heading">Action</th></tr></thead>
+        <thead><tr><SelectAllHeader selection={selection} />{showStand && <th>Stand</th>}<th>Besoin</th><th>Statut</th><th className="actions-heading">Action</th></tr></thead>
         <tbody>{needs.map((need) => (
-          <tr key={need.id} className={`b2b-admin-row is-${need.status}`}>
+          <tr key={need.id} className={`b2b-admin-row is-${need.status}`}><SelectCell selection={selection} id={need.id} />
             {showStand && <td><strong>{need.occupant?.name || '—'}</strong></td>}
             <td><span className="b2b-admin-title">{need.title}</span></td>
             <td>{need.status === 'open' ? 'Ouvert' : 'Fermé'}</td>

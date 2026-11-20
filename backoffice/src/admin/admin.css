@@ -312,3 +312,7 @@
 .admin-app .presence.is-online { color: var(--green); font-weight: 600; }
 .admin-app .presence.is-online::before { background: #00a85a; }
 .admin-app .presence.is-recent::before { background: #f6c800; }
+
+/* Colonne de sélection, comme sur la Semaine de l'Industrie : étroite, case centrée. */
+.admin-app th.select-cell, .admin-app td.select-cell { width: 40px; padding: 0; text-align: center; }
+.admin-app .select-cell input { width: 16px; height: 16px; min-height: 0; margin: 0; padding: 0; vertical-align: middle; accent-color: var(--green); cursor: pointer; }

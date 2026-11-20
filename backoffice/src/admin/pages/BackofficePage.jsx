@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Download, Plus, QrCode, Search, Ticket } from 'lucide-react';
 import ConfirmDelete from '../components/ConfirmDelete';
 import OccupantDetail from '../components/OccupantDetail';
+import { useRowSelection } from '../components/RowSelection';
 import ConfirmReward from '../components/ConfirmReward';
 import QrCodeDialog from '../components/QrCodeDialog';
 import InvestorRequestDrawer from '../components/drawers/InvestorRequestDrawer';
@@ -201,16 +202,28 @@ export default function BackofficePage({ session, onLogout, section }) {
     wheel: visibleWheelSegments,
   };
   const rows = arrange(sectionRows[section] || []);
+  // Lignes cochées : l'export ne prend qu'elles quand il y en a.
+  const selection = useRowSelection(rows);
+  const checkedCount = selection.selected.length;
+  const { clear: clearSelection } = selection;
+  useEffect(() => { clearSelection(); }, [section]); // eslint-disable-line react-hooks/exhaustive-deps
   // Repères de la roue, affichés en une ligne discrète.
   const toolbarNote = loading || error ? '' : section === 'wheel'
     ? `${wheel.stats.played} partie${wheel.stats.played > 1 ? 's' : ''} · ${wheel.stats.awarded} lot${wheel.stats.awarded > 1 ? 's' : ''} gagné${wheel.stats.awarded > 1 ? 's' : ''} · ${wheel.stats.remaining} restant${wheel.stats.remaining > 1 ? 's' : ''}`
     : '';
 
-  // Exporte exactement les lignes affichées ; pour la roue, toutes les parties jouées.
+  // Exporte les lignes cochées, sinon toutes les lignes affichées.
+  // Pour la roue : les parties jouées, limitées aux lots cochés s'il y en a.
   const exportRows = async () => {
     setExporting(true);
     try {
-      const data = section === 'wheel' ? await api.wheelPlays(session.token) : rows;
+      const chosen = checkedCount ? selection.selected : rows;
+      let data = chosen;
+      if (section === 'wheel') {
+        const plays = await api.wheelPlays(session.token);
+        const labels = new Set(selection.selected.map((segment) => segment.label));
+        data = checkedCount ? plays.filter((play) => labels.has(play.result?.label)) : plays;
+      }
       await exportToExcel({
         name: settings.exportName,
         sheetName: sectionMeta[section].title,
@@ -338,21 +351,21 @@ export default function BackofficePage({ session, onLogout, section }) {
               <select value={sortValue || settings.sorts[0].value} onChange={(event) => setSortValue(event.target.value)} aria-label="Trier">
                 {settings.sorts.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
               </select>
-              <button className="button button-secondary data-export" type="button" onClick={exportRows} disabled={loading || exporting || (section !== 'wheel' && !rows.length)}>
-                <Download size={15} /> {exporting ? 'Export…' : section === 'wheel' ? 'Exporter les parties' : 'Exporter'}
+              <button className="button button-secondary data-export" type="button" onClick={exportRows} disabled={loading || exporting || (section !== 'wheel' && !rows.length)} title={checkedCount ? `Exporter les ${checkedCount} lignes cochées` : 'Exporter tout le tableau'}>
+                <Download size={15} /> {exporting ? 'Export…' : section === 'wheel' ? 'Exporter les parties' : 'Exporter'}{checkedCount > 0 && !exporting && ` (${checkedCount})`}
               </button>
             </div>
           </header>
           {error && <p className="panel-message is-error">{error}</p>}
           {loading && <p className="panel-message">Chargement des données...</p>}
-          {!loading && !error && section === 'occupants' && <OccupantsTable occupants={rows} contactStats={contactStats} query={query} onEdit={(item) => setDrawer({ type: 'occupant', item })} onDelete={requestOccupantDelete} />}
-          {!loading && !error && section === 'users' && <UsersTable users={rows} query={query} currentUserId={session.user.id} onEdit={(item) => setDrawer({ type: 'user', item })} onDelete={requestUserDelete} />}
-          {!loading && !error && section === 'program' && <ProgramEventsTable events={rows} query={query} onEdit={(item) => setDrawer({ type: 'program', item })} onDelete={requestProgramDelete} />}
-          {!loading && !error && section === 'investor-requests' && <InvestorRequestsTable requests={rows} query={query} showStand={isSuperAdmin} onEdit={(item) => setDrawer({ type: 'investor-request', item })} />}
-          {!loading && !error && section === 'b2b' && <B2bNeedsTable needs={rows} query={query} showStand={isSuperAdmin} onEdit={(item) => setDrawer({ type: 'b2b', item })} />}
-          {!loading && !error && section === 'studio' && <StudioInvitationsTable invitations={rows} query={query} showStand={isSuperAdmin} copiedId={copiedInvitationId} onCopy={copyInvitationLink} onEdit={(item) => setDrawer({ type: 'studio', item })} />}
-          {!loading && !error && section === 'challenges' && <ChallengePassportsTable passports={rows} query={query} allowReward={isSuperAdmin} onRedeem={(passport) => { setRewardError(''); setPendingReward(passport); }} />}
-          {!loading && !error && section === 'wheel' && <WheelSegmentsTable segments={rows} query={query} onEdit={(item) => setDrawer({ type: 'wheel', item })} onDelete={requestWheelDelete} />}
+          {!loading && !error && section === 'occupants' && <OccupantsTable selection={selection} occupants={rows} contactStats={contactStats} query={query} onEdit={(item) => setDrawer({ type: 'occupant', item })} onDelete={requestOccupantDelete} />}
+          {!loading && !error && section === 'users' && <UsersTable selection={selection} users={rows} query={query} currentUserId={session.user.id} onEdit={(item) => setDrawer({ type: 'user', item })} onDelete={requestUserDelete} />}
+          {!loading && !error && section === 'program' && <ProgramEventsTable selection={selection} events={rows} query={query} onEdit={(item) => setDrawer({ type: 'program', item })} onDelete={requestProgramDelete} />}
+          {!loading && !error && section === 'investor-requests' && <InvestorRequestsTable selection={selection} requests={rows} query={query} showStand={isSuperAdmin} onEdit={(item) => setDrawer({ type: 'investor-request', item })} />}
+          {!loading && !error && section === 'b2b' && <B2bNeedsTable selection={selection} needs={rows} query={query} showStand={isSuperAdmin} onEdit={(item) => setDrawer({ type: 'b2b', item })} />}
+          {!loading && !error && section === 'studio' && <StudioInvitationsTable selection={selection} invitations={rows} query={query} showStand={isSuperAdmin} copiedId={copiedInvitationId} onCopy={copyInvitationLink} onEdit={(item) => setDrawer({ type: 'studio', item })} />}
+          {!loading && !error && section === 'challenges' && <ChallengePassportsTable selection={selection} passports={rows} query={query} allowReward={isSuperAdmin} onRedeem={(passport) => { setRewardError(''); setPendingReward(passport); }} />}
+          {!loading && !error && section === 'wheel' && <WheelSegmentsTable selection={selection} segments={rows} query={query} onEdit={(item) => setDrawer({ type: 'wheel', item })} onDelete={requestWheelDelete} />}
         </section>
         {section === 'wheel' && !loading && !error && <section className="data-panel wheel-codes-panel"><h2>Derniers codes</h2><WheelCodesTable codes={wheel.codes} /></section>}
       </main>

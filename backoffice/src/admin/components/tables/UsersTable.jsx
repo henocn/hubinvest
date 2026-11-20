@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Check, Pencil, Trash2 } from 'lucide-react';
 import { roleLabels } from '../../constants/access';
 import EmptyState from '../EmptyState';
+import { SelectAllHeader, SelectCell } from '../RowSelection';
 
 // Présence d'un compte, comme sur la Semaine de l'Industrie : en ligne, sinon depuis combien de temps.
 const presenceOf = (online, lastSeenAt, now) => {
@@ -18,7 +19,7 @@ const presenceOf = (online, lastSeenAt, now) => {
   return { label: 'Hors ligne', tone: 'offline' };
 };
 
-export default function UsersTable({ users, query, currentUserId, onEdit, onDelete }) {
+export default function UsersTable({ selection, users, query, currentUserId, onEdit, onDelete }) {
   // Les durées « Il y a X min » avancent d'elles-mêmes.
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -33,11 +34,11 @@ export default function UsersTable({ users, query, currentUserId, onEdit, onDele
   return (
     <div className="table-scroll">
       <table>
-        <thead><tr><th>Utilisateur</th><th>Rôle</th><th>Stand</th><th>Présence</th><th>Statut</th><th className="actions-heading">Actions</th></tr></thead>
+        <thead><tr><SelectAllHeader selection={selection} /><th>Utilisateur</th><th>Rôle</th><th>Stand</th><th>Présence</th><th>Statut</th><th className="actions-heading">Actions</th></tr></thead>
         <tbody>{users.map((user) => {
           const presence = presenceOf(user.online, user.lastSeenAt, now);
           return (
-            <tr key={user.id}>
+            <tr key={user.id}><SelectCell selection={selection} id={user.id} />
               <td><strong>{user.firstName} {user.lastName}</strong><small>{user.email}</small></td>
               <td>{roleLabels[user.role] || user.role}</td>
               <td>{['admin', 'occupant'].includes(user.role) ? user.occupant?.name || '—' : '—'}</td>

@@ -106,3 +106,4 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 - Ne pas ajouter de bouton d’actualisation sous le code participant ; le suivi des passages se met à jour sans action dédiée.
 - Vérifier chaque interface à 320 px, 375 px et sur ordinateur avant de la considérer terminée.
 - Back office sobre, sur le modèle de la Semaine de l’Industrie : en-tête d’une ligne (titre à gauche, actions à droite) sans phrase descriptive, aucune tuile de résumé ni filtre au-dessus des tableaux (seulement recherche, tri et export ; un filtre ne s’ajoute que si un besoin réel apparaît), cadres à coins droits et bordures fines et claires (verticales comme horizontales dans les tableaux), lignes et marges resserrées, tableau vide sur une seule ligne.
+- Chaque tableau du back office commence par une colonne de cases à cocher (case d’en-tête pour tout cocher, état intermédiaire si partiel) ; l’export prend les lignes cochées quand il y en a, sinon tout le tableau.

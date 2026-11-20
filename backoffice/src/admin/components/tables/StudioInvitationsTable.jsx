@@ -1,6 +1,7 @@
 import { Check, Clipboard, Pencil, Video } from 'lucide-react';
 import { publicBaseUrl, studioStatusLabels } from '../../constants/access';
 import EmptyState from '../EmptyState';
+import { SelectAllHeader, SelectCell } from '../RowSelection';
 
 const dateFormatter = new Intl.DateTimeFormat('fr-FR', {
   weekday: 'short',
@@ -14,7 +15,7 @@ const timeFormatter = new Intl.DateTimeFormat('fr-FR', {
   minute: '2-digit',
 });
 
-export default function StudioInvitationsTable({ invitations, query, copiedId, onCopy, onEdit, showStand = false }) {
+export default function StudioInvitationsTable({ selection, invitations, query, copiedId, onCopy, onEdit, showStand = false }) {
   if (!invitations.length) {
     return <EmptyState icon={Video} title="Aucune invitation" copy={query ? 'Aucun résultat ne correspond à la recherche.' : 'Créez la première invitation du Studio.'} />;
   }
@@ -22,12 +23,12 @@ export default function StudioInvitationsTable({ invitations, query, copiedId, o
   return (
     <div className="table-scroll">
       <table>
-        <thead><tr><th>Date</th>{showStand && <th>Stand</th>}<th>Invité</th><th>Sujet</th><th>Réponse</th><th className="actions-heading">Actions</th></tr></thead>
+        <thead><tr><SelectAllHeader selection={selection} /><th>Date</th>{showStand && <th>Stand</th>}<th>Invité</th><th>Sujet</th><th>Réponse</th><th className="actions-heading">Actions</th></tr></thead>
         <tbody>{invitations.map((invitation) => {
           const date = new Date(invitation.scheduledAt);
           const link = `${publicBaseUrl}/studio/${invitation.token}`;
           return (
-            <tr key={invitation.id} className={`studio-row is-${invitation.status}`}>
+            <tr key={invitation.id} className={`studio-row is-${invitation.status}`}><SelectCell selection={selection} id={invitation.id} />
               <td className="studio-date"><strong>{dateFormatter.format(date)}</strong><small>{timeFormatter.format(date)}</small></td>
               {showStand && <td>{invitation.occupant?.name || '—'}</td>}
               <td><strong>{invitation.guestName}</strong></td>
