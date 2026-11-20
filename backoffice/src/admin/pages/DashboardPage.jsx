@@ -29,7 +29,7 @@ export default function DashboardPage({ session }) {
             <h2 id="dashboard-todo">À traiter</h2>
             <div className="dashboard-grid">
               <Stat value={data.investor.new} label="Demandes Investor Desk" detail="nouvelles" to="/investor-desk" urgent />
-              <Stat value={data.b2b.pendingProposals} label="Propositions B2B" detail="sans réponse" to="/b2b" urgent />
+              <Stat value={data.b2b.pendingProposals} label="Demandes B2B" detail="à traiter" to="/b2b" urgent />
               <Stat value={data.challenges.rewardsToHand} label="Récompenses des Défis" detail="parcours terminés, à remettre" to="/participants" urgent />
               <Stat value={data.wheel.prizesToHand} label="Lots de la roue" detail="gagnés, pas encore remis" to="/roue" urgent />
             </div>

@@ -88,6 +88,8 @@ export const tableSettings = {
       { header: 'Besoin', value: (item) => item.title, width: 40 },
       { header: 'Description', value: (item) => item.description, width: 60 },
       { header: 'Stand', value: (item) => item.occupant?.name, width: 26 },
+      { header: 'Demandes reçues', value: (item) => item.proposalCount || 0, width: 16 },
+      { header: 'Demandes traitées', value: (item) => item.handledCount || 0, width: 16 },
       { header: 'Statut', value: (item) => (item.status === 'open' ? 'Ouvert' : 'Fermé'), width: 12 },
       { header: 'Publié par', value: (item) => fullName(item.createdBy), width: 24 },
     ],

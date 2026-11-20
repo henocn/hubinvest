@@ -1,4 +1,11 @@
+const { literal } = require('sequelize');
 const { B2bNeed, Occupant, User } = require('../../models');
+
+// Pour le back office : demandes reçues sur le besoin et demandes déjà traitées (acceptées ou refusées).
+const proposalCounts = [
+  [literal('(SELECT COUNT(*)::int FROM b2b_proposals AS p WHERE p.b2b_need_id = "B2bNeed"."id")'), 'proposalCount'],
+  [literal('(SELECT COUNT(*)::int FROM b2b_proposals AS p WHERE p.b2b_need_id = "B2bNeed"."id" AND p.status <> \'pending\')'), 'handledCount'],
+];
 
 const occupantInclude = [{
   model: Occupant,
@@ -27,6 +34,7 @@ const findPublicById = (id) => B2bNeed.findOne({
 
 const findAll = (occupantId = null) => B2bNeed.findAll({
   where: occupantId ? { occupantId } : {},
+  attributes: { include: proposalCounts },
   include: [...occupantInclude, ...creatorInclude],
   order: [['createdAt', 'DESC']],
 });

@@ -3,6 +3,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Download, Plus, QrCode, Search, Ticket } from 'lucide-react';
 import ConfirmDelete from '../components/ConfirmDelete';
 import OccupantDetail from '../components/OccupantDetail';
+import B2bNeedDetail from '../components/B2bNeedDetail';
 import { useRowSelection } from '../components/RowSelection';
 import ConfirmReward from '../components/ConfirmReward';
 import QrCodeDialog from '../components/QrCodeDialog';
@@ -46,7 +47,8 @@ export default function BackofficePage({ session, onLogout, section }) {
   const todo = useDashboard()?.data?.todo || {};
   const location = useLocation();
   const navigate = useNavigate();
-  const detailId = section === 'occupants' ? location.pathname.split('/')[2] || null : null;
+  // Fiche d'un élément : /stands/<id> pour un stand, /b2b/<id> pour un besoin B2B.
+  const detailId = section === 'occupants' || section === 'b2b' ? location.pathname.split('/')[2] || null : null;
   const [occupants, setOccupants] = useState([]);
   const [users, setUsers] = useState([]);
   const [investorRequests, setInvestorRequests] = useState([]);
@@ -298,7 +300,17 @@ export default function BackofficePage({ session, onLogout, section }) {
 
   return (
     <>
-      {detailId ? (
+      {detailId && section === 'b2b' ? (
+        loading ? <main className="admin-workspace"><p className="panel-message">Chargement…</p></main>
+          : b2bNeeds.find((item) => item.id === detailId) ? (
+            <B2bNeedDetail
+              need={b2bNeeds.find((item) => item.id === detailId)}
+              token={session.token}
+              showStand={isSuperAdmin}
+              onEdit={() => setDrawer({ type: 'b2b', item: b2bNeeds.find((item) => item.id === detailId) })}
+            />
+          ) : <main className="admin-workspace"><p className="panel-message">Ce besoin n’existe plus. <a href="/b2b" onClick={(event) => { event.preventDefault(); navigate('/b2b'); }}>Retour aux besoins B2B</a></p></main>
+      ) : detailId ? (
         loading ? <main className="admin-workspace"><p className="panel-message">Chargement…</p></main>
           : occupants.find((item) => item.id === detailId) ? (
             <OccupantDetail

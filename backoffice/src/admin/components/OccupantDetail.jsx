@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, Pencil, QrCode, Trash2 } from 'lucide-react';
 import { investorStatusLabels, programTypeLabels, publicBaseUrl, roleLabels } from '../constants/access';
 import { resolveAssetUrl } from '../lib/api';
+import { ProposalCount } from './tables/B2bNeedsTable';
 
 const dateTime = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Africa/Lome', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 const day = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Africa/Lome', day: 'numeric', month: 'long', year: 'numeric' });
@@ -101,8 +102,8 @@ export default function OccupantDetail({ occupant, users, contactCount, programE
       />
       <Related
         title="Besoins B2B"
-        head={['Besoin', 'Statut', 'Publié le']}
-        rows={needs.map((need) => <tr key={need.id}><td>{need.title}</td><td>{need.status === 'open' ? 'Ouvert' : 'Fermé'}</td><td className="stand-nowrap">{day.format(new Date(need.createdAt))}</td></tr>)}
+        head={['Besoin', 'Demandes', 'Statut', 'Publié le']}
+        rows={needs.map((need) => <tr key={need.id}><td><Link to={`/b2b/${need.id}`}>{need.title}</Link></td><td><ProposalCount need={need} /></td><td>{need.status === 'open' ? 'Ouvert' : 'Fermé'}</td><td className="stand-nowrap">{day.format(new Date(need.createdAt))}</td></tr>)}
       />
       <Related
         title="Investor Desk"

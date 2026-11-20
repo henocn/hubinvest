@@ -133,18 +133,13 @@
 .admin-app .challenge-reward-action.is-redeemed:disabled { opacity: .72; }
 .admin-app .b2b-admin-title { display: block; max-width: 520px; overflow: hidden; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
 .admin-app .b2b-admin-row.is-closed { background: rgba(0, 0, 0, .025); }
+.admin-app .b2b-admin-row.is-link, .admin-app .occupant-row.is-link { cursor: pointer; }
+.admin-app a.b2b-admin-title { color: inherit; text-decoration: none; }
+.admin-app a.b2b-admin-title:hover { text-decoration: underline; }
+.admin-app .proposal-count { color: #85898d; font-variant-numeric: tabular-nums; font-weight: 600; }
+.admin-app .proposal-count.is-pending { color: #6f5700; font-weight: 750; }
+.admin-app .b2b-message { min-width: 260px; max-width: 520px; color: #565b5f; line-height: 1.5; white-space: pre-line; }
 .admin-app .drawer-wide { width: min(620px, 100%); }
-.admin-app .b2b-admin-proposals { margin-top: 34px; padding-top: 26px; border-top: 1px solid var(--line); }
-.admin-app .b2b-admin-proposals > h3 { margin: 0 0 16px; font-size: 17px; }
-.admin-app .b2b-admin-proposals > p { margin: 0; color: var(--muted); font-size: 13px; }
-.admin-app .b2b-admin-proposal { padding: 16px 0; border-bottom: 1px solid var(--line); }
-.admin-app .b2b-admin-proposal > header, .admin-app .b2b-admin-proposal > div, .admin-app .b2b-admin-proposal > footer { display: flex; align-items: center; gap: 10px; }
-.admin-app .b2b-admin-proposal > header { justify-content: space-between; }
-.admin-app .b2b-admin-proposal > header span { color: var(--muted); font-size: 11px; font-weight: 750; }
-.admin-app .b2b-admin-proposal > p { margin: 12px 0; color: #565b5f; font-size: 13px; line-height: 1.55; white-space: pre-line; }
-.admin-app .b2b-admin-proposal > div { flex-wrap: wrap; }
-.admin-app .b2b-admin-proposal a { display: inline-flex; align-items: center; gap: 5px; color: var(--green); font-size: 12px; text-decoration: none; }
-.admin-app .b2b-admin-proposal > footer { justify-content: flex-end; margin-top: 14px; }
 .admin-app .status-pill { width: fit-content; display: inline-flex; align-items: center; gap: 5px; padding: 2px 7px; border-radius: 3px; color: #686c70; background: #efefed; font-size: 11px; font-weight: 700; }
 .admin-app .status-pill.is-active { color: var(--green); background: #e7f3ee; }
 .admin-app .status-pill.is-new { color: #6f5700; background: #fff4c2; }
@@ -286,7 +281,7 @@
 .admin-app .stand-field dt { padding: 9px 12px; border-right: 1px solid var(--grid); color: var(--muted); background: #fafafa; font-size: 13px; font-weight: 600; }
 .admin-app .stand-field dd { min-width: 0; margin: 0; padding: 9px 12px; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
 .admin-app .stand-field ul { margin: 0; padding-left: 18px; }
-.admin-app .stand-field a { color: var(--green); }
+.admin-app .stand-field a, .admin-app .stand-panel td a { color: var(--green); }
 .admin-app .stand-text { margin: 0; white-space: pre-line; }
 .admin-app .stand-empty { color: #9a9d9b; }
 .admin-app .stand-nowrap { white-space: nowrap; }
