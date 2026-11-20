@@ -10,7 +10,6 @@ const settingsService = require('../settings/settings.service');
 // Lettres et chiffres sans ambiguïté à l'oral ou à l'écrit (pas de 0/O, 1/I/L).
 const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const CODE_LENGTH = 4;
-const RECENT_CODES = 30;
 
 const plain = (value) => (value?.toJSON ? value.toJSON() : value);
 
@@ -99,6 +98,7 @@ const generateCodeValue = () => Array.from({ length: CODE_LENGTH }, () => CODE_A
 // Délivre un code à usage unique, valable pendant la durée configurée.
 const generateCode = async (user) => {
   settingsService.assertOpen('wheelOpen');
+  await wheelRepository.deleteExpiredCodes();
   const expiresAt = new Date(Date.now() + env.wheel.codeTtl);
   for (let attempt = 0; attempt < 5; attempt += 1) {
     try {
@@ -131,11 +131,13 @@ const adminCode = (item) => {
   };
 };
 
-// Rassemble les cases, les derniers codes et les chiffres de la roue pour l'administration.
+// Rassemble les cases, l'historique des codes et les chiffres de la roue pour l'administration.
+// Les codes expirés sans avoir été joués sont effacés au passage.
 const overview = async () => {
+  await wheelRepository.deleteExpiredCodes();
   const [segments, codes, played] = await Promise.all([
     wheelRepository.findSegments(),
-    wheelRepository.findRecentCodes(RECENT_CODES),
+    wheelRepository.findCodes(),
     wheelRepository.countPlayed(),
   ]);
   const list = segments.map(adminSegment);
@@ -217,9 +219,6 @@ const claimPrize = async (user, rawCode) => {
   return prize;
 };
 
-// Toutes les parties jouées, pour l'export Excel.
-const listPlays = async () => (await wheelRepository.findPlayedCodes()).map(adminCode);
-
 module.exports = {
   listPublic,
   spin,
@@ -231,7 +230,6 @@ module.exports = {
   arrange,
   isDrawable,
   normalizeCode,
-  listPlays,
   findPrize,
   claimPrize,
 };

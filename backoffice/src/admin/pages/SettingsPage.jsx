@@ -3,6 +3,7 @@ import { Check } from 'lucide-react';
 import { api } from '../lib/api';
 import { useRealtimeEvent } from '../../lib/realtime';
 import B2bNeedsSettings from '../components/B2bNeedsSettings';
+import WheelSettings from '../components/WheelSettings';
 
 const modules = [
   { key: 'contactRequestsOpen', title: 'Demandes de contact aux stands' },
@@ -14,7 +15,7 @@ const modules = [
 ];
 
 // Réglages du site, appliqués aussitôt : ouvrir ou fermer chaque module, nombre de stands requis pour les Défis,
-// et besoins B2B publiés. Un administrateur de stand n'y voit que les besoins B2B de son stand.
+// cases et lots de la roue, besoins B2B publiés. Un administrateur de stand n'y voit pas les réglages généraux.
 export default function SettingsPage({ session, onLogout }) {
   const isSuperAdmin = session.user.role === 'super-admin';
   const [settings, setSettings] = useState(null);
@@ -97,7 +98,7 @@ export default function SettingsPage({ session, onLogout }) {
           </section>
 
           <section className="data-panel settings-panel">
-            <h2>Défis et roue</h2>
+            <h2>Défis</h2>
             <form className="settings-row" onSubmit={savePassages}>
               <span>
                 <strong>Stands à visiter pour terminer le parcours</strong>
@@ -108,20 +109,24 @@ export default function SettingsPage({ session, onLogout }) {
                 <button className="button button-secondary" type="submit" disabled={savingKey === 'requiredPassages' || Number(passages) === settings.requiredPassages}>Enregistrer</button>
               </span>
             </form>
-            <form className="settings-row" onSubmit={savePlaysPerDay}>
-              <span>
-                <strong>Parties de roue par personne et par jour</strong>
-                <small>0 = sans limite</small>
-              </span>
-              {savedKey === 'wheelPlaysPerDay' && <Check className="settings-saved" size={18} aria-label="Enregistré" />}
-              <span className="settings-number">
-                <input type="number" min="0" max="20" value={playsPerDay} onChange={(event) => setPlaysPerDay(event.target.value)} aria-label="Parties par jour" />
-                <button className="button button-secondary" type="submit" disabled={savingKey === 'wheelPlaysPerDay' || Number(playsPerDay) === settings.wheelPlaysPerDay}>Enregistrer</button>
-              </span>
-            </form>
           </section>
         </>
       )}
+      <WheelSettings session={session} onLogout={onLogout}>
+        {settings && (
+          <form className="settings-row" onSubmit={savePlaysPerDay}>
+            <span>
+              <strong>Parties de roue par personne et par jour</strong>
+              <small>0 = sans limite</small>
+            </span>
+            {savedKey === 'wheelPlaysPerDay' && <Check className="settings-saved" size={18} aria-label="Enregistré" />}
+            <span className="settings-number">
+              <input type="number" min="0" max="20" value={playsPerDay} onChange={(event) => setPlaysPerDay(event.target.value)} aria-label="Parties par jour" />
+              <button className="button button-secondary" type="submit" disabled={savingKey === 'wheelPlaysPerDay' || Number(playsPerDay) === settings.wheelPlaysPerDay}>Enregistrer</button>
+            </span>
+          </form>
+        )}
+      </WheelSettings>
       <B2bNeedsSettings session={session} onLogout={onLogout} />
     </main>
   );

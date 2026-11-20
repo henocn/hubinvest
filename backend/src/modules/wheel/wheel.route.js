@@ -42,7 +42,6 @@ router.post('/prizes/:code/claim', prizeTeam, validate(wheelValidation.codeParam
 
 router.use(requireRoles(roles.SUPER_ADMIN, roles.ADMIN));
 router.get('/', asyncHandler(wheelController.overview));
-router.get('/plays', asyncHandler(wheelController.listPlays));
 router.post('/segments', validate(wheelValidation.createSegment), asyncHandler(wheelController.createSegment));
 router.patch(
   '/segments/:id',

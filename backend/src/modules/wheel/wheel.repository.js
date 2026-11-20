@@ -45,26 +45,18 @@ const createCode = (values) => WheelCode.create(values);
 
 const updateCode = (wheelCode, values, transaction) => wheelCode.update(values, { transaction });
 
-// Liste les derniers codes délivrés, avec la personne qui les a donnés.
-const findRecentCodes = (limit) => WheelCode.findAll({
+// Un code expiré sans avoir été joué ne sert plus à rien : on n'en garde pas la trace.
+const deleteExpiredCodes = () => WheelCode.destroy({ where: { usedAt: null, expiresAt: { [Op.lte]: new Date() } } });
+
+// Historique : les codes joués et ceux encore valables, du plus récent au plus ancien, avec qui les a donnés et qui a joué.
+const findCodes = () => WheelCode.findAll({
+  where: { [Op.or]: [{ usedAt: { [Op.ne]: null } }, { expiresAt: { [Op.gt]: new Date() } }] },
   include: [
     { model: User, as: 'createdBy', attributes: ['id', 'firstName', 'lastName'], required: false },
     { model: ChallengePassport, as: 'player', attributes: ['id', 'displayName', 'email', 'phone'], required: false },
     { model: User, as: 'claimedBy', attributes: ['id', 'firstName', 'lastName'], required: false },
   ],
   order: [['createdAt', 'DESC']],
-  limit,
-});
-
-// Toutes les parties jouées, de la plus récente à la plus ancienne.
-const findPlayedCodes = () => WheelCode.findAll({
-  where: { usedAt: { [Op.ne]: null } },
-  include: [
-    { model: User, as: 'createdBy', attributes: ['id', 'firstName', 'lastName'], required: false },
-    { model: ChallengePassport, as: 'player', attributes: ['id', 'displayName', 'email', 'phone'], required: false },
-    { model: User, as: 'claimedBy', attributes: ['id', 'firstName', 'lastName'], required: false },
-  ],
-  order: [['usedAt', 'DESC']],
 });
 
 // Compte les parties jouées par un joueur depuis une date (limite quotidienne).
@@ -102,8 +94,8 @@ module.exports = {
   findPlayerByToken,
   createCode,
   updateCode,
-  findRecentCodes,
-  findPlayedCodes,
+  deleteExpiredCodes,
+  findCodes,
   countPlayerPlaysSince,
   findPlayedCodeForClaim,
   countPlayed,

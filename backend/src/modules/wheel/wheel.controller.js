@@ -11,14 +11,9 @@ const spin = async (request, response) => response.json({
   data: await wheelService.spin(request.body, publicLanguage(request)),
 });
 
-// Renvoie les cases, les derniers codes et les chiffres de la roue.
+// Renvoie les cases, l'historique des codes et les chiffres de la roue.
 const overview = async (request, response) => response.json({
   data: await wheelService.overview(),
-});
-
-// Délivre un nouveau code de jeu.
-const listPlays = async (request, response) => response.json({
-  data: await wheelService.listPlays(),
 });
 
 const findPrize = async (request, response) => response.json({
@@ -29,6 +24,7 @@ const claimPrize = async (request, response) => response.json({
   data: await wheelService.claimPrize(request.user, request.params.code),
 });
 
+// Délivre un nouveau code de jeu.
 const generateCode = async (request, response) => response.status(201).json({
   data: await wheelService.generateCode(request.user),
 });
@@ -48,4 +44,4 @@ const removeSegment = async (request, response) => {
   response.json({ message: 'Case retirée de la roue.' });
 };
 
-module.exports = { getPublic, spin, overview, listPlays, findPrize, claimPrize, generateCode, createSegment, updateSegment, removeSegment };
+module.exports = { getPublic, spin, overview, findPrize, claimPrize, generateCode, createSegment, updateSegment, removeSegment };

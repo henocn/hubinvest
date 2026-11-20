@@ -18,9 +18,7 @@ import ChallengePassportsTable from '../components/tables/ChallengePassportsTabl
 import OccupantsTable from '../components/tables/OccupantsTable';
 import ProgramEventsTable from '../components/tables/ProgramEventsTable';
 import UsersTable from '../components/tables/UsersTable';
-import WheelSegmentsTable from '../components/tables/WheelSegmentsTable';
 import WheelCodesTable from '../components/tables/WheelCodesTable';
-import WheelSegmentDrawer from '../components/drawers/WheelSegmentDrawer';
 import WheelCodeDialog from '../components/WheelCodeDialog';
 import { publicBaseUrl } from '../constants/access';
 import { tableSettings } from '../constants/tables';
@@ -182,7 +180,7 @@ export default function BackofficePage({ session, onLogout, section }) {
   const visibleProgramEvents = useMemo(() => programEvents.filter((item) => !query || [item.title, item.location, item.description, item.occupant?.name].some((value) => String(value || '').toLowerCase().includes(query))), [programEvents, query]);
   const visibleChallengePassports = useMemo(() => challengePassports.filter((item) => !query || [item.displayName, item.email, item.phone, item.contact, item.code, ...(item.passages || []).flatMap((passage) => [passage.occupant?.name, passage.validatedBy?.firstName, passage.validatedBy?.lastName])].some((value) => String(value || '').toLowerCase().includes(query))), [challengePassports, query]);
 
-  const visibleWheelSegments = useMemo(() => wheel.segments.filter((item) => !query || [item.label, item.sponsor].some((value) => String(value || '').toLowerCase().includes(query))), [wheel.segments, query]);
+  const visibleWheelCodes = useMemo(() => wheel.codes.filter((item) => !query || [item.code, item.player?.displayName, item.player?.email, item.player?.phone, item.result?.label, item.result?.sponsor, item.createdBy?.firstName, item.createdBy?.lastName].some((value) => String(value || '').toLowerCase().includes(query))), [wheel.codes, query]);
 
   // Chaque rubrique s'ouvre avec une recherche vide.
   useEffect(() => {
@@ -203,7 +201,7 @@ export default function BackofficePage({ session, onLogout, section }) {
     'investor-requests': visibleInvestorRequests,
     b2b: visibleB2bProposals,
     challenges: visibleChallengePassports,
-    wheel: visibleWheelSegments,
+    wheel: visibleWheelCodes,
   };
   const rows = arrange(sectionRows[section] || []);
   // Lignes cochées : l'export ne prend qu'elles quand il y en a.
@@ -217,17 +215,10 @@ export default function BackofficePage({ session, onLogout, section }) {
     : '';
 
   // Exporte les lignes cochées, sinon toutes les lignes affichées.
-  // Pour la roue : les parties jouées, limitées aux lots cochés s'il y en a.
   const exportRows = async () => {
     setExporting(true);
     try {
-      const chosen = checkedCount ? selection.selected : rows;
-      let data = chosen;
-      if (section === 'wheel') {
-        const plays = await api.wheelPlays(session.token);
-        const labels = new Set(selection.selected.map((segment) => segment.label));
-        data = checkedCount ? plays.filter((play) => labels.has(play.result?.label)) : plays;
-      }
+      const data = checkedCount ? selection.selected : rows;
       await exportToExcel({
         name: settings.exportName,
         sheetName: sectionMeta[section].title,
@@ -301,11 +292,6 @@ export default function BackofficePage({ session, onLogout, section }) {
     setPendingDelete({ type: 'b2b-proposal', item: proposal, label: `la demande B2B de ${proposal.fullName}` });
   };
 
-  const requestWheelDelete = (segment) => {
-    setDeleteError('');
-    setPendingDelete({ type: 'wheel', item: segment, label: `la case « ${segment.label} » de la roue` });
-  };
-
   // Délivre un code de jeu et l'affiche en grand pour le joueur.
   const generateWheelCode = async () => {
     setWheelCode((current) => ({ data: current?.data || null, loading: true, error: '' }));
@@ -323,7 +309,6 @@ export default function BackofficePage({ session, onLogout, section }) {
     try {
       if (pendingDelete.type === 'occupant') await api.deleteOccupant(session.token, pendingDelete.item.id);
       else if (pendingDelete.type === 'program') await api.deleteProgramEvent(session.token, pendingDelete.item.id);
-      else if (pendingDelete.type === 'wheel') await api.deleteWheelSegment(session.token, pendingDelete.item.id);
       else if (pendingDelete.type === 'b2b-proposal') await api.deleteB2bProposal(session.token, pendingDelete.item.id);
       else await api.deleteUser(session.token, pendingDelete.item.id);
       setPendingDelete(null);
@@ -373,7 +358,7 @@ export default function BackofficePage({ session, onLogout, section }) {
           {(section === 'occupants' || section === 'users' || section === 'program' || section === 'investor-requests' || section === 'challenges' || section === 'wheel') && <div className="workspace-actions">
             {section === 'challenges' && <button className="button button-secondary" type="button" onClick={() => setQrCode({ title: 'QR des Défis', url: `${publicBaseUrl}/defis`, fileName: 'hubinvest-defis' })}><QrCode size={16} /> QR des Défis</button>}
             {section === 'program' && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: 'program', item: null })}><Plus size={16} /> Ajouter au programme</button>}
-            {section === 'wheel' && <><button className="button button-secondary" type="button" onClick={() => setDrawer({ type: 'wheel', item: null })}><Plus size={16} /> Nouvelle case</button><button className="button button-primary" type="button" onClick={generateWheelCode}><Ticket size={16} /> Générer un code</button></>}
+            {section === 'wheel' && <button className="button button-primary" type="button" onClick={generateWheelCode}><Ticket size={16} /> Générer un code</button>}
             {(section === 'occupants' || section === 'users' || section === 'investor-requests') && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: section === 'occupants' ? 'occupant' : section === 'users' ? 'user' : 'investor-request', item: null })}><Plus size={16} /> {section === 'occupants' ? 'Stand' : section === 'users' ? 'Nouvel utilisateur' : 'Demande'}</button>}
           </div>}
         </header>
@@ -381,13 +366,13 @@ export default function BackofficePage({ session, onLogout, section }) {
         <section className="data-panel">
           <header className="data-toolbar">
             <div className="data-toolbar-controls">
-              <label className="admin-search-field"><Search size={15} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Rechercher" aria-label={section === 'occupants' ? 'Rechercher un occupant' : section === 'users' ? 'Rechercher un utilisateur' : section === 'program' ? 'Rechercher dans le programme' : section === 'b2b' ? 'Rechercher une demande B2B' : section === 'challenges' ? 'Rechercher un participant' : section === 'wheel' ? 'Rechercher un lot' : 'Rechercher une demande'} /></label>
+              <label className="admin-search-field"><Search size={15} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Rechercher" aria-label={section === 'occupants' ? 'Rechercher un occupant' : section === 'users' ? 'Rechercher un utilisateur' : section === 'program' ? 'Rechercher dans le programme' : section === 'b2b' ? 'Rechercher une demande B2B' : section === 'challenges' ? 'Rechercher un participant' : section === 'wheel' ? 'Rechercher une partie' : 'Rechercher une demande'} /></label>
               {toolbarNote && <span className="data-note">{toolbarNote}</span>}
               <select value={sortValue || settings.sorts[0].value} onChange={(event) => setSortValue(event.target.value)} aria-label="Trier">
                 {settings.sorts.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
               </select>
-              <button className="button button-secondary data-export" type="button" onClick={exportRows} disabled={loading || exporting || (section !== 'wheel' && !rows.length)} title={checkedCount ? `Exporter les ${checkedCount} lignes cochées` : 'Exporter tout le tableau'}>
-                <Download size={15} /> {exporting ? 'Export…' : section === 'wheel' ? 'Exporter les parties' : 'Exporter'}{checkedCount > 0 && !exporting && ` (${checkedCount})`}
+              <button className="button button-secondary data-export" type="button" onClick={exportRows} disabled={loading || exporting || !rows.length} title={checkedCount ? `Exporter les ${checkedCount} lignes cochées` : 'Exporter tout le tableau'}>
+                <Download size={15} /> {exporting ? 'Export…' : 'Exporter'}{checkedCount > 0 && !exporting && ` (${checkedCount})`}
               </button>
             </div>
           </header>
@@ -399,9 +384,8 @@ export default function BackofficePage({ session, onLogout, section }) {
           {!loading && !error && section === 'investor-requests' && <InvestorRequestsTable selection={selection} requests={rows} query={query} onEdit={(item) => setDrawer({ type: 'investor-request', item })} />}
           {!loading && !error && section === 'b2b' && <B2bProposalsTable selection={selection} proposals={rows} query={query} showStand={isSuperAdmin} onDecide={requestDecision} onEdit={(item) => setDrawer({ type: 'b2b-proposal', item })} onDelete={requestB2bProposalDelete} />}
           {!loading && !error && section === 'challenges' && <ChallengePassportsTable selection={selection} passports={rows} query={query} allowReward={isSuperAdmin} onRedeem={(passport) => { setRewardError(''); setPendingReward(passport); }} />}
-          {!loading && !error && section === 'wheel' && <WheelSegmentsTable selection={selection} segments={rows} query={query} onEdit={(item) => setDrawer({ type: 'wheel', item })} onDelete={requestWheelDelete} />}
+          {!loading && !error && section === 'wheel' && <WheelCodesTable selection={selection} codes={rows} query={query} />}
         </section>
-        {section === 'wheel' && !loading && !error && <section className="data-panel wheel-codes-panel"><h2>Derniers codes</h2><WheelCodesTable codes={wheel.codes} /></section>}
       </main>
       )}
 
@@ -410,7 +394,6 @@ export default function BackofficePage({ session, onLogout, section }) {
       {drawer?.type === 'program' && <ProgramEventDrawer programEvent={drawer.item} occupants={occupants} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'investor-request' && <InvestorRequestDrawer investorRequest={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'b2b-proposal' && <B2bProposalDrawer proposal={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
-      {drawer?.type === 'wheel' && <WheelSegmentDrawer segment={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {wheelCode && <WheelCodeDialog wheelCode={wheelCode.data} loading={wheelCode.loading} error={wheelCode.error} onNew={generateWheelCode} onClose={() => setWheelCode(null)} />}
       {pendingDelete && <ConfirmDelete subject={pendingDelete} loading={deleting} error={deleteError} onCancel={() => setPendingDelete(null)} onConfirm={confirmDelete} />}
       {pendingDecision && <ConfirmDecision {...pendingDecision} loading={deciding} error={decisionError} onCancel={() => setPendingDecision(null)} onConfirm={confirmDecision} />}

@@ -1,6 +1,7 @@
 import { formatDate } from '../../lib/excel';
-import { b2bProposalLabels, challengeStatusLabels, investorStatusLabels, programTypeLabels, roleLabels } from './access';
+import { b2bProposalLabels, challengeStatusLabels, investorStatusLabels, programTypeLabels, roleLabels, wheelCodeStatus } from './access';
 
+const isToClaim = (item) => item.result?.kind === 'prize' && !item.claimedAt;
 const fullName = (person) => (person ? [person.firstName, person.lastName].filter(Boolean).join(' ') : '');
 const byText = (value) => (a, b) => String(value(a) || '').localeCompare(String(value(b) || ''), 'fr', { sensitivity: 'base' });
 const byDate = (value, direction) => (a, b) => direction * ((new Date(value(a) || 0)).getTime() - (new Date(value(b) || 0)).getTime());
@@ -109,15 +110,17 @@ export const tableSettings = {
     ],
   },
   wheel: {
+    // Historique des codes : les lots gagnés pas encore remis peuvent passer en tête.
     sorts: [
-      { value: 'az', label: 'A → Z', compare: byText((item) => item.label) },
-      { value: 'remaining', label: 'Moins de stock', compare: (a, b) => (a.remaining ?? Infinity) - (b.remaining ?? Infinity) },
+      ...sorts((item) => item.createdAt, (item) => item.player?.displayName).slice(0, 2),
+      { value: 'to-claim', label: 'Lots à remettre d’abord', compare: (a, b) => Number(isToClaim(b)) - Number(isToClaim(a)) || new Date(b.createdAt) - new Date(a.createdAt) },
     ],
-    // L'export de la roue donne toutes les parties jouées (gagnants compris), pas seulement les cases.
     exportName: 'roue-parties',
     columns: () => [
-      { header: 'Jouée le', value: (item) => formatDate(item.usedAt), width: 18 },
+      { header: 'Délivré le', value: (item) => formatDate(item.createdAt), width: 18 },
       { header: 'Code', value: (item) => item.code, width: 10 },
+      { header: 'Statut', value: wheelCodeStatus, width: 22 },
+      { header: 'Jouée le', value: (item) => formatDate(item.usedAt), width: 18 },
       { header: 'Joueur', value: (item) => item.player?.displayName, width: 28 },
       { header: 'E-mail', value: (item) => item.player?.email, width: 30 },
       { header: 'Téléphone', value: (item) => item.player?.phone, width: 18 },

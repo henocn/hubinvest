@@ -1045,6 +1045,22 @@ test('un lot épuisé ou désactivé disparaît de la roue, et une roue vide ne 
   assert.equal(soldOut.awarded, 3);
 });
 
+test('les codes de roue expirés sans être joués sont effacés avant l’historique et avant un nouveau code', async (context) => {
+  const calls = [];
+  context.mock.method(wheelRepository, 'deleteExpiredCodes', async () => { calls.push('purge'); return 2; });
+  context.mock.method(wheelRepository, 'findSegments', async () => []);
+  context.mock.method(wheelRepository, 'findCodes', async () => { calls.push('history'); return []; });
+  context.mock.method(wheelRepository, 'countPlayed', async () => 0);
+  context.mock.method(wheelRepository, 'createCode', async (values) => { calls.push('create'); return { ...values }; });
+
+  await wheelService.overview();
+  assert.deepEqual(calls, ['purge', 'history']);
+
+  calls.length = 0;
+  await wheelService.generateCode({ id: 'admin-1' });
+  assert.deepEqual(calls, ['purge', 'create']);
+});
+
 const seoService = require('../src/modules/seo/seo.service');
 const seoRepository = require('../src/modules/seo/seo.repository');
 
