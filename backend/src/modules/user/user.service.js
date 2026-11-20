@@ -2,7 +2,7 @@ const bcrypt = require('bcryptjs');
 const AppError = require('../../shared/app-error');
 const roles = require('../../shared/roles');
 const userRepository = require('./user.repository');
-const { events: realtime } = require('../realtime/realtime.service');
+const { events: realtime, isOnline } = require('../realtime/realtime.service');
 const env = require('../../config/env');
 const userMailer = require('./user.mailer');
 const mailer = require('../../shared/mailer');
@@ -37,7 +37,8 @@ const validateOccupant = async (values) => {
   }
 };
 
-const list = () => userRepository.findAll();
+// Liste des comptes avec leur présence : en ligne maintenant, sinon la dernière fois vue (lastSeenAt).
+const list = async () => (await userRepository.findAll()).map((user) => ({ ...serialize(user), online: isOnline(user.id) }));
 
 const get = async (id) => {
   const user = await userRepository.findById(id);

@@ -16,6 +16,9 @@ const close = (client) => {
   clearInterval(client.heartbeat);
   clearTimeout(client.expiry);
   if (!client.response.writableEnded) client.response.end();
+  if (client.onClose) {
+    try { client.onClose(); } catch (error) { console.error('Fermeture du flux : rappel en échec.', error.message); }
+  }
 };
 
 // Compte les connexions ouvertes pour une même clé (compte ou parcours).
@@ -25,8 +28,8 @@ const countByKey = (key) => {
   return count;
 };
 
-// Ouvre un flux SSE et l'abonne aux canaux donnés jusqu'à sa fermeture ou son expiration.
-const open = (request, response, { key, channels, maxDuration = env.realtime.maxStreamDuration }) => {
+// Ouvre un flux SSE et l'abonne aux canaux donnés jusqu'à sa fermeture ou son expiration ; onClose est appelé à la fermeture.
+const open = (request, response, { key, channels, maxDuration = env.realtime.maxStreamDuration, onClose = null }) => {
   response.status(200).set({
     'Content-Type': 'text/event-stream; charset=utf-8',
     'Cache-Control': 'no-cache, no-transform',
@@ -38,7 +41,7 @@ const open = (request, response, { key, channels, maxDuration = env.realtime.max
   request.socket.setNoDelay(true);
   request.socket.setTimeout(0);
 
-  const client = { key, channels: new Set(channels), response };
+  const client = { key, channels: new Set(channels), response, onClose };
   client.heartbeat = setInterval(() => write(client, ': ping\n\n'), env.realtime.heartbeatInterval);
   client.expiry = setTimeout(() => {
     write(client, 'event: reconnect\ndata: {}\n\n');

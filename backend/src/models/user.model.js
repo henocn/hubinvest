@@ -66,6 +66,12 @@ module.exports = (sequelize, DataTypes) =>
         defaultValue: true,
         field: 'is_active',
       },
+      // Dernière présence dans l'espace d'équipe (ouverture ou fermeture du flux temps réel, connexion).
+      lastSeenAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        field: 'last_seen_at',
+      },
     },
     {
       tableName: 'users',

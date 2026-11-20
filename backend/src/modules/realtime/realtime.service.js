@@ -4,6 +4,7 @@ const AppError = require('../../shared/app-error');
 const roles = require('../../shared/roles');
 const { findSessionUser } = require('../../middlewares/auth.middleware');
 const hub = require('./realtime.hub');
+const { User } = require('../../models');
 
 // Jetons de flux à usage unique : EventSource ne sait pas envoyer l'en-tête Authorization.
 const tickets = new Map();
@@ -64,6 +65,14 @@ const assertCapacity = (key) => {
   }
 };
 
+// Présence : un compte est « en ligne » tant qu'au moins un de ses écrans garde le flux ouvert.
+const isOnline = (userId) => hub.countByKey(channels.user(userId)) > 0;
+
+// Note l'heure de présence puis prévient l'administration ; une erreur ne coupe jamais le flux.
+const touchPresence = (userId, announce) => User.update({ lastSeenAt: new Date() }, { where: { id: userId } })
+  .catch((error) => console.error('Présence non enregistrée.', error.message))
+  .then(() => { if (announce) events.usersChanged(); });
+
 // Ouvre le flux d'un compte à partir de son jeton, sans dépasser la durée de sa session.
 const openUserStream = async (request, response, ticketValue) => {
   if (!env.realtime.enabled) throw new AppError(503, 'REALTIME_DISABLED', 'Le temps réel est désactivé.');
@@ -73,11 +82,16 @@ const openUserStream = async (request, response, ticketValue) => {
   assertCapacity(key);
   const untilSessionEnd = ticket.sessionExpiresAt ? ticket.sessionExpiresAt - Date.now() : Infinity;
   if (untilSessionEnd <= 0) throw new AppError(401, 'INVALID_TOKEN', 'Session invalide ou expirée.');
-  return hub.open(request, response, {
+  const wasOnline = isOnline(user.id);
+  const client = hub.open(request, response, {
     key,
     channels: channelsFor(user),
     maxDuration: Math.min(env.realtime.maxStreamDuration, untilSessionEnd),
+    // Dernier écran fermé : le compte passe hors ligne.
+    onClose: () => { void touchPresence(user.id, !isOnline(user.id)); },
   });
+  void touchPresence(user.id, !wasOnline);
+  return client;
 };
 
 // Ouvre le flux public d'un parcours Défis, identifié par son lien personnel.
@@ -139,6 +153,7 @@ module.exports = {
   consumeTicket,
   openUserStream,
   openPassportStream,
+  isOnline,
   events,
   closeAll: hub.closeAll,
   _tickets: tickets,
