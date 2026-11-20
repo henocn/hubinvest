@@ -40,5 +40,6 @@ const findById = (id) => B2bProposal.findOne({
 
 const create = (values) => B2bProposal.create(values);
 const update = (proposal, values) => proposal.update(values);
+const destroy = (proposal) => proposal.destroy();
 
-module.exports = { findAllByNeed, findAllVisible, findById, create, update };
+module.exports = { findAllByNeed, findAllVisible, findById, create, update, destroy };

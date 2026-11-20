@@ -9,4 +9,9 @@ const list = async (request, response) => response.json({ data: await b2bProposa
 const listAll = async (request, response) => response.json({ data: await b2bProposalService.listAll(request.user) });
 const update = async (request, response) => response.json({ data: await b2bProposalService.update(request.user, request.params.id, request.body), message: 'Proposition mise à jour.' });
 
-module.exports = { createPublic, list, listAll, update };
+const remove = async (request, response) => {
+  await b2bProposalService.remove(request.user, request.params.id);
+  response.status(204).end();
+};
+
+module.exports = { createPublic, list, listAll, update, remove };

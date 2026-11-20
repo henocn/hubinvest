@@ -447,6 +447,28 @@ test('la liste des demandes B2B se limite au stand d’un administrateur de stan
   await assert.rejects(b2bProposalService.listAll({ role: 'admin', occupantId: null }), (error) => error.code === 'STAND_REQUIRED');
 });
 
+test('corriger une demande B2B ne prévient pas la personne ; la supprimer reste limité au stand', async (context) => {
+  const proposal = { id: 'proposal-a', status: 'pending', need: { occupantId: 'occupant-b', title: 'Besoin' } };
+  let saved = null;
+  let destroyed = false;
+  context.mock.method(b2bProposalRepository, 'findById', async () => proposal);
+  context.mock.method(b2bProposalRepository, 'update', async (item, values) => { saved = values; return { ...item, ...values }; });
+  context.mock.method(b2bProposalRepository, 'destroy', async () => { destroyed = true; });
+  const decided = context.mock.method(notificationService, 'b2bProposalDecided', () => {});
+
+  await b2bProposalService.update({ id: 'user-b', role: 'admin', occupantId: 'occupant-b' }, 'proposal-a', { email: 'Awa@Exemple.tg', phone: '' });
+  assert.deepEqual(saved, { email: 'awa@exemple.tg', phone: null });
+  assert.equal(decided.mock.callCount(), 0);
+
+  await assert.rejects(
+    b2bProposalService.remove({ role: 'admin', occupantId: 'occupant-a' }, 'proposal-a'),
+    (error) => error.code === 'B2B_PROPOSAL_NOT_FOUND',
+  );
+  assert.equal(destroyed, false);
+  await b2bProposalService.remove({ role: 'admin', occupantId: 'occupant-b' }, 'proposal-a');
+  assert.equal(destroyed, true);
+});
+
 test('le backoffice B2B peut lire les propositions d’un besoin existant', async (context) => {
   context.mock.method(b2bNeedRepository, 'findById', async () => ({ id: 'need-b', occupantId: 'occupant-b' }));
   context.mock.method(b2bProposalRepository, 'findAllByNeed', async (needId) => [{ id: 'proposal-a', b2bNeedId: needId }]);

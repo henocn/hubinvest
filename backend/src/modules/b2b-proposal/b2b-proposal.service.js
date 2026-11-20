@@ -39,14 +39,25 @@ const listAll = async (user) => {
   return b2bProposalRepository.findAllVisible(user.occupantId);
 };
 
-const update = async (user, id, values) => {
+// Une demande que l'utilisateur peut traiter : toutes pour le super-admin, celles de son stand pour un administrateur de stand.
+const getManaged = async (user, id) => {
   const proposal = await b2bProposalRepository.findById(id);
   if (!proposal) throw new AppError(404, 'B2B_PROPOSAL_NOT_FOUND', 'Proposition B2B introuvable.');
   if (user.role === 'admin' && proposal.need.occupantId !== user.occupantId) {
     throw new AppError(404, 'B2B_PROPOSAL_NOT_FOUND', 'Proposition B2B introuvable.');
   }
+  return proposal;
+};
+
+// Accepter ou refuser (la personne est prévenue par e-mail), ou corriger les coordonnées et le message.
+const update = async (user, id, values) => {
+  const proposal = await getManaged(user, id);
   const previousStatus = proposal.status;
-  const updated = await b2bProposalRepository.update(proposal, { ...values, handledByUserId: user.id });
+  const nextValues = { ...values };
+  if (nextValues.email) nextValues.email = nextValues.email.toLowerCase();
+  if (nextValues.phone === '') nextValues.phone = null;
+  if (nextValues.status && nextValues.status !== previousStatus) nextValues.handledByUserId = user.id;
+  const updated = await b2bProposalRepository.update(proposal, nextValues);
   if (updated.status !== previousStatus) {
     notificationService.b2bProposalDecided(updated, proposal.need);
   }
@@ -54,4 +65,10 @@ const update = async (user, id, values) => {
   return updated;
 };
 
-module.exports = { createPublic, list, listAll, update };
+const remove = async (user, id) => {
+  const proposal = await getManaged(user, id);
+  await b2bProposalRepository.destroy(proposal);
+  realtime.b2bChanged(proposal.need.occupantId);
+};
+
+module.exports = { createPublic, list, listAll, update, remove };

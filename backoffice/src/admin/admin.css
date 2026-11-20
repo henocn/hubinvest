@@ -110,6 +110,12 @@
 .admin-app .table-action:hover { color: var(--ink); background: #f4f5f5; }
 .admin-app .table-action.is-danger { color: #a62039; }
 .admin-app .table-action.is-danger:hover { border-color: #efc6ce; background: #fff3f5; }
+/* Décision sur une demande : Accepter en vert, Refuser en rouge, séparés des boutons modifier et supprimer. */
+.admin-app .table-action.is-accept { color: #fff; border-color: var(--green); background: var(--green); }
+.admin-app .table-action.is-accept:hover { color: #fff; background: #0f5541; }
+.admin-app .table-action.is-decline { color: #a62039; border-color: #e3b3bd; background: #fff; }
+.admin-app .table-action.is-decline:hover { color: #8c1a30; border-color: #d48f9d; background: #fff3f5; }
+.admin-app .row-actions-divider { width: 1px; align-self: stretch; margin: 2px 2px; background: var(--grid); }
 .admin-app .table-action.is-copied { color: var(--green); border-color: rgba(21, 108, 83, .35); background: #edf3f1; }
 .admin-app .studio-date { min-width: 145px; }
 .admin-app .program-type-cell { color: var(--green); font-size: 12px; font-weight: 750; white-space: nowrap; }

@@ -79,6 +79,8 @@ export const api = {
     request(`/b2b-needs/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
   b2bAllProposals: (token) => request('/b2b-proposals', authorized(token)),
   b2bProposals: (token, needId) => request(`/b2b-proposals/need/${needId}`, authorized(token)),
+  deleteB2bProposal: (token, id) =>
+    request(`/b2b-proposals/${id}`, authorized(token, { method: 'DELETE' })),
   updateB2bProposal: (token, id, values) =>
     request(`/b2b-proposals/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
   programEvents: (token) => request('/program-events', authorized(token)),

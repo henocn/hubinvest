@@ -7,6 +7,7 @@ import { useRowSelection } from '../components/RowSelection';
 import ConfirmReward from '../components/ConfirmReward';
 import QrCodeDialog from '../components/QrCodeDialog';
 import InvestorRequestDrawer from '../components/drawers/InvestorRequestDrawer';
+import B2bProposalDrawer from '../components/drawers/B2bProposalDrawer';
 import OccupantDrawer from '../components/drawers/OccupantDrawer';
 import ProgramEventDrawer from '../components/drawers/ProgramEventDrawer';
 import UserDrawer from '../components/drawers/UserDrawer';
@@ -287,6 +288,11 @@ export default function BackofficePage({ session, onLogout, section }) {
     setPendingDelete({ type: 'program', item: programEvent, label: programEvent.type === 'spotlight' ? `la mise à l’affiche de ${programEvent.occupant?.name || 'ce stand'}` : `« ${programEvent.title} » du programme` });
   };
 
+  const requestB2bProposalDelete = (proposal) => {
+    setDeleteError('');
+    setPendingDelete({ type: 'b2b-proposal', item: proposal, label: `la demande B2B de ${proposal.fullName}` });
+  };
+
   const requestWheelDelete = (segment) => {
     setDeleteError('');
     setPendingDelete({ type: 'wheel', item: segment, label: `la case « ${segment.label} » de la roue` });
@@ -310,6 +316,7 @@ export default function BackofficePage({ session, onLogout, section }) {
       if (pendingDelete.type === 'occupant') await api.deleteOccupant(session.token, pendingDelete.item.id);
       else if (pendingDelete.type === 'program') await api.deleteProgramEvent(session.token, pendingDelete.item.id);
       else if (pendingDelete.type === 'wheel') await api.deleteWheelSegment(session.token, pendingDelete.item.id);
+      else if (pendingDelete.type === 'b2b-proposal') await api.deleteB2bProposal(session.token, pendingDelete.item.id);
       else await api.deleteUser(session.token, pendingDelete.item.id);
       setPendingDelete(null);
       if (pendingDelete.type === 'occupant' && detailId) navigate('/stands', { replace: true });
@@ -383,7 +390,7 @@ export default function BackofficePage({ session, onLogout, section }) {
           {!loading && !error && section === 'program' && <ProgramEventsTable selection={selection} events={rows} query={query} onEdit={(item) => setDrawer({ type: 'program', item })} onDelete={requestProgramDelete} />}
           {!loading && !error && section === 'investor-requests' && <InvestorRequestsTable selection={selection} requests={rows} query={query} showStand={isSuperAdmin} onEdit={(item) => setDrawer({ type: 'investor-request', item })} />}
           {section === 'b2b' && decisionError && <p className="panel-message is-error">{decisionError}</p>}
-          {!loading && !error && section === 'b2b' && <B2bProposalsTable selection={selection} proposals={rows} query={query} showStand={isSuperAdmin} deciding={deciding} onDecide={decideProposal} />}
+          {!loading && !error && section === 'b2b' && <B2bProposalsTable selection={selection} proposals={rows} query={query} showStand={isSuperAdmin} deciding={deciding} onDecide={decideProposal} onEdit={(item) => setDrawer({ type: 'b2b-proposal', item })} onDelete={requestB2bProposalDelete} />}
           {!loading && !error && section === 'challenges' && <ChallengePassportsTable selection={selection} passports={rows} query={query} allowReward={isSuperAdmin} onRedeem={(passport) => { setRewardError(''); setPendingReward(passport); }} />}
           {!loading && !error && section === 'wheel' && <WheelSegmentsTable selection={selection} segments={rows} query={query} onEdit={(item) => setDrawer({ type: 'wheel', item })} onDelete={requestWheelDelete} />}
         </section>
@@ -395,6 +402,7 @@ export default function BackofficePage({ session, onLogout, section }) {
       {drawer?.type === 'user' && <UserDrawer user={drawer.item} occupants={occupants} token={session.token} currentRole={session.user.role} currentUserId={session.user.id} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'program' && <ProgramEventDrawer programEvent={drawer.item} occupants={occupants} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'investor-request' && <InvestorRequestDrawer investorRequest={drawer.item} occupants={occupants} fixedOccupant={isAdmin ? session.user.occupant : null} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
+      {drawer?.type === 'b2b-proposal' && <B2bProposalDrawer proposal={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'wheel' && <WheelSegmentDrawer segment={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {wheelCode && <WheelCodeDialog wheelCode={wheelCode.data} loading={wheelCode.loading} error={wheelCode.error} onNew={generateWheelCode} onClose={() => setWheelCode(null)} />}
       {pendingDelete && <ConfirmDelete subject={pendingDelete} loading={deleting} error={deleteError} onCancel={() => setPendingDelete(null)} onConfirm={confirmDelete} />}
