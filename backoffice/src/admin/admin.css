@@ -343,3 +343,5 @@
 .admin-app .row-detail a { color: var(--green); }
 .admin-app .row-detail-list { margin: 0; padding-left: 18px; white-space: normal; }
 .admin-app .cell-ellipsis { display: block; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-app a.cell-link { color: var(--green); text-decoration: none; }
+.admin-app a.cell-link:hover { text-decoration: underline; }

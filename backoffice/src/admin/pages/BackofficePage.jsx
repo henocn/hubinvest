@@ -5,6 +5,7 @@ import ConfirmDelete from '../components/ConfirmDelete';
 import OccupantDetail from '../components/OccupantDetail';
 import { useRowSelection } from '../components/RowSelection';
 import ConfirmReward from '../components/ConfirmReward';
+import ConfirmDecision from '../components/ConfirmDecision';
 import QrCodeDialog from '../components/QrCodeDialog';
 import InvestorRequestDrawer from '../components/drawers/InvestorRequestDrawer';
 import B2bProposalDrawer from '../components/drawers/B2bProposalDrawer';
@@ -34,7 +35,7 @@ const sectionMeta = {
   users: { title: 'Accès' },
   program: { title: 'Programme' },
   'investor-requests': { title: 'Investor Desk' },
-  b2b: { title: 'B2B' },
+  b2b: { title: 'Rencontre B2B' },
   challenges: { title: 'Participants aux défis' },
   wheel: { title: 'Roue des opportunités' },
 };
@@ -53,7 +54,8 @@ export default function BackofficePage({ session, onLogout, section }) {
   const [investorRequests, setInvestorRequests] = useState([]);
   const [b2bNeeds, setB2bNeeds] = useState([]);
   const [b2bProposals, setB2bProposals] = useState([]);
-  const [deciding, setDeciding] = useState('');
+  const [pendingDecision, setPendingDecision] = useState(null);
+  const [deciding, setDeciding] = useState(false);
   const [decisionError, setDecisionError] = useState('');
   const [programEvents, setProgramEvents] = useState([]);
   const [challengePassports, setChallengePassports] = useState([]);
@@ -239,17 +241,23 @@ export default function BackofficePage({ session, onLogout, section }) {
     }
   };
 
-  // Accepter ou refuser une demande B2B ; la personne reçoit la réponse par e-mail.
-  const decideProposal = async (proposal, status) => {
-    setDeciding(proposal.id);
+  // Accepter ou refuser une demande B2B, après confirmation : la personne reçoit la réponse par e-mail.
+  const requestDecision = (proposal, status) => {
+    setDecisionError('');
+    setPendingDecision({ proposal, status });
+  };
+
+  const confirmDecision = async () => {
+    setDeciding(true);
     setDecisionError('');
     try {
-      await api.updateB2bProposal(session.token, proposal.id, { status });
+      await api.updateB2bProposal(session.token, pendingDecision.proposal.id, { status: pendingDecision.status });
+      setPendingDecision(null);
       await reloadTopic('b2b');
     } catch (requestError) {
       setDecisionError(requestError.message);
     } finally {
-      setDeciding('');
+      setDeciding(false);
     }
   };
 
@@ -389,8 +397,7 @@ export default function BackofficePage({ session, onLogout, section }) {
           {!loading && !error && section === 'users' && <UsersTable selection={selection} users={rows} query={query} currentUserId={session.user.id} onEdit={(item) => setDrawer({ type: 'user', item })} onDelete={requestUserDelete} />}
           {!loading && !error && section === 'program' && <ProgramEventsTable selection={selection} events={rows} query={query} onEdit={(item) => setDrawer({ type: 'program', item })} onDelete={requestProgramDelete} />}
           {!loading && !error && section === 'investor-requests' && <InvestorRequestsTable selection={selection} requests={rows} query={query} showStand={isSuperAdmin} onEdit={(item) => setDrawer({ type: 'investor-request', item })} />}
-          {section === 'b2b' && decisionError && <p className="panel-message is-error">{decisionError}</p>}
-          {!loading && !error && section === 'b2b' && <B2bProposalsTable selection={selection} proposals={rows} query={query} showStand={isSuperAdmin} deciding={deciding} onDecide={decideProposal} onEdit={(item) => setDrawer({ type: 'b2b-proposal', item })} onDelete={requestB2bProposalDelete} />}
+          {!loading && !error && section === 'b2b' && <B2bProposalsTable selection={selection} proposals={rows} query={query} showStand={isSuperAdmin} onDecide={requestDecision} onEdit={(item) => setDrawer({ type: 'b2b-proposal', item })} onDelete={requestB2bProposalDelete} />}
           {!loading && !error && section === 'challenges' && <ChallengePassportsTable selection={selection} passports={rows} query={query} allowReward={isSuperAdmin} onRedeem={(passport) => { setRewardError(''); setPendingReward(passport); }} />}
           {!loading && !error && section === 'wheel' && <WheelSegmentsTable selection={selection} segments={rows} query={query} onEdit={(item) => setDrawer({ type: 'wheel', item })} onDelete={requestWheelDelete} />}
         </section>
@@ -406,6 +413,7 @@ export default function BackofficePage({ session, onLogout, section }) {
       {drawer?.type === 'wheel' && <WheelSegmentDrawer segment={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {wheelCode && <WheelCodeDialog wheelCode={wheelCode.data} loading={wheelCode.loading} error={wheelCode.error} onNew={generateWheelCode} onClose={() => setWheelCode(null)} />}
       {pendingDelete && <ConfirmDelete subject={pendingDelete} loading={deleting} error={deleteError} onCancel={() => setPendingDelete(null)} onConfirm={confirmDelete} />}
+      {pendingDecision && <ConfirmDecision {...pendingDecision} loading={deciding} error={decisionError} onCancel={() => setPendingDecision(null)} onConfirm={confirmDecision} />}
       {pendingReward && <ConfirmReward passport={pendingReward} loading={rewarding} error={rewardError} onCancel={() => setPendingReward(null)} onConfirm={confirmReward} />}
       {qrCode && <QrCodeDialog {...qrCode} onClose={() => setQrCode(null)} />}
     </>

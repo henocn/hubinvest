@@ -6,7 +6,7 @@ export const adminSections = [
   { section: 'occupants', path: '/stands', label: 'Stands', Icon: Building2, superOnly: true, tab: true },
   { section: 'users', path: '/acces', label: 'Accès', Icon: Users, superOnly: true },
   { section: 'program', path: '/programme', label: 'Programme', Icon: CalendarDays, superOnly: true },
-  { section: 'b2b', path: '/b2b', label: 'B2B', Icon: Handshake, group: 'meetings' },
+  { section: 'b2b', path: '/b2b', label: 'Rencontre B2B', Icon: Handshake, group: 'meetings' },
   { section: 'investor-requests', path: '/investor-desk', label: 'Investor Desk', Icon: Handshake, group: 'meetings' },
   { section: 'challenges', path: '/participants', label: 'Participants', Icon: Trophy, tab: true },
   { section: 'wheel', path: '/roue', label: 'Roue', Icon: Disc3, tab: true },
