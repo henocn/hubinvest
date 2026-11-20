@@ -1,15 +1,12 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
 import { useDashboard } from '../dashboard';
 
-// Une carte : un gros chiffre, son libellé, et la rubrique où agir.
+// Une ligne : le libellé et son détail à gauche, le chiffre à droite ; cliquable vers la rubrique où agir.
 function Stat({ value, label, detail, to, urgent = false }) {
   const content = (
     <>
+      <span>{label}{detail && <small> · {detail}</small>}</span>
       <strong>{value ?? '—'}</strong>
-      <span>{label}</span>
-      {detail && <small>{detail}</small>}
-      {to && <ArrowRight className="dashboard-arrow" size={16} aria-hidden="true" />}
     </>
   );
   const className = `dashboard-stat${urgent && value > 0 ? ' is-urgent' : ''}`;
@@ -23,9 +20,7 @@ export default function DashboardPage({ session }) {
 
   return (
     <main className="admin-workspace">
-      <header className="workspace-header">
-        <div><h1>Tableau de bord</h1></div>
-      </header>
+      <header className="workspace-header"><h1>Tableau de bord</h1></header>
       {error && <p className="admin-form-error">{error}</p>}
       {!data && !error && <p className="panel-message">Chargement…</p>}
       {data && (

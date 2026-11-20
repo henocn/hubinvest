@@ -1,9 +1,8 @@
-export default function EmptyState({ icon: Icon, title, copy }) {
+// Tableau vide : une seule ligne, sans pictogramme.
+export default function EmptyState({ title, copy }) {
   return (
-    <div className="admin-empty-state">
-      <span><Icon size={22} /></span>
-      <strong>{title}</strong>
-      <p>{copy}</p>
-    </div>
+    <p className="admin-empty-state">
+      <strong>{title}.</strong> {copy}
+    </p>
   );
 }

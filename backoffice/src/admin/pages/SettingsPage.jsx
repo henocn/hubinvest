@@ -4,12 +4,12 @@ import { api } from '../lib/api';
 import { useRealtimeEvent } from '../../lib/realtime';
 
 const modules = [
-  { key: 'contactRequestsOpen', title: 'Demandes de contact aux stands', text: 'Formulaire « Être recontacté » des fiches de stand.' },
-  { key: 'investorDeskOpen', title: 'Investor Desk', text: 'Dépôt de nouveaux projets.' },
-  { key: 'b2bOpen', title: 'Propositions B2B', text: 'Réponses des visiteurs aux besoins publiés.' },
-  { key: 'challengeOpen', title: 'Défis', text: 'Inscription des joueurs et scans sur les stands.' },
-  { key: 'wheelOpen', title: 'Roue des opportunités', text: 'Codes de jeu et tirages.' },
-  { key: 'liveQuestionsOpen', title: 'Questions en direct', text: 'Questions du public à l’animateur pendant le Studio et les prises de parole.' },
+  { key: 'contactRequestsOpen', title: 'Demandes de contact aux stands' },
+  { key: 'investorDeskOpen', title: 'Investor Desk' },
+  { key: 'b2bOpen', title: 'Propositions B2B' },
+  { key: 'challengeOpen', title: 'Défis' },
+  { key: 'wheelOpen', title: 'Roue des opportunités' },
+  { key: 'liveQuestionsOpen', title: 'Questions en direct' },
 ];
 
 // Réglages du site, appliqués aussitôt : ouvrir ou fermer chaque module, nombre de stands requis pour les Défis.
@@ -67,20 +67,18 @@ export default function SettingsPage({ session, onLogout }) {
 
   return (
     <main className="admin-workspace">
-      <header className="workspace-header">
-        <div><h1>Paramètres</h1><p>Chaque changement s’applique aussitôt sur le site.</p></div>
-      </header>
+      <header className="workspace-header"><h1>Paramètres</h1></header>
       {error && <p className="admin-form-error">{error}</p>}
       {!settings && !error && <p className="panel-message">Chargement…</p>}
       {settings && (
         <>
           <section className="data-panel settings-panel">
             <h2>Modules ouverts au public</h2>
-            {modules.map(({ key, title, text }) => (
+            {modules.map(({ key, title }) => (
               <label className="settings-row" key={key}>
                 <span>
                   <strong>{title}</strong>
-                  <small>{settings[key] ? text : 'Fermé : le site affiche un message à la place.'}</small>
+                  {!settings[key] && <small>Fermé</small>}
                 </span>
                 {savedKey === key && <Check className="settings-saved" size={18} aria-label="Enregistré" />}
                 <input
@@ -100,7 +98,6 @@ export default function SettingsPage({ session, onLogout }) {
             <form className="settings-row" onSubmit={savePassages}>
               <span>
                 <strong>Stands à visiter pour terminer le parcours</strong>
-                <small>Un parcours déjà terminé le reste.</small>
               </span>
               {savedKey === 'requiredPassages' && <Check className="settings-saved" size={18} aria-label="Enregistré" />}
               <span className="settings-number">
@@ -111,7 +108,7 @@ export default function SettingsPage({ session, onLogout }) {
             <form className="settings-row" onSubmit={savePlaysPerDay}>
               <span>
                 <strong>Parties de roue par personne et par jour</strong>
-                <small>0 = sans limite. Le code d’un joueur qui a atteint la limite reste valable pour quelqu’un d’autre.</small>
+                <small>0 = sans limite</small>
               </span>
               {savedKey === 'wheelPlaysPerDay' && <Check className="settings-saved" size={18} aria-label="Enregistré" />}
               <span className="settings-number">

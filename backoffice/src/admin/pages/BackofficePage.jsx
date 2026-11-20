@@ -27,14 +27,14 @@ import { api } from '../lib/api';
 import { useRealtimeEvent } from '../../lib/realtime';
 
 const sectionMeta = {
-  occupants: { title: 'Stands', description: 'Fiches publiques, emplacements et statuts.' },
-  users: { title: 'Accès', description: 'Comptes et niveaux d’accès à la plateforme.' },
-  program: { title: 'Programme', description: 'Stand à l’affiche, animations et temps forts affichés sur l’accueil.' },
-  'investor-requests': { title: 'Investor Desk', description: 'Demandes de professionnels adressées à l’API-ZF.' },
-  b2b: { title: 'B2B', description: 'Besoins publiés et propositions reçues.' },
-  studio: { title: 'Studio', description: 'Invitations et planning des invités.' },
-  challenges: { title: 'Participants aux défis', description: 'Contacts, progression et remise des récompenses.' },
-  wheel: { title: 'Roue des opportunités', description: 'Lots, quantités et codes de jeu à usage unique.' },
+  occupants: { title: 'Stands' },
+  users: { title: 'Accès' },
+  program: { title: 'Programme' },
+  'investor-requests': { title: 'Investor Desk' },
+  b2b: { title: 'B2B' },
+  studio: { title: 'Studio' },
+  challenges: { title: 'Participants aux défis' },
+  wheel: { title: 'Roue des opportunités' },
 };
 
 // Page d'une rubrique de l'administration ; la rubrique vient de l'adresse (/stands, /b2b, /roue…).
@@ -170,8 +170,6 @@ export default function BackofficePage({ session, onLogout, section }) {
   const visibleB2bNeeds = useMemo(() => b2bNeeds.filter((item) => !query || [item.title, item.occupant?.name, item.status].some((value) => String(value || '').toLowerCase().includes(query))), [b2bNeeds, query]);
   const visibleStudioInvitations = useMemo(() => studioInvitations.filter((item) => !query || [item.guestName, item.subject].some((value) => String(value || '').toLowerCase().includes(query))), [studioInvitations, query]);
   const visibleProgramEvents = useMemo(() => programEvents.filter((item) => !query || [item.title, item.location, item.description, item.occupant?.name].some((value) => String(value || '').toLowerCase().includes(query))), [programEvents, query]);
-  const programTodayStart = new Date().setUTCHours(0, 0, 0, 0);
-  const programTodayEnd = programTodayStart + 86_400_000;
   const visibleChallengePassports = useMemo(() => challengePassports.filter((item) => !query || [item.displayName, item.email, item.phone, item.contact, item.code, ...(item.passages || []).flatMap((passage) => [passage.occupant?.name, passage.validatedBy?.firstName, passage.validatedBy?.lastName])].some((value) => String(value || '').toLowerCase().includes(query))), [challengePassports, query]);
 
   const visibleWheelSegments = useMemo(() => wheel.segments.filter((item) => !query || [item.label, item.sponsor].some((value) => String(value || '').toLowerCase().includes(query))), [wheel.segments, query]);
@@ -185,13 +183,13 @@ export default function BackofficePage({ session, onLogout, section }) {
 
   // Filtre et tri du tableau affiché : le premier tri proposé est celui par défaut.
   const settings = tableSettings[section];
+  const matchesFilter = (item, value) => {
+    const result = settings.filterOf(item, value);
+    return result === true || result === value;
+  };
   const arrange = (items) => {
-    const matches = (item) => {
-      const result = settings.filterOf(item, filterValue);
-      return result === true || result === filterValue;
-    };
     const sorter = settings.sorts.find((item) => item.value === sortValue) || settings.sorts[0];
-    return (filterValue ? items.filter(matches) : [...items]).sort(sorter.compare);
+    return (filterValue ? items.filter((item) => matchesFilter(item, filterValue)) : [...items]).sort(sorter.compare);
   };
   const sectionRows = {
     occupants: visibleOccupants,
@@ -203,7 +201,14 @@ export default function BackofficePage({ session, onLogout, section }) {
     challenges: visibleChallengePassports,
     wheel: visibleWheelSegments,
   };
-  const rows = arrange(sectionRows[section] || []);
+  const baseRows = sectionRows[section] || [];
+  const rows = arrange(baseRows);
+  // Les filtres portent leur nombre de lignes : plus besoin de tuiles de résumé au-dessus du tableau.
+  const filterChips = [{ value: '', label: 'Tous', count: baseRows.length }, ...settings.filters.map((item) => ({ ...item, count: baseRows.filter((row) => matchesFilter(row, item.value)).length }))];
+  // Repères qu'aucun filtre ne donne, affichés en une ligne discrète.
+  const toolbarNote = loading || error ? '' : section === 'wheel'
+    ? `${wheel.stats.played} partie${wheel.stats.played > 1 ? 's' : ''} · ${wheel.stats.awarded} lot${wheel.stats.awarded > 1 ? 's' : ''} gagné${wheel.stats.awarded > 1 ? 's' : ''} · ${wheel.stats.remaining} restant${wheel.stats.remaining > 1 ? 's' : ''}`
+    : section === 'occupants' ? `${contactStats.total} contact${contactStats.total > 1 ? 's' : ''} enregistré${contactStats.total > 1 ? 's' : ''}` : '';
 
   // Exporte exactement les lignes affichées ; pour la roue, toutes les parties jouées.
   const exportRows = async () => {
@@ -301,74 +306,33 @@ export default function BackofficePage({ session, onLogout, section }) {
     <>
       <main className="admin-workspace">
         <header className="workspace-header">
-          <div><h1>{sectionMeta[section].title}</h1><p>{sectionMeta[section].description}</p></div>
+          <h1>{sectionMeta[section].title}</h1>
           {(section === 'occupants' || section === 'users' || section === 'program' || section === 'b2b' || section === 'studio' || section === 'challenges' || section === 'wheel') && <div className="workspace-actions">
-            {section === 'occupants' && <button className="button button-secondary" type="button" onClick={() => setQrCode({ title: 'QR du Hub', url: `${publicBaseUrl}/stands`, fileName: 'hubinvest-hub' })}><QrCode size={18} /> QR du Hub</button>}
-            {section === 'challenges' && <button className="button button-secondary" type="button" onClick={() => setQrCode({ title: 'QR des Défis', url: `${publicBaseUrl}/defis`, fileName: 'hubinvest-defis' })}><QrCode size={18} /> QR des Défis</button>}
-            {section === 'program' && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: 'program', item: null })}><Plus size={18} /> Ajouter au programme</button>}
-            {section === 'wheel' && <><button className="button button-secondary" type="button" onClick={() => setDrawer({ type: 'wheel', item: null })}><Plus size={18} /> Nouvelle case</button><button className="button button-primary" type="button" onClick={generateWheelCode}><Ticket size={18} /> Générer un code</button></>}
-            {section !== 'challenges' && section !== 'program' && section !== 'wheel' && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: section === 'occupants' ? 'occupant' : section === 'users' ? 'user' : section === 'b2b' ? 'b2b' : 'studio', item: null })}><Plus size={18} /> {section === 'occupants' ? 'Nouveau stand' : section === 'users' ? 'Nouvel utilisateur' : section === 'b2b' ? 'Nouveau besoin' : 'Nouvelle invitation'}</button>}
+            {section === 'occupants' && <button className="button button-secondary" type="button" onClick={() => setQrCode({ title: 'QR du Hub', url: `${publicBaseUrl}/stands`, fileName: 'hubinvest-hub' })}><QrCode size={16} /> QR du Hub</button>}
+            {section === 'challenges' && <button className="button button-secondary" type="button" onClick={() => setQrCode({ title: 'QR des Défis', url: `${publicBaseUrl}/defis`, fileName: 'hubinvest-defis' })}><QrCode size={16} /> QR des Défis</button>}
+            {section === 'program' && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: 'program', item: null })}><Plus size={16} /> Ajouter au programme</button>}
+            {section === 'wheel' && <><button className="button button-secondary" type="button" onClick={() => setDrawer({ type: 'wheel', item: null })}><Plus size={16} /> Nouvelle case</button><button className="button button-primary" type="button" onClick={generateWheelCode}><Ticket size={16} /> Générer un code</button></>}
+            {section !== 'challenges' && section !== 'program' && section !== 'wheel' && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: section === 'occupants' ? 'occupant' : section === 'users' ? 'user' : section === 'b2b' ? 'b2b' : 'studio', item: null })}><Plus size={16} /> {section === 'occupants' ? 'Nouveau stand' : section === 'users' ? 'Nouvel utilisateur' : section === 'b2b' ? 'Nouveau besoin' : 'Nouvelle invitation'}</button>}
           </div>}
         </header>
 
-        {section === 'wheel' ? (
-          <section className="summary-row" aria-label="Résumé">
-            <article><span>Parties jouées</span><strong>{loading || error ? '—' : wheel.stats.played}</strong><small>codes utilisés</small></article>
-            <article><span>Lots gagnés</span><strong>{loading || error ? '—' : wheel.stats.awarded}</strong><small>depuis l’ouverture</small></article>
-            <article><span>Lots restants</span><strong>{loading || error ? '—' : wheel.stats.remaining}</strong><small>encore sur la roue</small></article>
-          </section>
-        ) : section === 'challenges' ? (
-          <section className="summary-row" aria-label="Résumé">
-            <article><span>En cours</span><strong>{loading || error ? '—' : challengePassports.filter((item) => item.status === 'active').length}</strong><small>parcours commencés</small></article>
-            <article><span>Terminés</span><strong>{loading || error ? '—' : challengePassports.filter((item) => item.status === 'completed').length}</strong><small>récompenses à remettre</small></article>
-            <article><span>Remises</span><strong>{loading || error ? '—' : challengePassports.filter((item) => item.status === 'redeemed').length}</strong><small>récompenses enregistrées</small></article>
-          </section>
-        ) : section === 'program' ? (
-          <section className="summary-row" aria-label="Résumé">
-            <article><span>Aujourd’hui</span><strong>{loading || error ? '—' : programEvents.filter((item) => item.type !== 'spotlight' && new Date(item.startsAt) >= programTodayStart && new Date(item.startsAt) < programTodayEnd).length}</strong><small>rendez-vous du jour</small></article>
-            <article><span>À venir</span><strong>{loading || error ? '—' : programEvents.filter((item) => item.type !== 'spotlight' && new Date(item.startsAt) >= programTodayEnd).length}</strong><small>rendez-vous programmés</small></article>
-            <article><span>À l’affiche</span><strong>{loading || error ? '—' : programEvents.find((item) => item.type === 'spotlight' && new Date(item.startsAt) >= programTodayStart && new Date(item.startsAt) < programTodayEnd)?.occupant?.name || 'Aucun'}</strong><small>stand du jour</small></article>
-          </section>
-        ) : section === 'b2b' ? (
-          <section className="summary-row" aria-label="Résumé">
-            <article><span>Ouverts</span><strong>{loading || error ? '—' : b2bNeeds.filter((item) => item.status === 'open').length}</strong><small>besoins publiés</small></article>
-            <article><span>Fermés</span><strong>{loading || error ? '—' : b2bNeeds.filter((item) => item.status === 'closed').length}</strong><small>besoins retirés</small></article>
-            <article><span>Total</span><strong>{loading || error ? '—' : b2bNeeds.length}</strong><small>besoins enregistrés</small></article>
-          </section>
-        ) : section === 'studio' ? (
-          <section className="summary-row" aria-label="Résumé">
-            <article><span>En attente</span><strong>{loading || error ? '—' : studioInvitations.filter((item) => item.status === 'pending').length}</strong><small>sans réponse</small></article>
-            <article><span>Confirmées</span><strong>{loading || error ? '—' : studioInvitations.filter((item) => item.status === 'confirmed').length}</strong><small>invités attendus</small></article>
-            <article><span>Refusées</span><strong>{loading || error ? '—' : studioInvitations.filter((item) => item.status === 'declined').length}</strong><small>indisponibles</small></article>
-          </section>
-        ) : section === 'investor-requests' ? (
-          <section className="summary-row" aria-label="Résumé">
-            <article><span>Nouvelles</span><strong>{loading || error ? '—' : investorRequests.filter((item) => item.status === 'new').length}</strong><small>à examiner</small></article>
-            <article><span>En cours</span><strong>{loading || error ? '—' : investorRequests.filter((item) => item.status === 'in_progress').length}</strong><small>prises en charge</small></article>
-            <article><span>Clôturées</span><strong>{loading || error ? '—' : investorRequests.filter((item) => item.status === 'closed').length}</strong><small>demandes traitées</small></article>
-          </section>
-        ) : (
-          <section className="summary-row" aria-label="Résumé">
-            <article><span>Stands</span><strong>{loading || error ? '—' : occupants.length}</strong><small>{!loading && !error && `${occupants.filter((item) => item.status === 'active').length} actifs`}</small></article>
-            <article><span>Utilisateurs</span><strong>{loading || error ? '—' : users.length}</strong><small>{!loading && !error && `${users.filter((item) => item.isActive).length} actifs`}</small></article>
-            {section === 'occupants' ? <article><span>Contacts enregistrés</span><strong>{loading || error ? '—' : contactStats.total}</strong><small>tous les occupants</small></article> : <article><span>Administration</span><strong>{loading || error ? '—' : users.filter((item) => ['super-admin', 'admin'].includes(item.role)).length}</strong><small>comptes internes</small></article>}
-          </section>
-        )}
-
         <section className="data-panel">
           <header className="data-toolbar">
-            <label className="admin-search-field"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={section === 'occupants' ? 'Rechercher un occupant' : section === 'users' ? 'Rechercher un utilisateur' : section === 'program' ? 'Rechercher dans le programme' : section === 'b2b' ? 'Rechercher un besoin' : section === 'studio' ? 'Rechercher une invitation' : section === 'challenges' ? 'Rechercher un participant' : section === 'wheel' ? 'Rechercher un lot' : 'Rechercher une demande'} /></label>
+            <div className="filter-chips" role="group" aria-label={settings.filterLabel}>
+              {filterChips.map((item) => (
+                <button key={item.value || 'all'} type="button" className={item.value === filterValue ? 'is-active' : ''} aria-pressed={item.value === filterValue} onClick={() => setFilterValue(item.value)}>
+                  {item.label} <span>{loading ? '—' : item.count}</span>
+                </button>
+              ))}
+            </div>
+            {toolbarNote && <span className="data-note">{toolbarNote}</span>}
             <div className="data-toolbar-controls">
-              <select value={filterValue} onChange={(event) => setFilterValue(event.target.value)} aria-label={settings.filterLabel}>
-                <option value="">{settings.filterLabel} : tous</option>
-                {settings.filters.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-              </select>
+              <label className="admin-search-field"><Search size={15} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Rechercher" aria-label={section === 'occupants' ? 'Rechercher un occupant' : section === 'users' ? 'Rechercher un utilisateur' : section === 'program' ? 'Rechercher dans le programme' : section === 'b2b' ? 'Rechercher un besoin' : section === 'studio' ? 'Rechercher une invitation' : section === 'challenges' ? 'Rechercher un participant' : section === 'wheel' ? 'Rechercher un lot' : 'Rechercher une demande'} /></label>
               <select value={sortValue || settings.sorts[0].value} onChange={(event) => setSortValue(event.target.value)} aria-label="Trier">
                 {settings.sorts.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
               </select>
-              <span className="data-count">{loading ? '—' : rows.length} ligne{rows.length > 1 ? 's' : ''}</span>
               <button className="button button-secondary data-export" type="button" onClick={exportRows} disabled={loading || exporting || (section !== 'wheel' && !rows.length)}>
-                <Download size={16} /> {exporting ? 'Export…' : section === 'wheel' ? 'Exporter les parties' : 'Exporter'}
+                <Download size={15} /> {exporting ? 'Export…' : section === 'wheel' ? 'Exporter les parties' : 'Exporter'}
               </button>
             </div>
           </header>

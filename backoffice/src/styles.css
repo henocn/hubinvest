@@ -1201,3 +1201,68 @@ select:focus {
   padding: 18px 0 0;
   border-top: 1px solid var(--border);
 }
+
+/* Espace d'équipe sobre : titres à taille de lecture, moins d'espace au-dessus, chiffres sur une ligne. */
+.workspace {
+  padding-top: 18px;
+}
+
+.workspace h1,
+.workspace .challenge-validation-content h1,
+.workspace.animator-rewards-workspace h1 {
+  margin-bottom: 0;
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.workspace.animator-rewards-workspace h1,
+.workspace.live-questions-workspace h1 {
+  margin-bottom: 12px;
+}
+
+.page-heading {
+  margin-bottom: 14px;
+}
+
+.heading-with-action {
+  align-items: center;
+}
+
+.metric-strip,
+.metric-strip div {
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+
+.metric-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-bottom: 12px;
+}
+
+.metric-strip div {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 0;
+}
+
+.metric-strip strong {
+  font-size: 1rem;
+}
+
+.metric-strip span {
+  font-size: 0.85rem;
+}
+
+@media (max-width: 640px) {
+  .heading-with-action {
+    display: flex;
+  }
+
+  .metric-strip div:nth-child(-n + 2) {
+    border-bottom: 0;
+  }
+}
