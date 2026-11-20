@@ -43,8 +43,6 @@ Contact.belongsTo(Occupant, { foreignKey: 'occupantId', as: 'occupant' });
 User.hasMany(Contact, { foreignKey: 'createdByUserId', as: 'createdContacts' });
 Contact.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
 
-Occupant.hasMany(InvestorRequest, { foreignKey: 'occupantId', as: 'investorRequests' });
-InvestorRequest.belongsTo(Occupant, { foreignKey: 'occupantId', as: 'occupant' });
 
 Occupant.hasMany(B2bNeed, { foreignKey: 'occupantId', as: 'b2bNeeds' });
 B2bNeed.belongsTo(Occupant, { foreignKey: 'occupantId', as: 'occupant' });

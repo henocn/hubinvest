@@ -115,8 +115,6 @@ export default {
     title: "Parlez-nous de votre projet",
     subtitle: "Investor Desk",
     question: "Que souhaitez-vous réaliser ?",
-    institution: "Institution concernée",
-    chooseInstitution: "Choisir une institution",
     details: "Vos coordonnées",
     successTitle: "Demande transmise",
     successText: "L’Investor Desk dispose maintenant de votre projet et de vos coordonnées.",

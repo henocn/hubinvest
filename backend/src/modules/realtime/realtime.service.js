@@ -125,7 +125,7 @@ const events = {
     channels.animators,
     passportId && channels.passport(passportId),
   ], 'challenge'),
-  investorRequestsChanged: (occupantId) => safePublish([channels.admin(occupantId), channels.superAdmins], 'investor-requests'),
+  investorRequestsChanged: () => safePublish([channels.superAdmins], 'investor-requests'),
   b2bChanged: (occupantIds) => safePublish([...unique([].concat(occupantIds)).map(channels.admin), channels.superAdmins], 'b2b'),
   studioChanged: (occupantIds) => safePublish([...unique([].concat(occupantIds)).map(channels.admin), channels.superAdmins], 'studio'),
   // Fiche de stand modifiée : backoffice et en-tête de l'espace occupant (logo, nom).

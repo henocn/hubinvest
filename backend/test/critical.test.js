@@ -358,7 +358,6 @@ test('une demande publique est rattachée au stand lu par le serveur, sans quali
 
 test('une demande Investor Desk exige le consentement API-ZF', () => {
   const { error } = investorRequestValidation.createPublic.validate({
-    occupantId: '4eb8be9e-7ee3-4c57-9043-19e41b77df9d',
     fullName: 'Investisseur Test',
     email: 'investisseur@example.com',
     projectSummary: 'Projet industriel à présenter.',
@@ -368,39 +367,14 @@ test('une demande Investor Desk exige le consentement API-ZF', () => {
   assert.ok(error);
 });
 
-test('le suivi Investor Desk reste limité au stand de l’administrateur', async (context) => {
+test('le suivi Investor Desk enregistre seulement le statut et la prochaine action', async (context) => {
   const investorRequest = { id: 'request-a' };
   let saved;
-  context.mock.method(investorRequestRepository, 'findById', async (_id, occupantId) => {
-    assert.equal(occupantId, 'occupant-a');
-    return investorRequest;
-  });
-  context.mock.method(investorRequestRepository, 'update', async (_request, values) => {
-    saved = values;
-    return values;
-  });
+  context.mock.method(investorRequestRepository, 'findById', async () => investorRequest);
+  context.mock.method(investorRequestRepository, 'update', async (_request, values) => { saved = values; return values; });
 
-  await investorRequestService.update(
-    { id: 'agent-a', role: 'admin', occupantId: 'occupant-a' },
-    investorRequest.id,
-    { status: 'in_progress', nextAction: 'Rappeler le porteur du projet' },
-  );
-
+  await investorRequestService.update(investorRequest.id, { status: 'in_progress', nextAction: 'Rappeler le porteur du projet' });
   assert.deepEqual(saved, { status: 'in_progress', nextAction: 'Rappeler le porteur du projet' });
-});
-
-test('la liste Investor Desk d’un administrateur utilise uniquement son stand', async (context) => {
-  let requestedStand;
-  context.mock.method(investorRequestRepository, 'findAll', async (query) => {
-    requestedStand = query.occupantId;
-    return { rows: [], count: 0 };
-  });
-
-  await investorRequestService.list(
-    { role: 'admin', occupantId: 'occupant-a' },
-    { limit: 50, offset: 0 },
-  );
-  assert.equal(requestedStand, 'occupant-a');
 });
 
 test('la liste publique B2B ne contient que les besoins ouverts de stands actifs', async (context) => {
@@ -992,8 +966,8 @@ test('un passage validé prévient le stand, ses administrateurs, les animateurs
   );
 
   published.length = 0;
-  realtimeService.events.investorRequestsChanged('stand-b');
-  assert.deepEqual(published[0], { channels: ['admin:stand-b', 'super-admin'], topic: 'investor-requests' });
+  realtimeService.events.investorRequestsChanged();
+  assert.deepEqual(published[0], { channels: ['super-admin'], topic: 'investor-requests' });
 });
 
 test('une diffusion en échec ne fait jamais échouer l’action métier', (context) => {
@@ -1124,7 +1098,7 @@ test('un module fermé depuis l’administration refuse les actions publiques', 
   context.after(() => settingsService._reset());
   context.mock.method(AppSetting, 'findAll', async () => [{ key: 'investorDeskOpen', value: false }, { key: 'requiredPassages', value: 5 }]);
   await settingsService.load();
-  await assert.rejects(investorRequestService.createPublic({ occupantId: 'stand-a' }), (error) => error.code === 'MODULE_CLOSED' && error.status === 403);
+  await assert.rejects(investorRequestService.createPublic({}), (error) => error.code === 'MODULE_CLOSED' && error.status === 403);
   assert.doesNotThrow(() => settingsService.assertOpen('b2bOpen'));
   assert.equal(settingsService.requiredPassages(), 5);
   assert.equal(settingsService.publicSettings().investorDeskOpen, false);
@@ -1205,19 +1179,14 @@ test('la galerie d’un stand garde 5 images au plus et retire le fichier refus�
   await assert.rejects(occupantService.removeGalleryImage('stand-a', '/uploads/gallery/zz.jpg'), (error) => error.code === 'GALLERY_IMAGE_NOT_FOUND');
 });
 
-test('une demande Investor Desk saisie par un administrateur de stand reste sur son stand, même module fermé', async (context) => {
+test('une demande Investor Desk saisie dans le back office n’est rattachée à aucun stand, même module fermé', async (context) => {
   const created = [];
-  context.mock.method(investorRequestRepository, 'findActiveOccupantById', async (id) => ({ id, name: 'Stand' }));
   context.mock.method(investorRequestRepository, 'create', async (values) => { created.push(values); return values; });
   const values = { fullName: 'Ama Kodjo', email: 'Ama@Example.com', projectSummary: 'Projet de transformation du soja.', status: 'new', consentApizf: false };
 
-  await investorRequestService.createManual({ id: 'admin-a', role: 'admin', occupantId: 'stand-a' }, { ...values, occupantId: 'stand-b' });
-  assert.equal(created[0].occupantId, 'stand-a');
+  await investorRequestService.createManual(values);
+  assert.equal('occupantId' in created[0], false);
   assert.equal(created[0].email, 'ama@example.com');
-
-  await assert.rejects(
-    investorRequestService.createManual({ id: 'super', role: 'super-admin' }, values),
-    (error) => error.status === 422 && error.code === 'OCCUPANT_REQUIRED',
-  );
   assert.equal(investorRequestValidation.createManual.validate({ ...values, email: 'pas-un-email' }).error?.details[0].path[0], 'email');
+  assert.equal(investorRequestValidation.createPublic.validate({ ...values, occupantId: 'ancien-client', consentApizf: true }, { stripUnknown: true }).value.occupantId, undefined);
 });

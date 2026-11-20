@@ -28,7 +28,7 @@ export default function DashboardPage({ session }) {
           <section className="dashboard-group" aria-labelledby="dashboard-todo">
             <h2 id="dashboard-todo">À traiter</h2>
             <div className="dashboard-grid">
-              <Stat value={data.investor.new} label="Demandes Investor Desk" detail="nouvelles" to="/investor-desk" urgent />
+              {isSuperAdmin && <Stat value={data.investor.new} label="Demandes Investor Desk" detail="nouvelles" to="/investor-desk" urgent />}
               <Stat value={data.b2b.pendingProposals} label="Demandes B2B" detail="à traiter" to="/b2b" urgent />
               <Stat value={data.challenges.rewardsToHand} label="Récompenses des Défis" detail="parcours terminés, à remettre" to="/participants" urgent />
               <Stat value={data.wheel.prizesToHand} label="Lots de la roue" detail="gagnés, pas encore remis" to="/roue" urgent />
@@ -42,7 +42,7 @@ export default function DashboardPage({ session }) {
               {isSuperAdmin && <Stat value={data.contacts.total} label="Contacts captés" detail={`dont ${data.contacts.today} aujourd’hui · ${data.contacts.fromSite} via le site`} />}
               <Stat value={data.challenges.players} label={isSuperAdmin ? 'Joueurs des Défis' : 'Joueurs passés par le stand'} detail={`${data.challenges.rewardsHanded} récompense${data.challenges.rewardsHanded > 1 ? 's' : ''} remise${data.challenges.rewardsHanded > 1 ? 's' : ''}`} to="/participants" />
               <Stat value={data.wheel.played} label="Parties de roue" detail={`dont ${data.wheel.playedToday} aujourd’hui`} to="/roue" />
-              <Stat value={data.investor.total} label="Projets Investor Desk" detail={`${data.investor.inProgress} en cours`} to="/investor-desk" />
+              {isSuperAdmin && <Stat value={data.investor.total} label="Projets Investor Desk" detail={`${data.investor.inProgress} en cours`} to="/investor-desk" />}
               <Stat value={data.b2b.openNeeds} label="Besoins B2B ouverts" to="/parametres" />
             </div>
           </section>

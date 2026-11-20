@@ -72,7 +72,6 @@ export const tableSettings = {
       { header: 'Nom', value: (item) => item.fullName, width: 26 },
       { header: 'E-mail', value: (item) => item.email, width: 30 },
       { header: 'Téléphone', value: (item) => item.phone, width: 18 },
-      { header: 'Stand', value: (item) => item.occupant?.name, width: 26 },
       { header: 'Projet', value: (item) => item.projectSummary, width: 60 },
       { header: 'Statut', value: (item) => investorStatusLabels[item.status] || item.status, width: 14 },
       { header: 'Prochaine action', value: (item) => item.nextAction, width: 36 },

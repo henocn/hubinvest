@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { X } from 'lucide-react';
 import { api } from '../../lib/api';
 
-// Saisie d'une demande reçue hors du site (sur le stand, au téléphone…) : le stand est imposé à un administrateur de stand.
-function NewInvestorRequestForm({ occupants, fixedOccupant, token, onClose, onSaved }) {
-  const [form, setForm] = useState({ occupantId: fixedOccupant?.id || '', fullName: '', email: '', phone: '', projectSummary: '', status: 'new', nextAction: '', consentApizf: false });
+// Saisie d'une demande reçue hors du site (au guichet, au téléphone…).
+function NewInvestorRequestForm({ token, onClose, onSaved }) {
+  const [form, setForm] = useState({ fullName: '', email: '', phone: '', projectSummary: '', status: 'new', nextAction: '', consentApizf: false });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const set = (key) => (event) => setForm({ ...form, [key]: event.target.type === 'checkbox' ? event.target.checked : event.target.value });
@@ -14,7 +14,7 @@ function NewInvestorRequestForm({ occupants, fixedOccupant, token, onClose, onSa
     setLoading(true);
     setError('');
     try {
-      const saved = await api.createInvestorRequest(token, { ...form, occupantId: form.occupantId || null, phone: form.phone || null, nextAction: form.nextAction || null });
+      const saved = await api.createInvestorRequest(token, { ...form, phone: form.phone || null, nextAction: form.nextAction || null });
       await onSaved(saved);
     } catch (requestError) {
       setError(requestError.message);
@@ -25,14 +25,6 @@ function NewInvestorRequestForm({ occupants, fixedOccupant, token, onClose, onSa
 
   return (
     <form onSubmit={submit} className="drawer-form">
-      {!fixedOccupant && (
-        <label>Stand
-          <select value={form.occupantId} onChange={set('occupantId')} required>
-            <option value="">Sélectionner un stand</option>
-            {occupants.filter((item) => item.status === 'active').map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-          </select>
-        </label>
-      )}
       <label>Nom et prénom<input value={form.fullName} onChange={set('fullName')} minLength={2} maxLength={160} required /></label>
       <div className="field-row">
         <label>E-mail<input type="email" value={form.email} onChange={set('email')} maxLength={180} required /></label>
@@ -97,7 +89,7 @@ function FollowUpForm({ investorRequest, token, onClose, onSaved }) {
   );
 }
 
-export default function InvestorRequestDrawer({ investorRequest, occupants = [], fixedOccupant = null, onClose, onSaved, token }) {
+export default function InvestorRequestDrawer({ investorRequest, onClose, onSaved, token }) {
   return (
     <div className="drawer-backdrop" role="presentation" onMouseDown={onClose}>
       <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="investor-request-title" onMouseDown={(event) => event.stopPropagation()}>
@@ -107,7 +99,7 @@ export default function InvestorRequestDrawer({ investorRequest, occupants = [],
         </header>
         {investorRequest
           ? <FollowUpForm investorRequest={investorRequest} token={token} onClose={onClose} onSaved={onSaved} />
-          : <NewInvestorRequestForm occupants={occupants} fixedOccupant={fixedOccupant} token={token} onClose={onClose} onSaved={onSaved} />}
+          : <NewInvestorRequestForm token={token} onClose={onClose} onSaved={onSaved} />}
       </aside>
     </div>
   );

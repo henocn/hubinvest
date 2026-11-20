@@ -38,9 +38,10 @@ const overview = async (user) => {
     players, rewardsToHand, rewardsHanded,
     wheelPlayed, wheelPlayedToday, wheelToHand,
   ] = await Promise.all([
-    InvestorRequest.count({ where: { ...byStand, status: 'new' } }),
-    InvestorRequest.count({ where: { ...byStand, status: 'in_progress' } }),
-    InvestorRequest.count({ where: byStand }),
+    // L'Investor Desk est le guichet de l'API-ZF : ses chiffres ne concernent que le super administrateur.
+    isSuperAdmin ? InvestorRequest.count({ where: { status: 'new' } }) : 0,
+    isSuperAdmin ? InvestorRequest.count({ where: { status: 'in_progress' } }) : 0,
+    isSuperAdmin ? InvestorRequest.count() : 0,
     B2bProposal.count({ where: { status: 'pending' }, include: [{ model: B2bNeed, as: 'need', attributes: [], where: byStand, required: true }] }),
     B2bNeed.count({ where: { ...byStand, status: 'open' } }),
     StudioInvitation.count({ where: { ...byStand, status: 'pending' } }),
@@ -54,7 +55,6 @@ const overview = async (user) => {
   ]);
 
   const result = {
-    investor: { new: investorNew, inProgress: investorInProgress, total: investorTotal },
     b2b: { pendingProposals: b2bPending, openNeeds: b2bOpenNeeds },
     studio: { pending: studioPending, confirmed: studioConfirmed },
     challenges: { players, rewardsToHand, rewardsHanded },
@@ -62,6 +62,7 @@ const overview = async (user) => {
   };
 
   if (isSuperAdmin) {
+    result.investor = { new: investorNew, inProgress: investorInProgress, total: investorTotal };
     const [activeStands, contacts, contactsToday, siteRequests] = await Promise.all([
       Occupant.count({ where: { status: 'active' } }),
       Contact.count(),
@@ -74,7 +75,7 @@ const overview = async (user) => {
 
   // Ce qui attend une action : affiché en pastille dans le menu, au nombre exact.
   result.todo = {
-    'investor-requests': investorNew,
+    ...(isSuperAdmin && { 'investor-requests': investorNew }),
     b2b: b2bPending,
     challenges: rewardsToHand,
     wheel: wheelToHand,

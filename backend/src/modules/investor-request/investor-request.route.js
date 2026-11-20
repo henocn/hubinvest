@@ -7,7 +7,8 @@ const investorRequestValidation = require('./investor-request.validation');
 const investorRequestController = require('./investor-request.controller');
 
 const router = express.Router();
-const investorDeskOnly = requireRoles(roles.SUPER_ADMIN, roles.ADMIN);
+// Guichet de l'API-ZF : réservé à son équipe (super administrateurs), pas aux administrateurs de stand.
+const investorDeskOnly = requireRoles(roles.SUPER_ADMIN);
 
 router.post(
   '/public',

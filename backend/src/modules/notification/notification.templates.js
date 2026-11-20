@@ -37,12 +37,12 @@ const contactReminder = ({ user, contact }) => {
 };
 
 // Prévient l'équipe qu'un projet a été déposé à l'Investor Desk.
-const investorRequestReceived = ({ user, occupant }) => ({
+const investorRequestReceived = ({ user }) => ({
   title: 'Nouvelle demande Investor Desk',
-  body: `Un projet vient d’être présenté à ${occupant.name}.`,
+  body: 'Un projet vient d’être présenté à l’API-ZF.',
   url: teamUrl('/investor-desk'),
   subject: 'Nouvelle demande Investor Desk',
-  text: teamText(user, [`Un projet vient d’être présenté à ${occupant.name} depuis l’Investor Desk.`, 'Consultez-le dans l’administration :'], teamUrl('/investor-desk')),
+  text: teamText(user, ['Un projet vient d’être présenté à l’API-ZF depuis l’Investor Desk.', 'Consultez-le dans l’administration :'], teamUrl('/investor-desk')),
 });
 
 // Prévient l'équipe qu'une proposition de rencontre répond à un besoin B2B.
@@ -71,7 +71,7 @@ const publicCopy = {
     hello: (name) => `Bonjour ${name},`,
     signature: 'L’équipe HubInvest',
     investorSubject: 'Votre demande a bien été reçue',
-    investorBody: (occupant) => `Votre demande adressée à ${occupant} depuis l’Investor Desk a bien été enregistrée. Elle sera étudiée par l’équipe concernée.`,
+    investorBody: () => `Votre demande adressée à l’API-ZF depuis l’Investor Desk a bien été enregistrée. Elle sera étudiée par l’équipe concernée.`,
     proposalSubject: 'Votre proposition a bien été transmise',
     proposalBody: (need, occupant) => `Votre proposition pour le besoin « ${need} » a bien été transmise à ${occupant}. Vous recevrez un e-mail dès qu’elle aura été examinée.`,
     acceptedSubject: 'Votre proposition a été acceptée',
@@ -83,7 +83,7 @@ const publicCopy = {
     hello: (name) => `Hello ${name},`,
     signature: 'The HubInvest team',
     investorSubject: 'We have received your request',
-    investorBody: (occupant) => `Your request to ${occupant} through the Investor Desk has been recorded. It will be reviewed by the team concerned.`,
+    investorBody: () => 'Your request to API-ZF through the Investor Desk has been recorded. It will be reviewed by the team concerned.',
     proposalSubject: 'Your proposal has been sent',
     proposalBody: (need, occupant) => `Your proposal for the need “${need}” has been sent to ${occupant}. You will receive an email once it has been reviewed.`,
     acceptedSubject: 'Your proposal has been accepted',
@@ -103,9 +103,9 @@ const publicEmail = (copy, name, subject, body) => ({
 });
 
 // Confirme à l'investisseur que sa demande est enregistrée.
-const investorRequestConfirmation = ({ request, occupant }) => {
+const investorRequestConfirmation = ({ request }) => {
   const copy = copyFor(request.language);
-  return publicEmail(copy, request.fullName, copy.investorSubject, copy.investorBody(occupant.name));
+  return publicEmail(copy, request.fullName, copy.investorSubject, copy.investorBody());
 };
 
 // Confirme au professionnel que sa proposition B2B est transmise.

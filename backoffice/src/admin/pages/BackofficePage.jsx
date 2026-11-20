@@ -43,8 +43,8 @@ const sectionMeta = {
 // Page d'une rubrique de l'administration ; la rubrique vient de l'adresse (/stands, /b2b, /roue…).
 export default function BackofficePage({ session, onLogout, section }) {
   const isSuperAdmin = session.user.role === 'super-admin';
-  const isAdmin = session.user.role === 'admin';
   const todo = useDashboard()?.data?.todo || {};
+  const visibleMeetingTabs = meetingTabs.filter((item) => isSuperAdmin || !item.superOnly);
   const location = useLocation();
   const navigate = useNavigate();
   // Fiche d'un stand : /stands/<id>.
@@ -102,14 +102,12 @@ export default function BackofficePage({ session, onLogout, section }) {
         setProgramEvents(programData);
         setWheel(wheelData);
       } else {
-        const [investorData, needData, proposalData, challengeData, wheelData] = await Promise.all([
-          api.investorRequests(session.token),
+        const [needData, proposalData, challengeData, wheelData] = await Promise.all([
           api.b2bNeeds(session.token),
           api.b2bAllProposals(session.token),
           api.challengePassports(session.token),
           api.wheel(session.token),
         ]);
-        setInvestorRequests(investorData.items);
         setB2bNeeds(needData);
         setB2bProposals(proposalData);
         setChallengePassports(challengeData);
@@ -129,7 +127,6 @@ export default function BackofficePage({ session, onLogout, section }) {
   const silentLoaders = useMemo(() => {
     const token = session.token;
     const loaders = {
-      'investor-requests': async () => setInvestorRequests((await api.investorRequests(token)).items),
       b2b: async () => {
         const [needData, proposalData] = await Promise.all([api.b2bNeeds(token), api.b2bAllProposals(token)]);
         setB2bNeeds(needData);
@@ -146,6 +143,7 @@ export default function BackofficePage({ session, onLogout, section }) {
           setOccupants(occupantData);
           setProgramEvents(programData);
         },
+        'investor-requests': async () => setInvestorRequests((await api.investorRequests(token)).items),
         users: async () => setUsers(await api.users(token)),
         program: async () => setProgramEvents(await api.programEvents(token)),
         contacts: async () => setContactStats(await api.contactStats(token)),
@@ -347,7 +345,6 @@ export default function BackofficePage({ session, onLogout, section }) {
               contactCount={contactStats.byOccupant[detailId] || 0}
               programEvents={programEvents}
               b2bNeeds={b2bNeeds}
-              investorRequests={investorRequests}
               challengePassports={challengePassports}
               onEdit={() => setDrawer({ type: 'occupant', item: occupants.find((item) => item.id === detailId) })}
               onDelete={() => requestOccupantDelete(occupants.find((item) => item.id === detailId))}
@@ -357,12 +354,13 @@ export default function BackofficePage({ session, onLogout, section }) {
       ) : (
       <main className="admin-workspace">
         <header className="workspace-header">
-          {meetingTabs.some((item) => item.section === section) ? (
+          {meetingTabs.some((item) => item.section === section) && visibleMeetingTabs.length > 1 ? (
             // Rencontres : un titre et deux onglets, B2B et Investor Desk, avec ce qui attend une action.
+            // Un administrateur de stand n'a que la Rencontre B2B : un simple titre.
             <div className="section-heading">
               <h1>Rencontres</h1>
               <nav className="section-tabs" aria-label="Rencontres">
-                {meetingTabs.map((item) => (
+                {visibleMeetingTabs.map((item) => (
                   <NavLink key={item.path} to={item.path} className={({ isActive }) => (isActive ? 'is-active' : '')}>
                     {item.label}{todo[item.section] > 0 && <b>{todo[item.section]}</b>}
                   </NavLink>
@@ -396,7 +394,7 @@ export default function BackofficePage({ session, onLogout, section }) {
           {!loading && !error && section === 'occupants' && <OccupantsTable selection={selection} occupants={rows} contactStats={contactStats} query={query} onEdit={(item) => setDrawer({ type: 'occupant', item })} onDelete={requestOccupantDelete} />}
           {!loading && !error && section === 'users' && <UsersTable selection={selection} users={rows} query={query} currentUserId={session.user.id} onEdit={(item) => setDrawer({ type: 'user', item })} onDelete={requestUserDelete} />}
           {!loading && !error && section === 'program' && <ProgramEventsTable selection={selection} events={rows} query={query} onEdit={(item) => setDrawer({ type: 'program', item })} onDelete={requestProgramDelete} />}
-          {!loading && !error && section === 'investor-requests' && <InvestorRequestsTable selection={selection} requests={rows} query={query} showStand={isSuperAdmin} onEdit={(item) => setDrawer({ type: 'investor-request', item })} />}
+          {!loading && !error && section === 'investor-requests' && <InvestorRequestsTable selection={selection} requests={rows} query={query} onEdit={(item) => setDrawer({ type: 'investor-request', item })} />}
           {!loading && !error && section === 'b2b' && <B2bProposalsTable selection={selection} proposals={rows} query={query} showStand={isSuperAdmin} onDecide={requestDecision} onEdit={(item) => setDrawer({ type: 'b2b-proposal', item })} onDelete={requestB2bProposalDelete} />}
           {!loading && !error && section === 'challenges' && <ChallengePassportsTable selection={selection} passports={rows} query={query} allowReward={isSuperAdmin} onRedeem={(passport) => { setRewardError(''); setPendingReward(passport); }} />}
           {!loading && !error && section === 'wheel' && <WheelSegmentsTable selection={selection} segments={rows} query={query} onEdit={(item) => setDrawer({ type: 'wheel', item })} onDelete={requestWheelDelete} />}
@@ -408,7 +406,7 @@ export default function BackofficePage({ session, onLogout, section }) {
       {drawer?.type === 'occupant' && <OccupantDrawer occupant={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'user' && <UserDrawer user={drawer.item} occupants={occupants} token={session.token} currentRole={session.user.role} currentUserId={session.user.id} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'program' && <ProgramEventDrawer programEvent={drawer.item} occupants={occupants} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
-      {drawer?.type === 'investor-request' && <InvestorRequestDrawer investorRequest={drawer.item} occupants={occupants} fixedOccupant={isAdmin ? session.user.occupant : null} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
+      {drawer?.type === 'investor-request' && <InvestorRequestDrawer investorRequest={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'b2b-proposal' && <B2bProposalDrawer proposal={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'wheel' && <WheelSegmentDrawer segment={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {wheelCode && <WheelCodeDialog wheelCode={wheelCode.data} loading={wheelCode.loading} error={wheelCode.error} onNew={generateWheelCode} onClose={() => setWheelCode(null)} />}

@@ -3,7 +3,6 @@ const Joi = require('joi');
 const uuid = Joi.string().guid({ version: ['uuidv4'] });
 
 const createPublic = Joi.object({
-  occupantId: uuid.required(),
   fullName: Joi.string().trim().min(2).max(160).required(),
   email: Joi.string().trim().email().max(180).required(),
   phone: Joi.string().trim().min(6).max(32).allow('', null),
@@ -11,9 +10,8 @@ const createPublic = Joi.object({
   consentApizf: Joi.boolean().valid(true).required(),
 });
 
-// Saisie par l'équipe (rencontre sur le stand, appel…) : le stand est imposé pour un administrateur de stand.
+// Saisie par l'équipe de l'API-ZF (rencontre au guichet, appel…).
 const createManual = Joi.object({
-  occupantId: uuid.allow(null, ''),
   fullName: Joi.string().trim().min(2).max(160).required(),
   email: Joi.string().trim().email().max(180).required(),
   phone: Joi.string().trim().min(6).max(32).allow('', null),
