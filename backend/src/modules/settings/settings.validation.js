@@ -9,6 +9,7 @@ const update = Joi.object({
   liveQuestionsOpen: Joi.boolean(),
   requiredPassages: Joi.number().integer().min(1).max(50),
   wheelPlaysPerDay: Joi.number().integer().min(0).max(20),
+  wheelSpinsPerCode: Joi.number().integer().min(1).max(20),
 }).min(1);
 
 module.exports = { update };

@@ -14,9 +14,8 @@ export const challengeStatusLabels = { active: 'En cours', completed: 'Terminé'
 // Site public (QR codes, liens des fiches) : jamais l'adresse de l'espace équipe.
 export const publicBaseUrl = (import.meta.env.VITE_PUBLIC_URL || 'https://hub.investir.tg').replace(/\/$/, '');
 
-// Ce qu'est devenu un code de la roue : attente, perdu, lot à remettre ou remis (un code expiré sans être joué est effacé).
-export const wheelCodeStatus = (item) => {
-  if (item.status === 'waiting') return 'Pas encore joué';
-  if (item.result?.kind !== 'prize') return 'Perdu';
-  return item.claimedAt ? 'Lot remis' : 'Lot à remettre';
+// Issue d'un tour de roue : perdu, lot à remettre ou lot remis.
+export const wheelPlayStatus = (play) => {
+  if (play.result?.kind !== 'prize') return 'Perdu';
+  return play.claimedAt ? 'Lot remis' : 'Lot à remettre';
 };

@@ -990,75 +990,111 @@ test('la liste des remises signale seulement celles de l’animateur connecté, 
 });
 
 const PLAYER = 'a'.repeat(64);
-const wheelSetup = (context, { segments, code, playsToday = 0 }) => {
+const OTHER_PLAYER = 'c'.repeat(64);
+const wheelSetup = (context, { segments, code, plays = [], playsToday = 0 }) => {
   context.mock.method(wheelRepository, 'countPlayerPlaysSince', async () => playsToday);
   context.mock.method(wheelRepository.sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));
-  context.mock.method(wheelRepository, 'findPlayerByToken', async (token) => (token === PLAYER ? { id: 'passport-a' } : null));
+  context.mock.method(wheelRepository, 'findPlayerByToken', async (token) => (token === PLAYER ? { id: 'passport-a' } : token === OTHER_PLAYER ? { id: 'passport-b' } : null));
   context.mock.method(wheelRepository, 'findCodeForUpdate', async (value) => (code && code.code === value ? code : null));
+  context.mock.method(wheelRepository, 'findCodePlays', async () => plays.filter((play) => play.wheelCodeId === code?.id));
   context.mock.method(wheelRepository, 'findActiveSegmentsForUpdate', async () => segments.filter((segment) => segment.isActive));
   context.mock.method(wheelRepository, 'recordAward', async (segment) => { segment.awarded += 1; });
-  context.mock.method(wheelRepository, 'updateCode', async (wheelCode, values) => Object.assign(wheelCode, values));
+  context.mock.method(wheelRepository, 'createPlay', async (values) => { plays.push(values); return values; });
+  return plays;
 };
 
-test('un code de la roue ne sert qu’une fois et décompte le lot gagné', async (context) => {
+test('un code de la roue donne un seul tour par défaut et décompte le lot gagné', async (context) => {
   const prize = { id: 'p1', kind: 'prize', label: 'T-shirt', sponsor: 'WAFO INDUSTRIE', quantity: 2, awarded: 0, isActive: true };
   const lose = { id: 'l1', kind: 'lose', label: 'Presque !', sponsor: null, quantity: null, awarded: 0, isActive: true };
-  const code = { code: 'K7P2QX', usedAt: null, expiresAt: new Date(Date.now() + 60000) };
-  wheelSetup(context, { segments: [prize, lose], code });
+  const code = { id: 'code-1', code: 'K7P2', spinsAllowed: 1 };
+  const plays = wheelSetup(context, { segments: [prize, lose], code });
 
-  const outcome = await wheelService.spin({ code: ' k7p2-qx ', player: PLAYER }, 'fr', (length) => { assert.equal(length, 2); return 0; });
+  const outcome = await wheelService.spin({ code: ' k7-p2 ', player: PLAYER }, 'fr', (length) => { assert.equal(length, 2); return 0; });
   assert.equal(outcome.result.id, 'p1');
   assert.equal(outcome.result.sponsor, 'WAFO INDUSTRIE');
+  assert.equal(outcome.spinsLeft, 0);
   assert.equal(prize.awarded, 1);
-  assert.equal(code.resultLabel, 'T-shirt');
-  assert.equal(code.passportId, 'passport-a');
-  assert.ok(code.usedAt);
+  assert.equal(plays.length, 1);
+  assert.equal(plays[0].resultLabel, 'T-shirt');
+  assert.equal(plays[0].passportId, 'passport-a');
 
-  await assert.rejects(wheelService.spin({ code: 'K7P2QX', player: PLAYER }, 'fr', () => 0), (error) => error.status === 409 && error.code === 'WHEEL_CODE_USED');
+  await assert.rejects(wheelService.spin({ code: 'K7P2', player: PLAYER }, 'fr', () => 0), (error) => error.status === 409 && error.code === 'WHEEL_CODE_USED');
   assert.equal(prize.awarded, 1);
 });
 
-test('un code expiré ou inventé ne fait pas tourner la roue', async (context) => {
+test('un code à plusieurs tours reste au premier joueur et s’arrête au dernier tour', async (context) => {
+  const lose = { id: 'l1', kind: 'lose', label: 'Dommage !', sponsor: null, quantity: null, awarded: 0, isActive: true };
+  const code = { id: 'code-2', code: 'M3X9', spinsAllowed: 2 };
+  const plays = wheelSetup(context, { segments: [lose], code });
+
+  assert.equal((await wheelService.spin({ code: 'M3X9', player: PLAYER }, 'fr', () => 0)).spinsLeft, 1);
+  await assert.rejects(wheelService.spin({ code: 'M3X9', player: OTHER_PLAYER }, 'fr', () => 0), (error) => error.status === 409 && error.code === 'WHEEL_CODE_TAKEN');
+  assert.equal((await wheelService.spin({ code: 'M3X9', player: PLAYER }, 'fr', () => 0)).spinsLeft, 0);
+  await assert.rejects(wheelService.spin({ code: 'M3X9', player: PLAYER }, 'fr', () => 0), (error) => error.code === 'WHEEL_CODE_USED');
+  assert.equal(plays.length, 2);
+});
+
+test('un code inventé ou un joueur non identifié ne fait pas tourner la roue', async (context) => {
   const lose = { id: 'l1', kind: 'lose', label: 'Dommage !', quantity: null, awarded: 0, isActive: true };
-  const code = { code: 'ABCDEF', usedAt: null, expiresAt: new Date(Date.now() - 1000) };
-  wheelSetup(context, { segments: [lose], code });
+  const code = { id: 'code-3', code: 'ABCD', spinsAllowed: 1 };
+  const plays = wheelSetup(context, { segments: [lose], code });
 
-  await assert.rejects(wheelService.spin({ code: 'ABCDEF', player: PLAYER }, 'fr'), (error) => error.status === 410 && error.code === 'WHEEL_CODE_EXPIRED');
-  await assert.rejects(wheelService.spin({ code: 'ZZZZZZ', player: PLAYER }, 'fr'), (error) => error.status === 404 && error.code === 'WHEEL_CODE_INVALID');
-  await assert.rejects(wheelService.spin({ code: 'ABCDEF', player: 'b'.repeat(64) }, 'fr'), (error) => error.status === 422 && error.code === 'WHEEL_PLAYER_REQUIRED');
-  assert.equal(code.usedAt, null);
+  await assert.rejects(wheelService.spin({ code: 'ZZZZ', player: PLAYER }, 'fr'), (error) => error.status === 404 && error.code === 'WHEEL_CODE_INVALID');
+  await assert.rejects(wheelService.spin({ code: 'ABCD', player: 'b'.repeat(64) }, 'fr'), (error) => error.status === 422 && error.code === 'WHEEL_PLAYER_REQUIRED');
+  assert.equal(plays.length, 0);
 });
 
-test('un lot épuisé ou désactivé disparaît de la roue, et une roue vide ne consomme pas le code', async (context) => {
+test('un lot épuisé ou désactivé disparaît de la roue, et une roue vide ne consomme pas le tour', async (context) => {
   const soldOut = { id: 'p1', kind: 'prize', label: 'Casquette', quantity: 3, awarded: 3, isActive: true };
   const inactive = { id: 'p2', kind: 'prize', label: 'Tablier', quantity: 5, awarded: 0, isActive: false };
-  const code = { code: 'QWERTY', usedAt: null, expiresAt: new Date(Date.now() + 60000) };
-  wheelSetup(context, { segments: [soldOut, inactive], code });
+  const code = { id: 'code-4', code: 'QWER', spinsAllowed: 1 };
+  const plays = wheelSetup(context, { segments: [soldOut, inactive], code });
 
-  await assert.rejects(wheelService.spin({ code: 'QWERTY', player: PLAYER }, 'fr', () => 0), (error) => error.status === 409 && error.code === 'WHEEL_EMPTY');
-  assert.equal(code.usedAt, null);
+  await assert.rejects(wheelService.spin({ code: 'QWER', player: PLAYER }, 'fr', () => 0), (error) => error.status === 409 && error.code === 'WHEEL_EMPTY');
+  assert.equal(plays.length, 0);
 
   const lose = { id: 'l1', kind: 'lose', label: 'Pas cette fois', quantity: null, awarded: 0, isActive: true };
   wheelSetup(context, { segments: [soldOut, inactive, lose], code });
-  const outcome = await wheelService.spin({ code: 'QWERTY', player: PLAYER }, 'fr', (length) => { assert.equal(length, 1); return 0; });
+  const outcome = await wheelService.spin({ code: 'QWER', player: PLAYER }, 'fr', (length) => { assert.equal(length, 1); return 0; });
   assert.deepEqual(outcome.segments.map((segment) => segment.id), ['l1']);
   assert.equal(soldOut.awarded, 3);
 });
 
-test('les codes de roue expirés sans être joués sont effacés avant l’historique et avant un nouveau code', async (context) => {
-  const calls = [];
-  context.mock.method(wheelRepository, 'deleteExpiredCodes', async () => { calls.push('purge'); return 2; });
+test('un nouveau code donne le nombre de tours réglé ; la fenêtre des codes distingue gagnants, perdants et non joués', async (context) => {
+  context.mock.method(settingsService, 'wheelSpinsPerCode', () => 3);
+  context.mock.method(wheelRepository, 'createCode', async (values) => ({ ...values }));
+  const created = await wheelService.generateCode({ id: 'admin-1' });
+  assert.equal(created.spinsAllowed, 3);
+  assert.match(created.code, /^[A-HJ-NP-Z2-9]{4}$/);
+  assert.deepEqual(Object.keys(created).sort(), ['code', 'spinsAllowed']);
+
   context.mock.method(wheelRepository, 'findSegments', async () => []);
-  context.mock.method(wheelRepository, 'findCodes', async () => { calls.push('history'); return []; });
-  context.mock.method(wheelRepository, 'countPlayed', async () => 0);
-  context.mock.method(wheelRepository, 'createCode', async (values) => { calls.push('create'); return { ...values }; });
+  context.mock.method(wheelRepository, 'findPlays', async () => [{ id: 'play-1', resultKind: 'prize', resultLabel: 'T-shirt', playedAt: new Date(), wheelCode: { code: 'WIN1' } }]);
+  context.mock.method(wheelRepository, 'findCodes', async () => [
+    { id: 'c1', code: 'WIN1', spinsAllowed: 2, plays: [{ resultKind: 'lose' }, { resultKind: 'prize' }] },
+    { id: 'c2', code: 'LOS1', spinsAllowed: 1, plays: [{ resultKind: 'lose' }] },
+    { id: 'c3', code: 'NEW1', spinsAllowed: 1, plays: [] },
+  ]);
+  const overview = await wheelService.overview();
+  assert.deepEqual(overview.codes.map((item) => [item.code, item.outcome, item.spinsUsed]), [['WIN1', 'won', 2], ['LOS1', 'lost', 1], ['NEW1', null, 0]]);
+  assert.deepEqual(overview.plays.map((item) => [item.code, item.result.label]), [['WIN1', 'T-shirt']]);
+  assert.equal(overview.stats.played, 1);
+});
 
-  await wheelService.overview();
-  assert.deepEqual(calls, ['purge', 'history']);
+test('les lots gagnés avec un même code se remettent un par un, puis le code est signalé comme déjà remis', async (context) => {
+  const prizes = [
+    { id: 'play-1', resultKind: 'prize', resultLabel: 'T-shirt', claimedAt: null, wheelCode: { code: 'WIN1' } },
+    { id: 'play-2', resultKind: 'prize', resultLabel: 'Casquette', claimedAt: null, wheelCode: { code: 'WIN1' } },
+  ];
+  context.mock.method(wheelRepository.sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));
+  context.mock.method(wheelRepository, 'findCodePrizes', async () => prizes);
+  context.mock.method(wheelRepository, 'updatePlay', async (play, values) => Object.assign(play, values));
+  const staff = { id: 'user-1', firstName: 'Ama', lastName: 'Koffi' };
 
-  calls.length = 0;
-  await wheelService.generateCode({ id: 'admin-1' });
-  assert.deepEqual(calls, ['purge', 'create']);
+  assert.equal((await wheelService.findPrize('win1')).result.label, 'T-shirt');
+  assert.equal((await wheelService.claimPrize(staff, 'WIN1')).result.label, 'T-shirt');
+  assert.equal((await wheelService.claimPrize(staff, 'WIN1')).result.label, 'Casquette');
+  await assert.rejects(wheelService.claimPrize(staff, 'WIN1'), (error) => error.code === 'WHEEL_PRIZE_ALREADY_CLAIMED' && error.details.result.label === 'Casquette');
 });
 
 const seoService = require('../src/modules/seo/seo.service');
@@ -1137,19 +1173,23 @@ test('un joueur ne tourne la roue qu’une fois par jour et le code reste valabl
 });
 
 test('un lot gagné ne se remet qu’une fois, et seulement s’il a été gagné', async (context) => {
-  const won = { code: 'WIN2', usedAt: new Date(), resultKind: 'prize', resultLabel: 'Casquette', claimedAt: null, player: { displayName: 'Ama' } };
-  const lost = { code: 'LOS3', usedAt: new Date(), resultKind: 'lose', resultLabel: 'Presque !', claimedAt: null };
+  const won = { id: 'play-w', resultKind: 'prize', resultLabel: 'Casquette', claimedAt: null, player: { displayName: 'Ama' }, wheelCode: { code: 'WIN2' } };
+  const codes = { WIN2: { id: 'code-w', plays: 1 }, LOS3: { id: 'code-l', plays: 1 }, NEW4: { id: 'code-n', plays: 0 } };
   context.mock.method(wheelRepository.sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));
-  context.mock.method(wheelRepository, 'findPlayedCodeForClaim', async (value) => ({ WIN2: won, LOS3: lost })[value] || null);
-  context.mock.method(wheelRepository, 'updateCode', async (wheelCode, values) => Object.assign(wheelCode, values));
+  context.mock.method(wheelRepository, 'findCodePrizes', async (value) => (value === 'WIN2' ? [won] : []));
+  context.mock.method(wheelRepository, 'findCodeByValue', async (value) => (codes[value] ? { id: codes[value].id } : null));
+  context.mock.method(wheelRepository, 'countPlays', async (id) => Object.values(codes).find((item) => item.id === id).plays);
+  context.mock.method(wheelRepository, 'updatePlay', async (play, values) => Object.assign(play, values));
   const user = { id: 'animateur-a', firstName: 'Kossi', lastName: 'A.' };
 
   const claimed = await wheelService.claimPrize(user, 'win2');
   assert.equal(claimed.result.label, 'Casquette');
+  assert.equal(claimed.player.displayName, 'Ama');
   assert.ok(won.claimedAt);
   assert.equal(won.claimedByUserId, 'animateur-a');
   await assert.rejects(wheelService.claimPrize(user, 'WIN2'), (error) => error.code === 'WHEEL_PRIZE_ALREADY_CLAIMED');
   await assert.rejects(wheelService.claimPrize(user, 'LOS3'), (error) => error.code === 'WHEEL_NO_PRIZE');
+  await assert.rejects(wheelService.findPrize('NEW4'), (error) => error.code === 'WHEEL_NOT_PLAYED');
   await assert.rejects(wheelService.claimPrize(user, 'NOPE'), (error) => error.code === 'WHEEL_CODE_INVALID');
 });
 

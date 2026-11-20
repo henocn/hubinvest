@@ -24,6 +24,7 @@ export default function SettingsPage({ session, onLogout }) {
   const [savedKey, setSavedKey] = useState('');
   const [passages, setPassages] = useState('');
   const [playsPerDay, setPlaysPerDay] = useState('');
+  const [spinsPerCode, setSpinsPerCode] = useState('');
 
   const load = useCallback(async () => {
     try {
@@ -31,6 +32,7 @@ export default function SettingsPage({ session, onLogout }) {
       setSettings(data);
       setPassages(String(data.requiredPassages));
       setPlaysPerDay(String(data.wheelPlaysPerDay));
+      setSpinsPerCode(String(data.wheelSpinsPerCode));
     } catch (requestError) {
       if (requestError.status === 401 || requestError.status === 403) onLogout();
       else setError(requestError.message);
@@ -48,6 +50,7 @@ export default function SettingsPage({ session, onLogout }) {
       setSettings(data);
       setPassages(String(data.requiredPassages));
       setPlaysPerDay(String(data.wheelPlaysPerDay));
+      setSpinsPerCode(String(data.wheelSpinsPerCode));
       setSavedKey(key);
       window.setTimeout(() => setSavedKey((current) => (current === key ? '' : current)), 1800);
     } catch (requestError) {
@@ -67,6 +70,12 @@ export default function SettingsPage({ session, onLogout }) {
     event.preventDefault();
     const value = Number.parseInt(playsPerDay, 10);
     if (Number.isInteger(value) && value >= 0 && value !== settings.wheelPlaysPerDay) void save('wheelPlaysPerDay', value);
+  };
+
+  const saveSpinsPerCode = (event) => {
+    event.preventDefault();
+    const value = Number.parseInt(spinsPerCode, 10);
+    if (Number.isInteger(value) && value >= 1 && value !== settings.wheelSpinsPerCode) void save('wheelSpinsPerCode', value);
   };
 
   return (
@@ -113,6 +122,19 @@ export default function SettingsPage({ session, onLogout }) {
         </>
       )}
       <WheelSettings session={session} onLogout={onLogout}>
+        {settings && (
+          <form className="settings-row" onSubmit={saveSpinsPerCode}>
+            <span>
+              <strong>Tours de roue par code de jeu</strong>
+              <small>Un code n’expire pas ; il sert jusqu’à son dernier tour</small>
+            </span>
+            {savedKey === 'wheelSpinsPerCode' && <Check className="settings-saved" size={18} aria-label="Enregistré" />}
+            <span className="settings-number">
+              <input type="number" min="1" max="20" value={spinsPerCode} onChange={(event) => setSpinsPerCode(event.target.value)} aria-label="Tours par code" />
+              <button className="button button-secondary" type="submit" disabled={savingKey === 'wheelSpinsPerCode' || Number(spinsPerCode) === settings.wheelSpinsPerCode}>Enregistrer</button>
+            </span>
+          </form>
+        )}
         {settings && (
           <form className="settings-row" onSubmit={savePlaysPerDay}>
             <span>

@@ -18,6 +18,8 @@ const defaults = () => ({
   requiredPassages: Math.max(1, env.challenge.requiredPassages),
   // Parties de roue par joueur et par jour ; 0 = sans limite.
   wheelPlaysPerDay: 1,
+  // Tours de roue donnés par un code de jeu (un code n'expire pas).
+  wheelSpinsPerCode: 1,
 });
 
 // Les réglages sont gardés en mémoire : lus à chaque requête sans interroger la base, rechargés à chaque modification.
@@ -34,6 +36,8 @@ const current = () => ({ ...cache });
 const requiredPassages = () => Math.max(1, Number(cache.requiredPassages) || 1);
 
 const wheelPlaysPerDay = () => Math.max(0, Number(cache.wheelPlaysPerDay) || 0);
+
+const wheelSpinsPerCode = () => Math.max(1, Number(cache.wheelSpinsPerCode) || 1);
 
 // Refuse l'action publique quand son module est fermé.
 const assertOpen = (key) => {
@@ -55,4 +59,4 @@ const update = async (values, user) => {
 // Ce que le site public a besoin de savoir : modules ouverts et nombre de stands des Défis.
 const publicSettings = () => current();
 
-module.exports = { MODULES, load, current, requiredPassages, wheelPlaysPerDay, assertOpen, update, publicSettings, _reset: () => { cache = defaults(); } };
+module.exports = { MODULES, load, current, requiredPassages, wheelPlaysPerDay, wheelSpinsPerCode, assertOpen, update, publicSettings, _reset: () => { cache = defaults(); } };

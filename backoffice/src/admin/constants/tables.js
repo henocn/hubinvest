@@ -1,5 +1,5 @@
 import { formatDate } from '../../lib/excel';
-import { b2bProposalLabels, challengeStatusLabels, investorStatusLabels, programTypeLabels, roleLabels, wheelCodeStatus } from './access';
+import { b2bProposalLabels, challengeStatusLabels, investorStatusLabels, programTypeLabels, roleLabels, wheelPlayStatus } from './access';
 
 const isToClaim = (item) => item.result?.kind === 'prize' && !item.claimedAt;
 const fullName = (person) => (person ? [person.firstName, person.lastName].filter(Boolean).join(' ') : '');
@@ -110,24 +110,22 @@ export const tableSettings = {
     ],
   },
   wheel: {
-    // Historique des codes : les lots gagnés pas encore remis peuvent passer en tête.
+    // Historique des tours joués : les lots gagnés pas encore remis peuvent passer en tête.
     sorts: [
-      ...sorts((item) => item.createdAt, (item) => item.player?.displayName).slice(0, 2),
-      { value: 'to-claim', label: 'Lots à remettre d’abord', compare: (a, b) => Number(isToClaim(b)) - Number(isToClaim(a)) || new Date(b.createdAt) - new Date(a.createdAt) },
+      ...sorts((item) => item.playedAt, (item) => item.player?.displayName).slice(0, 2),
+      { value: 'to-claim', label: 'Lots à remettre d’abord', compare: (a, b) => Number(isToClaim(b)) - Number(isToClaim(a)) || new Date(b.playedAt) - new Date(a.playedAt) },
     ],
     exportName: 'roue-parties',
     columns: () => [
-      { header: 'Délivré le', value: (item) => formatDate(item.createdAt), width: 18 },
+      { header: 'Jouée le', value: (item) => formatDate(item.playedAt), width: 18 },
       { header: 'Code', value: (item) => item.code, width: 10 },
-      { header: 'Statut', value: wheelCodeStatus, width: 22 },
-      { header: 'Jouée le', value: (item) => formatDate(item.usedAt), width: 18 },
+      { header: 'Statut', value: wheelPlayStatus, width: 16 },
       { header: 'Joueur', value: (item) => item.player?.displayName, width: 28 },
       { header: 'E-mail', value: (item) => item.player?.email, width: 30 },
       { header: 'Téléphone', value: (item) => item.player?.phone, width: 18 },
       { header: 'Résultat', value: (item) => item.result?.label, width: 30 },
       { header: 'Gagné', value: (item) => item.result?.kind === 'prize', width: 10 },
       { header: 'Partenaire', value: (item) => item.result?.sponsor, width: 24 },
-      { header: 'Code délivré par', value: (item) => fullName(item.createdBy), width: 24 },
       { header: 'Lot remis le', value: (item) => formatDate(item.claimedAt), width: 18 },
       { header: 'Remis par', value: (item) => fullName(item.claimedBy), width: 24 },
     ],

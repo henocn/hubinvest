@@ -2,7 +2,7 @@ const { Op } = require('sequelize');
 const AppError = require('../../shared/app-error');
 const roles = require('../../shared/roles');
 const {
-  B2bNeed, B2bProposal, ChallengePassage, ChallengePassport, Contact, InvestorRequest, Occupant, StudioInvitation, WheelCode,
+  B2bNeed, B2bProposal, ChallengePassage, ChallengePassport, Contact, InvestorRequest, Occupant, StudioInvitation, WheelPlay,
 } = require('../../models');
 
 // Début de la journée à Lomé (UTC, sans heure d'été).
@@ -49,9 +49,9 @@ const overview = async (user) => {
     countPassports(occupantId),
     countPassports(occupantId, { status: 'completed' }),
     countPassports(occupantId, { status: 'redeemed' }),
-    WheelCode.count({ where: { usedAt: { [Op.ne]: null } } }),
-    WheelCode.count({ where: { usedAt: { [Op.gte]: today } } }),
-    WheelCode.count({ where: { usedAt: { [Op.ne]: null }, resultKind: 'prize', claimedAt: null } }),
+    WheelPlay.count(),
+    WheelPlay.count({ where: { playedAt: { [Op.gte]: today } } }),
+    WheelPlay.count({ where: { resultKind: 'prize', claimedAt: null } }),
   ]);
 
   const result = {

@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const { sequelize, WheelSegment, WheelCode, User, ChallengePassport } = require('../../models');
+const { sequelize, WheelSegment, WheelCode, WheelPlay, User, ChallengePassport } = require('../../models');
 
 const segmentOrder = [['position', 'ASC'], ['createdAt', 'ASC']];
 
@@ -38,46 +38,59 @@ const findCodeForUpdate = (code, transaction) => WheelCode.findOne({
   lock: transaction.LOCK.UPDATE,
 });
 
+// Tours déjà joués avec un code (joueur compris), pour savoir s'il en reste et à qui il appartient.
+const findCodePlays = (wheelCodeId, transaction) => WheelPlay.findAll({
+  where: { wheelCodeId },
+  attributes: ['id', 'passportId'],
+  transaction,
+});
+
 // Retrouve le joueur identifié à partir de son lien personnel.
 const findPlayerByToken = (token, transaction) => ChallengePassport.findOne({ where: { token }, attributes: ['id'], transaction });
 
 const createCode = (values) => WheelCode.create(values);
 
-const updateCode = (wheelCode, values, transaction) => wheelCode.update(values, { transaction });
+const createPlay = (values, transaction) => WheelPlay.create(values, { transaction });
 
-// Un code expiré sans avoir été joué ne sert plus à rien : on n'en garde pas la trace.
-const deleteExpiredCodes = () => WheelCode.destroy({ where: { usedAt: null, expiresAt: { [Op.lte]: new Date() } } });
+const updatePlay = (play, values, transaction) => play.update(values, { transaction });
 
-// Historique : les codes joués et ceux encore valables, du plus récent au plus ancien, avec qui les a donnés et qui a joué.
+// Tous les codes délivrés, avec le résultat de leurs tours : pour la fenêtre « Code de jeu ».
 const findCodes = () => WheelCode.findAll({
-  where: { [Op.or]: [{ usedAt: { [Op.ne]: null } }, { expiresAt: { [Op.gt]: new Date() } }] },
-  include: [
-    { model: User, as: 'createdBy', attributes: ['id', 'firstName', 'lastName'], required: false },
-    { model: ChallengePassport, as: 'player', attributes: ['id', 'displayName', 'email', 'phone'], required: false },
-    { model: User, as: 'claimedBy', attributes: ['id', 'firstName', 'lastName'], required: false },
-  ],
+  attributes: ['id', 'code', 'spinsAllowed', 'createdAt'],
+  include: [{ model: WheelPlay, as: 'plays', attributes: ['resultKind'], required: false }],
   order: [['createdAt', 'DESC']],
 });
 
-// Compte les parties jouées par un joueur depuis une date (limite quotidienne).
-const countPlayerPlaysSince = (passportId, since, transaction) => WheelCode.count({
-  where: { passportId, usedAt: { [Op.gte]: since } },
+const playIncludes = [
+  { model: WheelCode, as: 'wheelCode', attributes: ['id', 'code'] },
+  { model: ChallengePassport, as: 'player', attributes: ['id', 'displayName', 'email', 'phone'], required: false },
+  { model: User, as: 'claimedBy', attributes: ['id', 'firstName', 'lastName'], required: false },
+];
+
+// Historique : les tours joués, du plus récent au plus ancien.
+const findPlays = () => WheelPlay.findAll({ include: playIncludes, order: [['playedAt', 'DESC']] });
+
+// Compte les tours joués par un joueur depuis une date (limite quotidienne).
+const countPlayerPlaysSince = (passportId, since, transaction) => WheelPlay.count({
+  where: { passportId, playedAt: { [Op.gte]: since } },
   transaction,
 });
 
-// Retrouve un code joué avec son joueur, verrouillé le temps de la remise du lot.
-const findPlayedCodeForClaim = (code, transaction) => WheelCode.findOne({
-  where: { code },
-  include: [
-    { model: ChallengePassport, as: 'player', attributes: ['id', 'displayName', 'email', 'phone'], required: false },
-    { model: User, as: 'claimedBy', attributes: ['id', 'firstName', 'lastName'], required: false },
-  ],
+// Lots gagnés avec un code, le plus ancien d'abord ; verrouillés le temps de la remise.
+const findCodePrizes = (code, transaction) => WheelPlay.findAll({
+  where: { resultKind: 'prize' },
+  include: [{ ...playIncludes[0], where: { code } }, ...playIncludes.slice(1)],
+  order: [['playedAt', 'ASC']],
   transaction,
-  ...(transaction && { lock: { level: transaction.LOCK.UPDATE, of: WheelCode } }),
+  ...(transaction && { lock: { level: transaction.LOCK.UPDATE, of: WheelPlay } }),
 });
 
-// Compte les parties réellement jouées.
-const countPlayed = () => WheelCode.count({ where: { usedAt: { [Op.ne]: null } } });
+const findCodeByValue = (code) => WheelCode.findOne({ where: { code }, attributes: ['id'] });
+
+const countPlays = (wheelCodeId) => WheelPlay.count({ where: { wheelCodeId } });
+
+// Compte les tours réellement joués.
+const countPlayed = () => WheelPlay.count();
 
 module.exports = {
   sequelize,
@@ -91,12 +104,16 @@ module.exports = {
   removeSegment,
   recordAward,
   findCodeForUpdate,
+  findCodePlays,
   findPlayerByToken,
   createCode,
-  updateCode,
-  deleteExpiredCodes,
+  createPlay,
+  updatePlay,
   findCodes,
+  findPlays,
   countPlayerPlaysSince,
-  findPlayedCodeForClaim,
+  findCodePrizes,
+  findCodeByValue,
+  countPlays,
   countPlayed,
 };
