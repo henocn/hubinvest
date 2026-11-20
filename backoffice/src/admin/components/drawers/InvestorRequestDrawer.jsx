@@ -87,7 +87,6 @@ function FollowUpForm({ investorRequest, token, onClose, onSaved }) {
       <form onSubmit={submit} className="drawer-form investor-followup-form">
         <label>Statut<select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })}><option value="new">Nouvelle</option><option value="in_progress">En cours</option><option value="closed">Clôturée</option></select></label>
         <label>Prochaine action<textarea rows="4" value={form.nextAction} onChange={(event) => setForm({ ...form, nextAction: event.target.value })} maxLength={255} /></label>
-        {investorRequest.assignedTo && <p className="assignment-note">Responsable : {investorRequest.assignedTo.firstName} {investorRequest.assignedTo.lastName}</p>}
         {error && <p className="admin-form-error">{error}</p>}
         <footer className="drawer-actions">
           <button className="button button-secondary" type="button" onClick={onClose}>Annuler</button>

@@ -166,7 +166,6 @@
 .admin-app .investor-request-detail a { width: fit-content; color: var(--green); font-size: 13px; text-decoration: none; }
 .admin-app .investor-request-detail p { margin: 0; color: #4e5357; font-size: 13px; line-height: 1.65; white-space: pre-line; }
 .admin-app .investor-followup-form { gap: 18px; }
-.admin-app .assignment-note { margin: 0; color: var(--muted); font-size: 12px; }
 .admin-app .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 @keyframes drawer-in { from { transform: translateY(8px) scale(.985); opacity: 0; } }
 

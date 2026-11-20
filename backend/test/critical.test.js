@@ -368,8 +368,8 @@ test('une demande Investor Desk exige le consentement API-ZF', () => {
   assert.ok(error);
 });
 
-test('le premier suivi Investor Desk attribue la demande à son agent', async (context) => {
-  const investorRequest = { id: 'request-a', assignedToUserId: null };
+test('le suivi Investor Desk reste limité au stand de l’administrateur', async (context) => {
+  const investorRequest = { id: 'request-a' };
   let saved;
   context.mock.method(investorRequestRepository, 'findById', async (_id, occupantId) => {
     assert.equal(occupantId, 'occupant-a');
@@ -386,8 +386,7 @@ test('le premier suivi Investor Desk attribue la demande à son agent', async (c
     { status: 'in_progress', nextAction: 'Rappeler le porteur du projet' },
   );
 
-  assert.equal(saved.assignedToUserId, 'agent-a');
-  assert.equal(saved.status, 'in_progress');
+  assert.deepEqual(saved, { status: 'in_progress', nextAction: 'Rappeler le porteur du projet' });
 });
 
 test('la liste Investor Desk d’un administrateur utilise uniquement son stand', async (context) => {
@@ -1214,7 +1213,6 @@ test('une demande Investor Desk saisie par un administrateur de stand reste sur 
 
   await investorRequestService.createManual({ id: 'admin-a', role: 'admin', occupantId: 'stand-a' }, { ...values, occupantId: 'stand-b' });
   assert.equal(created[0].occupantId, 'stand-a');
-  assert.equal(created[0].assignedToUserId, 'admin-a');
   assert.equal(created[0].email, 'ama@example.com');
 
   await assert.rejects(

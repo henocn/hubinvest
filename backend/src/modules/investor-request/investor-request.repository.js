@@ -1,11 +1,5 @@
 const { Op } = require('sequelize');
-const { InvestorRequest, Occupant, User } = require('../../models');
-
-const assignedToInclude = [{
-  model: User,
-  as: 'assignedTo',
-  attributes: ['id', 'firstName', 'lastName'],
-}];
+const { InvestorRequest, Occupant } = require('../../models');
 
 const occupantInclude = [{
   model: Occupant,
@@ -26,7 +20,7 @@ const findAll = ({ status, search, limit, offset, occupantId }) => {
 
   return InvestorRequest.findAndCountAll({
     where,
-    include: [...assignedToInclude, ...occupantInclude],
+    include: occupantInclude,
     order: [['createdAt', 'DESC']],
     limit,
     offset,
@@ -35,7 +29,7 @@ const findAll = ({ status, search, limit, offset, occupantId }) => {
 
 const findById = (id, occupantId = null) => InvestorRequest.findOne({
   where: { id, ...(occupantId && { occupantId }) },
-  include: [...assignedToInclude, ...occupantInclude],
+  include: occupantInclude,
 });
 const findActiveOccupantById = (id) => Occupant.findOne({ where: { id, status: 'active' }, attributes: ['id', 'name'] });
 const create = (values) => InvestorRequest.create(values);

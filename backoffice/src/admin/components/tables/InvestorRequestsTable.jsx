@@ -16,13 +16,13 @@ export default function InvestorRequestsTable({ selection, requests, query, onEd
   return (
     <div className="table-scroll">
       <table>
-        <thead><tr><SelectAllHeader selection={selection} /><th>Reçue le</th><th>Demandeur</th>{showStand && <th>Stand</th>}<th>Statut</th><th>Responsable</th><th className="actions-heading">Actions</th></tr></thead>
+        <thead><tr><SelectAllHeader selection={selection} /><th>Reçue le</th><th>Demandeur</th>{showStand && <th>Stand</th>}<th>Statut</th><th className="actions-heading">Actions</th></tr></thead>
         <tbody>{requests.map((item) => (
           <ExpandableRow
             key={item.id}
             id={item.id}
             openRow={openRow}
-            colSpan={showStand ? 7 : 6}
+            colSpan={showStand ? 6 : 5}
             details={<>
               <Detail label="E-mail"><a href={`mailto:${item.email}`}>{item.email}</a></Detail>
               <Detail label="Téléphone">{item.phone && <a href={`tel:${item.phone}`}>{item.phone}</a>}</Detail>
@@ -36,7 +36,6 @@ export default function InvestorRequestsTable({ selection, requests, query, onEd
             <td><strong>{item.fullName}</strong></td>
             {showStand && <td>{item.occupant?.name || '—'}</td>}
             <td><span className={`status-pill ${item.status === 'in_progress' ? 'is-active' : item.status === 'new' ? 'is-new' : ''}`}>{investorStatusLabels[item.status]}</span></td>
-            <td>{item.assignedTo ? `${item.assignedTo.firstName} ${item.assignedTo.lastName}` : '—'}</td>
             <ActionsCell><button className="table-action is-icon" type="button" aria-label={`Suivre la demande de ${item.fullName}`} title="Suivre" onClick={() => onEdit(item)}><Pencil size={16} /></button></ActionsCell>
           </ExpandableRow>
         ))}</tbody>

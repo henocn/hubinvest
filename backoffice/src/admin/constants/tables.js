@@ -75,7 +75,6 @@ export const tableSettings = {
       { header: 'Stand', value: (item) => item.occupant?.name, width: 26 },
       { header: 'Projet', value: (item) => item.projectSummary, width: 60 },
       { header: 'Statut', value: (item) => investorStatusLabels[item.status] || item.status, width: 14 },
-      { header: 'Responsable', value: (item) => fullName(item.assignedTo), width: 24 },
       { header: 'Prochaine action', value: (item) => item.nextAction, width: 36 },
       { header: 'Accord API-ZF', value: (item) => Boolean(item.consentApizf), width: 14 },
     ],

@@ -35,7 +35,6 @@ const createPublic = async (values, language = 'fr') => {
     projectSummary: values.projectSummary,
     status: 'new',
     nextAction: null,
-    assignedToUserId: null,
     language,
     consentApizf: true,
     consentCapturedAt: new Date(),
@@ -45,7 +44,7 @@ const createPublic = async (values, language = 'fr') => {
   return investorRequest;
 };
 
-// Demande saisie dans le back office : pas de module à ouvrir ni de notification, la personne qui saisit en est responsable.
+// Demande saisie dans le back office : pas de module à ouvrir ni de notification.
 const createManual = async (user, values) => {
   const occupantId = standFor(user) || values.occupantId;
   if (!occupantId) throw new AppError(422, 'OCCUPANT_REQUIRED', 'Choisissez le stand concerné.');
@@ -59,7 +58,6 @@ const createManual = async (user, values) => {
     projectSummary: values.projectSummary,
     status: values.status,
     nextAction: values.nextAction || null,
-    assignedToUserId: user.id,
     language: 'fr',
     consentApizf: values.consentApizf,
     consentCapturedAt: new Date(),
@@ -74,10 +72,7 @@ const update = async (user, id, values) => {
     throw new AppError(404, 'INVESTOR_REQUEST_NOT_FOUND', 'Demande introuvable.');
   }
 
-  const updated = await investorRequestRepository.update(investorRequest, {
-    ...values,
-    assignedToUserId: investorRequest.assignedToUserId || user.id,
-  });
+  const updated = await investorRequestRepository.update(investorRequest, values);
   realtime.investorRequestsChanged(investorRequest.occupantId);
   return updated;
 };
