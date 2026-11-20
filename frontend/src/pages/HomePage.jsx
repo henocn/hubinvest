@@ -189,13 +189,32 @@ export default function HomePage() {
   const now = useNow();
   const formats = useHubFormats(i18n.resolvedLanguage);
 
+  // Le programme se recharge seul toutes les 30 secondes et au retour sur la page : un ajout fait dans
+  // l'administration apparaît sans que le visiteur recharge. Ces mises à jour silencieuses gardent l'affichage en cas d'échec.
   useEffect(() => {
-    setLoading(true);
-    setError('');
-    api.publicToday()
-      .then(setData)
-      .catch((requestError) => setError(publicErrorMessage(t, requestError)))
-      .finally(() => setLoading(false));
+    let active = true;
+    const load = (silent) => {
+      if (!silent) {
+        setLoading(true);
+        setError('');
+      }
+      api.publicToday()
+        .then((result) => { if (active) { setData(result); setError(''); } })
+        .catch((requestError) => { if (active && !silent) setError(publicErrorMessage(t, requestError)); })
+        .finally(() => { if (active && !silent) setLoading(false); });
+    };
+    const refresh = () => { if (!document.hidden) load(true); };
+
+    load(false);
+    const interval = window.setInterval(refresh, 30_000);
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+    };
   }, [t]);
 
   const isEmpty = data && !data.spotlight && data.today.length === 0 && data.upcoming.length === 0;
