@@ -79,6 +79,7 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 - Les envois externes sont asynchrones. Une notification e-mail ou push est d’abord ajoutée à la file `notification_jobs`, puis envoyée en arrière-plan par le worker avec nouvelles tentatives. Une action métier n’attend jamais un envoi et n’échoue jamais à cause d’une notification.
 - Un membre d’équipe est prévenu en push sur ses appareils abonnés, et par e-mail seulement lorsqu’aucun appareil n’est joignable. Un visiteur sans compte reçoit uniquement des e-mails, dans la langue de sa demande.
 - Une notification d’équipe ne contient pas les coordonnées du visiteur : elle indique l’événement et mène à l’écran où la donnée est consultable.
+- Les coordonnées des joueurs (téléphone, e-mail) restent visibles en entier par les équipes des stands et les animateurs (recherche d’un joueur, lot de la roue) : ces comptes sont vérifiés avant l’événement, le masquage n’est donc pas appliqué (décision du 20/11/2026).
 - Une déconnexion volontaire coupe les notifications de l’appareil ; une session expirée ne les coupe pas.
 - Les dates et jalons des documents de travail ne fixent pas l’ordre du travail.
 - Avancer par petits parcours complets. Ne pas construire tous les cas futurs avant leur usage réel.
