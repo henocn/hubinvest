@@ -40,8 +40,8 @@ export default function B2bProposalsTable({ selection, proposals, query, showSta
             <td><span className="cell-ellipsis">{proposal.need?.title || '—'}</span></td>
             <td><span className={`status-pill${statusClass[proposal.status] ?? ''}`}>{b2bProposalLabels[proposal.status] || proposal.status}</span></td>
             <ActionsCell>{proposal.status === 'pending' && <>
-              <button className="table-action is-accept" type="button" disabled={deciding === proposal.id} onClick={() => onDecide(proposal, 'accepted')} aria-label={`Accepter la demande de ${proposal.fullName}`}><Check size={14} /> Accepter</button>
-              <button className="table-action is-decline" type="button" disabled={deciding === proposal.id} onClick={() => onDecide(proposal, 'declined')} aria-label={`Refuser la demande de ${proposal.fullName}`}><X size={14} /> Refuser</button>
+              <button className="table-action is-icon is-accept" type="button" disabled={deciding === proposal.id} onClick={() => onDecide(proposal, 'accepted')} aria-label={`Accepter la demande de ${proposal.fullName}`} title="Accepter"><Check size={16} /></button>
+              <button className="table-action is-icon is-decline" type="button" disabled={deciding === proposal.id} onClick={() => onDecide(proposal, 'declined')} aria-label={`Refuser la demande de ${proposal.fullName}`} title="Refuser"><X size={16} /></button>
               <span className="row-actions-divider" aria-hidden="true" />
             </>}
               <button className="table-action is-icon" type="button" onClick={() => onEdit(proposal)} aria-label={`Modifier la demande de ${proposal.fullName}`} title="Modifier"><Pencil size={16} /></button>
