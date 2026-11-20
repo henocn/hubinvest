@@ -15,7 +15,7 @@ const modules = [
 ];
 
 // Réglages du site, appliqués aussitôt : ouvrir ou fermer chaque module, nombre de stands requis pour les Défis,
-// cases et lots de la roue, besoins B2B publiés. Un administrateur de stand n'y voit pas les réglages généraux.
+// cases et lots de la roue, besoins B2B publiés. Un administrateur de stand n'y voit que les besoins B2B de son stand.
 export default function SettingsPage({ session, onLogout }) {
   const isSuperAdmin = session.user.role === 'super-admin';
   const [settings, setSettings] = useState(null);
@@ -121,7 +121,7 @@ export default function SettingsPage({ session, onLogout }) {
           </section>
         </>
       )}
-      <WheelSettings session={session} onLogout={onLogout}>
+      {isSuperAdmin && <WheelSettings session={session} onLogout={onLogout}>
         {settings && (
           <form className="settings-row" onSubmit={saveSpinsPerCode}>
             <span>
@@ -148,7 +148,7 @@ export default function SettingsPage({ session, onLogout }) {
             </span>
           </form>
         )}
-      </WheelSettings>
+      </WheelSettings>}
       <B2bNeedsSettings session={session} onLogout={onLogout} />
     </main>
   );
