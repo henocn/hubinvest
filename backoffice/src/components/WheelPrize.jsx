@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { CheckCircle2, Disc3, Gift, Ticket } from 'lucide-react';
 import { api } from '../lib/api';
 
@@ -80,14 +80,11 @@ export function WheelPrizeResult({ text }) {
   return text ? <p className="challenge-validation-success" role="status"><CheckCircle2 size={20} /> {text}</p> : null;
 }
 
-// Délivre un code de jeu à donner au visiteur, affiché en grand avec son heure d'expiration.
+// Délivre un code de jeu à donner au visiteur, affiché en grand ; il n'expire pas.
 export function WheelCodeGenerator({ session, onLogout }) {
   const [wheelCode, setWheelCode] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const timer = useRef(0);
-
-  useEffect(() => () => window.clearTimeout(timer.current), []);
 
   const generate = async () => {
     setLoading(true);
@@ -95,8 +92,6 @@ export function WheelCodeGenerator({ session, onLogout }) {
     try {
       const data = await api.createWheelCode(session.token);
       setWheelCode(data);
-      window.clearTimeout(timer.current);
-      timer.current = window.setTimeout(() => setWheelCode(null), Math.max(0, new Date(data.expiresAt) - Date.now()));
     } catch (requestError) {
       if (requestError.status === 401 || requestError.status === 403) onLogout();
       else setError(requestError.message);
@@ -114,7 +109,7 @@ export function WheelCodeGenerator({ session, onLogout }) {
       {wheelCode && (
         <div className="wheel-code-box" role="status">
           <strong>{wheelCode.code}</strong>
-          <span>Une partie, jusqu’à {timeFormatter.format(new Date(wheelCode.expiresAt))}</span>
+          <span>{wheelCode.spinsAllowed} tour{wheelCode.spinsAllowed > 1 ? 's' : ''}, sans limite de temps</span>
         </div>
       )}
       {error && <p className="panel-error" role="alert">{error}</p>}

@@ -1,20 +1,8 @@
 const { Op } = require('sequelize');
-const { InvestorRequest, Occupant, User } = require('../../models');
+const { InvestorRequest } = require('../../models');
 
-const assignedToInclude = [{
-  model: User,
-  as: 'assignedTo',
-  attributes: ['id', 'firstName', 'lastName'],
-}];
-
-const occupantInclude = [{
-  model: Occupant,
-  as: 'occupant',
-  attributes: ['id', 'name', 'standLabel'],
-}];
-
-const findAll = ({ status, search, limit, offset, occupantId }) => {
-  const where = occupantId ? { occupantId } : {};
+const findAll = ({ status, search, limit, offset }) => {
+  const where = {};
   if (status) where.status = status;
   if (search) {
     where[Op.or] = [
@@ -26,19 +14,14 @@ const findAll = ({ status, search, limit, offset, occupantId }) => {
 
   return InvestorRequest.findAndCountAll({
     where,
-    include: [...assignedToInclude, ...occupantInclude],
     order: [['createdAt', 'DESC']],
     limit,
     offset,
   });
 };
 
-const findById = (id, occupantId = null) => InvestorRequest.findOne({
-  where: { id, ...(occupantId && { occupantId }) },
-  include: [...assignedToInclude, ...occupantInclude],
-});
-const findActiveOccupantById = (id) => Occupant.findOne({ where: { id, status: 'active' }, attributes: ['id', 'name'] });
+const findById = (id) => InvestorRequest.findByPk(id);
 const create = (values) => InvestorRequest.create(values);
 const update = (request, values) => request.update(values);
 
-module.exports = { findAll, findById, findActiveOccupantById, create, update };
+module.exports = { findAll, findById, create, update };

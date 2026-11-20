@@ -33,6 +33,8 @@ const login = async ({ email, password }) => {
     { subject: user.id, expiresIn: env.auth.expiresIn },
   );
 
+  // La connexion compte comme une présence, même avant l'ouverture du flux temps réel.
+  await user.update({ lastSeenAt: new Date() });
   const payload = user.toJSON();
   delete payload.passwordHash;
 

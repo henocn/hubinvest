@@ -68,6 +68,8 @@ export const api = {
   deleteOccupant: (token, id) =>
     request(`/occupants/${id}`, authorized(token, { method: 'DELETE' })),
   investorRequests: (token) => request('/investor-requests', authorized(token)),
+  createInvestorRequest: (token, values) =>
+    request('/investor-requests', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   updateInvestorRequest: (token, id, values) =>
     request(`/investor-requests/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
   b2bNeeds: (token) => request('/b2b-needs', authorized(token)),
@@ -75,14 +77,12 @@ export const api = {
     request('/b2b-needs', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   updateB2bNeed: (token, id, values) =>
     request(`/b2b-needs/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
+  b2bAllProposals: (token) => request('/b2b-proposals', authorized(token)),
   b2bProposals: (token, needId) => request(`/b2b-proposals/need/${needId}`, authorized(token)),
+  deleteB2bProposal: (token, id) =>
+    request(`/b2b-proposals/${id}`, authorized(token, { method: 'DELETE' })),
   updateB2bProposal: (token, id, values) =>
     request(`/b2b-proposals/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
-  studioInvitations: (token) => request('/studio-invitations', authorized(token)),
-  createStudioInvitation: (token, values) =>
-    request('/studio-invitations', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
-  updateStudioInvitation: (token, id, values) =>
-    request(`/studio-invitations/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
   programEvents: (token) => request('/program-events', authorized(token)),
   createProgramEvent: (token, values) =>
     request('/program-events', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
@@ -94,7 +94,6 @@ export const api = {
   redeemChallengePassport: (token, id) =>
     request(`/challenge-passports/${id}/redeem`, authorized(token, { method: 'PATCH' })),
   wheel: (token) => request('/wheel', authorized(token)),
-  wheelPlays: (token) => request('/wheel/plays', authorized(token)),
   dashboard: (token) => request('/dashboard', authorized(token)),
   settings: (token) => request('/settings', authorized(token)),
   updateSettings: (token, values) => request('/settings', authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),

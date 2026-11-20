@@ -20,7 +20,7 @@ export default function AnimatorScanPage({ session, onLogout }) {
 
   const findParticipant = useCallback(async (value) => {
     if (submitting.current) return;
-    const normalized = value.trim().toUpperCase().replace(/[s-]/g, '');
+    const normalized = value.trim().toUpperCase().replace(/[\s-]/g, '');
     // Un code de 4 caractères est un code de jeu de la roue : on retrouve le lot gagné.
     if (wheelCodePattern.test(normalized)) {
       setError('');

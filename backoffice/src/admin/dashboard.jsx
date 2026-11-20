@@ -20,7 +20,7 @@ export function DashboardProvider({ session, onLogout, children }) {
   }, [onLogout, session.token]);
 
   useEffect(() => { void refresh(); }, [refresh]);
-  useRealtimeEvent(['investor-requests', 'b2b', 'studio', 'challenge', 'wheel', 'occupants', 'contacts'], () => { void refresh(); });
+  useRealtimeEvent(['investor-requests', 'b2b', 'challenge', 'wheel', 'occupants', 'contacts'], () => { void refresh(); });
 
   return <DashboardContext.Provider value={{ data, error, refresh }}>{children}</DashboardContext.Provider>;
 }

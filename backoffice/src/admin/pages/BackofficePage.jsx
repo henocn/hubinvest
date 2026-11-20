@@ -1,60 +1,72 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Download, Plus, QrCode, Search, Ticket } from 'lucide-react';
 import ConfirmDelete from '../components/ConfirmDelete';
+import OccupantDetail from '../components/OccupantDetail';
+import { useRowSelection } from '../components/RowSelection';
 import ConfirmReward from '../components/ConfirmReward';
+import ConfirmDecision from '../components/ConfirmDecision';
 import QrCodeDialog from '../components/QrCodeDialog';
 import InvestorRequestDrawer from '../components/drawers/InvestorRequestDrawer';
-import B2bNeedDrawer from '../components/drawers/B2bNeedDrawer';
+import B2bProposalDrawer from '../components/drawers/B2bProposalDrawer';
 import OccupantDrawer from '../components/drawers/OccupantDrawer';
 import ProgramEventDrawer from '../components/drawers/ProgramEventDrawer';
-import StudioInvitationDrawer from '../components/drawers/StudioInvitationDrawer';
 import UserDrawer from '../components/drawers/UserDrawer';
 import InvestorRequestsTable from '../components/tables/InvestorRequestsTable';
-import B2bNeedsTable from '../components/tables/B2bNeedsTable';
+import B2bProposalsTable from '../components/tables/B2bProposalsTable';
 import ChallengePassportsTable from '../components/tables/ChallengePassportsTable';
 import OccupantsTable from '../components/tables/OccupantsTable';
 import ProgramEventsTable from '../components/tables/ProgramEventsTable';
-import StudioInvitationsTable from '../components/tables/StudioInvitationsTable';
 import UsersTable from '../components/tables/UsersTable';
-import WheelSegmentsTable from '../components/tables/WheelSegmentsTable';
-import WheelCodesTable from '../components/tables/WheelCodesTable';
-import WheelSegmentDrawer from '../components/drawers/WheelSegmentDrawer';
+import WheelPlaysTable from '../components/tables/WheelPlaysTable';
 import WheelCodeDialog from '../components/WheelCodeDialog';
 import { publicBaseUrl } from '../constants/access';
 import { tableSettings } from '../constants/tables';
 import { exportToExcel } from '../../lib/excel';
 import { api } from '../lib/api';
 import { useRealtimeEvent } from '../../lib/realtime';
+import { adminSections, groupTabs, sectionGroups } from '../../navigation';
+import { useDashboard } from '../dashboard';
 
 const sectionMeta = {
-  occupants: { title: 'Stands', description: 'Fiches publiques, emplacements et statuts.' },
-  users: { title: 'Accès', description: 'Comptes et niveaux d’accès à la plateforme.' },
-  program: { title: 'Programme', description: 'Stand à l’affiche, animations et temps forts affichés sur l’accueil.' },
-  'investor-requests': { title: 'Investor Desk', description: 'Demandes de professionnels adressées à l’API-ZF.' },
-  b2b: { title: 'B2B', description: 'Besoins publiés et propositions reçues.' },
-  studio: { title: 'Studio', description: 'Invitations et planning des invités.' },
-  challenges: { title: 'Participants aux défis', description: 'Contacts, progression et remise des récompenses.' },
-  wheel: { title: 'Roue des opportunités', description: 'Lots, quantités et codes de jeu à usage unique.' },
+  occupants: { title: 'Stands' },
+  users: { title: 'Accès' },
+  program: { title: 'Programme' },
+  'investor-requests': { title: 'Investor Desk' },
+  b2b: { title: 'Rencontre B2B' },
+  challenges: { title: 'Défi de passage' },
+  wheel: { title: 'Roue des opportunités' },
 };
 
 // Page d'une rubrique de l'administration ; la rubrique vient de l'adresse (/stands, /b2b, /roue…).
 export default function BackofficePage({ session, onLogout, section }) {
   const isSuperAdmin = session.user.role === 'super-admin';
-  const isAdmin = session.user.role === 'admin';
+  const todo = useDashboard()?.data?.todo || {};
+  // Onglets de la rubrique quand elle fait partie d'un groupe (Rencontres, Jeux).
+  const group = adminSections.find((item) => item.section === section)?.group;
+  const tabs = group ? groupTabs(group, session.user.role) : [];
+  const location = useLocation();
+  const navigate = useNavigate();
+  // Fiche d'un stand : /stands/<id>.
+  const detailId = section === 'occupants' ? location.pathname.split('/')[2] || null : null;
   const [occupants, setOccupants] = useState([]);
   const [users, setUsers] = useState([]);
   const [investorRequests, setInvestorRequests] = useState([]);
   const [b2bNeeds, setB2bNeeds] = useState([]);
-  const [studioInvitations, setStudioInvitations] = useState([]);
+  const [b2bProposals, setB2bProposals] = useState([]);
+  const [pendingDecision, setPendingDecision] = useState(null);
+  const [deciding, setDeciding] = useState(false);
+  const [decisionError, setDecisionError] = useState('');
   const [programEvents, setProgramEvents] = useState([]);
   const [challengePassports, setChallengePassports] = useState([]);
   const [contactStats, setContactStats] = useState({ total: 0, byOccupant: {} });
-  const [wheel, setWheel] = useState({ segments: [], codes: [], stats: { played: 0, awarded: 0, remaining: 0 } });
+  const [wheel, setWheel] = useState({ segments: [], codes: [], plays: [], stats: { played: 0, awarded: 0, remaining: 0 } });
   const [wheelCode, setWheelCode] = useState(null);
   const [search, setSearch] = useState('');
-  const [filterValue, setFilterValue] = useState('');
   const [sortValue, setSortValue] = useState('');
   const [exporting, setExporting] = useState(false);
+  // Une erreur d'export s'affiche au-dessus du tableau, sans le masquer.
+  const [exportError, setExportError] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [drawer, setDrawer] = useState(null);
@@ -62,7 +74,6 @@ export default function BackofficePage({ session, onLogout, section }) {
   const [deleteError, setDeleteError] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [qrCode, setQrCode] = useState(null);
-  const [copiedInvitationId, setCopiedInvitationId] = useState(null);
   const [pendingReward, setPendingReward] = useState(null);
   const [rewardError, setRewardError] = useState('');
   const [rewarding, setRewarding] = useState(false);
@@ -72,13 +83,13 @@ export default function BackofficePage({ session, onLogout, section }) {
     setError('');
     try {
       if (isSuperAdmin) {
-        const [occupantData, userData, statsData, investorData, b2bData, studioData, challengeData, programData, wheelData] = await Promise.all([
+        const [occupantData, userData, statsData, investorData, b2bData, proposalData, challengeData, programData, wheelData] = await Promise.all([
           api.occupants(session.token),
           api.users(session.token),
           api.contactStats(session.token),
           api.investorRequests(session.token),
           api.b2bNeeds(session.token),
-          api.studioInvitations(session.token),
+          api.b2bAllProposals(session.token),
           api.challengePassports(session.token),
           api.programEvents(session.token),
           api.wheel(session.token),
@@ -88,21 +99,19 @@ export default function BackofficePage({ session, onLogout, section }) {
         setContactStats(statsData);
         setInvestorRequests(investorData.items);
         setB2bNeeds(b2bData);
-        setStudioInvitations(studioData);
+        setB2bProposals(proposalData);
         setChallengePassports(challengeData);
         setProgramEvents(programData);
         setWheel(wheelData);
       } else {
-        const [investorData, needData, studioData, challengeData, wheelData] = await Promise.all([
-          api.investorRequests(session.token),
+        const [needData, proposalData, challengeData, wheelData] = await Promise.all([
           api.b2bNeeds(session.token),
-          api.studioInvitations(session.token),
+          api.b2bAllProposals(session.token),
           api.challengePassports(session.token),
           api.wheel(session.token),
         ]);
-        setInvestorRequests(investorData.items);
         setB2bNeeds(needData);
-        setStudioInvitations(studioData);
+        setB2bProposals(proposalData);
         setChallengePassports(challengeData);
         setWheel(wheelData);
       }
@@ -120,9 +129,11 @@ export default function BackofficePage({ session, onLogout, section }) {
   const silentLoaders = useMemo(() => {
     const token = session.token;
     const loaders = {
-      'investor-requests': async () => setInvestorRequests((await api.investorRequests(token)).items),
-      b2b: async () => setB2bNeeds(await api.b2bNeeds(token)),
-      studio: async () => setStudioInvitations(await api.studioInvitations(token)),
+      b2b: async () => {
+        const [needData, proposalData] = await Promise.all([api.b2bNeeds(token), api.b2bAllProposals(token)]);
+        setB2bNeeds(needData);
+        setB2bProposals(proposalData);
+      },
       challenge: async () => setChallengePassports(await api.challengePassports(token)),
       wheel: async () => setWheel(await api.wheel(token)),
       account: async () => { await api.profile(token); },
@@ -134,6 +145,7 @@ export default function BackofficePage({ session, onLogout, section }) {
           setOccupants(occupantData);
           setProgramEvents(programData);
         },
+        'investor-requests': async () => setInvestorRequests((await api.investorRequests(token)).items),
         users: async () => setUsers(await api.users(token)),
         program: async () => setProgramEvents(await api.programEvents(token)),
         contacts: async () => setContactStats(await api.contactStats(token)),
@@ -158,7 +170,6 @@ export default function BackofficePage({ session, onLogout, section }) {
   useRealtimeEvent('contacts', () => reloadTopic('contacts'));
   useRealtimeEvent('investor-requests', () => reloadTopic('investor-requests'));
   useRealtimeEvent('b2b', () => reloadTopic('b2b'));
-  useRealtimeEvent('studio', () => reloadTopic('studio'));
   useRealtimeEvent('challenge', () => reloadTopic('challenge'));
   useRealtimeEvent('wheel', () => reloadTopic('wheel'));
   useRealtimeEvent('account', () => reloadTopic('account'));
@@ -167,71 +178,87 @@ export default function BackofficePage({ session, onLogout, section }) {
   const visibleOccupants = useMemo(() => occupants.filter((occupant) => !query || [occupant.name, occupant.activity, occupant.standLabel].some((value) => String(value || '').toLowerCase().includes(query))), [occupants, query]);
   const visibleUsers = useMemo(() => users.filter((user) => !query || [user.firstName, user.lastName, user.email, user.role, user.occupant?.name].some((value) => String(value || '').toLowerCase().includes(query))), [users, query]);
   const visibleInvestorRequests = useMemo(() => investorRequests.filter((item) => !query || [item.fullName, item.email, item.projectSummary, item.nextAction].some((value) => String(value || '').toLowerCase().includes(query))), [investorRequests, query]);
-  const visibleB2bNeeds = useMemo(() => b2bNeeds.filter((item) => !query || [item.title, item.occupant?.name, item.status].some((value) => String(value || '').toLowerCase().includes(query))), [b2bNeeds, query]);
-  const visibleStudioInvitations = useMemo(() => studioInvitations.filter((item) => !query || [item.guestName, item.subject].some((value) => String(value || '').toLowerCase().includes(query))), [studioInvitations, query]);
+  const visibleB2bProposals = useMemo(() => b2bProposals.filter((item) => !query || [item.fullName, item.email, item.phone, item.message, item.need?.title, item.need?.occupant?.name].some((value) => String(value || '').toLowerCase().includes(query))), [b2bProposals, query]);
   const visibleProgramEvents = useMemo(() => programEvents.filter((item) => !query || [item.title, item.location, item.description, item.occupant?.name].some((value) => String(value || '').toLowerCase().includes(query))), [programEvents, query]);
-  const programTodayStart = new Date().setUTCHours(0, 0, 0, 0);
-  const programTodayEnd = programTodayStart + 86_400_000;
   const visibleChallengePassports = useMemo(() => challengePassports.filter((item) => !query || [item.displayName, item.email, item.phone, item.contact, item.code, ...(item.passages || []).flatMap((passage) => [passage.occupant?.name, passage.validatedBy?.firstName, passage.validatedBy?.lastName])].some((value) => String(value || '').toLowerCase().includes(query))), [challengePassports, query]);
 
-  const visibleWheelSegments = useMemo(() => wheel.segments.filter((item) => !query || [item.label, item.sponsor].some((value) => String(value || '').toLowerCase().includes(query))), [wheel.segments, query]);
+  const visibleWheelPlays = useMemo(() => wheel.plays.filter((item) => !query || [item.code, item.player?.displayName, item.player?.email, item.player?.phone, item.result.label, item.result.sponsor].some((value) => String(value || '').toLowerCase().includes(query))), [wheel.plays, query]);
 
   // Chaque rubrique s'ouvre avec une recherche vide.
   useEffect(() => {
     setSearch('');
-    setFilterValue('');
     setSortValue('');
+    setExportError('');
   }, [section]);
 
-  // Filtre et tri du tableau affiché : le premier tri proposé est celui par défaut.
+  // Tri du tableau affiché : le premier tri proposé est celui par défaut.
   const settings = tableSettings[section];
   const arrange = (items) => {
-    const matches = (item) => {
-      const result = settings.filterOf(item, filterValue);
-      return result === true || result === filterValue;
-    };
     const sorter = settings.sorts.find((item) => item.value === sortValue) || settings.sorts[0];
-    return (filterValue ? items.filter(matches) : [...items]).sort(sorter.compare);
+    return [...items].sort(sorter.compare);
   };
   const sectionRows = {
     occupants: visibleOccupants,
     users: visibleUsers,
     program: visibleProgramEvents,
     'investor-requests': visibleInvestorRequests,
-    b2b: visibleB2bNeeds,
-    studio: visibleStudioInvitations,
+    b2b: visibleB2bProposals,
     challenges: visibleChallengePassports,
-    wheel: visibleWheelSegments,
+    wheel: visibleWheelPlays,
   };
   const rows = arrange(sectionRows[section] || []);
+  // Lignes cochées : l'export ne prend qu'elles quand il y en a.
+  const selection = useRowSelection(rows);
+  const checkedCount = selection.selected.length;
+  const { clear: clearSelection } = selection;
+  useEffect(() => { clearSelection(); }, [section]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Repères de la roue, affichés en une ligne discrète.
+  const toolbarNote = loading || error ? '' : section === 'wheel'
+    ? `${wheel.stats.played} partie${wheel.stats.played > 1 ? 's' : ''} · ${wheel.stats.awarded} lot${wheel.stats.awarded > 1 ? 's' : ''} gagné${wheel.stats.awarded > 1 ? 's' : ''} · ${wheel.stats.remaining} restant${wheel.stats.remaining > 1 ? 's' : ''}`
+    : '';
 
-  // Exporte exactement les lignes affichées ; pour la roue, toutes les parties jouées.
+  // Exporte les lignes cochées, sinon toutes les lignes affichées.
   const exportRows = async () => {
     setExporting(true);
+    setExportError('');
     try {
-      const data = section === 'wheel' ? await api.wheelPlays(session.token) : rows;
+      const data = checkedCount ? selection.selected : rows;
       await exportToExcel({
         name: settings.exportName,
         sheetName: sectionMeta[section].title,
         columns: settings.columns({ contactStats, publicBaseUrl }),
         rows: data,
       });
-    } catch (requestError) {
-      setError(requestError.message);
+    } catch (exportFailure) {
+      setExportError(`Export impossible : ${exportFailure.message}`);
     } finally {
       setExporting(false);
+    }
+  };
+
+  // Accepter ou refuser une demande B2B, après confirmation : la personne reçoit la réponse par e-mail.
+  const requestDecision = (proposal, status) => {
+    setDecisionError('');
+    setPendingDecision({ proposal, status });
+  };
+
+  const confirmDecision = async () => {
+    setDeciding(true);
+    setDecisionError('');
+    try {
+      await api.updateB2bProposal(session.token, pendingDecision.proposal.id, { status: pendingDecision.status });
+      setPendingDecision(null);
+      await reloadTopic('b2b');
+    } catch (requestError) {
+      setDecisionError(requestError.message);
+    } finally {
+      setDeciding(false);
     }
   };
 
   const saved = async () => {
     setDrawer(null);
     await loadData();
-  };
-
-  const copyInvitationLink = async (id, link) => {
-    await navigator.clipboard.writeText(link);
-    setCopiedInvitationId(id);
-    window.setTimeout(() => setCopiedInvitationId(null), 1800);
   };
 
   const confirmReward = async () => {
@@ -264,17 +291,18 @@ export default function BackofficePage({ session, onLogout, section }) {
     setPendingDelete({ type: 'program', item: programEvent, label: programEvent.type === 'spotlight' ? `la mise à l’affiche de ${programEvent.occupant?.name || 'ce stand'}` : `« ${programEvent.title} » du programme` });
   };
 
-  const requestWheelDelete = (segment) => {
+  const requestB2bProposalDelete = (proposal) => {
     setDeleteError('');
-    setPendingDelete({ type: 'wheel', item: segment, label: `la case « ${segment.label} » de la roue` });
+    setPendingDelete({ type: 'b2b-proposal', item: proposal, label: `la demande B2B de ${proposal.fullName}` });
   };
 
-  // Délivre un code de jeu et l'affiche en grand pour le joueur.
+  // Délivre un code de jeu, l'affiche en grand pour le joueur et l'ajoute à la liste des codes.
   const generateWheelCode = async () => {
     setWheelCode((current) => ({ data: current?.data || null, loading: true, error: '' }));
     try {
       const data = await api.createWheelCode(session.token);
       setWheelCode({ data, loading: false, error: '' });
+      void reloadTopic('wheel');
     } catch (requestError) {
       setWheelCode((current) => ({ data: current?.data || null, loading: false, error: requestError.message }));
     }
@@ -286,9 +314,10 @@ export default function BackofficePage({ session, onLogout, section }) {
     try {
       if (pendingDelete.type === 'occupant') await api.deleteOccupant(session.token, pendingDelete.item.id);
       else if (pendingDelete.type === 'program') await api.deleteProgramEvent(session.token, pendingDelete.item.id);
-      else if (pendingDelete.type === 'wheel') await api.deleteWheelSegment(session.token, pendingDelete.item.id);
+      else if (pendingDelete.type === 'b2b-proposal') await api.deleteB2bProposal(session.token, pendingDelete.item.id);
       else await api.deleteUser(session.token, pendingDelete.item.id);
       setPendingDelete(null);
+      if (pendingDelete.type === 'occupant' && detailId) navigate('/stands', { replace: true });
       await loadData();
     } catch (requestError) {
       setDeleteError(requestError.message);
@@ -299,102 +328,81 @@ export default function BackofficePage({ session, onLogout, section }) {
 
   return (
     <>
+      {detailId ? (
+        loading ? <main className="admin-workspace"><p className="panel-message">Chargement…</p></main>
+          : occupants.find((item) => item.id === detailId) ? (
+            <OccupantDetail
+              occupant={occupants.find((item) => item.id === detailId)}
+              users={users}
+              contactCount={contactStats.byOccupant[detailId] || 0}
+              programEvents={programEvents}
+              b2bNeeds={b2bNeeds}
+              challengePassports={challengePassports}
+              onEdit={() => setDrawer({ type: 'occupant', item: occupants.find((item) => item.id === detailId) })}
+              onDelete={() => requestOccupantDelete(occupants.find((item) => item.id === detailId))}
+              onQrCode={setQrCode}
+            />
+          ) : <main className="admin-workspace"><p className="panel-message">Ce stand n’existe plus. <a href="/stands" onClick={(event) => { event.preventDefault(); navigate('/stands'); }}>Retour aux stands</a></p></main>
+      ) : (
       <main className="admin-workspace">
         <header className="workspace-header">
-          <div><h1>{sectionMeta[section].title}</h1><p>{sectionMeta[section].description}</p></div>
-          {(section === 'occupants' || section === 'users' || section === 'program' || section === 'b2b' || section === 'studio' || section === 'challenges' || section === 'wheel') && <div className="workspace-actions">
-            {section === 'occupants' && <button className="button button-secondary" type="button" onClick={() => setQrCode({ title: 'QR du Hub', url: `${publicBaseUrl}/stands`, fileName: 'hubinvest-hub' })}><QrCode size={18} /> QR du Hub</button>}
-            {section === 'challenges' && <button className="button button-secondary" type="button" onClick={() => setQrCode({ title: 'QR des Défis', url: `${publicBaseUrl}/defis`, fileName: 'hubinvest-defis' })}><QrCode size={18} /> QR des Défis</button>}
-            {section === 'program' && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: 'program', item: null })}><Plus size={18} /> Ajouter au programme</button>}
-            {section === 'wheel' && <><button className="button button-secondary" type="button" onClick={() => setDrawer({ type: 'wheel', item: null })}><Plus size={18} /> Nouvelle case</button><button className="button button-primary" type="button" onClick={generateWheelCode}><Ticket size={18} /> Générer un code</button></>}
-            {section !== 'challenges' && section !== 'program' && section !== 'wheel' && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: section === 'occupants' ? 'occupant' : section === 'users' ? 'user' : section === 'b2b' ? 'b2b' : 'studio', item: null })}><Plus size={18} /> {section === 'occupants' ? 'Nouveau stand' : section === 'users' ? 'Nouvel utilisateur' : section === 'b2b' ? 'Nouveau besoin' : 'Nouvelle invitation'}</button>}
+          {tabs.length > 1 ? (
+            // Groupe de rubriques : un titre et ses onglets, avec ce qui attend une action.
+            // Un administrateur de stand n'a que la Rencontre B2B dans Rencontres : un simple titre.
+            <div className="section-heading">
+              <h1>{sectionGroups[group].label}</h1>
+              <nav className="section-tabs" aria-label={sectionGroups[group].label}>
+                {tabs.map((item) => (
+                  <NavLink key={item.path} to={item.path} className={({ isActive }) => (isActive ? 'is-active' : '')}>
+                    {item.label}{todo[item.section] > 0 && <b>{todo[item.section]}</b>}
+                  </NavLink>
+                ))}
+              </nav>
+            </div>
+          ) : <h1>{sectionMeta[section].title}</h1>}
+          {(section === 'occupants' || section === 'users' || section === 'program' || section === 'investor-requests' || section === 'challenges' || section === 'wheel') && <div className="workspace-actions">
+            {section === 'challenges' && <button className="button button-secondary" type="button" onClick={() => setQrCode({ title: 'QR des Défis', url: `${publicBaseUrl}/defis`, fileName: 'hubinvest-defis' })}><QrCode size={16} /> QR des Défis</button>}
+            {section === 'program' && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: 'program', item: null })}><Plus size={16} /> Ajouter au programme</button>}
+            {section === 'wheel' && <button className="button button-primary" type="button" onClick={() => setWheelCode({ data: null, loading: false, error: '' })}><Ticket size={16} /> Code de jeu</button>}
+            {(section === 'occupants' || section === 'users' || section === 'investor-requests') && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: section === 'occupants' ? 'occupant' : section === 'users' ? 'user' : 'investor-request', item: null })}><Plus size={16} /> {section === 'occupants' ? 'Stand' : section === 'users' ? 'Nouvel utilisateur' : 'Demande'}</button>}
           </div>}
         </header>
 
-        {section === 'wheel' ? (
-          <section className="summary-row" aria-label="Résumé">
-            <article><span>Parties jouées</span><strong>{loading || error ? '—' : wheel.stats.played}</strong><small>codes utilisés</small></article>
-            <article><span>Lots gagnés</span><strong>{loading || error ? '—' : wheel.stats.awarded}</strong><small>depuis l’ouverture</small></article>
-            <article><span>Lots restants</span><strong>{loading || error ? '—' : wheel.stats.remaining}</strong><small>encore sur la roue</small></article>
-          </section>
-        ) : section === 'challenges' ? (
-          <section className="summary-row" aria-label="Résumé">
-            <article><span>En cours</span><strong>{loading || error ? '—' : challengePassports.filter((item) => item.status === 'active').length}</strong><small>parcours commencés</small></article>
-            <article><span>Terminés</span><strong>{loading || error ? '—' : challengePassports.filter((item) => item.status === 'completed').length}</strong><small>récompenses à remettre</small></article>
-            <article><span>Remises</span><strong>{loading || error ? '—' : challengePassports.filter((item) => item.status === 'redeemed').length}</strong><small>récompenses enregistrées</small></article>
-          </section>
-        ) : section === 'program' ? (
-          <section className="summary-row" aria-label="Résumé">
-            <article><span>Aujourd’hui</span><strong>{loading || error ? '—' : programEvents.filter((item) => item.type !== 'spotlight' && new Date(item.startsAt) >= programTodayStart && new Date(item.startsAt) < programTodayEnd).length}</strong><small>rendez-vous du jour</small></article>
-            <article><span>À venir</span><strong>{loading || error ? '—' : programEvents.filter((item) => item.type !== 'spotlight' && new Date(item.startsAt) >= programTodayEnd).length}</strong><small>rendez-vous programmés</small></article>
-            <article><span>À l’affiche</span><strong>{loading || error ? '—' : programEvents.find((item) => item.type === 'spotlight' && new Date(item.startsAt) >= programTodayStart && new Date(item.startsAt) < programTodayEnd)?.occupant?.name || 'Aucun'}</strong><small>stand du jour</small></article>
-          </section>
-        ) : section === 'b2b' ? (
-          <section className="summary-row" aria-label="Résumé">
-            <article><span>Ouverts</span><strong>{loading || error ? '—' : b2bNeeds.filter((item) => item.status === 'open').length}</strong><small>besoins publiés</small></article>
-            <article><span>Fermés</span><strong>{loading || error ? '—' : b2bNeeds.filter((item) => item.status === 'closed').length}</strong><small>besoins retirés</small></article>
-            <article><span>Total</span><strong>{loading || error ? '—' : b2bNeeds.length}</strong><small>besoins enregistrés</small></article>
-          </section>
-        ) : section === 'studio' ? (
-          <section className="summary-row" aria-label="Résumé">
-            <article><span>En attente</span><strong>{loading || error ? '—' : studioInvitations.filter((item) => item.status === 'pending').length}</strong><small>sans réponse</small></article>
-            <article><span>Confirmées</span><strong>{loading || error ? '—' : studioInvitations.filter((item) => item.status === 'confirmed').length}</strong><small>invités attendus</small></article>
-            <article><span>Refusées</span><strong>{loading || error ? '—' : studioInvitations.filter((item) => item.status === 'declined').length}</strong><small>indisponibles</small></article>
-          </section>
-        ) : section === 'investor-requests' ? (
-          <section className="summary-row" aria-label="Résumé">
-            <article><span>Nouvelles</span><strong>{loading || error ? '—' : investorRequests.filter((item) => item.status === 'new').length}</strong><small>à examiner</small></article>
-            <article><span>En cours</span><strong>{loading || error ? '—' : investorRequests.filter((item) => item.status === 'in_progress').length}</strong><small>prises en charge</small></article>
-            <article><span>Clôturées</span><strong>{loading || error ? '—' : investorRequests.filter((item) => item.status === 'closed').length}</strong><small>demandes traitées</small></article>
-          </section>
-        ) : (
-          <section className="summary-row" aria-label="Résumé">
-            <article><span>Stands</span><strong>{loading || error ? '—' : occupants.length}</strong><small>{!loading && !error && `${occupants.filter((item) => item.status === 'active').length} actifs`}</small></article>
-            <article><span>Utilisateurs</span><strong>{loading || error ? '—' : users.length}</strong><small>{!loading && !error && `${users.filter((item) => item.isActive).length} actifs`}</small></article>
-            {section === 'occupants' ? <article><span>Contacts enregistrés</span><strong>{loading || error ? '—' : contactStats.total}</strong><small>tous les occupants</small></article> : <article><span>Administration</span><strong>{loading || error ? '—' : users.filter((item) => ['super-admin', 'admin'].includes(item.role)).length}</strong><small>comptes internes</small></article>}
-          </section>
-        )}
-
         <section className="data-panel">
           <header className="data-toolbar">
-            <label className="admin-search-field"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={section === 'occupants' ? 'Rechercher un occupant' : section === 'users' ? 'Rechercher un utilisateur' : section === 'program' ? 'Rechercher dans le programme' : section === 'b2b' ? 'Rechercher un besoin' : section === 'studio' ? 'Rechercher une invitation' : section === 'challenges' ? 'Rechercher un participant' : section === 'wheel' ? 'Rechercher un lot' : 'Rechercher une demande'} /></label>
             <div className="data-toolbar-controls">
-              <select value={filterValue} onChange={(event) => setFilterValue(event.target.value)} aria-label={settings.filterLabel}>
-                <option value="">{settings.filterLabel} : tous</option>
-                {settings.filters.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-              </select>
+              <label className="admin-search-field"><Search size={15} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Rechercher" aria-label={section === 'occupants' ? 'Rechercher un occupant' : section === 'users' ? 'Rechercher un utilisateur' : section === 'program' ? 'Rechercher dans le programme' : section === 'b2b' ? 'Rechercher une demande B2B' : section === 'challenges' ? 'Rechercher un participant' : section === 'wheel' ? 'Rechercher une partie' : 'Rechercher une demande'} /></label>
+              {toolbarNote && <span className="data-note">{toolbarNote}</span>}
               <select value={sortValue || settings.sorts[0].value} onChange={(event) => setSortValue(event.target.value)} aria-label="Trier">
                 {settings.sorts.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
               </select>
-              <span className="data-count">{loading ? '—' : rows.length} ligne{rows.length > 1 ? 's' : ''}</span>
-              <button className="button button-secondary data-export" type="button" onClick={exportRows} disabled={loading || exporting || (section !== 'wheel' && !rows.length)}>
-                <Download size={16} /> {exporting ? 'Export…' : section === 'wheel' ? 'Exporter les parties' : 'Exporter'}
+              <button className="button button-secondary data-export" type="button" onClick={exportRows} disabled={loading || exporting || !rows.length} title={checkedCount ? `Exporter les ${checkedCount} lignes cochées` : 'Exporter tout le tableau'}>
+                <Download size={15} /> {exporting ? 'Export…' : 'Exporter'}{checkedCount > 0 && !exporting && ` (${checkedCount})`}
               </button>
             </div>
           </header>
+          {exportError && <p className="panel-message is-error" role="alert">{exportError}</p>}
           {error && <p className="panel-message is-error">{error}</p>}
           {loading && <p className="panel-message">Chargement des données...</p>}
-          {!loading && !error && section === 'occupants' && <OccupantsTable occupants={rows} contactStats={contactStats} query={query} onQrCode={setQrCode} onEdit={(item) => setDrawer({ type: 'occupant', item })} onDelete={requestOccupantDelete} />}
-          {!loading && !error && section === 'users' && <UsersTable users={rows} query={query} currentUserId={session.user.id} onEdit={(item) => setDrawer({ type: 'user', item })} onDelete={requestUserDelete} />}
-          {!loading && !error && section === 'program' && <ProgramEventsTable events={rows} query={query} onEdit={(item) => setDrawer({ type: 'program', item })} onDelete={requestProgramDelete} />}
-          {!loading && !error && section === 'investor-requests' && <InvestorRequestsTable requests={rows} query={query} showStand={isSuperAdmin} onEdit={(item) => setDrawer({ type: 'investor-request', item })} />}
-          {!loading && !error && section === 'b2b' && <B2bNeedsTable needs={rows} query={query} showStand={isSuperAdmin} onEdit={(item) => setDrawer({ type: 'b2b', item })} />}
-          {!loading && !error && section === 'studio' && <StudioInvitationsTable invitations={rows} query={query} showStand={isSuperAdmin} copiedId={copiedInvitationId} onCopy={copyInvitationLink} onEdit={(item) => setDrawer({ type: 'studio', item })} />}
-          {!loading && !error && section === 'challenges' && <ChallengePassportsTable passports={rows} query={query} allowReward={isSuperAdmin} onRedeem={(passport) => { setRewardError(''); setPendingReward(passport); }} />}
-          {!loading && !error && section === 'wheel' && <WheelSegmentsTable segments={rows} query={query} onEdit={(item) => setDrawer({ type: 'wheel', item })} onDelete={requestWheelDelete} />}
+          {!loading && !error && section === 'occupants' && <OccupantsTable selection={selection} occupants={rows} contactStats={contactStats} query={query} onEdit={(item) => setDrawer({ type: 'occupant', item })} onDelete={requestOccupantDelete} />}
+          {!loading && !error && section === 'users' && <UsersTable selection={selection} users={rows} query={query} currentUserId={session.user.id} onEdit={(item) => setDrawer({ type: 'user', item })} onDelete={requestUserDelete} />}
+          {!loading && !error && section === 'program' && <ProgramEventsTable selection={selection} events={rows} query={query} onEdit={(item) => setDrawer({ type: 'program', item })} onDelete={requestProgramDelete} />}
+          {!loading && !error && section === 'investor-requests' && <InvestorRequestsTable selection={selection} requests={rows} query={query} onEdit={(item) => setDrawer({ type: 'investor-request', item })} />}
+          {!loading && !error && section === 'b2b' && <B2bProposalsTable selection={selection} proposals={rows} query={query} showStand={isSuperAdmin} onDecide={requestDecision} onEdit={(item) => setDrawer({ type: 'b2b-proposal', item })} onDelete={requestB2bProposalDelete} />}
+          {!loading && !error && section === 'challenges' && <ChallengePassportsTable selection={selection} passports={rows} query={query} allowReward={isSuperAdmin} onRedeem={(passport) => { setRewardError(''); setPendingReward(passport); }} />}
+          {!loading && !error && section === 'wheel' && <WheelPlaysTable selection={selection} plays={rows} query={query} />}
         </section>
-        {section === 'wheel' && !loading && !error && <section className="data-panel wheel-codes-panel"><h2>Derniers codes</h2><WheelCodesTable codes={wheel.codes} /></section>}
       </main>
+      )}
 
       {drawer?.type === 'occupant' && <OccupantDrawer occupant={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'user' && <UserDrawer user={drawer.item} occupants={occupants} token={session.token} currentRole={session.user.role} currentUserId={session.user.id} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'program' && <ProgramEventDrawer programEvent={drawer.item} occupants={occupants} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'investor-request' && <InvestorRequestDrawer investorRequest={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
-      {drawer?.type === 'b2b' && <B2bNeedDrawer need={drawer.item} occupants={occupants} fixedOccupant={isAdmin ? session.user.occupant : null} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
-      {drawer?.type === 'studio' && <StudioInvitationDrawer invitation={drawer.item} occupants={occupants} fixedOccupant={isAdmin ? session.user.occupant : null} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
-      {drawer?.type === 'wheel' && <WheelSegmentDrawer segment={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
-      {wheelCode && <WheelCodeDialog wheelCode={wheelCode.data} loading={wheelCode.loading} error={wheelCode.error} onNew={generateWheelCode} onClose={() => setWheelCode(null)} />}
+      {drawer?.type === 'b2b-proposal' && <B2bProposalDrawer proposal={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
+      {wheelCode && <WheelCodeDialog codes={wheel.codes} created={wheelCode.data} loading={wheelCode.loading} error={wheelCode.error} onNew={generateWheelCode} onClose={() => setWheelCode(null)} />}
       {pendingDelete && <ConfirmDelete subject={pendingDelete} loading={deleting} error={deleteError} onCancel={() => setPendingDelete(null)} onConfirm={confirmDelete} />}
+      {pendingDecision && <ConfirmDecision {...pendingDecision} loading={deciding} error={decisionError} onCancel={() => setPendingDecision(null)} onConfirm={confirmDecision} />}
       {pendingReward && <ConfirmReward passport={pendingReward} loading={rewarding} error={rewardError} onCancel={() => setPendingReward(null)} onConfirm={confirmReward} />}
       {qrCode && <QrCodeDialog {...qrCode} onClose={() => setQrCode(null)} />}
     </>

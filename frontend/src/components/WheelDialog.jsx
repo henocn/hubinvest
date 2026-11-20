@@ -146,6 +146,12 @@ export default function WheelDialog({ player, onClose, onPlayerLost }) {
     release();
   };
 
+  // Un code peut donner plusieurs tours : « Tourner encore » garde le code, « Jouer avec un autre code » le vide.
+  const spinAgain = () => {
+    setOutcome(null);
+    setError('');
+  };
+
   const playAgain = () => {
     setOutcome(null);
     setCode('');
@@ -183,6 +189,7 @@ export default function WheelDialog({ player, onClose, onPlayerLost }) {
           {won && outcome.result.sponsor && <small>{t('wheel.sponsor', { sponsor: outcome.result.sponsor })}</small>}
           <p>{won ? t('wheel.claim') : t('wheel.lost')}</p>
           {won && <code>{outcome.code}</code>}
+          {outcome.spinsLeft > 0 && <button className="button button-primary" type="button" onClick={spinAgain}>{t('wheel.spinAgain', { count: outcome.spinsLeft })}</button>}
           <button className="button button-secondary" type="button" onClick={playAgain}>{t('wheel.playAgain')}</button>
         </div>
       ) : segments.length > 0 && (

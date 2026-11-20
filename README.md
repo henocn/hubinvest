@@ -12,7 +12,7 @@ Ce cadrage est une **interprétation de travail à valider**, issue du cahier de
 | Visiteur professionnel, acheteur ou investisseur | Cherche une entreprise ou une information, expose son besoin, demande à rencontrer un occupant ou l’API-ZF. | Un interlocuteur identifié et une suite claire, pas une simple collecte de coordonnées. |
 | Membre d’un stand | Enregistre avec accord les personnes réellement rencontrées, précise leur besoin et prévoit une relance. | Son propre carnet de contacts et ses actions à faire. |
 | Occupant | Enregistre les contacts de son stand et valide les passages des participants. | Un espace limité à Contacts, Défis et Profil. |
-| Équipe API-ZF | Reçoit les demandes qui lui sont adressées, qualifie les projets d’investissement, attribue un responsable et suit les prochaines actions. | Une vue d’ensemble fiable, sans exposer les contacts privés d’un stand aux autres. |
+| Équipe API-ZF | Reçoit les demandes qui lui sont adressées, qualifie les projets d’investissement et suit les prochaines actions. | Une vue d’ensemble fiable, sans exposer les contacts privés d’un stand aux autres. |
 | Super administrateur | Crée les stands, les comptes et contrôle tous les modules. | Une administration complète qui permet de garder la main sans développeur. |
 | Administrateur | Gère Investor Desk, B2B, Studio et les participants pour son institution. | La même administration que le super administrateur, avec toutes les données limitées à son stand. |
 | Animateur | Scanne le code d’un participant arrivé au terme du parcours et enregistre la remise de sa récompense. | Une interface minimale composée de Scan, Remises et Profil. |

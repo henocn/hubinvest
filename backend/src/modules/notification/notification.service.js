@@ -54,12 +54,12 @@ const contactReminderChanged = (contact) => dispatch(async () => {
   ));
 });
 
-// Prévient l'équipe et confirme à l'investisseur la réception de sa demande.
-const investorRequestReceived = (request, occupant) => dispatch(async () => {
-  const team = await standTeam(occupant.id);
+// Prévient l'équipe de l'API-ZF (super administrateurs) et confirme à l'investisseur la réception de sa demande.
+const investorRequestReceived = (request) => dispatch(async () => {
+  const team = await notificationRepository.findSuperAdmins();
   await notificationRepository.enqueue([
-    ...forUsers(team, (user) => templates.investorRequestReceived({ user, occupant })),
-    { channel: 'email', recipient: request.email, payload: templates.investorRequestConfirmation({ request, occupant }) },
+    ...forUsers(team, (user) => templates.investorRequestReceived({ user })),
+    { channel: 'email', recipient: request.email, payload: templates.investorRequestConfirmation({ request }) },
   ]);
 });
 

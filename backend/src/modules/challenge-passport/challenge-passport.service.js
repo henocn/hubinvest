@@ -32,8 +32,9 @@ const publicPayload = (passport, includeToken = false) => {
   };
 };
 
+// Vue de l'équipe : jamais le lien personnel du joueur (token), qui permet de jouer à sa place.
 const managerPayload = (passport) => {
-  const values = passport.toJSON ? passport.toJSON() : passport;
+  const { token: _token, ...values } = passport.toJSON ? passport.toJSON() : passport;
   return {
     ...values,
     passageCount: (values.passages || []).length,

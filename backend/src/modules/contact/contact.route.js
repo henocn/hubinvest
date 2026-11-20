@@ -5,11 +5,13 @@ const { authenticate, requireRoles } = require('../../middlewares/auth.middlewar
 const roles = require('../../shared/roles');
 const contactValidation = require('./contact.validation');
 const contactController = require('./contact.controller');
+const rateLimit = require('../../middlewares/rate-limit.middleware');
 
 const router = express.Router();
 
 router.post(
   '/public/:slug',
+  rateLimit.publicForm('contact'),
   validate(contactValidation.publicParams, 'params'),
   validate(contactValidation.createPublic),
   asyncHandler(contactController.createPublic),

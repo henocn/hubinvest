@@ -14,6 +14,7 @@ const definePushSubscription = require('./push-subscription.model');
 const defineProgramEvent = require('./program-event.model');
 const defineWheelSegment = require('./wheel-segment.model');
 const defineWheelCode = require('./wheel-code.model');
+const defineWheelPlay = require('./wheel-play.model');
 const defineAppSetting = require('./app-setting.model');
 const defineLiveQuestion = require('./live-question.model');
 
@@ -31,6 +32,7 @@ const PushSubscription = definePushSubscription(sequelize, DataTypes);
 const ProgramEvent = defineProgramEvent(sequelize, DataTypes);
 const WheelSegment = defineWheelSegment(sequelize, DataTypes);
 const WheelCode = defineWheelCode(sequelize, DataTypes);
+const WheelPlay = defineWheelPlay(sequelize, DataTypes);
 const AppSetting = defineAppSetting(sequelize, DataTypes);
 const LiveQuestion = defineLiveQuestion(sequelize, DataTypes);
 
@@ -43,10 +45,6 @@ Contact.belongsTo(Occupant, { foreignKey: 'occupantId', as: 'occupant' });
 User.hasMany(Contact, { foreignKey: 'createdByUserId', as: 'createdContacts' });
 Contact.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
 
-User.hasMany(InvestorRequest, { foreignKey: 'assignedToUserId', as: 'assignedInvestorRequests' });
-InvestorRequest.belongsTo(User, { foreignKey: 'assignedToUserId', as: 'assignedTo' });
-Occupant.hasMany(InvestorRequest, { foreignKey: 'occupantId', as: 'investorRequests' });
-InvestorRequest.belongsTo(Occupant, { foreignKey: 'occupantId', as: 'occupant' });
 
 Occupant.hasMany(B2bNeed, { foreignKey: 'occupantId', as: 'b2bNeeds' });
 B2bNeed.belongsTo(Occupant, { foreignKey: 'occupantId', as: 'occupant' });
@@ -83,13 +81,15 @@ PushSubscription.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 Occupant.hasMany(ProgramEvent, { foreignKey: 'occupantId', as: 'programEvents' });
 ProgramEvent.belongsTo(Occupant, { foreignKey: 'occupantId', as: 'occupant' });
 
-WheelSegment.hasMany(WheelCode, { foreignKey: 'segmentId', as: 'codes' });
-WheelCode.belongsTo(WheelSegment, { foreignKey: 'segmentId', as: 'segment' });
 User.hasMany(WheelCode, { foreignKey: 'createdByUserId', as: 'createdWheelCodes' });
 WheelCode.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
-ChallengePassport.hasMany(WheelCode, { foreignKey: 'passportId', as: 'wheelCodes' });
-WheelCode.belongsTo(ChallengePassport, { foreignKey: 'passportId', as: 'player' });
-WheelCode.belongsTo(User, { foreignKey: 'claimedByUserId', as: 'claimedBy' });
+WheelCode.hasMany(WheelPlay, { foreignKey: 'wheelCodeId', as: 'plays' });
+WheelPlay.belongsTo(WheelCode, { foreignKey: 'wheelCodeId', as: 'wheelCode' });
+WheelSegment.hasMany(WheelPlay, { foreignKey: 'segmentId', as: 'plays' });
+WheelPlay.belongsTo(WheelSegment, { foreignKey: 'segmentId', as: 'segment' });
+ChallengePassport.hasMany(WheelPlay, { foreignKey: 'passportId', as: 'wheelPlays' });
+WheelPlay.belongsTo(ChallengePassport, { foreignKey: 'passportId', as: 'player' });
+WheelPlay.belongsTo(User, { foreignKey: 'claimedByUserId', as: 'claimedBy' });
 
 ProgramEvent.hasMany(LiveQuestion, { foreignKey: 'programEventId', as: 'questions' });
 LiveQuestion.belongsTo(ProgramEvent, { foreignKey: 'programEventId', as: 'event' });
@@ -111,6 +111,7 @@ module.exports = {
   ProgramEvent,
   WheelSegment,
   WheelCode,
+  WheelPlay,
   AppSetting,
   LiveQuestion,
 };

@@ -7,16 +7,6 @@ module.exports = (sequelize, DataTypes) =>
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
       },
-      assignedToUserId: {
-        type: DataTypes.UUID,
-        allowNull: true,
-        field: 'assigned_to_user_id',
-      },
-      occupantId: {
-        type: DataTypes.UUID,
-        allowNull: true,
-        field: 'occupant_id',
-      },
       fullName: {
         type: DataTypes.STRING(160),
         allowNull: false,

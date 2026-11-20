@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ArrowRight, BriefcaseBusiness } from 'lucide-react';
 import { api } from '../lib/api';
 import { useTranslation } from 'react-i18next';
@@ -13,10 +13,8 @@ export default function InvestorRequestForm() {
     email: '',
     phone: '',
     projectSummary: '',
-    occupantId: '',
     consentApizf: false,
   });
-  const [occupants, setOccupants] = useState([]);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [phoneChecked, setPhoneChecked] = useState(false);
@@ -24,12 +22,6 @@ export default function InvestorRequestForm() {
   const [received, setReceived] = useState(false);
 
   const field = (name, value) => setForm((current) => ({ ...current, [name]: value }));
-
-  useEffect(() => {
-    api.publicOccupants()
-      .then(setOccupants)
-      .catch((requestError) => setError(publicErrorMessage(t, requestError)));
-  }, [t]);
 
   const submit = async (event) => {
     event.preventDefault();
@@ -71,8 +63,7 @@ export default function InvestorRequestForm() {
 
       {step === 1 ? (
         <div className="investor-step">
-          <label>{t('investor.institution')}<select value={form.occupantId} onChange={(event) => field('occupantId', event.target.value)} autoFocus required><option value="">{t('investor.chooseInstitution')}</option>{occupants.map((occupant) => <option key={occupant.id} value={occupant.id}>{occupant.name}</option>)}</select></label>
-          <label>{t('investor.question')}<textarea value={form.projectSummary} onChange={(event) => field('projectSummary', event.target.value)} rows={7} minLength={10} maxLength={6000} required /></label>
+          <label>{t('investor.question')}<textarea value={form.projectSummary} onChange={(event) => field('projectSummary', event.target.value)} autoFocus rows={7} minLength={10} maxLength={6000} required /></label>
           {error && <p className="request-error" role="alert">{error}</p>}
           <button className="button button-primary investor-next-button" type="submit">{t('common.continue')} <ArrowRight size={17} /></button>
         </div>

@@ -1,6 +1,5 @@
 const crypto = require('node:crypto');
 const { UniqueConstraintError } = require('sequelize');
-const env = require('../../config/env');
 const AppError = require('../../shared/app-error');
 const { translatePublicContent } = require('../../shared/translation.service');
 const wheelRepository = require('./wheel.repository');
@@ -10,7 +9,6 @@ const settingsService = require('../settings/settings.service');
 // Lettres et chiffres sans ambiguïté à l'oral ou à l'écrit (pas de 0/O, 1/I/L).
 const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const CODE_LENGTH = 4;
-const RECENT_CODES = 30;
 
 const plain = (value) => (value?.toJSON ? value.toJSON() : value);
 
@@ -47,15 +45,16 @@ const listPublic = async (language) => {
 
 const normalizeCode = (value) => String(value || '').trim().toUpperCase().replace(/[\s-]/g, '');
 
-// Tire une case au hasard parmi celles visibles : le code est consommé et le stock décompté dans la même transaction.
-// Seul un joueur identifié peut jouer ; sa partie lui est rattachée.
+// Tire une case au hasard parmi celles visibles : le tour est enregistré et le stock décompté dans la même transaction.
+// Seul un joueur identifié peut jouer. Un code n'expire pas : il donne le nombre de tours fixé à sa création
+// et appartient au premier joueur qui l'utilise.
 const spin = async ({ code: rawCode, player }, language, randomIndex = crypto.randomInt) => {
   settingsService.assertOpen('wheelOpen');
   const code = normalizeCode(rawCode);
   const outcome = await wheelRepository.sequelize.transaction(async (transaction) => {
     const passport = await wheelRepository.findPlayerByToken(player, transaction);
     if (!passport) throw new AppError(422, 'WHEEL_PLAYER_REQUIRED', 'Identifiez-vous avant de jouer.');
-    // Limite de parties par joueur et par jour (heure de Lomé, UTC) : vérifiée avant de consommer le code, qui reste valable.
+    // Limite de tours par joueur et par jour (heure de Lomé, UTC) : vérifiée avant d'utiliser le code, qui reste valable.
     const perDay = settingsService.wheelPlaysPerDay();
     if (perDay > 0) {
       const today = new Date();
@@ -66,24 +65,33 @@ const spin = async ({ code: rawCode, player }, language, randomIndex = crypto.ra
     }
     const wheelCode = await wheelRepository.findCodeForUpdate(code, transaction);
     if (!wheelCode) throw new AppError(404, 'WHEEL_CODE_INVALID', 'Ce code n’existe pas. Vérifiez-le auprès de l’équipe du stand.');
-    if (wheelCode.usedAt) throw new AppError(409, 'WHEEL_CODE_USED', 'Ce code a déjà servi. Demandez-en un nouveau à l’équipe du stand.');
-    if (new Date(wheelCode.expiresAt) <= new Date()) throw new AppError(410, 'WHEEL_CODE_EXPIRED', 'Ce code a expiré. Demandez-en un nouveau à l’équipe du stand.');
+    const plays = await wheelRepository.findCodePlays(wheelCode.id, transaction);
+    if (plays.length >= wheelCode.spinsAllowed) throw new AppError(409, 'WHEEL_CODE_USED', 'Ce code a déjà servi. Demandez-en un nouveau à l’équipe du stand.');
+    if (plays.some((play) => play.passportId && play.passportId !== passport.id)) {
+      throw new AppError(409, 'WHEEL_CODE_TAKEN', 'Ce code a déjà été utilisé par un autre joueur. Demandez-en un nouveau à l’équipe du stand.');
+    }
 
     const segments = arrange((await wheelRepository.findActiveSegmentsForUpdate(transaction)).filter(isDrawable));
     if (!segments.length) throw new AppError(409, 'WHEEL_EMPTY', 'La roue n’est pas encore prête. Revenez dans un instant.');
 
     const chosen = segments[randomIndex(segments.length)];
     if (chosen.kind === 'prize') await wheelRepository.recordAward(chosen, transaction);
-    await wheelRepository.updateCode(wheelCode, {
-      usedAt: new Date(),
+    await wheelRepository.createPlay({
+      wheelCodeId: wheelCode.id,
       passportId: passport.id,
       segmentId: chosen.id,
       resultKind: chosen.kind,
       resultLabel: chosen.label,
       resultSponsor: chosen.sponsor || null,
+      playedAt: new Date(),
     }, transaction);
 
-    return { code, result: publicSegment(chosen), segments: segments.map(publicSegment) };
+    return {
+      code,
+      result: publicSegment(chosen),
+      segments: segments.map(publicSegment),
+      spinsLeft: Math.max(wheelCode.spinsAllowed - plays.length - 1, 0),
+    };
   });
 
   realtime.wheelChanged();
@@ -91,20 +99,20 @@ const spin = async ({ code: rawCode, player }, language, randomIndex = crypto.ra
     translateSegments(outcome.segments, language),
     translateSegments([outcome.result], language),
   ]);
-  return { code: outcome.code, result, segments };
+  return { code: outcome.code, result, segments, spinsLeft: outcome.spinsLeft };
 };
 
 const generateCodeValue = () => Array.from({ length: CODE_LENGTH }, () => CODE_ALPHABET[crypto.randomInt(CODE_ALPHABET.length)]).join('');
 
-// Délivre un code à usage unique, valable pendant la durée configurée.
+// Délivre un code de jeu : il n'expire pas et donne le nombre de tours réglé dans les paramètres.
 const generateCode = async (user) => {
   settingsService.assertOpen('wheelOpen');
-  const expiresAt = new Date(Date.now() + env.wheel.codeTtl);
+  const spinsAllowed = settingsService.wheelSpinsPerCode();
   for (let attempt = 0; attempt < 5; attempt += 1) {
     try {
-      const created = await wheelRepository.createCode({ code: generateCodeValue(), createdByUserId: user.id, expiresAt });
+      const created = await wheelRepository.createCode({ code: generateCodeValue(), createdByUserId: user.id, spinsAllowed });
       realtime.wheelChanged();
-      return { code: created.code, expiresAt: created.expiresAt };
+      return { code: created.code, spinsAllowed: created.spinsAllowed };
     } catch (error) {
       if (!(error instanceof UniqueConstraintError)) throw error;
     }
@@ -112,38 +120,50 @@ const generateCode = async (user) => {
   throw new AppError(503, 'WHEEL_CODE_UNAVAILABLE', 'Impossible de créer un code pour le moment. Réessayez.');
 };
 
-// Code de jeu vu par l'administration : statut, résultat, joueur et personne qui l'a délivré.
+const personName = (person) => (person ? { firstName: person.firstName, lastName: person.lastName } : null);
+
+// Tour joué vu par l'équipe : code, joueur, résultat et remise du lot.
+const adminPlay = (item) => {
+  const values = plain(item);
+  return {
+    id: values.id,
+    code: values.wheelCode?.code || null,
+    playedAt: values.playedAt,
+    result: { kind: values.resultKind, label: values.resultLabel, sponsor: values.resultSponsor },
+    player: values.player ? { displayName: values.player.displayName, email: values.player.email, phone: values.player.phone } : null,
+    claimedAt: values.claimedAt || null,
+    claimedBy: personName(values.claimedBy),
+  };
+};
+
+// Code délivré, pour la fenêtre « Code de jeu » : gagnant si un tour a donné un lot, perdant s'il a été joué sans lot.
 const adminCode = (item) => {
   const values = plain(item);
-  const expired = !values.usedAt && new Date(values.expiresAt) <= new Date();
+  const plays = values.plays || [];
   return {
     id: values.id,
     code: values.code,
     createdAt: values.createdAt,
-    expiresAt: values.expiresAt,
-    usedAt: values.usedAt,
-    status: values.usedAt ? 'used' : expired ? 'expired' : 'waiting',
-    result: values.usedAt ? { kind: values.resultKind, label: values.resultLabel, sponsor: values.resultSponsor } : null,
-    createdBy: values.createdBy ? { firstName: values.createdBy.firstName, lastName: values.createdBy.lastName } : null,
-    player: values.player ? { displayName: values.player.displayName, email: values.player.email, phone: values.player.phone } : null,
-    claimedAt: values.claimedAt || null,
-    claimedBy: values.claimedBy ? { firstName: values.claimedBy.firstName, lastName: values.claimedBy.lastName } : null,
+    spinsAllowed: values.spinsAllowed,
+    spinsUsed: plays.length,
+    outcome: plays.some((play) => play.resultKind === 'prize') ? 'won' : plays.length ? 'lost' : null,
   };
 };
 
-// Rassemble les cases, les derniers codes et les chiffres de la roue pour l'administration.
+// Rassemble les cases, les codes délivrés, l'historique des tours et les chiffres de la roue pour l'administration.
 const overview = async () => {
-  const [segments, codes, played] = await Promise.all([
+  const [segments, codes, plays] = await Promise.all([
     wheelRepository.findSegments(),
-    wheelRepository.findRecentCodes(RECENT_CODES),
-    wheelRepository.countPlayed(),
+    wheelRepository.findCodes(),
+    wheelRepository.findPlays(),
   ]);
   const list = segments.map(adminSegment);
   return {
     segments: list,
     codes: codes.map(adminCode),
+    plays: plays.map(adminPlay),
     stats: {
-      played,
+      played: plays.length,
       awarded: list.reduce((total, segment) => total + (segment.kind === 'prize' ? segment.awarded : 0), 0),
       remaining: list.reduce((total, segment) => total + (segment.kind === 'prize' && segment.isActive ? segment.remaining : 0), 0),
     },
@@ -190,35 +210,41 @@ const removeSegment = async (id) => {
   realtime.wheelChanged();
 };
 
-// Lot gagné à partir de son code de jeu : ce qu'il faut remettre, à qui, et s'il l'a déjà été.
-const prizeFor = (wheelCode) => {
-  if (!wheelCode) throw new AppError(404, 'WHEEL_CODE_INVALID', 'Ce code n’existe pas.');
-  if (!wheelCode.usedAt) throw new AppError(409, 'WHEEL_NOT_PLAYED', 'Ce code n’a pas encore été joué.');
-  if (wheelCode.resultKind !== 'prize') throw new AppError(409, 'WHEEL_NO_PRIZE', 'Cette partie n’a pas gagné de lot.');
-  return adminCode(wheelCode);
+// Sans lot gagné avec ce code : il n'existe pas, n'a pas encore été joué ou n'a rien gagné.
+const noPrize = async (code) => {
+  const wheelCode = await wheelRepository.findCodeByValue(code);
+  if (!wheelCode) return new AppError(404, 'WHEEL_CODE_INVALID', 'Ce code n’existe pas.');
+  if (!(await wheelRepository.countPlays(wheelCode.id))) return new AppError(409, 'WHEEL_NOT_PLAYED', 'Ce code n’a pas encore été joué.');
+  return new AppError(409, 'WHEEL_NO_PRIZE', 'Ce code n’a pas gagné de lot.');
 };
 
-const findPrize = async (rawCode) => prizeFor(await wheelRepository.findPlayedCodeForClaim(normalizeCode(rawCode)));
+// Lot gagné avec un code : le plus ancien pas encore remis, sinon le dernier remis (pour l'indiquer).
+const findPrize = async (rawCode) => {
+  const code = normalizeCode(rawCode);
+  const prizes = await wheelRepository.findCodePrizes(code);
+  if (!prizes.length) throw await noPrize(code);
+  return adminPlay(prizes.find((play) => !play.claimedAt) || prizes[prizes.length - 1]);
+};
 
 // Marque le lot comme remis, une seule fois : une capture d'écran ne permet pas de le réclamer deux fois.
+// Un code qui a gagné plusieurs lots les remet un par un.
 const claimPrize = async (user, rawCode) => {
+  const code = normalizeCode(rawCode);
   const prize = await wheelRepository.sequelize.transaction(async (transaction) => {
-    const wheelCode = await wheelRepository.findPlayedCodeForClaim(normalizeCode(rawCode), transaction);
-    const current = prizeFor(wheelCode);
-    if (current.claimedAt) {
+    const prizes = await wheelRepository.findCodePrizes(code, transaction);
+    if (!prizes.length) throw await noPrize(code);
+    const next = prizes.find((play) => !play.claimedAt);
+    if (!next) {
       const error = new AppError(409, 'WHEEL_PRIZE_ALREADY_CLAIMED', 'Ce lot a déjà été remis.');
-      error.details = current;
+      error.details = adminPlay(prizes[prizes.length - 1]);
       throw error;
     }
-    await wheelRepository.updateCode(wheelCode, { claimedAt: new Date(), claimedByUserId: user.id }, transaction);
-    return { ...current, claimedAt: wheelCode.claimedAt, claimedBy: { firstName: user.firstName, lastName: user.lastName } };
+    await wheelRepository.updatePlay(next, { claimedAt: new Date(), claimedByUserId: user.id }, transaction);
+    return { ...adminPlay(next), claimedBy: personName(user) };
   });
   realtime.wheelChanged();
   return prize;
 };
-
-// Toutes les parties jouées, pour l'export Excel.
-const listPlays = async () => (await wheelRepository.findPlayedCodes()).map(adminCode);
 
 module.exports = {
   listPublic,
@@ -231,7 +257,6 @@ module.exports = {
   arrange,
   isDrawable,
   normalizeCode,
-  listPlays,
   findPrize,
   claimPrize,
 };

@@ -12,19 +12,22 @@ import { useRealtimeConnection, useRealtimeEvent } from '../lib/realtime';
 import { isAdminRole, linksForRole, roleLabels, tabsForRole } from '../navigation';
 import { useSession } from '../session';
 
-const adminTopics = ['occupants', 'users', 'program', 'contacts', 'investor-requests', 'b2b', 'studio', 'challenge', 'wheel', 'settings', 'live-questions', 'account'];
+const adminTopics = ['occupants', 'users', 'program', 'contacts', 'investor-requests', 'b2b', 'challenge', 'wheel', 'settings', 'live-questions', 'account'];
 const teamTopics = ['contacts', 'challenge', 'occupants', 'live-questions', 'account'];
 
 // Liens de navigation : NavLink marque la rubrique ouverte, y compris ses sous-pages (/contacts/nouveau…).
 // La pastille donne le nombre exact d'éléments qui attendent une action dans la rubrique.
 // Dans la barre du bas, un libellé court remplace le nom complet quand il y en a un.
+// Une entrée qui regroupe plusieurs rubriques (Rencontres) additionne leurs pastilles et reste active sur chacune.
 function NavItems({ links, className = '', short = false }) {
   const todo = useDashboard()?.data?.todo || {};
-  return links.map(({ path, label: fullLabel, tabLabel, Icon, section }) => {
+  const { pathname } = useLocation();
+  return links.map(({ path, label: fullLabel, tabLabel, Icon, section, sections = section ? [section] : [], matches }) => {
     const label = short && tabLabel ? tabLabel : fullLabel;
-    const count = section ? todo[section] || 0 : 0;
+    const count = sections.reduce((total, key) => total + (todo[key] || 0), 0);
+    const grouped = matches?.some((item) => pathname === item || pathname.startsWith(`${item}/`));
     return (
-      <NavLink key={path} to={path} className={({ isActive }) => `${className}${isActive ? ' is-active' : ''}`.trim()} aria-label={count ? `${label}, ${count} à traiter` : undefined}>
+      <NavLink key={path} to={path} className={({ isActive }) => `${className}${isActive || grouped ? ' is-active' : ''}`.trim()} aria-label={count ? `${label}, ${count} à traiter` : undefined}>
         <span className="team-nav-icon">
           <Icon size={20} aria-hidden="true" />
           {count > 0 && <b className="team-badge" aria-hidden="true">{count}</b>}
@@ -119,11 +122,14 @@ function TeamShellLayout() {
         </nav>
 
         <div className="team-user">
-          <span className="team-user-avatar"><UserRound size={18} /></span>
-          <div>
-            <strong>{user.firstName} {user.lastName}</strong>
-            <span>{roleLabels[user.role]}</span>
-          </div>
+          {/* Le nom et l'avatar mènent au profil (il n'y a pas d'entrée « Profil » dans le menu). */}
+          <NavLink className={({ isActive }) => `team-user-link${isActive ? ' is-active' : ''}`} to="/profil" aria-label={`Mon profil, ${user.firstName} ${user.lastName}`} title="Mon profil">
+            <span className="team-user-avatar"><UserRound size={18} /></span>
+            <div>
+              <strong>{user.firstName} {user.lastName}</strong>
+              <span>{roleLabels[user.role]}</span>
+            </div>
+          </NavLink>
           <span className="team-user-actions admin-app">
             <PushToggleButton token={token} />
             <button className="admin-icon-button" type="button" onClick={signOut} aria-label="Se déconnecter" title="Se déconnecter"><LogOut size={18} /></button>

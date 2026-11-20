@@ -1,9 +1,10 @@
 import { X } from 'lucide-react';
 
-const timeFormatter = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Africa/Lome', hour: '2-digit', minute: '2-digit' });
+const spinsLabel = (count) => `${count} tour${count > 1 ? 's' : ''}`;
 
-// Affiche en grand le code à dicter ou à montrer au joueur.
-export default function WheelCodeDialog({ wheelCode, loading, error, onNew, onClose }) {
+// Fenêtre « Code de jeu » : le dernier code créé en grand, à dicter ou montrer au joueur, puis tous les codes délivrés.
+// Fond vert : le code a gagné un lot ; rouge : joué sans lot ; sans fond : pas encore joué. Un code n'expire pas.
+export default function WheelCodeDialog({ codes, created, loading, error, onNew, onClose }) {
   return (
     <div className="dialog-backdrop" role="presentation" onMouseDown={onClose}>
       <section className="qr-dialog wheel-code-dialog" role="dialog" aria-modal="true" aria-labelledby="wheel-code-title" onMouseDown={(event) => event.stopPropagation()}>
@@ -11,13 +12,23 @@ export default function WheelCodeDialog({ wheelCode, loading, error, onNew, onCl
           <h2 id="wheel-code-title">Code de jeu</h2>
           <button className="admin-icon-button" type="button" onClick={onClose} aria-label="Fermer"><X size={18} /></button>
         </header>
-        {wheelCode && <strong className="wheel-code-value">{wheelCode.code}</strong>}
-        {wheelCode && <p className="wheel-code-hint">Une seule partie, jusqu’à {timeFormatter.format(new Date(wheelCode.expiresAt))}.</p>}
+        {created && <strong className="wheel-code-value">{created.code}</strong>}
+        {created && <p className="wheel-code-hint">{spinsLabel(created.spinsAllowed)} avec ce code, sans limite de temps.</p>}
         {error && <p className="admin-form-error">{error}</p>}
-        <footer>
-          <button className="button button-secondary" type="button" onClick={onClose}>Fermer</button>
-          <button className="button button-primary" type="button" onClick={onNew} disabled={loading}>{loading ? 'Création...' : 'Nouveau code'}</button>
-        </footer>
+        <button className="button button-primary wheel-code-new" type="button" onClick={onNew} disabled={loading}>{loading ? 'Création…' : 'Nouveau code'}</button>
+        {codes.length > 0 && (
+          <>
+            <ul className="wheel-code-grid" aria-label="Codes délivrés">
+              {codes.map((item) => (
+                <li key={item.id} className={item.outcome ? `is-${item.outcome}` : ''} title={item.outcome === 'won' ? 'Gagnant' : item.outcome === 'lost' ? 'Perdant' : 'Pas encore joué'}>
+                  {item.code}
+                  {item.spinsAllowed > 1 && <small>{item.spinsUsed}/{item.spinsAllowed}</small>}
+                </li>
+              ))}
+            </ul>
+            <p className="wheel-code-legend"><span className="is-won" /> Gagnant <span className="is-lost" /> Perdant <span /> Pas encore joué</p>
+          </>
+        )}
       </section>
     </div>
   );
