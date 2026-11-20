@@ -44,7 +44,6 @@ export default function DashboardPage({ session }) {
               <Stat value={data.wheel.played} label="Parties de roue" detail={`dont ${data.wheel.playedToday} aujourd’hui`} to="/roue" />
               <Stat value={data.investor.total} label="Projets Investor Desk" detail={`${data.investor.inProgress} en cours`} to="/investor-desk" />
               <Stat value={data.b2b.openNeeds} label="Besoins B2B ouverts" to="/b2b" />
-              <Stat value={data.studio.confirmed} label="Invités Studio confirmés" detail={`${data.studio.pending} sans réponse`} to="/studio" />
             </div>
           </section>
         </>

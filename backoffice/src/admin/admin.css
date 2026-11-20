@@ -90,10 +90,6 @@
 .admin-app .occupant-row.is-inactive { background: rgba(211, 27, 52, .035); }
 .admin-app .occupant-row.is-active:hover { background: rgba(21, 108, 83, .075); }
 .admin-app .occupant-row.is-inactive:hover { background: rgba(211, 27, 52, .065); }
-.admin-app .studio-row.is-confirmed { background: rgba(21, 108, 83, .045); }
-.admin-app .studio-row.is-declined { background: rgba(211, 27, 52, .035); }
-.admin-app .studio-row.is-confirmed:hover { background: rgba(21, 108, 83, .075); }
-.admin-app .studio-row.is-declined:hover { background: rgba(211, 27, 52, .065); }
 .admin-app .challenge-row.is-completed { background: rgba(211, 27, 52, .035); }
 .admin-app .challenge-row.is-redeemed { background: rgba(21, 108, 83, .045); }
 .admin-app .challenge-row.is-completed:hover { background: rgba(211, 27, 52, .06); }
@@ -121,7 +117,6 @@
 .admin-app .program-row.is-past td { color: #9a9d9b; }
 .admin-app .program-row.is-past td strong { color: #8b8f8c; }
 .admin-app .drawer-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.admin-app .studio-status { font-weight: 700; }
 .admin-app .challenge-table-code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 13px; font-weight: 750; letter-spacing: .08em; }
 .admin-app .challenge-table-contact { color: var(--green); font-weight: 650; text-decoration: none; white-space: nowrap; }
 .admin-app .challenge-table-contact:hover { text-decoration: underline; }

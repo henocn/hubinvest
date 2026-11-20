@@ -10,14 +10,12 @@ import InvestorRequestDrawer from '../components/drawers/InvestorRequestDrawer';
 import B2bNeedDrawer from '../components/drawers/B2bNeedDrawer';
 import OccupantDrawer from '../components/drawers/OccupantDrawer';
 import ProgramEventDrawer from '../components/drawers/ProgramEventDrawer';
-import StudioInvitationDrawer from '../components/drawers/StudioInvitationDrawer';
 import UserDrawer from '../components/drawers/UserDrawer';
 import InvestorRequestsTable from '../components/tables/InvestorRequestsTable';
 import B2bNeedsTable from '../components/tables/B2bNeedsTable';
 import ChallengePassportsTable from '../components/tables/ChallengePassportsTable';
 import OccupantsTable from '../components/tables/OccupantsTable';
 import ProgramEventsTable from '../components/tables/ProgramEventsTable';
-import StudioInvitationsTable from '../components/tables/StudioInvitationsTable';
 import UsersTable from '../components/tables/UsersTable';
 import WheelSegmentsTable from '../components/tables/WheelSegmentsTable';
 import WheelCodesTable from '../components/tables/WheelCodesTable';
@@ -37,7 +35,6 @@ const sectionMeta = {
   program: { title: 'Programme' },
   'investor-requests': { title: 'Investor Desk' },
   b2b: { title: 'B2B' },
-  studio: { title: 'Studio' },
   challenges: { title: 'Participants aux défis' },
   wheel: { title: 'Roue des opportunités' },
 };
@@ -54,7 +51,6 @@ export default function BackofficePage({ session, onLogout, section }) {
   const [users, setUsers] = useState([]);
   const [investorRequests, setInvestorRequests] = useState([]);
   const [b2bNeeds, setB2bNeeds] = useState([]);
-  const [studioInvitations, setStudioInvitations] = useState([]);
   const [programEvents, setProgramEvents] = useState([]);
   const [challengePassports, setChallengePassports] = useState([]);
   const [contactStats, setContactStats] = useState({ total: 0, byOccupant: {} });
@@ -70,7 +66,6 @@ export default function BackofficePage({ session, onLogout, section }) {
   const [deleteError, setDeleteError] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [qrCode, setQrCode] = useState(null);
-  const [copiedInvitationId, setCopiedInvitationId] = useState(null);
   const [pendingReward, setPendingReward] = useState(null);
   const [rewardError, setRewardError] = useState('');
   const [rewarding, setRewarding] = useState(false);
@@ -80,13 +75,12 @@ export default function BackofficePage({ session, onLogout, section }) {
     setError('');
     try {
       if (isSuperAdmin) {
-        const [occupantData, userData, statsData, investorData, b2bData, studioData, challengeData, programData, wheelData] = await Promise.all([
+        const [occupantData, userData, statsData, investorData, b2bData, challengeData, programData, wheelData] = await Promise.all([
           api.occupants(session.token),
           api.users(session.token),
           api.contactStats(session.token),
           api.investorRequests(session.token),
           api.b2bNeeds(session.token),
-          api.studioInvitations(session.token),
           api.challengePassports(session.token),
           api.programEvents(session.token),
           api.wheel(session.token),
@@ -96,21 +90,18 @@ export default function BackofficePage({ session, onLogout, section }) {
         setContactStats(statsData);
         setInvestorRequests(investorData.items);
         setB2bNeeds(b2bData);
-        setStudioInvitations(studioData);
         setChallengePassports(challengeData);
         setProgramEvents(programData);
         setWheel(wheelData);
       } else {
-        const [investorData, needData, studioData, challengeData, wheelData] = await Promise.all([
+        const [investorData, needData, challengeData, wheelData] = await Promise.all([
           api.investorRequests(session.token),
           api.b2bNeeds(session.token),
-          api.studioInvitations(session.token),
           api.challengePassports(session.token),
           api.wheel(session.token),
         ]);
         setInvestorRequests(investorData.items);
         setB2bNeeds(needData);
-        setStudioInvitations(studioData);
         setChallengePassports(challengeData);
         setWheel(wheelData);
       }
@@ -130,7 +121,6 @@ export default function BackofficePage({ session, onLogout, section }) {
     const loaders = {
       'investor-requests': async () => setInvestorRequests((await api.investorRequests(token)).items),
       b2b: async () => setB2bNeeds(await api.b2bNeeds(token)),
-      studio: async () => setStudioInvitations(await api.studioInvitations(token)),
       challenge: async () => setChallengePassports(await api.challengePassports(token)),
       wheel: async () => setWheel(await api.wheel(token)),
       account: async () => { await api.profile(token); },
@@ -166,7 +156,6 @@ export default function BackofficePage({ session, onLogout, section }) {
   useRealtimeEvent('contacts', () => reloadTopic('contacts'));
   useRealtimeEvent('investor-requests', () => reloadTopic('investor-requests'));
   useRealtimeEvent('b2b', () => reloadTopic('b2b'));
-  useRealtimeEvent('studio', () => reloadTopic('studio'));
   useRealtimeEvent('challenge', () => reloadTopic('challenge'));
   useRealtimeEvent('wheel', () => reloadTopic('wheel'));
   useRealtimeEvent('account', () => reloadTopic('account'));
@@ -176,7 +165,6 @@ export default function BackofficePage({ session, onLogout, section }) {
   const visibleUsers = useMemo(() => users.filter((user) => !query || [user.firstName, user.lastName, user.email, user.role, user.occupant?.name].some((value) => String(value || '').toLowerCase().includes(query))), [users, query]);
   const visibleInvestorRequests = useMemo(() => investorRequests.filter((item) => !query || [item.fullName, item.email, item.projectSummary, item.nextAction].some((value) => String(value || '').toLowerCase().includes(query))), [investorRequests, query]);
   const visibleB2bNeeds = useMemo(() => b2bNeeds.filter((item) => !query || [item.title, item.occupant?.name, item.status].some((value) => String(value || '').toLowerCase().includes(query))), [b2bNeeds, query]);
-  const visibleStudioInvitations = useMemo(() => studioInvitations.filter((item) => !query || [item.guestName, item.subject].some((value) => String(value || '').toLowerCase().includes(query))), [studioInvitations, query]);
   const visibleProgramEvents = useMemo(() => programEvents.filter((item) => !query || [item.title, item.location, item.description, item.occupant?.name].some((value) => String(value || '').toLowerCase().includes(query))), [programEvents, query]);
   const visibleChallengePassports = useMemo(() => challengePassports.filter((item) => !query || [item.displayName, item.email, item.phone, item.contact, item.code, ...(item.passages || []).flatMap((passage) => [passage.occupant?.name, passage.validatedBy?.firstName, passage.validatedBy?.lastName])].some((value) => String(value || '').toLowerCase().includes(query))), [challengePassports, query]);
 
@@ -200,7 +188,6 @@ export default function BackofficePage({ session, onLogout, section }) {
     program: visibleProgramEvents,
     'investor-requests': visibleInvestorRequests,
     b2b: visibleB2bNeeds,
-    studio: visibleStudioInvitations,
     challenges: visibleChallengePassports,
     wheel: visibleWheelSegments,
   };
@@ -243,12 +230,6 @@ export default function BackofficePage({ session, onLogout, section }) {
   const saved = async () => {
     setDrawer(null);
     await loadData();
-  };
-
-  const copyInvitationLink = async (id, link) => {
-    await navigator.clipboard.writeText(link);
-    setCopiedInvitationId(id);
-    window.setTimeout(() => setCopiedInvitationId(null), 1800);
   };
 
   const confirmReward = async () => {
@@ -326,7 +307,6 @@ export default function BackofficePage({ session, onLogout, section }) {
               contactCount={contactStats.byOccupant[detailId] || 0}
               programEvents={programEvents}
               b2bNeeds={b2bNeeds}
-              studioInvitations={studioInvitations}
               investorRequests={investorRequests}
               challengePassports={challengePassports}
               onEdit={() => setDrawer({ type: 'occupant', item: occupants.find((item) => item.id === detailId) })}
@@ -350,18 +330,18 @@ export default function BackofficePage({ session, onLogout, section }) {
               </nav>
             </div>
           ) : <h1>{sectionMeta[section].title}</h1>}
-          {(section === 'occupants' || section === 'users' || section === 'program' || section === 'b2b' || section === 'investor-requests' || section === 'studio' || section === 'challenges' || section === 'wheel') && <div className="workspace-actions">
+          {(section === 'occupants' || section === 'users' || section === 'program' || section === 'b2b' || section === 'investor-requests' || section === 'challenges' || section === 'wheel') && <div className="workspace-actions">
             {section === 'challenges' && <button className="button button-secondary" type="button" onClick={() => setQrCode({ title: 'QR des Défis', url: `${publicBaseUrl}/defis`, fileName: 'hubinvest-defis' })}><QrCode size={16} /> QR des Défis</button>}
             {section === 'program' && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: 'program', item: null })}><Plus size={16} /> Ajouter au programme</button>}
             {section === 'wheel' && <><button className="button button-secondary" type="button" onClick={() => setDrawer({ type: 'wheel', item: null })}><Plus size={16} /> Nouvelle case</button><button className="button button-primary" type="button" onClick={generateWheelCode}><Ticket size={16} /> Générer un code</button></>}
-            {section !== 'challenges' && section !== 'program' && section !== 'wheel' && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: section === 'occupants' ? 'occupant' : section === 'users' ? 'user' : section === 'b2b' ? 'b2b' : section === 'investor-requests' ? 'investor-request' : 'studio', item: null })}><Plus size={16} /> {section === 'occupants' ? 'Stand' : section === 'users' ? 'Nouvel utilisateur' : section === 'b2b' ? 'Besoin' : section === 'investor-requests' ? 'Demande' : 'Nouvelle invitation'}</button>}
+            {section !== 'challenges' && section !== 'program' && section !== 'wheel' && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: section === 'occupants' ? 'occupant' : section === 'users' ? 'user' : section === 'b2b' ? 'b2b' : 'investor-request', item: null })}><Plus size={16} /> {section === 'occupants' ? 'Stand' : section === 'users' ? 'Nouvel utilisateur' : section === 'b2b' ? 'Besoin' : 'Demande'}</button>}
           </div>}
         </header>
 
         <section className="data-panel">
           <header className="data-toolbar">
             <div className="data-toolbar-controls">
-              <label className="admin-search-field"><Search size={15} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Rechercher" aria-label={section === 'occupants' ? 'Rechercher un occupant' : section === 'users' ? 'Rechercher un utilisateur' : section === 'program' ? 'Rechercher dans le programme' : section === 'b2b' ? 'Rechercher un besoin' : section === 'studio' ? 'Rechercher une invitation' : section === 'challenges' ? 'Rechercher un participant' : section === 'wheel' ? 'Rechercher un lot' : 'Rechercher une demande'} /></label>
+              <label className="admin-search-field"><Search size={15} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Rechercher" aria-label={section === 'occupants' ? 'Rechercher un occupant' : section === 'users' ? 'Rechercher un utilisateur' : section === 'program' ? 'Rechercher dans le programme' : section === 'b2b' ? 'Rechercher un besoin' : section === 'challenges' ? 'Rechercher un participant' : section === 'wheel' ? 'Rechercher un lot' : 'Rechercher une demande'} /></label>
               {toolbarNote && <span className="data-note">{toolbarNote}</span>}
               <select value={sortValue || settings.sorts[0].value} onChange={(event) => setSortValue(event.target.value)} aria-label="Trier">
                 {settings.sorts.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
@@ -378,7 +358,6 @@ export default function BackofficePage({ session, onLogout, section }) {
           {!loading && !error && section === 'program' && <ProgramEventsTable selection={selection} events={rows} query={query} onEdit={(item) => setDrawer({ type: 'program', item })} onDelete={requestProgramDelete} />}
           {!loading && !error && section === 'investor-requests' && <InvestorRequestsTable selection={selection} requests={rows} query={query} showStand={isSuperAdmin} onEdit={(item) => setDrawer({ type: 'investor-request', item })} />}
           {!loading && !error && section === 'b2b' && <B2bNeedsTable selection={selection} needs={rows} query={query} showStand={isSuperAdmin} onEdit={(item) => setDrawer({ type: 'b2b', item })} />}
-          {!loading && !error && section === 'studio' && <StudioInvitationsTable selection={selection} invitations={rows} query={query} showStand={isSuperAdmin} copiedId={copiedInvitationId} onCopy={copyInvitationLink} onEdit={(item) => setDrawer({ type: 'studio', item })} />}
           {!loading && !error && section === 'challenges' && <ChallengePassportsTable selection={selection} passports={rows} query={query} allowReward={isSuperAdmin} onRedeem={(passport) => { setRewardError(''); setPendingReward(passport); }} />}
           {!loading && !error && section === 'wheel' && <WheelSegmentsTable selection={selection} segments={rows} query={query} onEdit={(item) => setDrawer({ type: 'wheel', item })} onDelete={requestWheelDelete} />}
         </section>
@@ -391,7 +370,6 @@ export default function BackofficePage({ session, onLogout, section }) {
       {drawer?.type === 'program' && <ProgramEventDrawer programEvent={drawer.item} occupants={occupants} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'investor-request' && <InvestorRequestDrawer investorRequest={drawer.item} occupants={occupants} fixedOccupant={isAdmin ? session.user.occupant : null} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'b2b' && <B2bNeedDrawer need={drawer.item} occupants={occupants} fixedOccupant={isAdmin ? session.user.occupant : null} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
-      {drawer?.type === 'studio' && <StudioInvitationDrawer invitation={drawer.item} occupants={occupants} fixedOccupant={isAdmin ? session.user.occupant : null} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'wheel' && <WheelSegmentDrawer segment={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {wheelCode && <WheelCodeDialog wheelCode={wheelCode.data} loading={wheelCode.loading} error={wheelCode.error} onNew={generateWheelCode} onClose={() => setWheelCode(null)} />}
       {pendingDelete && <ConfirmDelete subject={pendingDelete} loading={deleting} error={deleteError} onCancel={() => setPendingDelete(null)} onConfirm={confirmDelete} />}

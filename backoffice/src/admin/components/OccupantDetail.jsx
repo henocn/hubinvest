@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Pencil, QrCode, Trash2 } from 'lucide-react';
-import { investorStatusLabels, programTypeLabels, publicBaseUrl, roleLabels, studioStatusLabels } from '../constants/access';
+import { investorStatusLabels, programTypeLabels, publicBaseUrl, roleLabels } from '../constants/access';
 import { resolveAssetUrl } from '../lib/api';
 
 const dateTime = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Africa/Lome', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
@@ -31,14 +31,13 @@ function Related({ title, head, rows }) {
 }
 
 // Fiche complète d'un stand dans l'administration : tout ce qui le décrit et tout ce qui lui est rattaché.
-export default function OccupantDetail({ occupant, users, contactCount, programEvents, b2bNeeds, studioInvitations, investorRequests, challengePassports, onEdit, onDelete, onQrCode }) {
+export default function OccupantDetail({ occupant, users, contactCount, programEvents, b2bNeeds, investorRequests, challengePassports, onEdit, onDelete, onQrCode }) {
   const isActive = occupant.status === 'active';
   const publicUrl = `${publicBaseUrl}/stands/${occupant.slug}`;
   const own = belongsTo(occupant.id);
   const accounts = users.filter(own);
   const events = programEvents.filter(own).sort((a, b) => new Date(a.startsAt) - new Date(b.startsAt));
   const needs = b2bNeeds.filter(own);
-  const invitations = studioInvitations.filter(own);
   const requests = investorRequests.filter(own);
   const players = challengePassports.filter((passport) => (passport.passages || []).some(own)).length;
   const photos = [
@@ -104,11 +103,6 @@ export default function OccupantDetail({ occupant, users, contactCount, programE
         title="Besoins B2B"
         head={['Besoin', 'Statut', 'Publié le']}
         rows={needs.map((need) => <tr key={need.id}><td>{need.title}</td><td>{need.status === 'open' ? 'Ouvert' : 'Fermé'}</td><td className="stand-nowrap">{day.format(new Date(need.createdAt))}</td></tr>)}
-      />
-      <Related
-        title="Studio"
-        head={['Date', 'Invité', 'Sujet', 'Réponse']}
-        rows={invitations.map((invitation) => <tr key={invitation.id}><td className="stand-nowrap">{invitation.scheduledAt ? dateTime.format(new Date(invitation.scheduledAt)) : '—'}</td><td>{invitation.guestName}</td><td>{invitation.subject}</td><td>{studioStatusLabels[invitation.status] || invitation.status}</td></tr>)}
       />
       <Related
         title="Investor Desk"

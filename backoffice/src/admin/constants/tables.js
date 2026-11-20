@@ -1,5 +1,5 @@
 import { formatDate } from '../../lib/excel';
-import { challengeStatusLabels, investorStatusLabels, programTypeLabels, roleLabels, studioStatusLabels } from './access';
+import { challengeStatusLabels, investorStatusLabels, programTypeLabels, roleLabels } from './access';
 
 const fullName = (person) => (person ? [person.firstName, person.lastName].filter(Boolean).join(' ') : '');
 const byText = (value) => (a, b) => String(value(a) || '').localeCompare(String(value(b) || ''), 'fr', { sensitivity: 'base' });
@@ -90,23 +90,6 @@ export const tableSettings = {
       { header: 'Stand', value: (item) => item.occupant?.name, width: 26 },
       { header: 'Statut', value: (item) => (item.status === 'open' ? 'Ouvert' : 'Fermé'), width: 12 },
       { header: 'Publié par', value: (item) => fullName(item.createdBy), width: 24 },
-    ],
-  },
-  studio: {
-    sorts: [
-      { value: 'oldest', label: 'Chronologique', compare: byDate((item) => item.scheduledAt, 1) },
-      { value: 'recent', label: 'Plus tard d’abord', compare: byDate((item) => item.scheduledAt, -1) },
-      { value: 'az', label: 'A → Z', compare: byText((item) => item.guestName) },
-    ],
-    exportName: 'studio',
-    columns: (context) => [
-      { header: 'Date', value: (item) => formatDate(item.scheduledAt), width: 18 },
-      { header: 'Invité', value: (item) => item.guestName, width: 28 },
-      { header: 'Sujet', value: (item) => item.subject, width: 45 },
-      { header: 'Stand', value: (item) => item.occupant?.name, width: 26 },
-      { header: 'Réponse', value: (item) => studioStatusLabels[item.status] || item.status, width: 14 },
-      { header: 'Répondu le', value: (item) => formatDate(item.respondedAt), width: 18 },
-      { header: 'Lien de l’invité', value: (item) => `${context.publicBaseUrl}/studio/${item.token}`, width: 50 },
     ],
   },
   challenges: {

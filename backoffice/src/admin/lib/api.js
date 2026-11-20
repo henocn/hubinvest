@@ -80,11 +80,6 @@ export const api = {
   b2bProposals: (token, needId) => request(`/b2b-proposals/need/${needId}`, authorized(token)),
   updateB2bProposal: (token, id, values) =>
     request(`/b2b-proposals/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
-  studioInvitations: (token) => request('/studio-invitations', authorized(token)),
-  createStudioInvitation: (token, values) =>
-    request('/studio-invitations', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
-  updateStudioInvitation: (token, id, values) =>
-    request(`/studio-invitations/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
   programEvents: (token) => request('/program-events', authorized(token)),
   createProgramEvent: (token, values) =>
     request('/program-events', authorized(token, { method: 'POST', body: JSON.stringify(values) })),

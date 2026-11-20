@@ -1,4 +1,4 @@
-import { Building2, CalendarDays, CircleUserRound, Disc3, Gift, Handshake, LayoutDashboard, MessageCircleQuestion, ScanLine, SlidersHorizontal, Trophy, Users, Video } from 'lucide-react';
+import { Building2, CalendarDays, CircleUserRound, Disc3, Gift, Handshake, LayoutDashboard, MessageCircleQuestion, ScanLine, SlidersHorizontal, Trophy, Users } from 'lucide-react';
 
 // Rubriques de l'administration : chaque section a sa propre adresse.
 // « tab » place la rubrique dans la barre du bas sur téléphone (quatre au plus) ; les autres restent dans le menu.
@@ -8,7 +8,6 @@ export const adminSections = [
   { section: 'program', path: '/programme', label: 'Programme', Icon: CalendarDays, superOnly: true },
   { section: 'b2b', path: '/b2b', label: 'B2B', Icon: Handshake, group: 'meetings' },
   { section: 'investor-requests', path: '/investor-desk', label: 'Investor Desk', Icon: Handshake, group: 'meetings' },
-  { section: 'studio', path: '/studio', label: 'Studio', Icon: Video },
   { section: 'challenges', path: '/participants', label: 'Participants', Icon: Trophy, tab: true },
   { section: 'wheel', path: '/roue', label: 'Roue', Icon: Disc3, tab: true },
 ];
