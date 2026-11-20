@@ -18,13 +18,16 @@ const teamTopics = ['contacts', 'challenge', 'occupants', 'live-questions', 'acc
 // Liens de navigation : NavLink marque la rubrique ouverte, y compris ses sous-pages (/contacts/nouveau…).
 // La pastille donne le nombre exact d'éléments qui attendent une action dans la rubrique.
 // Dans la barre du bas, un libellé court remplace le nom complet quand il y en a un.
+// Une entrée qui regroupe plusieurs rubriques (Rencontres) additionne leurs pastilles et reste active sur chacune.
 function NavItems({ links, className = '', short = false }) {
   const todo = useDashboard()?.data?.todo || {};
-  return links.map(({ path, label: fullLabel, tabLabel, Icon, section }) => {
+  const { pathname } = useLocation();
+  return links.map(({ path, label: fullLabel, tabLabel, Icon, section, sections = section ? [section] : [], matches }) => {
     const label = short && tabLabel ? tabLabel : fullLabel;
-    const count = section ? todo[section] || 0 : 0;
+    const count = sections.reduce((total, key) => total + (todo[key] || 0), 0);
+    const grouped = matches?.some((item) => pathname === item || pathname.startsWith(`${item}/`));
     return (
-      <NavLink key={path} to={path} className={({ isActive }) => `${className}${isActive ? ' is-active' : ''}`.trim()} aria-label={count ? `${label}, ${count} à traiter` : undefined}>
+      <NavLink key={path} to={path} className={({ isActive }) => `${className}${isActive || grouped ? ' is-active' : ''}`.trim()} aria-label={count ? `${label}, ${count} à traiter` : undefined}>
         <span className="team-nav-icon">
           <Icon size={20} aria-hidden="true" />
           {count > 0 && <b className="team-badge" aria-hidden="true">{count}</b>}

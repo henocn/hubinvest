@@ -1,4 +1,4 @@
-import { Building2, BriefcaseBusiness, CalendarDays, CircleUserRound, Disc3, Gift, Handshake, LayoutDashboard, MessageCircleQuestion, ScanLine, SlidersHorizontal, Trophy, Users, Video } from 'lucide-react';
+import { Building2, CalendarDays, CircleUserRound, Disc3, Gift, Handshake, LayoutDashboard, MessageCircleQuestion, ScanLine, SlidersHorizontal, Trophy, Users, Video } from 'lucide-react';
 
 // Rubriques de l'administration : chaque section a sa propre adresse.
 // « tab » place la rubrique dans la barre du bas sur téléphone (quatre au plus) ; les autres restent dans le menu.
@@ -6,12 +6,22 @@ export const adminSections = [
   { section: 'occupants', path: '/stands', label: 'Stands', Icon: Building2, superOnly: true, tab: true },
   { section: 'users', path: '/acces', label: 'Accès', Icon: Users, superOnly: true },
   { section: 'program', path: '/programme', label: 'Programme', Icon: CalendarDays, superOnly: true },
-  { section: 'investor-requests', path: '/investor-desk', label: 'Investor Desk', Icon: BriefcaseBusiness, tab: true },
-  { section: 'b2b', path: '/b2b', label: 'B2B', Icon: Handshake, tab: true },
+  { section: 'b2b', path: '/b2b', label: 'B2B', Icon: Handshake, group: 'meetings' },
+  { section: 'investor-requests', path: '/investor-desk', label: 'Investor Desk', Icon: Handshake, group: 'meetings' },
   { section: 'studio', path: '/studio', label: 'Studio', Icon: Video },
   { section: 'challenges', path: '/participants', label: 'Participants', Icon: Trophy, tab: true },
   { section: 'wheel', path: '/roue', label: 'Roue', Icon: Disc3, tab: true },
 ];
+
+// Rencontres : B2B et Investor Desk réunis sous une seule entrée du menu, avec deux onglets dans la page.
+export const meetingTabs = adminSections.filter((item) => item.group === 'meetings');
+const meetingsLink = { path: '/b2b', label: 'Rencontres', Icon: Handshake, tab: true, sections: meetingTabs.map((item) => item.section), matches: meetingTabs.map((item) => item.path) };
+
+// Entrées du menu : les rubriques, avec les Rencontres à la place de leurs deux onglets.
+const menuSections = (sections) => sections.flatMap((item) => {
+  if (item.group !== 'meetings') return [item];
+  return item === sections.find((other) => other.group === 'meetings') ? [meetingsLink] : [];
+});
 
 const profileLink = { path: '/profil', label: 'Profil', Icon: CircleUserRound, tab: true };
 // Accueil de l'administration : ce qui attend une action et les chiffres du Hub.
@@ -20,8 +30,8 @@ const dashboardLink = { path: '/tableau-de-bord', label: 'Tableau de bord', tabL
 const questionsLink = { path: '/questions', label: 'Questions', Icon: MessageCircleQuestion, tab: true };
 
 const roleLinks = {
-  'super-admin': [dashboardLink, ...adminSections, { ...questionsLink, tab: false }, { path: '/parametres', label: 'Paramètres', Icon: SlidersHorizontal }, { ...profileLink, tab: false }],
-  admin: [dashboardLink, ...adminSections.filter((item) => !item.superOnly), { ...profileLink, tab: false }],
+  'super-admin': [dashboardLink, ...menuSections(adminSections), { ...questionsLink, tab: false }, { path: '/parametres', label: 'Paramètres', Icon: SlidersHorizontal }, { ...profileLink, tab: false }],
+  admin: [dashboardLink, ...menuSections(adminSections.filter((item) => !item.superOnly)), { ...profileLink, tab: false }],
   occupant: [
     { path: '/contacts', label: 'Contacts', Icon: Users, tab: true },
     { path: '/defis', label: 'Défis', Icon: Trophy, tab: true },

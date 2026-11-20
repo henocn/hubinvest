@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Download, Plus, QrCode, Search, Ticket } from 'lucide-react';
 import ConfirmDelete from '../components/ConfirmDelete';
 import OccupantDetail from '../components/OccupantDetail';
@@ -28,6 +28,8 @@ import { tableSettings } from '../constants/tables';
 import { exportToExcel } from '../../lib/excel';
 import { api } from '../lib/api';
 import { useRealtimeEvent } from '../../lib/realtime';
+import { meetingTabs } from '../../navigation';
+import { useDashboard } from '../dashboard';
 
 const sectionMeta = {
   occupants: { title: 'Stands' },
@@ -44,6 +46,7 @@ const sectionMeta = {
 export default function BackofficePage({ session, onLogout, section }) {
   const isSuperAdmin = session.user.role === 'super-admin';
   const isAdmin = session.user.role === 'admin';
+  const todo = useDashboard()?.data?.todo || {};
   const location = useLocation();
   const navigate = useNavigate();
   const detailId = section === 'occupants' ? location.pathname.split('/')[2] || null : null;
@@ -334,7 +337,19 @@ export default function BackofficePage({ session, onLogout, section }) {
       ) : (
       <main className="admin-workspace">
         <header className="workspace-header">
-          <h1>{sectionMeta[section].title}</h1>
+          {meetingTabs.some((item) => item.section === section) ? (
+            // Rencontres : un titre et deux onglets, B2B et Investor Desk, avec ce qui attend une action.
+            <div className="section-heading">
+              <h1>Rencontres</h1>
+              <nav className="section-tabs" aria-label="Rencontres">
+                {meetingTabs.map((item) => (
+                  <NavLink key={item.path} to={item.path} className={({ isActive }) => (isActive ? 'is-active' : '')}>
+                    {item.label}{todo[item.section] > 0 && <b>{todo[item.section]}</b>}
+                  </NavLink>
+                ))}
+              </nav>
+            </div>
+          ) : <h1>{sectionMeta[section].title}</h1>}
           {(section === 'occupants' || section === 'users' || section === 'program' || section === 'b2b' || section === 'studio' || section === 'challenges' || section === 'wheel') && <div className="workspace-actions">
             {section === 'challenges' && <button className="button button-secondary" type="button" onClick={() => setQrCode({ title: 'QR des Défis', url: `${publicBaseUrl}/defis`, fileName: 'hubinvest-defis' })}><QrCode size={16} /> QR des Défis</button>}
             {section === 'program' && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: 'program', item: null })}><Plus size={16} /> Ajouter au programme</button>}

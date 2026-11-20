@@ -316,3 +316,11 @@
 /* Colonne de sélection, comme sur la Semaine de l'Industrie : étroite, case centrée. */
 .admin-app th.select-cell, .admin-app td.select-cell { width: 40px; padding: 0; text-align: center; }
 .admin-app .select-cell input { width: 16px; height: 16px; min-height: 0; margin: 0; padding: 0; vertical-align: middle; accent-color: var(--green); cursor: pointer; }
+
+/* Onglets d'une rubrique regroupée (Rencontres), sur la ligne du titre. */
+.admin-app .section-heading { min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 6px 18px; }
+.admin-app .section-tabs { display: flex; gap: 2px; }
+.admin-app .section-tabs a { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border: 1px solid transparent; color: var(--muted); font-size: 14px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.admin-app .section-tabs a:hover { color: var(--ink); background: #eceeee; }
+.admin-app .section-tabs a.is-active { color: var(--ink); border-color: var(--frame); background: #fff; }
+.admin-app .section-tabs b { min-width: 18px; padding: 0 5px; border-radius: 9px; color: #fff; background: var(--red); font-size: 11px; line-height: 18px; text-align: center; }
