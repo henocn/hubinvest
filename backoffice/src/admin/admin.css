@@ -133,12 +133,10 @@
 .admin-app .challenge-reward-action.is-redeemed:disabled { opacity: .72; }
 .admin-app .b2b-admin-title { display: block; max-width: 520px; overflow: hidden; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
 .admin-app .b2b-admin-row.is-closed { background: rgba(0, 0, 0, .025); }
-.admin-app .b2b-admin-row.is-link, .admin-app .occupant-row.is-link { cursor: pointer; }
 .admin-app a.b2b-admin-title { color: inherit; text-decoration: none; }
 .admin-app a.b2b-admin-title:hover { text-decoration: underline; }
 .admin-app .proposal-count { color: #85898d; font-variant-numeric: tabular-nums; font-weight: 600; }
 .admin-app .proposal-count.is-pending { color: #6f5700; font-weight: 750; }
-.admin-app .b2b-message { min-width: 260px; max-width: 520px; color: #565b5f; line-height: 1.5; white-space: pre-line; }
 .admin-app .drawer-wide { width: min(620px, 100%); }
 .admin-app .status-pill { width: fit-content; display: inline-flex; align-items: center; gap: 5px; padding: 2px 7px; border-radius: 3px; color: #686c70; background: #efefed; font-size: 11px; font-weight: 700; }
 .admin-app .status-pill.is-active { color: var(--green); background: #e7f3ee; }
@@ -223,7 +221,6 @@
 .admin-app .settings-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 8px 6px 12px; border-bottom: 1px solid var(--frame); background: #fafafa; }
 .admin-app .settings-panel-head h2 { margin: 0; font-size: 14px; }
 .admin-app .settings-panel-head h2 span { margin-left: 4px; color: #8a8e92; font-weight: 600; }
-.admin-app .b2b-need-name { display: block; max-width: 280px; font-weight: 600; }
 .admin-app .settings-row { display: flex; flex-direction: row; align-items: center; gap: 12px; padding: 9px 12px; border-bottom: 1px solid var(--grid); color: var(--ink); font-size: 14px; cursor: pointer; }
 .admin-app .settings-row:last-child { border-bottom: 0; }
 .admin-app .settings-row > span:first-child { flex: 1; min-width: 0; display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; }
@@ -271,7 +268,6 @@
 .admin-app .gallery-add:hover { border-color: var(--green); background: var(--tint); }
 
 /* Fiche d'un stand : en-tête avec retour, champs « libellé : valeur », images en vignettes, tableaux rattachés. */
-.admin-app .occupant-row.is-link { cursor: pointer; }
 .admin-app .occupant-row a { color: inherit; text-decoration: none; }
 .admin-app .occupant-row a:hover strong { text-decoration: underline; }
 .admin-app .stand-title { min-width: 0; display: flex; align-items: center; gap: 10px; }
@@ -325,3 +321,17 @@
 /* Case à cocher dans un formulaire : sur la même ligne que son libellé. */
 .admin-app label.checkbox-field { flex-direction: row; align-items: flex-start; gap: 9px; font-weight: 500; line-height: 1.4; cursor: pointer; }
 .admin-app label.checkbox-field input { width: 16px; height: 16px; flex: 0 0 auto; margin: 1px 0 0; padding: 0; accent-color: var(--green); }
+
+
+/* Lignes dépliables (comme la SDI) : la ligne garde l'essentiel, un clic affiche le reste juste en dessous. */
+.admin-app tr.is-link { cursor: pointer; }
+.admin-app tbody tr.is-open, .admin-app tbody tr.is-open:hover { background: #edf5f1; }
+.admin-app tr.row-details-row > td { padding: 0; background: #fff; }
+.admin-app .row-details { margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px 24px; padding: 12px 14px 14px; border-left: 3px solid var(--green); }
+.admin-app .row-detail { min-width: 0; }
+.admin-app .row-detail.is-wide { grid-column: 1 / -1; }
+.admin-app .row-detail dt { margin-bottom: 2px; color: var(--muted); font-size: 11px; font-weight: 700; }
+.admin-app .row-detail dd { margin: 0; color: var(--ink); font-size: 13px; line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere; }
+.admin-app .row-detail a { color: var(--green); }
+.admin-app .row-detail-list { margin: 0; padding-left: 18px; white-space: normal; }
+.admin-app .cell-ellipsis { display: block; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react';
 import { Check, Pencil, Trash2 } from 'lucide-react';
 import { roleLabels } from '../../constants/access';
 import EmptyState from '../EmptyState';
+import { ActionsCell, Detail, ExpandableRow, useOpenRow } from '../RowDetails';
 import { SelectAllHeader, SelectCell } from '../RowSelection';
+
+const dateTime = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Africa/Lome', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
 // Présence d'un compte, comme sur la Semaine de l'Industrie : en ligne, sinon depuis combien de temps.
 const presenceOf = (online, lastSeenAt, now) => {
@@ -19,7 +22,9 @@ const presenceOf = (online, lastSeenAt, now) => {
   return { label: 'Hors ligne', tone: 'offline' };
 };
 
+// Comptes de la plateforme ; un clic sur la ligne affiche les coordonnées et les dates.
 export default function UsersTable({ selection, users, query, currentUserId, onEdit, onDelete }) {
+  const openRow = useOpenRow();
   // Les durées « Il y a X min » avancent d'elles-mêmes.
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -38,17 +43,29 @@ export default function UsersTable({ selection, users, query, currentUserId, onE
         <tbody>{users.map((user) => {
           const presence = presenceOf(user.online, user.lastSeenAt, now);
           return (
-            <tr key={user.id}><SelectCell selection={selection} id={user.id} />
-              <td><strong>{user.firstName} {user.lastName}</strong><small>{user.email}</small></td>
+            <ExpandableRow
+              key={user.id}
+              id={user.id}
+              openRow={openRow}
+              colSpan={7}
+              details={<>
+                <Detail label="E-mail"><a href={`mailto:${user.email}`}>{user.email}</a></Detail>
+                <Detail label="Téléphone">{user.phone && <a href={`tel:${user.phone}`}>{user.phone}</a>}</Detail>
+                <Detail label="Dernière connexion">{user.lastSeenAt ? dateTime.format(new Date(user.lastSeenAt)) : 'Jamais'}</Detail>
+                <Detail label="Compte créé le">{user.createdAt && dateTime.format(new Date(user.createdAt))}</Detail>
+              </>}
+            >
+              <SelectCell selection={selection} id={user.id} />
+              <td><strong>{user.firstName} {user.lastName}</strong></td>
               <td>{roleLabels[user.role] || user.role}</td>
               <td>{['admin', 'occupant'].includes(user.role) ? user.occupant?.name || '—' : '—'}</td>
               <td><span className={`presence is-${presence.tone}`}>{presence.label}</span></td>
               <td><span className={`status-pill ${user.isActive ? 'is-active' : ''}`}>{user.isActive && <Check size={13} />}{user.isActive ? 'Actif' : 'Inactif'}</span></td>
-              <td><div className="row-actions">
+              <ActionsCell>
                 <button className="table-action is-icon" type="button" aria-label={`Modifier ${user.firstName} ${user.lastName}`} title="Modifier" onClick={() => onEdit(user)}><Pencil size={16} /></button>
                 <button className="table-action is-icon is-danger" type="button" aria-label={`Supprimer ${user.firstName} ${user.lastName}`} disabled={user.id === currentUserId} title={user.id === currentUserId ? 'Votre propre compte ne peut pas être supprimé' : 'Supprimer'} onClick={() => onDelete(user)}><Trash2 size={16} /></button>
-              </div></td>
-            </tr>
+              </ActionsCell>
+            </ExpandableRow>
           );
         })}</tbody>
       </table>
