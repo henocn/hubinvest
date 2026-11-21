@@ -367,14 +367,10 @@ test('une demande Investor Desk exige le consentement API-ZF', () => {
   assert.ok(error);
 });
 
-test('le suivi Investor Desk enregistre seulement le statut et la prochaine action', async (context) => {
-  const investorRequest = { id: 'request-a' };
-  let saved;
-  context.mock.method(investorRequestRepository, 'findById', async () => investorRequest);
-  context.mock.method(investorRequestRepository, 'update', async (_request, values) => { saved = values; return values; });
-
-  await investorRequestService.update(investorRequest.id, { status: 'in_progress', nextAction: 'Rappeler le porteur du projet' });
-  assert.deepEqual(saved, { status: 'in_progress', nextAction: 'Rappeler le porteur du projet' });
+test('le statut Investor Desk ne se saisit pas : il est calculé à partir de la classe et des relances', () => {
+  const { update } = investorRequestValidation;
+  assert.ok(update.validate({ status: 'closed', nextAction: 'x' }, { stripUnknown: true }).error);
+  assert.deepEqual(update.validate({ classification: 'a', status: 'closed' }, { stripUnknown: true }).value, { classification: 'A' });
 });
 
 test('la liste publique B2B ne contient que les besoins ouverts de stands actifs', async (context) => {
@@ -1359,6 +1355,7 @@ test('Investor Desk : la classe A fixe une relance sous 48 h, B sous 7 jours, C 
   await investorRequestService.update('ir-1', { classification: 'A' });
   const dueA = saved.at(-1).nextFollowUpAt.getTime() - before;
   assert.ok(dueA >= 48 * 3600000 && dueA < 48 * 3600000 + 5000);
+  assert.equal(saved.at(-1).status, 'in_progress');
 
   await investorRequestService.update('ir-1', { classification: 'B' });
   const dueB = saved.at(-1).nextFollowUpAt.getTime() - before;
@@ -1366,6 +1363,8 @@ test('Investor Desk : la classe A fixe une relance sous 48 h, B sous 7 jours, C 
 
   await investorRequestService.update('ir-1', { classification: 'C' });
   assert.equal(saved.at(-1).nextFollowUpAt, null);
+  assert.equal(saved.at(-1).status, 'closed');
+  assert.equal(investorRequestService.progressStatus({ nextFollowUpAt: null, classification: null }, false), 'new');
 });
 
 test('Investor Desk : l’interlocuteur est un membre de l’équipe API-ZF et la qualification ne garde que les champs réglés', async (context) => {
@@ -1388,6 +1387,10 @@ test('Investor Desk : une relance d’un contact A exige l’étape suivante et 
   assert.equal(followUp.createdByUserId, 'u1');
   assert.deepEqual(saved.at(-1), { nextAction: 'Envoyer le dossier d’agrément', nextFollowUpAt: next, status: 'in_progress' });
   assert.equal(reminders.length, 1);
+
+  // Relance sans prochaine date : la demande est terminée.
+  await investorRequestService.addFollowUp({ id: 'u1' }, 'ir-3', { channel: 'message', nextStep: 'Dossier envoyé' });
+  assert.equal(saved.at(-1).status, 'closed');
 
   // Une relance déjà faite garde sa date même si la classe change.
   await investorRequestService.update('ir-3', { classification: 'B' });

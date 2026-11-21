@@ -82,7 +82,6 @@ export const tableSettings = {
       { header: 'Téléphone', value: (item) => item.phone, width: 18 },
       { header: 'Projet', value: (item) => item.projectSummary, width: 60 },
       { header: 'Classe', value: (item) => item.classification, width: 8 },
-      { header: 'Interlocuteur', value: (item) => fullName(item.contactUser), width: 24 },
       { header: 'Prochaine relance', value: (item) => formatDate(item.nextFollowUpAt), width: 18 },
       { header: 'Statut', value: (item) => investorStatusLabels[item.status] || item.status, width: 14 },
       { header: 'Étape suivante', value: (item) => item.nextAction, width: 36 },

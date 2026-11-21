@@ -6,6 +6,13 @@ const settingsService = require('../settings/settings.service');
 
 const plain = (value) => (value?.toJSON ? value.toJSON() : value);
 
+// Statut calculé, jamais saisi : « À traiter » (new) tant que rien n'est fait, « À relancer » (in_progress) dès qu'une
+// prochaine relance est prévue, « Terminé » (closed) quand la demande est classée ou relancée sans nouvelle relance prévue.
+const progressStatus = ({ nextFollowUpAt, classification }, hasFollowUps) => {
+  if (nextFollowUpAt) return 'in_progress';
+  return classification || hasFollowUps ? 'closed' : 'new';
+};
+
 // L'Investor Desk est le guichet de l'API-ZF : toutes les demandes lui reviennent, aucune n'est rattachée à un stand.
 const list = async (query) => {
   const result = await investorRequestRepository.findAll(query);
@@ -44,8 +51,8 @@ const createManual = async (values) => {
     email: values.email.toLowerCase(),
     phone: values.phone || null,
     projectSummary: values.projectSummary,
-    status: values.status,
-    nextAction: values.nextAction || null,
+    status: 'new',
+    nextAction: null,
     language: 'fr',
     consentApizf: values.consentApizf,
     consentCapturedAt: new Date(),
@@ -90,7 +97,7 @@ const cleanQualification = (answers) => {
   return cleaned;
 };
 
-// Suivi : statut, qualification, classe et interlocuteur. Une première classe A ou B fixe la date de relance
+// Suivi : classe, qualification et interlocuteur ; le statut suit. Une première classe A ou B fixe la date de relance
 // (48 h ou 7 jours, réglables) ; C n'a pas de relance individuelle. Une relance déjà faite garde sa propre date.
 const update = async (id, values) => {
   const investorRequest = await getRequest(id);
@@ -107,6 +114,11 @@ const update = async (id, values) => {
     if (!delay) next.nextFollowUpAt = null;
     else if (!(await investorRequestRepository.countFollowUps(investorRequest.id))) next.nextFollowUpAt = new Date(Date.now() + delay);
   }
+  const hasFollowUps = (await investorRequestRepository.countFollowUps(investorRequest.id)) > 0;
+  next.status = progressStatus({
+    nextFollowUpAt: 'nextFollowUpAt' in next ? next.nextFollowUpAt : investorRequest.nextFollowUpAt,
+    classification: 'classification' in next ? next.classification : investorRequest.classification,
+  }, hasFollowUps);
   await investorRequestRepository.update(investorRequest, next);
   const updated = await getRequest(id);
   notificationService.investorFollowUpChanged(updated);
@@ -114,7 +126,7 @@ const update = async (id, values) => {
   return updated;
 };
 
-// Relance faite (appel, e-mail, rendez-vous). Pour un contact A ou B, l'étape suivante est obligatoire :
+// Relance faite (appel ou message). Pour un contact A ou B, l'étape suivante est obligatoire :
 // « Personne ne repart sans étape suivante ». La prochaine relance prend la date donnée, ou aucune.
 const addFollowUp = async (user, id, values) => {
   const investorRequest = await getRequest(id);
@@ -132,7 +144,7 @@ const addFollowUp = async (user, id, values) => {
   await investorRequestRepository.update(investorRequest, {
     nextAction: values.nextStep || investorRequest.nextAction,
     nextFollowUpAt: values.nextFollowUpAt || null,
-    status: investorRequest.status === 'new' ? 'in_progress' : investorRequest.status,
+    status: progressStatus({ nextFollowUpAt: values.nextFollowUpAt || null, classification: investorRequest.classification }, true),
   });
   notificationService.investorFollowUpChanged(await getRequest(id));
   realtime.investorRequestsChanged();
@@ -144,6 +156,8 @@ const removeFollowUp = async (id, followUpId) => {
   const followUp = await investorRequestRepository.findFollowUp(followUpId, investorRequest.id);
   if (!followUp) throw new AppError(404, 'INVESTOR_FOLLOW_UP_NOT_FOUND', 'Relance introuvable.');
   await investorRequestRepository.destroyFollowUp(followUp);
+  const hasFollowUps = (await investorRequestRepository.countFollowUps(investorRequest.id)) > 0;
+  await investorRequestRepository.update(investorRequest, { status: progressStatus(investorRequest, hasFollowUps) });
   realtime.investorRequestsChanged();
 };
 
@@ -192,4 +206,5 @@ module.exports = {
   updateMeeting,
   removeMeeting,
   cleanQualification,
+  progressStatus,
 };

@@ -40,18 +40,18 @@ function Modal({ eyebrow, title, error, loading, submitLabel, onClose, onSubmit,
   );
 }
 
-// Relance faite : moyen, ce qui s'est dit, étape suivante (obligatoire pour A et B) et date de la prochaine relance.
+// Relancer : appel ou message, ce qui s'est dit, étape suivante (obligatoire pour A et B) et date de la prochaine relance.
 function FollowUpForm({ request, loading, error, onClose, onSave }) {
   const required = ['A', 'B'].includes(request.classification);
   const [form, setForm] = useState({ channel: 'call', note: '', nextStep: '', nextFollowUpAt: '' });
   const set = (key) => (event) => setForm({ ...form, [key]: event.target.value });
   return (
-    <Modal eyebrow={request.fullName} title="Relance faite" error={error} loading={loading} submitLabel="Enregistrer la relance" onClose={onClose}
+    <Modal eyebrow={request.fullName} title="Relancer" error={error} loading={loading} submitLabel="Enregistrer la relance" onClose={onClose}
       onSubmit={() => onSave({ channel: form.channel, note: form.note || null, nextStep: form.nextStep || null, nextFollowUpAt: fromInput(form.nextFollowUpAt) })}>
       <label>Moyen<select value={form.channel} onChange={set('channel')}>{Object.entries(investorChannelLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
       <label>Ce qui s’est dit<textarea rows="4" value={form.note} onChange={set('note')} maxLength={2000} /></label>
       <label>Étape suivante{required && ' (obligatoire pour un contact A ou B)'}<input value={form.nextStep} onChange={set('nextStep')} maxLength={255} required={required} /></label>
-      <label>Prochaine relance<input type="datetime-local" value={form.nextFollowUpAt} onChange={set('nextFollowUpAt')} /><span className="field-hint">Heure de Lomé. L’interlocuteur est prévenu à cette date si la relance n’est pas faite.</span></label>
+      <label>Prochaine relance<input type="datetime-local" value={form.nextFollowUpAt} onChange={set('nextFollowUpAt')} /><span className="field-hint">Heure de Lomé. Sans date, la demande passe à « Terminé ».</span></label>
     </Modal>
   );
 }
@@ -85,7 +85,6 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
   const [request, setRequest] = useState(null);
   const [error, setError] = useState('');
   const [notFound, setNotFound] = useState(false);
-  const [follow, setFollow] = useState(null);
   const [answers, setAnswers] = useState({});
   const [dialog, setDialog] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -99,7 +98,6 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
       const data = await api.investorRequest(session.token, id);
       setRequest(data);
       if (resetForms) {
-        setFollow({ classification: data.classification || '', contactUserId: data.contactUserId || '', status: data.status });
         setAnswers(data.qualification || {});
       }
       setError('');
@@ -146,7 +144,6 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
   const meetings = request.meetings || [];
   const fields = request.qualificationFields || [];
   const filled = fields.filter((field) => request.qualification?.[field.key] !== undefined).length;
-  const followChanged = follow && (follow.classification !== (request.classification || '') || follow.contactUserId !== (request.contactUserId || '') || follow.status !== request.status);
 
   return (
     <main className="admin-workspace">
@@ -158,7 +155,7 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
           <span className={`status-pill${statusClass[request.status] ?? ''}`}>{investorStatusLabels[request.status]}</span>
         </div>
         <div className="workspace-actions">
-          <button className="button button-primary" type="button" onClick={() => open('follow-up')}><PhoneCall size={16} /> Relancé</button>
+          <button className="button button-primary" type="button" onClick={() => open('follow-up')}><PhoneCall size={16} /> Relancer</button>
           <button className="button button-secondary" type="button" onClick={() => open('meeting')}><CalendarPlus size={16} /> Rendez-vous</button>
         </div>
       </header>
@@ -179,37 +176,22 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
 
       <section className="data-panel stand-panel">
         <header className="settings-panel-head"><h2>Suivi</h2>{saved === 'follow' && <span className="investor-saved">Enregistré</span>}</header>
-        <form className="investor-follow" onSubmit={(event) => { event.preventDefault(); void run(() => api.updateInvestorRequest(session.token, request.id, { classification: follow.classification || null, contactUserId: follow.contactUserId || null, status: follow.status }), 'follow'); }}>
-          <fieldset className="investor-classes">
+        {/* Un clic sur une classe l'enregistre aussitôt. */}
+        <div className="investor-follow">
+          <fieldset className="investor-classes" disabled={busy}>
             <legend>Classe</legend>
             {Object.entries(investorClassLabels).map(([value, label]) => (
-              <label key={value} className={`investor-class-option${follow.classification === value ? ' is-selected' : ''}`}>
-                <input type="radio" name="classification" value={value} checked={follow.classification === value} onChange={() => setFollow({ ...follow, classification: value })} />
+              <label key={value} className={`investor-class-option${request.classification === value ? ' is-selected' : ''}`}>
+                <input type="radio" name="classification" value={value} checked={request.classification === value}
+                  onChange={() => { void run(() => api.updateInvestorRequest(session.token, request.id, { classification: value }), 'follow'); }} />
                 <span><strong>{label}</strong><small>{investorClassHints[value]}</small></span>
               </label>
             ))}
           </fieldset>
-          <div className="field-row">
-            <label>Interlocuteur nommé
-              <select value={follow.contactUserId} onChange={(event) => setFollow({ ...follow, contactUserId: event.target.value })}>
-                <option value="">À désigner</option>
-                {(request.team || []).map((member) => <option key={member.id} value={member.id}>{fullName(member)}</option>)}
-              </select>
-            </label>
-            <label>Statut
-              <select value={follow.status} onChange={(event) => setFollow({ ...follow, status: event.target.value })}>
-                {Object.entries(investorStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-              </select>
-            </label>
-          </div>
-          <dl className="stand-fields investor-follow-facts">
-            <Field label="Prochaine relance">{request.nextFollowUpAt && <span className={overdue ? 'investor-late' : ''}>{dateTime.format(new Date(request.nextFollowUpAt))}</span>}</Field>
-            <Field label="Étape suivante">{request.nextAction}</Field>
-          </dl>
-          <div className="investor-form-actions"><button className="button button-primary" type="submit" disabled={busy || !followChanged}>Enregistrer le suivi</button></div>
-        </form>
+        </div>
       </section>
 
+      {/* Qualification en neuf informations : masquée en attendant que l'API-ZF confirme la liste ; le serveur la garde.
       <section className="data-panel stand-panel">
         <header className="settings-panel-head"><h2>Qualification <span>{filled} / {fields.length}</span></h2>{saved === 'qualification' && <span className="investor-saved">Enregistré</span>}</header>
         <form className="investor-qualification" onSubmit={(event) => { event.preventDefault(); void run(() => api.updateInvestorRequest(session.token, request.id, { qualification: answers }), 'qualification'); }}>
@@ -222,6 +204,28 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
           </div>
           <div className="investor-form-actions"><button className="button button-primary" type="submit" disabled={busy}>Enregistrer la qualification</button></div>
         </form>
+      </section>
+
+      */}
+      <section className="data-panel stand-panel">
+        <h2>Rendez-vous <span>{meetings.length}</span></h2>
+        {!meetings.length ? <p className="panel-message">Aucun rendez-vous fixé.</p> : (
+          <div className="table-scroll">
+            <table>
+              <thead><tr><th>Date et heure</th><th>Lieu</th><th className="actions-heading">Actions</th></tr></thead>
+              <tbody>{meetings.map((item) => (
+                <tr key={item.id}>
+                  <td className="stand-nowrap"><strong>{dateTime.format(new Date(item.startsAt))}</strong><small>{fullName(item.createdBy)}</small></td>
+                  <td>{item.location}</td>
+                  <td><div className="row-actions">
+                    <button className="table-action is-icon" type="button" onClick={() => open('meeting', item)} title="Modifier le rendez-vous" aria-label="Modifier le rendez-vous"><Pencil size={16} /></button>
+                    <button className="table-action is-icon is-danger" type="button" onClick={() => open('delete-meeting', item)} title="Annuler le rendez-vous" aria-label="Annuler le rendez-vous"><Trash2 size={16} /></button>
+                  </div></td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+        )}
       </section>
 
       <section className="data-panel stand-panel">
@@ -244,26 +248,6 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
         )}
       </section>
 
-      <section className="data-panel stand-panel">
-        <h2>Rendez-vous <span>{meetings.length}</span></h2>
-        {!meetings.length ? <p className="panel-message">Aucun rendez-vous fixé.</p> : (
-          <div className="table-scroll">
-            <table>
-              <thead><tr><th>Date et heure</th><th>Lieu</th><th className="actions-heading">Actions</th></tr></thead>
-              <tbody>{meetings.map((item) => (
-                <tr key={item.id}>
-                  <td className="stand-nowrap"><strong>{dateTime.format(new Date(item.startsAt))}</strong><small>{fullName(item.createdBy)}</small></td>
-                  <td>{item.location}</td>
-                  <td><div className="row-actions">
-                    <button className="table-action is-icon" type="button" onClick={() => open('meeting', item)} title="Modifier le rendez-vous" aria-label="Modifier le rendez-vous"><Pencil size={16} /></button>
-                    <button className="table-action is-icon is-danger" type="button" onClick={() => open('delete-meeting', item)} title="Annuler le rendez-vous" aria-label="Annuler le rendez-vous"><Trash2 size={16} /></button>
-                  </div></td>
-                </tr>
-              ))}</tbody>
-            </table>
-          </div>
-        )}
-      </section>
 
       {dialog?.type === 'follow-up' && <FollowUpForm request={request} loading={busy} error={actionError} onClose={close} onSave={(values) => run(() => api.addInvestorFollowUp(session.token, request.id, values))} />}
       {dialog?.type === 'meeting' && <MeetingForm request={request} meeting={dialog.item} loading={busy} error={actionError} onClose={close}

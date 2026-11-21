@@ -1,5 +1,5 @@
-// Une relance faite par l'API-ZF auprès d'un investisseur : quand, par quel moyen, ce qui s'est dit et l'étape suivante.
-const INVESTOR_FOLLOW_UP_CHANNELS = ['call', 'email', 'meeting'];
+// Une relance faite par l'API-ZF auprès d'un investisseur : quand, par appel ou par message, ce qui s'est dit et l'étape suivante.
+const INVESTOR_FOLLOW_UP_CHANNELS = ['call', 'message'];
 
 module.exports = (sequelize, DataTypes) =>
   sequelize.define(

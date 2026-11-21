@@ -13,8 +13,9 @@ export const b2bProposalLabels = { pending: 'À traiter', accepted: 'Acceptée',
 // Classes de l'Investor Desk (document : A relancé sous 48 h, B sous 7 jours, C intégré à la newsletter).
 export const investorClassLabels = { A: 'A · Projet prioritaire', B: 'B · Potentiel à suivre', C: 'C · Contact à nourrir' };
 export const investorClassHints = { A: 'Relance sous 48 h par l’interlocuteur', B: 'Relance sous 7 jours', C: 'Intégré à la newsletter, sans relance individuelle' };
-export const investorChannelLabels = { call: 'Appel', email: 'E-mail', meeting: 'Rendez-vous' };
-export const investorStatusLabels = { new: 'Nouvelle', in_progress: 'En cours', closed: 'Clôturée' };
+export const investorChannelLabels = { call: 'Appel', message: 'Message' };
+// Statut calculé par le serveur : rien de fait, relance prévue, ou classée et relancée sans nouvelle relance.
+export const investorStatusLabels = { new: 'À traiter', in_progress: 'À relancer', closed: 'Terminé' };
 export const programTypeLabels = { spotlight: 'À l’affiche', highlight: 'Temps fort', animation: 'Animation', studio: 'Studio', talk: 'Prise de parole' };
 export const challengeStatusLabels = { active: 'En cours', completed: 'Terminé', redeemed: 'Récompensé(e)' };
 // Site public (QR codes, liens des fiches) : jamais l'adresse de l'espace équipe.
