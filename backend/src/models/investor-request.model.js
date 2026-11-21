@@ -23,9 +23,10 @@ module.exports = (sequelize, DataTypes) =>
         type: DataTypes.STRING(32),
         allowNull: true,
       },
+      // Vide pour un rendez-vous réservé en ligne : le guichet choisi dit de quoi il s'agit.
       projectSummary: {
         type: DataTypes.TEXT,
-        allowNull: false,
+        allowNull: true,
         field: 'project_summary',
       },
       status: {

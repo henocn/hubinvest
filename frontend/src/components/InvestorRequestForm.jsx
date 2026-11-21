@@ -15,7 +15,6 @@ export default function InvestorRequestForm({ guichet = 'project' }) {
     phone: '',
     organization: '',
     projectSummary: '',
-    consentApizf: false,
   });
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -38,7 +37,7 @@ export default function InvestorRequestForm({ guichet = 'project' }) {
     setLoading(true);
     setError('');
     try {
-      await api.createInvestorRequest({ ...form, guichet, phone: toInternationalPhone(form.phone) });
+      await api.createInvestorRequest({ ...form, guichet, phone: toInternationalPhone(form.phone), consentApizf: true });
       setReceived(true);
     } catch (requestError) {
       setError(publicErrorMessage(t, requestError));
@@ -78,10 +77,6 @@ export default function InvestorRequestForm({ guichet = 'project' }) {
             <PhoneField value={form.phone} onChange={(phone) => field('phone', phone)} showError={phoneChecked} />
           </div>
           <label>{t('guichets.organization')} <small>({t('common.optional')})</small><input value={form.organization} onChange={(event) => field('organization', event.target.value)} maxLength={160} autoComplete="organization" /></label>
-          <label className="request-consent investor-consent">
-            <input type="checkbox" checked={form.consentApizf} onChange={(event) => field('consentApizf', event.target.checked)} required />
-            <span>{t('investor.consent')}</span>
-          </label>
           {error && <p className="request-error" role="alert">{error}</p>}
           <div className="investor-form-actions">
             <button className="button button-secondary" type="button" onClick={() => setStep(1)} disabled={loading}>{t('common.back')}</button>

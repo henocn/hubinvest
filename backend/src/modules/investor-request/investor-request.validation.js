@@ -17,7 +17,7 @@ const person = {
 const createPublic = Joi.object({ ...person, consentApizf: Joi.boolean().valid(true).required() });
 
 // « Prendre rendez-vous » à un guichet depuis le site : un créneau proposé.
-const book = Joi.object({ ...person, guichet: guichet.required(), startsAt: Joi.date().iso().required(), consentApizf: Joi.boolean().valid(true).required() });
+const book = Joi.object({ ...person, projectSummary: Joi.string().trim().max(6000).allow('', null), guichet: guichet.required(), startsAt: Joi.date().iso().required(), consentApizf: Joi.boolean().valid(true).required() });
 const slotsQuery = Joi.object({ guichet: guichet.required() });
 
 // Passage au guichet ou appel, saisi par l'équipe de l'API-ZF.

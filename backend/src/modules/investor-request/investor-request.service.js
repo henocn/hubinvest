@@ -45,7 +45,7 @@ const contactValues = (values) => ({
   phone: values.phone || null,
   organization: values.organization || null,
   guichet: values.guichet || 'project',
-  projectSummary: values.projectSummary,
+  projectSummary: values.projectSummary || null,
   status: 'new',
   nextAction: null,
 });

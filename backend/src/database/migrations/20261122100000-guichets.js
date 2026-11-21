@@ -20,6 +20,8 @@ module.exports = {
       await add('commitment_note', { type: Sequelize.TEXT, allowNull: true });
       await add('resolved_at', { type: Sequelize.DATE, allowNull: true });
       await queryInterface.changeColumn('investor_requests', 'classification', { type: Sequelize.STRING(12), allowNull: true }, { transaction });
+      // Un rendez-vous réservé en ligne ne demande pas d'objet : le guichet choisi suffit.
+      await queryInterface.changeColumn('investor_requests', 'project_summary', { type: Sequelize.TEXT, allowNull: true }, { transaction });
       await queryInterface.addIndex('investor_requests', ['guichet'], { transaction });
 
       // Un créneau de guichet ne se réserve qu'une fois, même par deux personnes au même instant.
@@ -40,6 +42,8 @@ module.exports = {
       await queryInterface.removeIndex('investor_requests', ['guichet'], { transaction });
       await queryInterface.sequelize.query("UPDATE investor_requests SET classification = NULL WHERE classification = 'support'", { transaction });
       await queryInterface.changeColumn('investor_requests', 'classification', { type: Sequelize.STRING(1), allowNull: true }, { transaction });
+      await queryInterface.sequelize.query("UPDATE investor_requests SET project_summary = 'Rendez-vous au guichet' WHERE project_summary IS NULL", { transaction });
+      await queryInterface.changeColumn('investor_requests', 'project_summary', { type: Sequelize.TEXT, allowNull: false }, { transaction });
       for (const column of ['guichet', 'source', 'organization', 'recommended_service_id', 'diagnosed_at', 'difficulty', 'commitment_service_id', 'commitment_due_at', 'commitment_note', 'resolved_at']) {
         await queryInterface.removeColumn('investor_requests', column, { transaction });
       }

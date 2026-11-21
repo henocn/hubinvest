@@ -3,6 +3,7 @@ import { CalendarDays, CheckCircle2, Clock3, PlayCircle, XCircle } from 'lucide-
 import { useTranslation } from 'react-i18next';
 import { api } from '../lib/api';
 import { publicErrorMessage } from '../lib/public-error';
+import SlotPicker from '../components/SlotPicker';
 
 // Page personnelle d'un invité du Studio (lien reçu par e-mail) : il choisit lui-même son créneau parmi ceux
 // encore libres, peut en changer jusqu'à une heure avant ou décliner, puis retrouve ici sa capsule une fois livrée.
@@ -11,7 +12,6 @@ export default function StudioInvitationPage({ token }) {
   const locale = i18n.resolvedLanguage?.startsWith('en') ? 'en-GB' : 'fr-FR';
   const [invitation, setInvitation] = useState(null);
   const [slots, setSlots] = useState(null);
-  const [day, setDay] = useState('');
   const [chosen, setChosen] = useState('');
   const [choosing, setChoosing] = useState(false);
   const [confirmDecline, setConfirmDecline] = useState(false);
@@ -21,15 +21,12 @@ export default function StudioInvitationPage({ token }) {
 
   const formats = useMemo(() => ({
     day: new Intl.DateTimeFormat(locale, { timeZone: 'Africa/Lome', weekday: 'long', day: 'numeric', month: 'long' }),
-    shortDay: new Intl.DateTimeFormat(locale, { timeZone: 'Africa/Lome', weekday: 'short', day: 'numeric', month: 'short' }),
     time: new Intl.DateTimeFormat(locale, { timeZone: 'Africa/Lome', hour: '2-digit', minute: '2-digit' }),
   }), [locale]);
 
   const loadSlots = useCallback(async () => {
     const data = await api.studioSlots(token);
     setSlots(data);
-    const firstDay = data.slots[0]?.slice(0, 10) || '';
-    setDay((current) => (data.slots.some((slot) => slot.startsWith(current)) ? current : firstDay));
   }, [token]);
 
   useEffect(() => {
@@ -90,8 +87,6 @@ export default function StudioInvitationPage({ token }) {
 
   const { status } = invitation;
   const showSlots = status === 'invited' || (status === 'booked' && choosing);
-  const days = slots ? [...new Set(slots.slots.map((slot) => slot.slice(0, 10)))] : [];
-  const daySlots = slots ? slots.slots.filter((slot) => slot.startsWith(day)) : [];
 
   return (
     <main className="public-container studio-response-page">
@@ -120,24 +115,7 @@ export default function StudioInvitationPage({ token }) {
           <section className="studio-booking" aria-label={t('studio.choose')}>
             <h2>{t('studio.choose')}</h2>
             <p className="studio-subject">{t('studio.chooseHint', { minutes: slots.minutes })}</p>
-            {!slots.slots.length ? <p className="public-message">{t('studio.noSlot')}</p> : (
-              <>
-                <div className="studio-days" role="tablist">
-                  {days.map((item) => (
-                    <button key={item} type="button" role="tab" aria-selected={item === day} className={item === day ? 'is-selected' : ''} onClick={() => { setDay(item); setChosen(''); }}>
-                      {formats.shortDay.format(new Date(`${item}T12:00:00Z`))}
-                    </button>
-                  ))}
-                </div>
-                <div className="studio-slots">
-                  {daySlots.map((slot) => (
-                    <button key={slot} type="button" aria-pressed={slot === chosen} className={slot === chosen ? 'is-selected' : ''} onClick={() => setChosen(slot)}>
-                      {formats.time.format(new Date(slot))}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
+            {!slots.slots.length ? <p className="public-message">{t('studio.noSlot')}</p> : <SlotPicker slots={slots.slots} value={chosen} onChange={setChosen} />}
           </section>
         )}
 
