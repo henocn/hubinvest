@@ -107,8 +107,10 @@ export default {
   },
   meetings: {
     title: "Meetings",
-    b2bTile: "Propose a B2B meeting",
-    deskTile: "Meet API-ZF at its desks",
+    deskTile: "API-ZF desks",
+    deskText: "Meet an API-ZF expert at the Stand.",
+    b2bTile: "Investment opportunities",
+    b2bText: "Find an opportunity among the needs published by companies.",
   },
   b2b: {
     title: "B2B needs",

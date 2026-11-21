@@ -2752,6 +2752,9 @@
   min-height: 46px;
   display: grid;
   place-items: center;
+  padding: 6px 10px;
+  text-align: center;
+  line-height: 1.2;
   color: var(--ink);
   font-weight: 700;
   text-decoration: none;
@@ -2782,6 +2785,7 @@
 }
 
 .guichet-choice label {
+  position: relative;
   display: grid;
   gap: 2px;
   padding: 12px 14px;
@@ -2797,6 +2801,10 @@
 
 .guichet-choice input {
   position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
   opacity: 0;
   pointer-events: none;
 }
@@ -2811,12 +2819,47 @@
 }
 
 /* Rencontres : des tuiles cliquables, un titre parlant ; deux par ligne sur téléphone, davantage sur grand écran. */
+/* Les tuiles se placent au milieu de l’écran, entre l’en-tête et la barre du bas. */
 .meetings-page {
-  padding-block: clamp(20px, 4vw, 40px) 90px;
+  min-height: calc(100dvh - 150px);
+  display: grid;
+  align-content: center;
+  position: relative;
+  padding-block: 24px;
+}
+
+/* Le symbole du Hub en filigrane très léger, en haut à droite et en bas à gauche, pour habiller les espaces vides. */
+.meetings-page::before,
+.meetings-page::after {
+  content: '';
+  position: absolute;
+  width: min(34vw, 210px);
+  aspect-ratio: 348 / 328;
+  background: url('./assets/brand/hub-symbol.png') center / contain no-repeat;
+  opacity: 0.07;
+  pointer-events: none;
+}
+
+.meetings-page::before {
+  top: 16px;
+  right: 0;
+}
+
+.meetings-page::after {
+  bottom: 16px;
+  left: 0;
+  transform: rotate(180deg);
+}
+
+.meetings-page .tile-grid {
+  position: relative;
+  z-index: 1;
 }
 
 .tile-grid {
+  width: 100%;
   max-width: 760px;
+  margin-inline: auto;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(150px, calc(50% - 6px)), 1fr));
   gap: 12px;
@@ -2825,9 +2868,9 @@
 .tile {
   min-height: clamp(140px, 22vw, 210px);
   display: grid;
-  align-content: space-between;
-  gap: 18px;
-  padding: 18px;
+  align-content: start;
+  gap: 14px;
+  padding: clamp(20px, 4vw, 36px) clamp(16px, 3vw, 24px);
   border: 2px solid var(--green);
   border-radius: 10px;
   color: var(--ink);
@@ -2862,8 +2905,25 @@
   background: #fff6d1;
 }
 
+.tile-text {
+  display: grid;
+  gap: 6px;
+}
+
+.tile small {
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+
 .tile strong {
   font-family: var(--font-display);
   font-size: clamp(1.02rem, 2.4vw, 1.25rem);
   line-height: 1.2;
+}
+
+/* Comportement d’application : la page ne défile jamais en largeur, l’en-tête et la barre du bas restent en place. */
+html,
+body {
+  overflow-x: clip;
 }
