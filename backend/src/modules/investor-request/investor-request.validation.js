@@ -1,5 +1,8 @@
 const Joi = require('joi');
 const { GUICHET_KEYS, CLASSIFICATIONS } = require('../../shared/guichets');
+const { SERVICE_KEYS } = require('../../shared/services');
+
+const serviceKey = Joi.string().valid(...SERVICE_KEYS).allow(null);
 
 const uuid = Joi.string().guid({ version: ['uuidv4'] });
 const guichet = Joi.string().valid(...GUICHET_KEYS);
@@ -39,7 +42,7 @@ const answers = Joi.object().pattern(Joi.string().max(40), Joi.alternatives(Joi.
 // Fiche de diagnostic : les neuf informations, le service d'orientation, l'étape suivante (obligatoire).
 const diagnosis = Joi.object({
   qualification: answers.default({}),
-  recommendedServiceId: uuid.allow(null),
+  recommendedService: serviceKey,
   nextAction: Joi.string().trim().min(2).max(255).required(),
 });
 
@@ -51,7 +54,7 @@ const difficulty = Joi.object({
     nature: Joi.string().trim().min(2).max(160).required(),
     description: Joi.string().trim().min(2).max(4000).required(),
   }).required(),
-  commitmentServiceId: uuid.allow(null),
+  commitmentService: serviceKey,
   commitmentDueAt: Joi.date().iso().allow(null),
   commitmentNote: Joi.string().trim().min(2).max(2000).allow(null),
 });

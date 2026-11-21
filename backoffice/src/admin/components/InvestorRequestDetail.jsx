@@ -139,7 +139,7 @@ function QualificationInput({ field, value, onChange }) {
 function DiagnosisForm({ request, busy, saved, onSave }) {
   const fields = request.qualificationFields || [];
   const [answers, setAnswers] = useState(request.qualification || {});
-  const [serviceId, setServiceId] = useState(request.recommendedServiceId || '');
+  const [serviceId, setServiceId] = useState(request.recommendedService || '');
   const [nextAction, setNextAction] = useState(request.nextAction || '');
   return (
     <section className="data-panel stand-panel">
@@ -147,7 +147,7 @@ function DiagnosisForm({ request, busy, saved, onSave }) {
         <h2>Diagnostic</h2>
         {saved ? <span className="investor-saved">Enregistré</span> : <span className="data-note">{request.diagnosedAt ? `Réalisé le ${dateTime.format(new Date(request.diagnosedAt))}` : 'À faire'}</span>}
       </header>
-      <form className="investor-qualification" onSubmit={(event) => { event.preventDefault(); onSave({ qualification: answers, recommendedServiceId: serviceId || null, nextAction }); }}>
+      <form className="investor-qualification" onSubmit={(event) => { event.preventDefault(); onSave({ qualification: answers, recommendedService: serviceId || null, nextAction }); }}>
         <div className="investor-qualification-grid">
           {fields.map((field) => (
             <label key={field.key}>{field.label}
@@ -155,7 +155,7 @@ function DiagnosisForm({ request, busy, saved, onSave }) {
             </label>
           ))}
           <label>Service vers lequel la personne est orientée
-            <select value={serviceId} onChange={(event) => setServiceId(event.target.value)}><option value="">—</option>{(request.services || []).map((service) => <option key={service.id} value={service.id}>{service.title}</option>)}</select>
+            <select value={serviceId} onChange={(event) => setServiceId(event.target.value)}><option value="">—</option>{(request.services || []).map((service) => <option key={service.key} value={service.key}>{service.title}</option>)}</select>
           </label>
           <label>Étape suivante<input value={nextAction} onChange={(event) => setNextAction(event.target.value)} minLength={2} maxLength={255} required /></label>
         </div>
@@ -173,7 +173,7 @@ function DifficultyForm({ request, busy, saved, onSave, onResolve }) {
     regime: initial.regime || 'free_zone',
     nature: initial.nature || '',
     description: initial.description || request.projectSummary || '',
-    serviceId: request.commitmentServiceId || '',
+    serviceId: request.commitmentService || '',
     dueAt: dayToInput(request.commitmentDueAt),
     note: request.commitmentNote || '',
   });
@@ -183,7 +183,7 @@ function DifficultyForm({ request, busy, saved, onSave, onResolve }) {
     event.preventDefault();
     onSave({
       difficulty: { company: form.company, regime: form.regime, nature: form.nature, description: form.description },
-      commitmentServiceId: form.serviceId || null,
+      commitmentService: form.serviceId || null,
       commitmentDueAt: dayFromInput(form.dueAt),
       commitmentNote: form.note.trim() || null,
     });
@@ -209,7 +209,7 @@ function DifficultyForm({ request, busy, saved, onSave, onResolve }) {
         </div>
         <h3 className="investor-subtitle">Engagement de suivi écrit</h3>
         <div className="investor-qualification-grid">
-          <label>Service concerné<select value={form.serviceId} onChange={set('serviceId')}><option value="">—</option>{(request.services || []).map((service) => <option key={service.id} value={service.id}>{service.title}</option>)}</select></label>
+          <label>Service concerné<select value={form.serviceId} onChange={set('serviceId')}><option value="">—</option>{(request.services || []).map((service) => <option key={service.key} value={service.key}>{service.title}</option>)}</select></label>
           <label>Réponse au plus tard le<input type="date" value={form.dueAt} onChange={set('dueAt')} required={Boolean(form.note.trim())} /></label>
           <label className="is-wide">Engagement pris auprès de l’entreprise<textarea rows="3" value={form.note} onChange={set('note')} maxLength={2000} required={Boolean(form.dueAt)} /></label>
         </div>

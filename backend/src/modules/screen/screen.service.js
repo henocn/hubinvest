@@ -1,0 +1,65 @@
+const { Op } = require('sequelize');
+const { B2bMeeting, ChallengePassport, InvestorMeeting, StudioInvitation, Occupant } = require('../../models');
+const programEventService = require('../program-event/program-event.service');
+const settingsService = require('../settings/settings.service');
+const { SERVICE_KEYS } = require('../../shared/services');
+
+const DAY = 24 * 60 * 60 * 1000;
+const CAPSULES = 4;
+
+// Le service du jour : celui choisi dans Paramètres, sinon les six services à tour de rôle, un par jour de Foire.
+const serviceOfDay = (now = new Date()) => {
+  const chosen = settingsService.current().screenService;
+  if (chosen && SERVICE_KEYS.includes(chosen)) return chosen;
+  const first = Date.parse(`${settingsService.studioSchedule().firstDay}T00:00:00Z`);
+  const day = Math.max(0, Math.floor((now.getTime() - first) / DAY));
+  return SERVICE_KEYS[day % SERVICE_KEYS.length];
+};
+
+// Compteurs mesurés par HubInvest, sans aucune donnée personnelle.
+const counters = async () => {
+  const [players, stepsCompleted, guichetMeetings, b2bMeetings, capsules] = await Promise.all([
+    ChallengePassport.count(),
+    ChallengePassport.count({ where: { status: { [Op.in]: ['completed', 'redeemed'] } } }),
+    InvestorMeeting.count({ where: { status: { [Op.ne]: 'cancelled' } } }),
+    B2bMeeting.count({ where: { outcome: { [Op.in]: ['held_follow_up', 'held_no_follow_up'] } } }),
+    StudioInvitation.count({ where: { status: 'delivered' } }),
+  ]);
+  return { players, stepsCompleted, guichetMeetings, b2bMeetings, capsules };
+};
+
+// Dernières capsules livrées : faites pour être partagées, elles s'affichent avec le nom de l'invité.
+const latestCapsules = async () => (await StudioInvitation.findAll({
+  where: { status: 'delivered', capsuleUrl: { [Op.ne]: null } },
+  attributes: ['id', 'guestName', 'organization', 'format', 'capsuleUrl', 'deliveredAt'],
+  include: [{ model: Occupant, as: 'occupant', attributes: ['name'], required: false }],
+  order: [['deliveredAt', 'DESC']],
+  limit: CAPSULES,
+})).map((item) => ({
+  id: item.id,
+  guestName: item.guestName,
+  organization: item.organization || item.occupant?.name || null,
+  format: settingsService.studioFormatLabel(item.format),
+  url: item.capsuleUrl,
+}));
+
+// Tout ce que le grand écran du Stand affiche (document v4, M7). En mode vidéo, seulement la boucle de repli.
+const getPublic = async (now = new Date()) => {
+  const settings = settingsService.current();
+  if (settings.screenMode === 'video' && settings.screenVideoUrl) return { mode: 'video', videoUrl: settings.screenVideoUrl };
+  const [today, numbers, capsules] = await Promise.all([programEventService.getToday('fr', now), counters(), latestCapsules()]);
+  const nextInterview = today.today.find((event) => event.type === 'studio' && new Date(event.endsAt || event.startsAt) > now)
+    || today.upcoming.find((event) => event.type === 'studio')
+    || null;
+  return {
+    mode: 'live',
+    date: today.date,
+    service: serviceOfDay(now),
+    spotlight: today.spotlight,
+    nextInterview,
+    counters: numbers,
+    capsules,
+  };
+};
+
+module.exports = { getPublic, serviceOfDay };

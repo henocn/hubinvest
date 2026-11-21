@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import '@fontsource-variable/sen';
+import '@fontsource/aleo/800-italic.css';
 import './i18n';
 import './styles.css';
 import App from './App';

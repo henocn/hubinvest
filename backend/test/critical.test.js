@@ -641,33 +641,45 @@ test('le compteur des joueurs scannés reste limité à l’occupant connecté',
   );
 });
 
-test('le passage requis termine le parcours avant la remise', async (context) => {
+test('« Trouvez les 5 étapes » : quatre stands de l’Espace Industrie, puis la dernière étape au Stand API-ZF', async (context) => {
   const passport = { id: 'passport-a', code: 'ABCD2345', displayName: 'Visiteur Test', status: 'active' };
+  const passages = [];
+  const spaces = { 'industry-1': 'industry', 'industry-2': 'industry', 'industry-3': 'industry', 'industry-4': 'industry', 'industry-5': 'industry', apizf: 'apizf' };
   let saved;
-  let passageValues;
   context.mock.method(challengePassageRepository.sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));
   context.mock.method(challengePassportRepository, 'findByCodeForUpdate', async () => passport);
-  context.mock.method(challengePassageRepository, 'findExisting', async () => null);
-  context.mock.method(challengePassageRepository, 'create', async (values) => {
-    passageValues = values;
-    return values;
-  });
-  context.mock.method(challengePassageRepository, 'countByPassport', async () => 3);
-  context.mock.method(challengePassportRepository, 'update', async (_passport, values) => {
-    saved = values;
-    return { ...passport, ...values };
-  });
+  context.mock.method(challengePassageRepository, 'findExisting', async (_id, occupantId) => passages.find((item) => item.occupantId === occupantId) || null);
+  context.mock.method(challengePassageRepository, 'findOccupant', async (id) => ({ id, space: spaces[id] }));
+  context.mock.method(challengePassageRepository, 'findByPassport', async () => passages.map((item) => ({ occupant: { space: spaces[item.occupantId] } })));
+  context.mock.method(challengePassageRepository, 'create', async (values) => { passages.push(values); return values; });
+  context.mock.method(challengePassageRepository, 'countByPassport', async () => passages.length);
+  context.mock.method(challengePassportRepository, 'update', async (_passport, values) => { saved = values; Object.assign(passport, values); return passport; });
+  const scan = (occupantId) => challengePassageService.validate({ id: 'user-c', occupantId }, { code: passport.code });
 
-  const result = await challengePassageService.validate(
-    { id: 'user-c', occupantId: 'occupant-c' },
-    { code: passport.code },
-  );
+  await assert.rejects(scan('apizf'), (error) => error.code === 'CHALLENGE_APIZF_LAST');
+  for (const stand of ['industry-1', 'industry-2', 'industry-3']) assert.equal((await scan(stand)).status, 'active');
+  await assert.rejects(scan('apizf'), (error) => error.code === 'CHALLENGE_APIZF_LAST');
+  assert.equal((await scan('industry-4')).passageCount, 4);
+  await assert.rejects(scan('industry-5'), (error) => error.code === 'CHALLENGE_FINISH_AT_APIZF');
 
+  const result = await scan('apizf');
   assert.equal(result.status, 'completed');
-  assert.equal('classification' in result, false);
-  assert.equal('classification' in passageValues, false);
+  assert.equal(result.requiredPassages, 5);
   assert.equal(saved.status, 'completed');
   assert.ok(saved.completedAt instanceof Date);
+});
+
+test('la remise d’une récompense respecte le stock suivi', async (context) => {
+  const passport = { id: 'passport-b', code: 'ABCD2346', status: 'completed', passages: [] };
+  context.mock.method(sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));
+  context.mock.method(challengePassportRepository, 'findByCodeForUpdate', async () => passport);
+  context.mock.method(challengePassportRepository, 'update', async (_passport, values) => Object.assign(passport, values));
+  context.mock.method(settingsService, 'challengeRewardStock', () => 10);
+  context.mock.method(challengePassportRepository, 'countRedeemed', async () => 10);
+  await assert.rejects(challengePassportService.redeemByCode({ id: 'animator-a', role: 'animateur' }, passport.code), (error) => error.code === 'REWARD_OUT_OF_STOCK');
+
+  context.mock.method(challengePassportRepository, 'countRedeemed', async () => 9);
+  assert.equal((await challengePassportService.redeemByCode({ id: 'animator-a', role: 'animateur' }, passport.code)).status, 'redeemed');
 });
 
 test('un animateur remet par code une récompense Défis une seule fois', async (context) => {
@@ -1141,7 +1153,7 @@ test('la roue renvoie vers la page Défis et une page inconnue répond 404', asy
 test('la fiche d’un stand reprend son nom, son activité et son image', async (context) => {
   context.mock.method(seoRepository, 'findStand', async () => ({ name: 'PIA', slug: 'pia', standLabel: 'Pavillon 2', activity: 'Aménagement <industriel>', coverImageUrl: '/uploads/covers/pia.jpg' }));
   const meta = await seoService.pageMeta('/stands/pia');
-  assert.equal(meta.title, 'PIA · Stands · Hub de l’Investissement');
+  assert.equal(meta.title, 'PIA · Entreprises · Hub de l’Investissement');
   assert.match(meta.description, /^PIA au Hub de l’Investissement \(Pavillon 2\) : Aménagement/);
   assert.match(meta.image, /\/uploads\/covers\/pia\.jpg$/);
   const tags = seoService.renderTags(meta);
@@ -1178,11 +1190,12 @@ test('un module fermé depuis l’administration refuse les actions publiques', 
   assert.equal(settingsService.publicSettings().investorDeskOpen, false);
 });
 
-test('les réglages refusent un nombre de stands hors limites et une clé inconnue', () => {
-  assert.ok(settingsValidation.update.validate({ requiredPassages: 0 }).error);
+test('les réglages refusent un stock négatif, le nombre d’étapes (fixe) et une clé inconnue', () => {
+  assert.ok(settingsValidation.update.validate({ challengeRewardStock: -1 }).error);
+  assert.ok(settingsValidation.update.validate({ requiredPassages: 4 }).error);
   assert.ok(settingsValidation.update.validate({ inconnu: true }).error);
   assert.ok(settingsValidation.update.validate({}).error);
-  assert.equal(settingsValidation.update.validate({ wheelOpen: false, requiredPassages: 4 }).error, undefined);
+  assert.equal(settingsValidation.update.validate({ wheelOpen: false, challengeRewardStock: 200 }).error, undefined);
 });
 
 test('un joueur ne tourne la roue qu’une fois par jour et le code reste valable', async (context) => {
@@ -1433,9 +1446,8 @@ test('Guichets : une relance d’un contact A exige l’étape suivante et rempl
 });
 
 test('Guichets : la fiche « Mon entreprise, mes difficultés » passe en Accompagnement, envoie l’engagement écrit et se termine à la réponse', async (context) => {
-  const request = { id: 'ir-4', classification: null, status: 'new', email: 'dg@usine.tg', commitmentNote: null, commitmentDueAt: null, commitmentServiceId: null, resolvedAt: null };
+  const request = { id: 'ir-4', classification: null, status: 'new', email: 'dg@usine.tg', commitmentNote: null, commitmentDueAt: null, commitmentService: null, resolvedAt: null, language: 'fr' };
   investorSetup(context, { request });
-  context.mock.method(investorRequestRepository, 'findService', async (id) => (id === 'svc-1' ? { id, title: 'Accompagnement après implantation' } : null));
   const commitments = [];
   context.mock.method(notificationService, 'investorCommitmentChanged', (item, options = {}) => { commitments.push(options); });
   const difficulty = { company: 'Usine du Golfe', regime: 'free_zone', nature: 'Dédouanement', description: 'Retards à l’import des intrants.' };
@@ -1446,12 +1458,12 @@ test('Guichets : la fiche « Mon entreprise, mes difficultés » passe en Accomp
 
   await assert.rejects(investorRequestService.saveDifficulty('ir-4', { difficulty, commitmentNote: 'Rendez-vous avec la douane' }), (error) => error.code === 'COMMITMENT_INCOMPLETE');
   const due = new Date(Date.now() + 10 * 24 * 3600000);
-  await investorRequestService.saveDifficulty('ir-4', { difficulty, commitmentServiceId: 'svc-1', commitmentDueAt: due, commitmentNote: 'Rendez-vous avec la douane' });
+  await investorRequestService.saveDifficulty('ir-4', { difficulty, commitmentService: 'aftercare', commitmentDueAt: due, commitmentNote: 'Rendez-vous avec la douane' });
   assert.equal(request.status, 'in_progress');
   assert.deepEqual(commitments.at(-1), { notifyCompany: true, serviceTitle: 'Accompagnement après implantation' });
 
   // Même engagement réenregistré : pas de nouvel e-mail.
-  await investorRequestService.saveDifficulty('ir-4', { difficulty, commitmentServiceId: 'svc-1', commitmentDueAt: due, commitmentNote: 'Rendez-vous avec la douane' });
+  await investorRequestService.saveDifficulty('ir-4', { difficulty, commitmentService: 'aftercare', commitmentDueAt: due, commitmentNote: 'Rendez-vous avec la douane' });
   assert.equal(commitments.at(-1).notifyCompany, false);
 
   await investorRequestService.resolve('ir-4', { resolved: true });
@@ -1567,15 +1579,40 @@ test('les formats du Studio se règlent dans Paramètres ; un format inconnu ou 
   await assert.rejects(settingsService.update({ studioFormats: [{ key: 'two_minutes', label: '2 min avec…' }] }, admin), (error) => error.code === 'STUDIO_FORMAT_IN_USE');
 });
 
-test('l’accueil « Nos services » ne montre que les services et démarches publiés, sans champ interne', async (context) => {
-  const serviceService = require('../src/modules/service/service.service');
-  const serviceRepository = require('../src/modules/service/service.repository');
-  const asked = [];
-  context.mock.method(serviceRepository, 'findServices', async (publishedOnly) => { asked.push(publishedOnly); return [{ id: 's1', stage: 1, title: 'Accueil et orientation', promise: 'Diagnostic', place: 'Guichet', limited: false, published: true, position: 1 }]; });
-  context.mock.method(serviceRepository, 'findProcedures', async (publishedOnly) => { asked.push(publishedOnly); return [{ id: 'p1', title: 'Demande de Carnet Bleu', domain: 'blue_book', url: null, published: true, position: 1 }]; });
+test('un service inconnu est refusé au diagnostic et à l’engagement de suivi', async (context) => {
+  const request = { id: 'ir-5', classification: null, status: 'new', diagnosedAt: null };
+  investorSetup(context, { request });
+  await assert.rejects(investorRequestService.saveDiagnosis('ir-5', { qualification: {}, recommendedService: 'inconnu', nextAction: 'Rappeler' }), (error) => error.code === 'SERVICE_NOT_FOUND');
+  await investorRequestService.saveDiagnosis('ir-5', { qualification: {}, recommendedService: 'regimes', nextAction: 'Rappeler' });
+  assert.equal(request.recommendedService, 'regimes');
+  assert.ok(investorRequestValidation.difficulty.validate({ difficulty: { company: 'Usine', regime: 'free_zone', nature: 'Douane', description: 'Retards' }, commitmentService: 'inconnu' }).error);
+});
 
-  const result = await serviceService.getPublic('fr');
-  assert.deepEqual(asked, [true, true]);
-  assert.deepEqual(result.services, [{ id: 's1', stage: 1, title: 'Accueil et orientation', promise: 'Diagnostic', place: 'Guichet', limited: false }]);
-  assert.deepEqual(result.procedures, [{ id: 'p1', title: 'Demande de Carnet Bleu', domain: 'blue_book', url: null }]);
+test('grand écran : le service du jour tourne chaque jour, peut être imposé, et la boucle vidéo remplace tout', async (context) => {
+  const screenService = require('../src/modules/screen/screen.service');
+  const settings = { screenService: '', screenMode: 'live', screenVideoUrl: '' };
+  context.mock.method(settingsService, 'current', () => ({ ...settings }));
+  context.mock.method(settingsService, 'studioSchedule', () => ({ firstDay: '2026-11-27' }));
+  const day = (n) => new Date(Date.UTC(2026, 10, 27 + n, 10));
+  assert.equal(screenService.serviceOfDay(day(0)), 'orientation');
+  assert.equal(screenService.serviceOfDay(day(1)), 'regimes');
+  assert.equal(screenService.serviceOfDay(day(6)), 'orientation');
+  settings.screenService = 'aftercare';
+  assert.equal(screenService.serviceOfDay(day(3)), 'aftercare');
+
+  settings.screenMode = 'video';
+  settings.screenVideoUrl = 'https://videos.tg/boucle.mp4';
+  assert.deepEqual(await screenService.getPublic(), { mode: 'video', videoUrl: 'https://videos.tg/boucle.mp4' });
+});
+
+test('l’accueil servi aux moteurs contient son texte, l’événement FIL 2026 et les services ; le grand écran n’est pas indexé', async () => {
+  const seoService = require('../src/modules/seo/seo.service');
+  const home = await seoService.pageMeta('/');
+  assert.match(home.body, /Investir au Togo, nous facilitons votre réussite/);
+  assert.match(home.body, /Demande de Carnet Bleu/);
+  const graph = home.jsonLd['@graph'];
+  assert.equal(graph.find((item) => item['@type'] === 'Event').startDate, '2026-11-27');
+  assert.equal(graph.find((item) => item.hasOfferCatalog).hasOfferCatalog.itemListElement.length, 6);
+  assert.equal((await seoService.pageMeta('/ecran')).robots, 'noindex, nofollow');
+  assert.equal((await seoService.pageMeta('/investor-desk')).canonical, '/guichets/rappel');
 });

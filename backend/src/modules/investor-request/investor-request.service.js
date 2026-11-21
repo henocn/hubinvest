@@ -6,6 +6,7 @@ const { events: realtime } = require('../realtime/realtime.service');
 const settingsService = require('../settings/settings.service');
 const { slotGrid } = require('../../shared/slot-grid');
 const { guichetLocation } = require('../../shared/guichets');
+const { SERVICES, SERVICE_KEYS, serviceTitle } = require('../../shared/services');
 
 // Les guichets et le registre unique (document v4, M3). Les données restent réservées à l'API-ZF (super administrateurs).
 const plain = (value) => (value?.toJSON ? value.toJSON() : value);
@@ -125,12 +126,12 @@ const getRequest = async (id) => {
 const detail = async (id) => {
   const investorRequest = await investorRequestRepository.findDetail(id);
   if (!investorRequest) throw new AppError(404, 'INVESTOR_REQUEST_NOT_FOUND', 'Contact introuvable.');
-  const [team, services] = await Promise.all([investorRequestRepository.findTeam(), investorRequestRepository.findServices()]);
+  const team = await investorRequestRepository.findTeam();
   return {
     ...plain(investorRequest),
     qualificationFields: settingsService.investorQualificationFields(),
     team: team.map(plain),
-    services: services.map(plain),
+    services: SERVICES.map(({ key, title }) => ({ key, title })),
   };
 };
 
@@ -159,8 +160,8 @@ const assertTeamMember = async (userId) => {
   }
 };
 
-const assertService = async (serviceId) => {
-  if (serviceId && !(await investorRequestRepository.findService(serviceId))) throw new AppError(422, 'SERVICE_NOT_FOUND', 'Service introuvable.');
+const assertService = (key) => {
+  if (key && !SERVICE_KEYS.includes(key)) throw new AppError(422, 'SERVICE_NOT_FOUND', 'Service introuvable.');
 };
 
 // Fiche : coordonnées, guichet, classe et responsable ; le statut suit. Une première classe A ou B fixe la date de relance
@@ -188,12 +189,12 @@ const update = async (id, values) => {
 
 // Fiche de diagnostic (15 minutes) : les neuf informations, le service vers lequel la personne est orientée et l'étape
 // suivante, obligatoire (« Personne ne repart sans étape suivante »). La première saisie compte comme diagnostic réalisé.
-const saveDiagnosis = async (id, { qualification, recommendedServiceId = null, nextAction }) => {
+const saveDiagnosis = async (id, { qualification, recommendedService = null, nextAction }) => {
   const investorRequest = await getRequest(id);
-  await assertService(recommendedServiceId);
+  assertService(recommendedService);
   await investorRequestRepository.update(investorRequest, {
     qualification: cleanQualification(qualification),
-    recommendedServiceId,
+    recommendedService,
     nextAction,
     diagnosedAt: investorRequest.diagnosedAt || new Date(),
   });
@@ -203,19 +204,19 @@ const saveDiagnosis = async (id, { qualification, recommendedServiceId = null, n
 
 // Fiche « Mon entreprise, mes difficultés » et engagement de suivi écrit (service concerné, réponse promise, délai).
 // Le contact passe en Accompagnement ; l'engagement est envoyé à l'entreprise s'il est nouveau ou modifié.
-const saveDifficulty = async (id, { difficulty, commitmentServiceId = null, commitmentDueAt = null, commitmentNote = null }) => {
+const saveDifficulty = async (id, { difficulty, commitmentService = null, commitmentDueAt = null, commitmentNote = null }) => {
   const investorRequest = await getRequest(id);
-  await assertService(commitmentServiceId);
+  assertService(commitmentService);
   if (commitmentDueAt && new Date(commitmentDueAt).getTime() <= Date.now()) throw new AppError(422, 'COMMITMENT_DUE_IN_PAST', 'Choisissez un délai à venir.');
   if (Boolean(commitmentDueAt) !== Boolean(commitmentNote)) throw new AppError(422, 'COMMITMENT_INCOMPLETE', 'L’engagement demande un texte et un délai de réponse.');
   const commitmentChanged = Boolean(commitmentNote) && (commitmentNote !== investorRequest.commitmentNote
     || new Date(commitmentDueAt).getTime() !== new Date(investorRequest.commitmentDueAt || 0).getTime()
-    || commitmentServiceId !== investorRequest.commitmentServiceId);
+    || commitmentService !== investorRequest.commitmentService);
   await investorRequestRepository.update(investorRequest, {
     difficulty,
     classification: 'support',
     nextFollowUpAt: null,
-    commitmentServiceId,
+    commitmentService,
     commitmentDueAt,
     commitmentNote,
     ...(commitmentChanged && { resolvedAt: null }),
@@ -223,8 +224,7 @@ const saveDifficulty = async (id, { difficulty, commitmentServiceId = null, comm
   await refreshStatus(investorRequest);
   const updated = await getRequest(id);
   notificationService.investorFollowUpChanged(updated);
-  const service = commitmentServiceId ? await investorRequestRepository.findService(commitmentServiceId) : null;
-  notificationService.investorCommitmentChanged(updated, { notifyCompany: commitmentChanged, serviceTitle: service?.title || null });
+  notificationService.investorCommitmentChanged(updated, { notifyCompany: commitmentChanged, serviceTitle: serviceTitle(commitmentService, updated.language) });
   realtime.investorRequestsChanged();
   return updated;
 };

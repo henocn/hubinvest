@@ -15,14 +15,14 @@ const findNeed = (id) => (UUID.test(id) ? B2bNeed.findOne({
 
 const listStands = () => Occupant.findAll({
   where: { status: 'active' },
-  attributes: ['slug', 'updatedAt'],
+  attributes: ['name', 'slug', 'updatedAt'],
   order: [['name', 'ASC']],
 });
 
 const listNeeds = () => B2bNeed.findAll({
   where: { status: 'open' },
-  attributes: ['id', 'updatedAt'],
-  include: [{ model: Occupant, as: 'occupant', where: { status: 'active' }, required: true, attributes: [] }],
+  attributes: ['id', 'title', 'updatedAt'],
+  include: [{ model: Occupant, as: 'occupant', where: { status: 'active' }, required: true, attributes: ['name'] }],
   order: [['createdAt', 'DESC']],
 });
 

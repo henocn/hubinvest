@@ -6,6 +6,7 @@ import B2bNeedsSettings from '../components/B2bNeedsSettings';
 import WheelSettings from '../components/WheelSettings';
 import InvestorQualificationSettings from '../components/InvestorQualificationSettings';
 import StudioFormatSettings from '../components/StudioFormatSettings';
+import ScreenSettings from '../components/ScreenSettings';
 
 const modules = [
   { key: 'contactRequestsOpen', title: 'Demandes de contact aux stands' },
@@ -46,7 +47,6 @@ export default function SettingsPage({ session, onLogout }) {
   const [error, setError] = useState('');
   const [savingKey, setSavingKey] = useState('');
   const [savedKey, setSavedKey] = useState('');
-  const [passages, setPassages] = useState('');
   const [playsPerDay, setPlaysPerDay] = useState('');
   const [spinsPerCode, setSpinsPerCode] = useState('');
 
@@ -54,7 +54,6 @@ export default function SettingsPage({ session, onLogout }) {
     try {
       const data = await api.settings(session.token);
       setSettings(data);
-      setPassages(String(data.requiredPassages));
       setPlaysPerDay(String(data.wheelPlaysPerDay));
       setSpinsPerCode(String(data.wheelSpinsPerCode));
     } catch (requestError) {
@@ -72,7 +71,6 @@ export default function SettingsPage({ session, onLogout }) {
     try {
       const data = await api.updateSettings(session.token, { [key]: value });
       setSettings(data);
-      setPassages(String(data.requiredPassages));
       setPlaysPerDay(String(data.wheelPlaysPerDay));
       setSpinsPerCode(String(data.wheelSpinsPerCode));
       setSavedKey(key);
@@ -82,12 +80,6 @@ export default function SettingsPage({ session, onLogout }) {
     } finally {
       setSavingKey('');
     }
-  };
-
-  const savePassages = (event) => {
-    event.preventDefault();
-    const value = Number.parseInt(passages, 10);
-    if (Number.isInteger(value) && value >= 1 && value !== settings.requiredPassages) void save('requiredPassages', value);
   };
 
   const savePlaysPerDay = (event) => {
@@ -131,17 +123,8 @@ export default function SettingsPage({ session, onLogout }) {
           </section>
 
           <section className="data-panel settings-panel">
-            <h2>Défi de passage</h2>
-            <form className="settings-row" onSubmit={savePassages}>
-              <span>
-                <strong>Stands à visiter pour terminer le parcours</strong>
-              </span>
-              {savedKey === 'requiredPassages' && <Check className="settings-saved" size={18} aria-label="Enregistré" />}
-              <span className="settings-number">
-                <input type="number" min="1" max="50" value={passages} onChange={(event) => setPassages(event.target.value)} aria-label="Nombre de stands" />
-                <button className="button button-secondary" type="submit" disabled={savingKey === 'requiredPassages' || Number(passages) === settings.requiredPassages}>Enregistrer</button>
-              </span>
-            </form>
+            <h2>Trouvez les 5 étapes</h2>
+            <SettingField settingKey="challengeRewardStock" label="Récompenses en stock" hint="0 = stock non suivi ; à zéro restant, la remise est refusée" type="number" min="0" max="100000" value={settings.challengeRewardStock} saving={savingKey} saved={savedKey} onSave={save} />
           </section>
 
           <section className="data-panel settings-panel">
@@ -153,6 +136,8 @@ export default function SettingsPage({ session, onLogout }) {
             <SettingField settingKey="studioSlotMinutes" label="Durée d’un passage (minutes)" type="number" min="5" max="120" value={settings.studioSlotMinutes} saving={savingKey} saved={savedKey} onSave={save} />
             <StudioFormatSettings formats={settings.studioFormats} saving={savingKey === 'studioFormats'} saved={savedKey === 'studioFormats'} onSave={save} />
           </section>
+
+          <ScreenSettings settings={settings} saving={savingKey} saved={savedKey} onSave={save} />
 
           <section className="data-panel settings-panel">
             <h2>Rendez-vous B2B</h2>

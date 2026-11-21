@@ -6,13 +6,13 @@ Référence prioritaire : `APIZF-FIL2026-v4.pdf` (proposition d’octobre 2026, 
 
 Le Hub devient deux espaces : le Stand API-ZF (3 stands, 3 guichets) et l’Espace Industrie (16 stands). On parle d’« entreprises », plus d’« occupants ». Signature : « Investir au Togo, nous facilitons votre réussite. » La roue des opportunités n’est plus citée mais reste (décision du 21/11/2026).
 
-- [x] Services : les 6 services et les 12 démarches en ligne, gérés dans l’administration (rubrique Services, super administrateur) : étape, promesse, lieu, « selon disponibilités », lien officiel, ordre, publier ou masquer (M9).
+- [x] Services : les 6 services et les 12 démarches en ligne, écrits dans le code (décision du 21/11/2026 : contenu statique, une mise à jour se fait dans `frontend/src/content/services.js` et `backend/src/shared/services.js`).
 - [ ] Liens des 12 démarches vers la plateforme officielle : adresses à obtenir de l’API-ZF.
 - [ ] Brochure « Investir au Togo en 5 étapes » et Investor Pack : fichiers à déposer dans l’administration et à proposer par QR code.
 - [~] Accueil « Nos services » (fait : signature, trois actions vers les guichets et les Défis, 5 étapes et leurs services, démarches en ligne ; reste : brochure, plan) : 6 services, 12 démarches avec lien vers la plateforme officielle, brochure « 5 étapes » ; puis programme, entreprises, plan ; boutons « Prendre rendez-vous », « Être recontacté », « Jouer » (M1).
 - [x] Guichets et registre unique (fait le 21/11/2026 ; reste à confirmer les neuf informations du diagnostic et les heures d’ouverture des guichets) : rendez-vous aux 3 guichets, fiche de diagnostic en 15 minutes, fiche « Mon entreprise, mes difficultés », A·B·C en neuf informations, un responsable par contact, alerte A sous 48 h, classe « Accompagnement » (M3).
-- [ ] Défis : parcours « Trouvez les 5 étapes », chaque étape sur un stand de l’Espace Industrie, la dernière au Stand API-ZF (M6).
-- [ ] Grand écran : service du jour, entreprise à la une, prochaine interview, compteurs, capsules (M7).
+- [x] Défis : parcours « Trouvez les 5 étapes » (fait le 21/11/2026 ; reste à marquer le stand de l’API-ZF « Stand API-ZF » dans sa fiche et à saisir le stock de récompenses), chaque étape sur un stand de l’Espace Industrie, la dernière au Stand API-ZF (M6).
+- [x] Grand écran (`/ecran`, fait le 21/11/2026) : service du jour (à tour de rôle ou imposé dans Paramètres), entreprise à la une et prochaine interview tirées du programme, quatre compteurs mesurés, dernières capsules avec QR, boucle vidéo de repli (M7). Reste : tester sur l’écran réel du Stand.
 - [ ] Tableau de bord : diagnostics et sollicitations d’accompagnement ; huit indicateurs ; rapport PDF par entreprise avant le 18 décembre (M8).
 - [ ] Vocabulaire : entreprises, Stand API-ZF, Espace Industrie, nouvelle signature.
 - [ ] À confirmer : dates superposées dans le PDF (28 octobre / 26 novembre) pour le pré-lancement et l’ouverture des rendez-vous aux guichets.
@@ -67,7 +67,8 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 - [ ] Google Search Console et Bing Webmaster Tools : valider le domaine hub.investir.tg et soumettre le sitemap (compte API-ZF).
 - [ ] Lien vers hub.investir.tg depuis investir.tg et les réseaux de l'API-ZF : c'est le premier levier de visibilité.
 - [ ] Inciter chaque occupant à remplir son activité : c'est la description de sa fiche dans Google.
-- [ ] Données structurées « Event » quand les dates et le lieu de la Foire sont confirmés.
+- [x] Données structurées « Event » FIL 2026 (27 novembre – 13 décembre, pavillon Oti) et catalogue des six services de l’API-ZF sur l’accueil (21/11/2026).
+- [x] Titres et descriptions au vocabulaire v4 et aux recherches visées (investir au Togo, API-ZF, Zone Franche, Code des investissements, Carnet Bleu, FIL 2026) ; texte de la page servi dans le HTML pour l’accueil, les guichets, les entreprises, les besoins B2B et chaque fiche ; grand écran en `noindex`.
 
 ## Notifications asynchrones (e-mail et push)
 

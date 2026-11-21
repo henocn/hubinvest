@@ -5,7 +5,7 @@ const publicPassageInclude = [{
   model: ChallengePassage,
   as: 'passages',
   attributes: ['id', 'createdAt'],
-  include: [{ model: Occupant, as: 'occupant', attributes: ['id', 'name', 'standLabel'] }],
+  include: [{ model: Occupant, as: 'occupant', attributes: ['id', 'name', 'standLabel', 'space'] }],
 }];
 
 const managerPassageInclude = [{
@@ -13,7 +13,7 @@ const managerPassageInclude = [{
   as: 'passages',
   attributes: ['id', 'createdAt'],
   include: [
-    { model: Occupant, as: 'occupant', attributes: ['id', 'name', 'standLabel'] },
+    { model: Occupant, as: 'occupant', attributes: ['id', 'name', 'standLabel', 'space'] },
     { model: User, as: 'validatedBy', attributes: ['id', 'firstName', 'lastName'] },
   ],
 }];
@@ -80,6 +80,8 @@ const findRedeemed = () => ChallengePassport.findAll({
 });
 
 // Retrouve seulement l'identifiant d'un parcours à partir de son lien personnel.
+const countRedeemed = (transaction) => ChallengePassport.count({ where: { status: 'redeemed' }, transaction });
+
 const findIdByToken = (token) => ChallengePassport.findOne({ where: { token }, attributes: ['id'] });
 
 // Liste les stands qui ont validé un passage de ce parcours.
@@ -97,6 +99,7 @@ const findById = (id) => ChallengePassport.findByPk(id, { attributes: ['id'] });
 const remove = (passport) => passport.destroy();
 
 module.exports = {
+  countRedeemed,
   search,
   findById,
   remove,

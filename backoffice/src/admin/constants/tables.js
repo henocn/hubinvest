@@ -115,7 +115,7 @@ export const tableSettings = {
     ],
   },
   challenges: {
-    sorts: [...sorts((item) => item.createdAt, (item) => item.displayName), { value: 'scans', label: 'Plus de stands', compare: (a, b) => (b.passageCount || 0) - (a.passageCount || 0) }],
+    sorts: [...sorts((item) => item.createdAt, (item) => item.displayName), { value: 'scans', label: 'Plus d’étapes', compare: (a, b) => (b.passageCount || 0) - (a.passageCount || 0) }],
     exportName: 'participants',
     columns: () => [
       { header: 'Inscrit le', value: (item) => formatDate(item.createdAt), width: 18 },
@@ -123,7 +123,7 @@ export const tableSettings = {
       { header: 'E-mail', value: (item) => item.email, width: 30 },
       { header: 'Téléphone', value: (item) => item.phone || item.contact, width: 18 },
       { header: 'Code', value: (item) => item.code, width: 10 },
-      { header: 'Stands validés', value: (item) => item.passageCount || 0, width: 15 },
+      { header: 'Étapes trouvées', value: (item) => item.passageCount || 0, width: 15 },
       { header: 'Stands visités', value: passageList, width: 60 },
       { header: 'Parcours', value: (item) => challengeStatusLabels[item.status] || item.status, width: 16 },
       { header: 'Récompense remise le', value: (item) => formatDate(item.redeemedAt), width: 20 },

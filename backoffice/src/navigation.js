@@ -1,10 +1,8 @@
-import { BriefcaseBusiness, Building2, ClipboardList, CalendarDays, Clapperboard, Disc3, Gift, Handshake, LayoutDashboard, MessageCircleQuestion, ScanLine, SlidersHorizontal, Trophy, Users } from 'lucide-react';
+import { BriefcaseBusiness, Building2, CalendarDays, Clapperboard, Disc3, Gift, Handshake, LayoutDashboard, MessageCircleQuestion, ScanLine, SlidersHorizontal, Trophy, Users } from 'lucide-react';
 
 // Rubriques de l'administration : chaque section a sa propre adresse.
 // « tab » place la rubrique dans la barre du bas sur téléphone (quatre au plus) ; les autres restent dans le menu.
 export const adminSections = [
-  // Les six services de l'API-ZF et les douze démarches en ligne (accueil « Nos services »).
-  { section: 'services', path: '/services', label: 'Services', Icon: ClipboardList, superOnly: true },
   { section: 'occupants', path: '/stands', label: 'Stands', Icon: Building2, superOnly: true, tab: true },
   { section: 'users', path: '/utilisateurs', label: 'Utilisateurs', Icon: Users, superOnly: true },
   { section: 'program', path: '/programme', label: 'Programme', Icon: CalendarDays, superOnly: true },

@@ -78,7 +78,7 @@ function HomeHero({ data, formats, now }) {
       <div className="public-container">
         <div className="home-hero-heading">
           <p className="home-hero-date">{formats.day.format(data ? new Date(data.date) : new Date(now))}</p>
-          <h1>{t('home.signature')}</h1>
+          <h1><em className="accroche">{t('home.signatureLead')}</em> {t('home.signatureRest')}</h1>
         </div>
         <nav className="home-hero-actions" aria-label={t('home.actions')}>
           <Link className="button button-primary" to="/guichets"><CalendarCheck size={18} aria-hidden="true" />{t('home.book')}</Link>
@@ -193,7 +193,6 @@ export default function HomePage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [offer, setOffer] = useState(null);
   const now = useNow();
   const formats = useHubFormats(i18n.resolvedLanguage);
 
@@ -225,20 +224,13 @@ export default function HomePage() {
     };
   }, [t]);
 
-  // Les services changent rarement : chargés une fois, dans la langue du visiteur ; un échec n'empêche pas le programme.
-  useEffect(() => {
-    let active = true;
-    api.publicServices().then((result) => { if (active) setOffer(result); }).catch(() => {});
-    return () => { active = false; };
-  }, [i18n.resolvedLanguage]);
-
   const isEmpty = data && !data.spotlight && data.today.length === 0 && data.upcoming.length === 0;
 
   return (
     <>
       <HomeHero data={data} formats={formats} now={now} />
       <main className="public-container home-main">
-        {offer && <HomeServices services={offer.services} procedures={offer.procedures} />}
+        <HomeServices />
         {loading && <p className="public-message">{t('home.loading')}</p>}
         {error && <div className="public-message is-error"><p>{error}</p></div>}
         {!loading && !error && isEmpty && (

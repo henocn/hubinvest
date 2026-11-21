@@ -5,6 +5,8 @@
   font-synthesis: none;
   --font-display: 'Sen Variable', Sen, Arial, sans-serif;
   --font-body: Arial, Helvetica, sans-serif;
+  --font-accroche: Aleo, Georgia, serif;
+  --filet: rgba(15, 24, 34, 0.15);
   --ink: #0f1822;
   --green: #156c53;
   --green-dark: #005b3f;
@@ -79,7 +81,7 @@ select {
   width: 100%;
   min-height: 48px;
   border: 1px solid #abb1af;
-  border-radius: 10px;
+  border-radius: 0;
   padding: 11px 13px;
   color: #0f1822;
   background: #fff;
@@ -107,11 +109,12 @@ select:focus {
 
 .button {
   min-height: 48px;
+  text-decoration: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 9px;
-  border-radius: 10px;
+  border-radius: 0;
   padding: 0 22px;
   border: 1px solid transparent;
   font-weight: 700;
@@ -187,11 +190,24 @@ select:focus {
 
 /* Co-marquage en pied de page : l'API-ZF à 60 % de la hauteur du logo du Hub. */
 .brand-footer {
+  display: grid;
+  gap: 24px;
+  padding: 0 0 30px;
+}
+
+/* Mosaïque de la charte en bandeau : jamais de texte dessus. */
+.brand-band {
+  display: block;
+  height: clamp(12px, 2.4vw, 22px);
+  background: url('./assets/brand/pattern-bandeau.png') left center / auto 100% repeat-x;
+}
+
+.brand-footer-sign {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 12px;
-  padding: 26px 20px 30px;
+  padding-inline: 20px;
 }
 
 .brand-footer small {

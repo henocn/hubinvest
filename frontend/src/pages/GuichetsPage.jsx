@@ -33,8 +33,9 @@ export default function GuichetsPage({ mode = 'book' }) {
           {!guichet ? (
             <div className="guichet-choice" role="group" aria-labelledby="guichet-choice-title">
               <h2 id="guichet-choice-title">{t('guichets.choose')}</h2>
-              {GUICHETS.map((key) => (
+              {GUICHETS.map((key, index) => (
                 <button key={key} type="button" onClick={() => setGuichet(key)}>
+                  <span className="guichet-number">{t('guichets.number', { number: index + 1 })}</span>
                   <strong>{t(`guichets.names.${key}`)}</strong>
                   <small>{t(`guichets.hints.${key}`)}</small>
                 </button>

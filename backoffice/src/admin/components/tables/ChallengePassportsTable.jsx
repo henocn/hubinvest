@@ -18,7 +18,7 @@ export default function ChallengePassportsTable({ selection, passports, query, o
   return (
     <div className="table-scroll">
       <table>
-        <thead><tr><SelectAllHeader selection={selection} /><th>Participant</th><th>Code</th><th>Scans</th><th className="reward-heading">Récompense</th>{allowReward && <th className="actions-heading">Actions</th>}</tr></thead>
+        <thead><tr><SelectAllHeader selection={selection} /><th>Participant</th><th>Code</th><th>Étapes</th><th className="reward-heading">Récompense</th>{allowReward && <th className="actions-heading">Actions</th>}</tr></thead>
         <tbody>{passports.map((passport) => {
           const passages = passport.passages || [];
           const rewardReceived = passport.status === 'redeemed';

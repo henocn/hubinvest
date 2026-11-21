@@ -1,3 +1,5 @@
+const { OCCUPANT_SPACES } = require('../shared/challenge-steps');
+
 module.exports = (sequelize, DataTypes) =>
   sequelize.define(
     'Occupant',
@@ -53,6 +55,13 @@ module.exports = (sequelize, DataTypes) =>
         type: DataTypes.JSONB,
         allowNull: false,
         defaultValue: [],
+      },
+      // Espace Industrie (industry) ou Stand API-ZF (apizf) : décide des étapes du parcours qu'il valide.
+      space: {
+        type: DataTypes.STRING(20),
+        allowNull: false,
+        defaultValue: 'industry',
+        validate: { isIn: [OCCUPANT_SPACES] },
       },
       status: {
         type: DataTypes.STRING(20),

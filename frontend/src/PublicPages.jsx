@@ -12,6 +12,7 @@ import StandListPage from './pages/StandListPage';
 import StudioInvitationPage from './pages/StudioInvitationPage';
 import ChallengePage from './pages/ChallengePage';
 import MeetingsPage from './pages/MeetingsPage';
+import ScreenPage from './pages/ScreenPage';
 import { setPageTitle, titleForPath } from './lib/page-title';
 import './public.css';
 
@@ -26,6 +27,9 @@ export default function PublicPages({ path }) {
   const b2bDetail = path.match(/^\/b2b\/([a-f0-9-]+)$/i);
   const studioInvitation = path.match(/^\/studio\/([a-f0-9]{64})$/i);
   const challengePassport = path.match(/^\/defis\/([a-f0-9]{64})$/i);
+
+  // Grand écran du Stand : plein écran, sans en-tête, menu ni pied de page.
+  if (path === '/ecran') return <ScreenPage />;
 
   let page;
 

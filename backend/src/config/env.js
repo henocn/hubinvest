@@ -76,9 +76,6 @@ module.exports = {
     maxStreams: integer(process.env.REALTIME_MAX_STREAMS, 2000),
   },
   corsOrigins: list(process.env.CORS_ORIGINS),
-  challenge: {
-    requiredPassages: integer(process.env.CHALLENGE_REQUIRED_PASSAGES, 3),
-  },
   translation: {
     deeplAuthKey: process.env.DEEPL_AUTH_KEY || '',
   },

@@ -1,4 +1,5 @@
 const Joi = require('joi');
+const { SERVICE_KEYS } = require('../../shared/services');
 
 // Heure de la journée au format HH:MM (heure de Lomé).
 const timeOfDay = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -12,7 +13,10 @@ const update = Joi.object({
   challengeOpen: Joi.boolean(),
   wheelOpen: Joi.boolean(),
   liveQuestionsOpen: Joi.boolean(),
-  requiredPassages: Joi.number().integer().min(1).max(50),
+  screenMode: Joi.string().valid('live', 'video'),
+  screenService: Joi.string().valid('', ...SERVICE_KEYS),
+  screenVideoUrl: Joi.string().trim().uri({ scheme: ['http', 'https'] }).max(500).allow(''),
+  challengeRewardStock: Joi.number().integer().min(0).max(100000),
   wheelPlaysPerDay: Joi.number().integer().min(0).max(20),
   wheelSpinsPerCode: Joi.number().integer().min(1).max(20),
   b2bTables: Joi.number().integer().min(1).max(50),

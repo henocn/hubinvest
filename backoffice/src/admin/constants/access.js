@@ -30,6 +30,8 @@ export const investorStatusLabel = (item) => (item.classification === 'support' 
 export const programTypeLabels = { spotlight: 'À l’affiche', highlight: 'Temps fort', animation: 'Animation', studio: 'Studio', talk: 'Prise de parole' };
 export const challengeStatusLabels = { active: 'En cours', completed: 'Terminé', redeemed: 'Récompensé(e)' };
 // Site public (QR codes, liens des fiches) : jamais l'adresse de l'espace équipe.
+// Les six services de l'API-ZF (contenu statique, même liste que backend/src/shared/services.js).
+export const serviceTitles = { orientation: 'Accueil et orientation', regimes: 'Régimes d’investissement', facilitation: 'Facilitation administrative', industrial_site: 'Implantation industrielle', aftercare: 'Accompagnement après implantation', partnerships: 'Opportunités et partenariats' };
 export const publicBaseUrl = (import.meta.env.VITE_PUBLIC_URL || 'https://hub.investir.tg').replace(/\/$/, '');
 
 // Issue d'un tour de roue : perdu, lot à remettre ou lot remis.

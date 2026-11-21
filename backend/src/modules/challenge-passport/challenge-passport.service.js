@@ -111,6 +111,10 @@ const redeemPassport = async (user, passport, transaction) => {
   if (!passport) throw new AppError(404, 'CHALLENGE_PASSPORT_NOT_FOUND', 'Parcours introuvable.');
   if (passport.status === 'active') throw new AppError(409, 'CHALLENGE_NOT_COMPLETED', 'Le parcours n’est pas encore terminé.');
   if (passport.status === 'redeemed') throw new AppError(409, 'REWARD_ALREADY_REDEEMED', 'La récompense a déjà été remise.');
+  const stock = settingsService.challengeRewardStock();
+  if (stock && (await challengePassportRepository.countRedeemed(transaction)) >= stock) {
+    throw new AppError(409, 'REWARD_OUT_OF_STOCK', 'Il ne reste plus de récompense en stock.');
+  }
 
   const updated = await challengePassportRepository.update(passport, {
     status: 'redeemed',
