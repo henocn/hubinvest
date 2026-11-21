@@ -8,6 +8,7 @@ const titles = {
   '/guichets': `Les guichets du Stand API-ZF · ${SITE_NAME}`,
   '/guichets/rappel': `Les guichets du Stand API-ZF · ${SITE_NAME}`,
   '/investor-desk': `Les guichets du Stand API-ZF · ${SITE_NAME}`,
+  '/ecran': `Grand écran · ${SITE_NAME}`,
   '/rencontres': `Rencontres professionnelles · ${SITE_NAME}`,
   '/b2b': `Besoins B2B des exposants · ${SITE_NAME}`,
   '/defis': `Défis et roue des opportunités · ${SITE_NAME}`,

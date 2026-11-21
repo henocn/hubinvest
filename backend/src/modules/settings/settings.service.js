@@ -17,6 +17,10 @@ const MODULES = Object.freeze({
 
 const defaults = () => ({
   ...Object.fromEntries(Object.keys(MODULES).map((key) => [key, true])),
+  // Grand écran du Stand : en direct (live) ou boucle vidéo de repli (video) ; service du jour choisi ('' = à tour de rôle).
+  screenMode: 'live',
+  screenService: '',
+  screenVideoUrl: '',
   // Récompenses du parcours en stock (document v4 : « récompenses à stock suivi ») ; 0 = stock non suivi.
   challengeRewardStock: 0,
   // Parties de roue par joueur et par jour ; 0 = sans limite.

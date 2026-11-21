@@ -3123,3 +3123,250 @@ main h1:not(.sr-only)::before {
 .play-game .challenge-steps li::before {
   content: none;
 }
+
+/* Grand écran du Stand API-ZF (16:9) : fond vert, panneau du service du jour, colonne de droite, compteurs et capsules.
+   Les tailles suivent la largeur de l'écran pour rester lisibles de loin. */
+.screen {
+  height: 100vh;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  gap: 1.6vw;
+  padding: 1.4vw 2.4vw calc(1.2vw + 1.4vw);
+  position: relative;
+  color: #fff;
+  background: var(--green);
+  font-size: 1.2vw;
+}
+
+.screen.is-video {
+  display: block;
+  padding: 0;
+  background: #000;
+}
+
+.screen.is-video video {
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+}
+
+.screen-top {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 2vw;
+}
+
+.screen-top img {
+  height: 3.4vw;
+}
+
+.screen-date {
+  margin-left: auto;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 1.4vw;
+  font-weight: 700;
+}
+
+.screen-date::first-letter {
+  text-transform: uppercase;
+}
+
+.screen-clock {
+  font-family: var(--font-display);
+  font-size: 2.6vw;
+  font-variant-numeric: tabular-nums;
+}
+
+.screen-label {
+  display: block;
+  margin-bottom: 0.8vw;
+  color: var(--yellow);
+  font-family: var(--font-display);
+  font-size: 1vw;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.screen-service {
+  display: grid;
+  align-content: center;
+  padding: 2.4vw;
+  border-top: 0.5vw solid var(--yellow);
+  background: var(--green-dark);
+}
+
+.screen-service h1 {
+  margin: 0 0 1vw;
+  color: #fff;
+  font-size: 3.8vw;
+  line-height: 1.05;
+}
+
+.screen-service p {
+  margin: 0 0 1.6vw;
+  font-size: 1.7vw;
+  line-height: 1.4;
+}
+
+.screen-place {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6vw;
+  color: var(--yellow);
+  font-size: 1.3vw;
+  font-weight: 700;
+}
+
+.screen-place svg {
+  flex: none;
+  width: 1.5vw;
+  height: 1.5vw;
+}
+
+.screen-side {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  gap: 1.6vw;
+}
+
+.screen-block {
+  display: grid;
+  align-content: center;
+  padding: 1.8vw;
+  color: var(--ink);
+  background: #fff;
+}
+
+.screen-block .screen-label,
+.screen-capsules .screen-label {
+  color: var(--green);
+}
+
+.screen-company,
+.screen-interview {
+  display: flex;
+  align-items: center;
+  gap: 1.2vw;
+}
+
+.screen-company img {
+  width: 5vw;
+  height: 5vw;
+  object-fit: contain;
+}
+
+.screen-interview svg {
+  flex: none;
+  width: 3vw;
+  height: 3vw;
+  color: var(--red);
+}
+
+.screen-company span,
+.screen-interview span,
+.screen-capsules li span {
+  min-width: 0;
+  display: grid;
+  gap: 0.3vw;
+}
+
+.screen-company strong,
+.screen-interview strong {
+  font-family: var(--font-display);
+  font-size: 2.2vw;
+  line-height: 1.1;
+}
+
+.screen-company small,
+.screen-interview small {
+  color: var(--muted);
+  font-size: 1.3vw;
+}
+
+.screen-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.3vw;
+}
+
+.screen-counters {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.6vw;
+}
+
+.screen-counters div {
+  display: grid;
+  gap: 0.3vw;
+  padding-top: 0.8vw;
+  border-top: 2px solid rgba(255, 255, 255, 0.35);
+}
+
+.screen-counters strong {
+  color: var(--yellow);
+  font-family: var(--font-display);
+  font-size: 3.4vw;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.screen-counters span {
+  font-size: 1.2vw;
+  font-weight: 700;
+}
+
+.screen-capsules {
+  grid-column: 1 / -1;
+  padding: 1.4vw 1.8vw;
+  color: var(--ink);
+  background: #fff;
+}
+
+.screen-capsules ul {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.6vw;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.screen-capsules li {
+  display: flex;
+  align-items: center;
+  gap: 0.9vw;
+}
+
+.screen-qr {
+  flex: none;
+  width: 5vw;
+  height: 5vw;
+}
+
+.screen-capsules strong {
+  font-size: 1.2vw;
+}
+
+.screen-capsules small {
+  color: var(--muted);
+  font-size: 1vw;
+}
+
+.screen-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1.4vw;
+  background: url('./assets/brand/pattern-bandeau.png') left center / auto 100% repeat-x;
+}
+
+/* main h1 du site : pas de filet jaune sur l'écran, le panneau a déjà sa barre. */
+.screen h1:not(.sr-only)::before {
+  content: none;
+}

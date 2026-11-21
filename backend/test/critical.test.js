@@ -1587,3 +1587,20 @@ test('un service inconnu est refusé au diagnostic et à l’engagement de suivi
   assert.equal(request.recommendedService, 'regimes');
   assert.ok(investorRequestValidation.difficulty.validate({ difficulty: { company: 'Usine', regime: 'free_zone', nature: 'Douane', description: 'Retards' }, commitmentService: 'inconnu' }).error);
 });
+
+test('grand écran : le service du jour tourne chaque jour, peut être imposé, et la boucle vidéo remplace tout', async (context) => {
+  const screenService = require('../src/modules/screen/screen.service');
+  const settings = { screenService: '', screenMode: 'live', screenVideoUrl: '' };
+  context.mock.method(settingsService, 'current', () => ({ ...settings }));
+  context.mock.method(settingsService, 'studioSchedule', () => ({ firstDay: '2026-11-27' }));
+  const day = (n) => new Date(Date.UTC(2026, 10, 27 + n, 10));
+  assert.equal(screenService.serviceOfDay(day(0)), 'orientation');
+  assert.equal(screenService.serviceOfDay(day(1)), 'regimes');
+  assert.equal(screenService.serviceOfDay(day(6)), 'orientation');
+  settings.screenService = 'aftercare';
+  assert.equal(screenService.serviceOfDay(day(3)), 'aftercare');
+
+  settings.screenMode = 'video';
+  settings.screenVideoUrl = 'https://videos.tg/boucle.mp4';
+  assert.deepEqual(await screenService.getPublic(), { mode: 'video', videoUrl: 'https://videos.tg/boucle.mp4' });
+});

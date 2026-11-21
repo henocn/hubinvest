@@ -6,6 +6,7 @@ import B2bNeedsSettings from '../components/B2bNeedsSettings';
 import WheelSettings from '../components/WheelSettings';
 import InvestorQualificationSettings from '../components/InvestorQualificationSettings';
 import StudioFormatSettings from '../components/StudioFormatSettings';
+import ScreenSettings from '../components/ScreenSettings';
 
 const modules = [
   { key: 'contactRequestsOpen', title: 'Demandes de contact aux stands' },
@@ -135,6 +136,8 @@ export default function SettingsPage({ session, onLogout }) {
             <SettingField settingKey="studioSlotMinutes" label="Durée d’un passage (minutes)" type="number" min="5" max="120" value={settings.studioSlotMinutes} saving={savingKey} saved={savedKey} onSave={save} />
             <StudioFormatSettings formats={settings.studioFormats} saving={savingKey === 'studioFormats'} saved={savedKey === 'studioFormats'} onSave={save} />
           </section>
+
+          <ScreenSettings settings={settings} saving={savingKey} saved={savedKey} onSave={save} />
 
           <section className="data-panel settings-panel">
             <h2>Rendez-vous B2B</h2>

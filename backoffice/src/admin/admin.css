@@ -427,3 +427,6 @@
 .admin-app .section-tabs b, .team-badge { border-radius: 999px; }
 .admin-app .settings-switch::after { border-radius: 0; }
 .admin-app .workspace-header > h1::before { content: ''; display: block; width: 32px; height: 4px; margin-bottom: 8px; background: var(--yellow, #ffcf15); }
+
+/* Adresse de la vidéo de repli du grand écran : un champ large, aligné à gauche. */
+.admin-app .settings-number input[type='url'] { width: min(320px, 50vw); text-align: left; }
