@@ -107,10 +107,8 @@ export default {
   },
   meetings: {
     title: "Rencontres",
-    b2bTitle: "Rencontres B2B",
-    b2bText: "Consultez les besoins publiés par les structures et proposez une rencontre.",
-    deskTitle: "Les guichets de l’API-ZF",
-    deskText: "Prenez rendez-vous au Stand API-ZF ou demandez à être recontacté.",
+    b2bTile: "Proposer une rencontre B2B",
+    deskTile: "Rendez-vous aux guichets de l’API-ZF",
   },
   b2b: {
     title: "Les besoins B2B",

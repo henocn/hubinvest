@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Disc3, QrCode, Route } from 'lucide-react';
 import ChallengeProgress from '../components/ChallengeProgress';
+import PlayCard from '../components/PlayCard';
 import PlayCta from '../components/PlayCta';
 import PlayerIdentifyDialog from '../components/PlayerIdentifyDialog';
 import ScanMeDialog from '../components/ScanMeDialog';
@@ -13,23 +14,6 @@ import { clearChallengePassportToken, readChallengePassportToken, saveChallengeP
 import { publicErrorMessage } from '../lib/public-error';
 import { useSiteSettings } from '../lib/settings';
 import { useRealtimeConnected, useRealtimeConnection, useRealtimeEvent } from '../lib/realtime';
-
-// Présente un jeu des Défis : ce qu'on y gagne et comment y jouer.
-function GameCard({ icon: Icon, tone, title, text, steps, doneSteps = 0, badge, action, children }) {
-  return (
-    <article className={`play-game is-${tone}`}>
-      <div className="play-game-top">
-        <span className="play-game-icon" aria-hidden="true"><Icon size={26} /></span>
-        {badge}
-      </div>
-      <h2>{title}</h2>
-      <p>{text}</p>
-      <ol>{steps.map((step, index) => <li key={step} className={index < doneSteps ? 'is-done' : undefined}>{step}</li>)}</ol>
-      {children}
-      {action}
-    </article>
-  );
-}
 
 export default function ChallengePage({ token, openWheel = false }) {
   const { t } = useTranslation();
@@ -163,7 +147,7 @@ export default function ChallengePage({ token, openWheel = false }) {
 
       {!loading && (
         <div className="play-games">
-          <GameCard
+          <PlayCard
             icon={Route}
             tone="route"
             title={t('play.routeTitle')}
@@ -174,8 +158,8 @@ export default function ChallengePage({ token, openWheel = false }) {
             action={hasPassport && <button className="button button-secondary" type="button" onClick={() => setScanOpen(true)}><QrCode size={18} />{t('play.routeAction')}</button>}
           >
             {hasPassport && <ChallengeProgress passport={passport} />}
-          </GameCard>
-          <GameCard
+          </PlayCard>
+          <PlayCard
             icon={Disc3}
             tone="wheel"
             title={t('wheel.title')}
