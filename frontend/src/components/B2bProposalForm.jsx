@@ -8,7 +8,7 @@ import { isValidPhone, toInternationalPhone } from '../lib/phone';
 
 export default function B2bProposalForm({ need }) {
   const { t } = useTranslation();
-  const [form, setForm] = useState({ message: '', fullName: '', email: '', phone: '', consentOccupant: false });
+  const [form, setForm] = useState({ message: '', fullName: '', email: '', phone: '' });
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [phoneChecked, setPhoneChecked] = useState(false);
@@ -28,7 +28,7 @@ export default function B2bProposalForm({ need }) {
     setLoading(true);
     setError('');
     try {
-      await api.createB2bProposal(need.id, { ...form, phone: toInternationalPhone(form.phone) });
+      await api.createB2bProposal(need.id, { ...form, phone: toInternationalPhone(form.phone), consentOccupant: true });
       setReceived(true);
     } catch (requestError) {
       setError(publicErrorMessage(t, requestError));
@@ -57,7 +57,6 @@ export default function B2bProposalForm({ need }) {
             <label>{t('fields.email')}<input type="email" value={form.email} onChange={(event) => field('email', event.target.value)} maxLength={180} autoComplete="email" required /></label>
             <PhoneField value={form.phone} onChange={(phone) => field('phone', phone)} showError={phoneChecked} />
           </div>
-          <label className="request-consent investor-consent"><input type="checkbox" checked={form.consentOccupant} onChange={(event) => field('consentOccupant', event.target.checked)} required /><span>{t('b2b.consent', { name: need.occupant.name })}</span></label>
           {error && <p className="request-error" role="alert">{error}</p>}
           <div className="investor-form-actions"><button className="button button-secondary" type="button" onClick={() => setStep(1)} disabled={loading}>{t('common.back')}</button><button className="button button-primary" type="submit" disabled={loading}>{loading ? t('common.sending') : t('common.send')}</button></div>
         </div>

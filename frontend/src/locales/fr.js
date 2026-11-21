@@ -124,7 +124,6 @@ export default {
     details: "Vos coordonnées",
     successTitle: "Proposition transmise",
     successText: "{{name}} peut maintenant étudier votre demande.",
-    consent: "J’accepte que {{name}} utilise mes coordonnées pour répondre à cette proposition.",
   },
   investor: {
     question: "Que souhaitez-vous réaliser ?",

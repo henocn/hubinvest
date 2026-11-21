@@ -124,7 +124,6 @@ export default {
     details: "Your contact details",
     successTitle: "Proposal sent",
     successText: "{{name}} can now review your request.",
-    consent: "I agree that {{name}} may use my contact details to respond to this proposal.",
   },
   investor: {
     question: "What would you like to achieve?",
