@@ -1,6 +1,7 @@
 const { Op } = require('sequelize');
 const AppError = require('../../shared/app-error');
 const roles = require('../../shared/roles');
+const settingsService = require('../settings/settings.service');
 const {
   B2bNeed, B2bProposal, ChallengePassage, ChallengePassport, Contact, InvestorRequest, Occupant, StudioInvitation, WheelPlay,
 } = require('../../models');
@@ -19,6 +20,13 @@ const countPassports = (occupantId, where = {}) => ChallengePassport.count({
   col: 'id',
   ...(occupantId && { include: [{ model: ChallengePassage, as: 'passages', attributes: [], where: { occupantId }, required: true }] }),
 });
+
+// Stock de récompenses du parcours, commun à tout le salon (null quand il n'est pas suivi).
+const rewardStock = async () => {
+  const stock = settingsService.challengeRewardStock();
+  if (!stock) return { rewardStock: null, rewardsLeft: null };
+  return { rewardStock: stock, rewardsLeft: Math.max(0, stock - await ChallengePassport.count({ where: { status: 'redeemed' } })) };
+};
 
 /**
  * Chiffres du tableau de bord et compteurs « à traiter » du menu.
@@ -60,7 +68,7 @@ const overview = async (user) => {
   const result = {
     b2b: { pendingProposals: b2bPending, openNeeds: b2bOpenNeeds },
     studio: { pending: studioPending, confirmed: studioConfirmed },
-    challenges: { players, rewardsToHand, rewardsHanded },
+    challenges: { players, rewardsToHand, rewardsHanded, ...(await rewardStock()) },
     wheel: { played: wheelPlayed, playedToday: wheelPlayedToday, prizesToHand: wheelToHand },
   };
 

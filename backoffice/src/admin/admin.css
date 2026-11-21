@@ -34,18 +34,18 @@
 
 .admin-app .form-stack, .admin-app .drawer-form { display: flex; flex-direction: column; gap: 19px; }
 .admin-app label { display: flex; flex-direction: column; gap: 8px; color: #43464a; font-size: 13px; font-weight: 650; }
-.admin-app input, .admin-app select, .admin-app textarea { width: 100%; border: 1px solid #c9cccf; border-radius: 4px; padding: 8px 10px; color: var(--ink); background: #fff; outline: none; transition: border-color .15s, box-shadow .15s; }
+.admin-app input, .admin-app select, .admin-app textarea { width: 100%; border: 1px solid #c9cccf; border-radius: 0; padding: 8px 10px; color: var(--ink); background: #fff; outline: none; transition: border-color .15s, box-shadow .15s; }
 .admin-app input:focus, .admin-app select:focus, .admin-app textarea:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(21, 108, 83, .1); }
 .admin-app textarea { resize: vertical; }
 .admin-app input[type='file'] { padding: 7px; }
-.admin-app input[type='file']::file-selector-button { margin-right: 10px; padding: 7px 10px; border: 0; border-radius: 6px; color: var(--ink); background: #eeeeec; font-weight: 650; cursor: pointer; }
+.admin-app input[type='file']::file-selector-button { margin-right: 10px; padding: 7px 10px; border: 0; border-radius: 0; color: var(--ink); background: #eeeeec; font-weight: 650; cursor: pointer; }
 .admin-app .admin-password-field { position: relative; width: 100%; }
 .admin-app .admin-password-field input { padding-right: 48px; }
-.admin-app .admin-password-field button { position: absolute; top: 50%; right: 3px; width: 40px; height: 40px; padding: 0; display: grid; place-items: center; transform: translateY(-50%); border: 0; border-radius: 10px; color: #777b7f; background: transparent; }
+.admin-app .admin-password-field button { position: absolute; top: 50%; right: 3px; width: 40px; height: 40px; padding: 0; display: grid; place-items: center; transform: translateY(-50%); border: 0; border-radius: 0; color: #777b7f; background: transparent; }
 .admin-app .admin-password-field button:hover { color: var(--ink); background: #f3f3f2; }
 .admin-app .admin-password-field button:focus-visible { outline: 2px solid #e2a700; outline-offset: -2px; }
 .admin-app .field-hint { color: var(--muted); font-size: 11px; font-weight: 500; line-height: 1.4; }
-.admin-app .admin-form-error { margin: 0; padding: 10px 12px; border: 1px solid #f2c8d0; border-radius: 10px; color: #ba0024; background: #fff4f6; font-size: 13px; }
+.admin-app .admin-form-error { margin: 0; padding: 10px 12px; border: 1px solid #f2c8d0; border-radius: 0; color: #ba0024; background: #fff4f6; font-size: 13px; }
 .admin-app .form-success { margin: 0; padding: 11px 12px; border-left: 3px solid var(--green); color: var(--green); background: #edf3f1; font-size: 13px; line-height: 1.5; }
 .admin-app .auth-form-link, .admin-app .auth-back-link { width: fit-content; color: var(--green); font-size: 13px; font-weight: 650; text-decoration: none; }
 .admin-app .auth-form-link { margin-top: -10px; align-self: flex-end; }
@@ -54,7 +54,7 @@
 .admin-app .auth-form-link:hover, .admin-app .auth-back-link:hover { text-decoration: underline; }
 .admin-app .auth-result { display: flex; flex-direction: column; gap: 19px; }
 .admin-app .auth-result .button { min-height: 42px; text-decoration: none; }
-.admin-app .button { border: 1px solid transparent; border-radius: 4px; padding: 7px 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700; font-size: 13px; transition: filter .15s, background .15s; }
+.admin-app .button { border: 1px solid transparent; border-radius: 0; padding: 7px 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700; font-size: 13px; transition: filter .15s, background .15s; }
 .admin-app .button:hover { filter: brightness(.96); }
 .admin-app .button:disabled { cursor: wait; opacity: .65; }
 .admin-app .button-primary { color: #fff; background: var(--red); }
@@ -63,7 +63,7 @@
 .admin-app .button-danger { color: var(--red-dark); border-color: var(--red); background: #fff; }
 .admin-app .button-danger:hover { filter: none; background: #fff4f6; }
 .admin-app .button-large { padding: 12px 16px; margin-top: 3px; }
-.admin-app .admin-icon-button { width: 32px; height: 32px; padding: 0; display: inline-grid; place-items: center; flex: 0 0 auto; border: 1px solid #c9cccf; border-radius: 4px; color: #606469; background: #fff; }
+.admin-app .admin-icon-button { width: 32px; height: 32px; padding: 0; display: inline-grid; place-items: center; flex: 0 0 auto; border: 1px solid #c9cccf; border-radius: 0; color: #606469; background: #fff; }
 .admin-app .admin-icon-button:hover { color: var(--ink); background: #f3f3f2; }
 .admin-app .admin-icon-button:disabled { cursor: not-allowed; opacity: .42; }
 
@@ -98,14 +98,14 @@
 .admin-app td strong { color: var(--ink); }
 .admin-app td small { margin-top: 2px; color: #85898d; }
 .admin-app .structure-cell { min-width: 210px; display: flex; align-items: center; gap: 11px; }
-.admin-app .structure-cell > img, .admin-app .structure-cover-placeholder { width: 32px; height: 32px; flex: 0 0 auto; border-radius: 4px; }
+.admin-app .structure-cell > img, .admin-app .structure-cover-placeholder { width: 32px; height: 32px; flex: 0 0 auto; border-radius: 0; }
 .admin-app .structure-cell > img { object-fit: cover; background: #eef0ee; }
 .admin-app .structure-cover-placeholder { background: rgba(0, 0, 0, .07); }
 .admin-app .activity-cell { max-width: 330px; color: #64686d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .admin-app .contact-count { font-variant-numeric: tabular-nums; font-weight: 700; }
 .admin-app .actions-heading { width: 1%; text-align: right; }
 .admin-app .row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 5px; white-space: nowrap; }
-.admin-app .table-action { min-height: 28px; padding: 0 8px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid #c9cccf; border-radius: 4px; color: #4d4d4d; background: #fff; font-size: 11px; font-weight: 700; text-decoration: none; }
+.admin-app .table-action { min-height: 28px; padding: 0 8px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid #c9cccf; border-radius: 0; color: #4d4d4d; background: #fff; font-size: 11px; font-weight: 700; text-decoration: none; }
 .admin-app .table-action.is-icon { width: 28px; padding: 0; justify-content: center; }
 .admin-app .table-action:hover { color: var(--ink); background: #f4f5f5; }
 .admin-app .table-action.is-danger { color: #a62039; }
@@ -146,7 +146,7 @@
 .admin-app .proposal-count { color: #85898d; font-variant-numeric: tabular-nums; font-weight: 600; }
 .admin-app .proposal-count.is-pending { color: #6f5700; font-weight: 750; }
 .admin-app .drawer.drawer-wide { width: min(680px, 100%); }
-.admin-app .status-pill { width: fit-content; display: inline-flex; align-items: center; gap: 5px; padding: 2px 7px; border-radius: 3px; color: #686c70; background: #efefed; font-size: 11px; font-weight: 700; }
+.admin-app .status-pill { width: fit-content; display: inline-flex; align-items: center; gap: 5px; padding: 2px 7px; border-radius: 0; color: #686c70; background: #efefed; font-size: 11px; font-weight: 700; }
 .admin-app .status-pill.is-active { color: var(--green); background: #e7f3ee; }
 .admin-app .status-pill.is-new { color: #6f5700; background: #fff4c2; }
 /* Étape terminée (lot remis) : fond vert plein, impossible à confondre avec un statut neutre comme « Perdu ». */
@@ -212,18 +212,18 @@
 .admin-app .wheel-code-dialog { width: min(520px, 100%); max-height: calc(100vh - 40px); display: flex; flex-direction: column; }
 .admin-app .wheel-code-new { align-self: center; margin: 16px 0 14px; }
 .admin-app .wheel-code-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 6px; min-height: 0; margin: 0; padding: 12px 0 0; overflow-y: auto; border-top: 1px solid var(--frame); list-style: none; }
-.admin-app .wheel-code-grid li { display: grid; justify-items: center; padding: 6px 4px; border: 1px solid var(--frame); border-radius: 3px; color: var(--ink); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 14px; font-weight: 700; letter-spacing: .08em; }
+.admin-app .wheel-code-grid li { display: grid; justify-items: center; padding: 6px 4px; border: 1px solid var(--frame); border-radius: 0; color: var(--ink); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 14px; font-weight: 700; letter-spacing: .08em; }
 .admin-app .wheel-code-grid li small { color: inherit; font-family: inherit; font-size: 10px; font-weight: 400; letter-spacing: 0; opacity: .8; }
 .admin-app .wheel-code-grid li.is-won, .admin-app .wheel-code-legend .is-won { border-color: var(--green); color: #fff; background: var(--green); }
 .admin-app .wheel-code-grid li.is-lost, .admin-app .wheel-code-legend .is-lost { border-color: var(--red); color: #fff; background: var(--red); }
 .admin-app .wheel-code-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 10px 0 0; color: var(--muted); font-size: 12px; }
-.admin-app .wheel-code-legend span { width: 12px; height: 12px; margin-left: 6px; border: 1px solid var(--frame); border-radius: 2px; }
+.admin-app .wheel-code-legend span { width: 12px; height: 12px; margin-left: 6px; border: 1px solid var(--frame); border-radius: 0; }
 .admin-app .wheel-code-legend span:first-child { margin-left: 0; }
 /* Rencontre B2B : choix du créneau, compte rendu en un clic, note du rendez-vous. */
 .admin-app .meeting-slots { margin: 0; padding: 0; border: 0; }
 .admin-app .meeting-slots legend { margin-bottom: 8px; color: var(--muted); font-size: 12px; font-weight: 700; }
 .admin-app .meeting-slots > div { display: flex; flex-wrap: wrap; gap: 6px; }
-.admin-app .meeting-slot { min-width: 64px; min-height: 32px; border: 1px solid #c9cccf; border-radius: 4px; color: var(--ink); background: #fff; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.admin-app .meeting-slot { min-width: 64px; min-height: 32px; border: 1px solid #c9cccf; border-radius: 0; color: var(--ink); background: #fff; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
 .admin-app .meeting-slot:hover { background: #f4f5f5; }
 .admin-app .meeting-slot.is-selected { border-color: var(--green); color: #fff; background: var(--green); }
 .admin-app .meeting-report { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
@@ -240,13 +240,13 @@
 @media (max-width: 720px) { .admin-app .qualification-setting { grid-template-columns: 24px minmax(0, 1fr) 28px; } .admin-app .qualification-setting select, .admin-app .qualification-setting > input:nth-of-type(2), .admin-app .qualification-setting > span:not(.qualification-setting-number) { grid-column: 2; } }
 /* Menu contextuel d'une ligne (trois points verticaux). */
 .admin-app .row-menu { position: relative; display: inline-flex; }
-.admin-app .row-menu-list { position: fixed; z-index: 40; min-width: 170px; margin: 0; padding: 4px 0; border: 1px solid var(--frame); border-radius: 4px; background: #fff; box-shadow: 0 8px 24px rgba(15, 24, 34, .14); list-style: none; }
+.admin-app .row-menu-list { position: fixed; z-index: 40; min-width: 170px; margin: 0; padding: 4px 0; border: 1px solid var(--frame); border-radius: 0; background: #fff; box-shadow: 0 8px 24px rgba(15, 24, 34, .14); list-style: none; }
 .admin-app .row-menu-list button { width: 100%; padding: 8px 14px; border: 0; color: var(--ink); background: none; font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
 .admin-app .row-menu-list button:hover:not(:disabled) { background: #f4f5f5; }
 .admin-app .row-menu-list button:disabled { color: #a3a7ab; cursor: not-allowed; }
 .admin-app .row-menu-list button.is-danger { color: #a62039; }
 /* Guichets : classe A·B·C ou Accompagnement, échéance en retard, responsable, diagnostic et fiche « difficultés ». */
-.admin-app .investor-class { width: 24px; height: 24px; display: inline-grid; place-items: center; border-radius: 4px; color: #fff; font-size: 12px; font-weight: 800; }
+.admin-app .investor-class { width: 24px; height: 24px; display: inline-grid; place-items: center; border-radius: 0; color: #fff; font-size: 12px; font-weight: 800; }
 .admin-app .investor-class.is-A { background: var(--red); }
 .admin-app .investor-class.is-B { background: #b58400; }
 .admin-app .investor-class.is-C { color: #4d4d4d; background: #e4e6e8; }
@@ -257,7 +257,7 @@
 .admin-app .investor-follow label, .admin-app .investor-qualification label { display: grid; gap: 6px; color: var(--muted); font-size: 12px; font-weight: 700; }
 .admin-app .investor-classes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; border: 0; }
 .admin-app .investor-classes legend { margin-bottom: 8px; color: var(--muted); font-size: 12px; font-weight: 700; }
-.admin-app .investor-class-option { position: relative; display: flex !important; align-items: flex-start; gap: 8px !important; padding: 10px; border: 1px solid var(--frame); border-radius: 4px; cursor: pointer; }
+.admin-app .investor-class-option { position: relative; display: flex !important; align-items: flex-start; gap: 8px !important; padding: 10px; border: 1px solid var(--frame); border-radius: 0; cursor: pointer; }
 .admin-app .investor-class-option input { position: absolute; opacity: 0; pointer-events: none; }
 .admin-app .investor-class-option:focus-within { outline: 2px solid var(--red); outline-offset: 1px; }
 .admin-app .investor-class-option.is-selected { border-color: var(--red); background: var(--red); }
@@ -274,7 +274,7 @@
 .admin-app .investor-owner { max-width: 320px; }
 .admin-app .investor-qualification-grid .is-wide { grid-column: 1 / -1; }
 .admin-app .investor-subtitle { margin: 4px 0 0; color: var(--ink); font-size: 13px; }
-.admin-app .investor-commitment { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 14px 14px 0; padding: 10px 12px; border: 1px solid #f0d58a; border-radius: 4px; background: #fff8e1; font-size: 13px; font-weight: 700; }
+.admin-app .investor-commitment { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 14px 14px 0; padding: 10px 12px; border: 1px solid #f0d58a; border-radius: 0; background: #fff8e1; font-size: 13px; font-weight: 700; }
 .admin-app .investor-commitment.is-done { border-color: #b9dfcd; background: #eef8f3; }
 .admin-app .meeting-note { margin: 6px 0 0; color: var(--muted); font-size: 12px; line-height: 1.4; white-space: pre-wrap; }
 
@@ -302,7 +302,7 @@
 .admin-app .settings-row > span:first-child { flex: 1; min-width: 0; display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; }
 .admin-app .settings-row small { color: var(--red); font-size: 12px; font-weight: 600; }
 .admin-app .settings-saved { color: var(--green); flex: 0 0 auto; }
-.admin-app .settings-switch { appearance: none; width: 38px; height: 22px; min-height: 0; flex: 0 0 auto; padding: 0; position: relative; border: 0; border-radius: 11px; background: #c9cccf; cursor: pointer; transition: background .15s; }
+.admin-app .settings-switch { appearance: none; width: 38px; height: 22px; min-height: 0; flex: 0 0 auto; padding: 0; position: relative; border: 0; border-radius: 0; background: #c9cccf; cursor: pointer; transition: background .15s; }
 .admin-app .settings-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .15s; }
 .admin-app .settings-switch:checked { background: var(--green); }
 .admin-app .settings-switch:checked::after { transform: translateX(16px); }
@@ -334,11 +334,11 @@
 .admin-app .gallery-field { margin: 0; padding: 0; border: 0; display: grid; gap: 8px; }
 .admin-app .gallery-field legend { display: flex; align-items: baseline; gap: 8px; padding: 0; margin-bottom: 8px; color: #43464a; font-size: 13px; font-weight: 650; }
 .admin-app .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
-.admin-app .gallery-grid figure { position: relative; margin: 0; aspect-ratio: 1; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: #eef0ee; }
+.admin-app .gallery-grid figure { position: relative; margin: 0; aspect-ratio: 1; overflow: hidden; border: 1px solid var(--line); border-radius: 0; background: #eef0ee; }
 .admin-app .gallery-grid figure.is-new { border-style: dashed; border-color: var(--green); }
 .admin-app .gallery-grid img { width: 100%; height: 100%; display: block; object-fit: cover; }
-.admin-app .gallery-grid figure button { position: absolute; top: 5px; right: 5px; width: 26px; height: 26px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 8px; color: #fff; background: rgba(15, 24, 34, .7); }
-.admin-app .gallery-add { aspect-ratio: 1; display: grid; place-items: center; align-content: center; gap: 4px; border: 1px dashed #b9bdc0; border-radius: 10px; color: var(--green); background: #fafafa; font-size: 12px; font-weight: 700; cursor: pointer; }
+.admin-app .gallery-grid figure button { position: absolute; top: 5px; right: 5px; width: 26px; height: 26px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 0; color: #fff; background: rgba(15, 24, 34, .7); }
+.admin-app .gallery-add { aspect-ratio: 1; display: grid; place-items: center; align-content: center; gap: 4px; border: 1px dashed #b9bdc0; border-radius: 0; color: var(--green); background: #fafafa; font-size: 12px; font-weight: 700; cursor: pointer; }
 .admin-app .gallery-add input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .admin-app .gallery-add:hover { border-color: var(--green); background: var(--tint); }
 
@@ -400,7 +400,7 @@
 .admin-app .detail-tabs button.is-active:hover { background: var(--green-dark); }
 .admin-app .detail-tabs b { color: var(--ink); background: #e4e6e8; }
 .admin-app .detail-tabs button.is-active b { color: var(--green); background: #fff; }
-.admin-app .section-tabs b { min-width: 18px; padding: 0 5px; border-radius: 9px; color: #fff; background: var(--red); font-size: 11px; line-height: 18px; text-align: center; }
+.admin-app .section-tabs b { min-width: 18px; padding: 0 5px; border-radius: 0; color: #fff; background: var(--red); font-size: 11px; line-height: 18px; text-align: center; }
 
 /* Case à cocher dans un formulaire : sur la même ligne que son libellé. */
 .admin-app label.checkbox-field { flex-direction: row; align-items: flex-start; gap: 9px; font-weight: 500; line-height: 1.4; cursor: pointer; }
@@ -422,3 +422,8 @@
 .admin-app a.cell-link { color: var(--green); text-decoration: none; }
 .admin-app a.cell-link:hover { text-decoration: underline; }
 .admin-app tr.is-muted td { color: #8a8e92; }
+
+/* Charte API-ZF : angles droits partout ; seules les pastilles de compte restent rondes. Filet jaune au-dessus du titre de rubrique. */
+.admin-app .section-tabs b, .team-badge { border-radius: 999px; }
+.admin-app .settings-switch::after { border-radius: 0; }
+.admin-app .workspace-header > h1::before { content: ''; display: block; width: 32px; height: 4px; margin-bottom: 8px; background: var(--yellow, #ffcf15); }

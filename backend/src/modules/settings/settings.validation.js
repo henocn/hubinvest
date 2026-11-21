@@ -12,7 +12,7 @@ const update = Joi.object({
   challengeOpen: Joi.boolean(),
   wheelOpen: Joi.boolean(),
   liveQuestionsOpen: Joi.boolean(),
-  requiredPassages: Joi.number().integer().min(1).max(50),
+  challengeRewardStock: Joi.number().integer().min(0).max(100000),
   wheelPlaysPerDay: Joi.number().integer().min(0).max(20),
   wheelSpinsPerCode: Joi.number().integer().min(1).max(20),
   b2bTables: Joi.number().integer().min(1).max(50),

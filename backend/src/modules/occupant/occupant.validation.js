@@ -1,5 +1,7 @@
 const Joi = require('joi');
 
+const { OCCUPANT_SPACES } = require('../../shared/challenge-steps');
+
 const uuid = Joi.string().guid({ version: ['uuidv4'] });
 
 const create = Joi.object({
@@ -10,6 +12,7 @@ const create = Joi.object({
   products: Joi.string().trim().max(4000).allow('', null),
   services: Joi.string().trim().max(4000).allow('', null),
   website: Joi.string().trim().uri({ scheme: ['http', 'https'] }).max(255).allow('', null),
+  space: Joi.string().valid(...OCCUPANT_SPACES).default('industry'),
   status: Joi.string().valid('active', 'inactive').default('active'),
 });
 
@@ -21,6 +24,7 @@ const update = Joi.object({
   products: Joi.string().trim().max(4000).allow('', null),
   services: Joi.string().trim().max(4000).allow('', null),
   website: Joi.string().trim().uri({ scheme: ['http', 'https'] }).max(255).allow('', null),
+  space: Joi.string().valid(...OCCUPANT_SPACES),
   status: Joi.string().valid('active', 'inactive'),
 }).min(1);
 

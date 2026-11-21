@@ -135,12 +135,11 @@ export default function ServicesPage({ session, onLogout }) {
             </header>
             <div className="table-scroll">
               <table>
-                <thead><tr><th>Étape</th><th>Service</th><th>Où le vivre</th><th className="actions-heading">Actions</th></tr></thead>
+                <thead><tr><th>Étape</th><th>Service</th><th className="actions-heading">Actions</th></tr></thead>
                 <tbody>{services.map((item, index) => (
                   <tr key={item.id} className={item.published ? '' : 'is-muted'}>
-                    <td className="stand-nowrap">{item.stage} · {serviceStages[item.stage]}</td>
+                    <td title={serviceStages[item.stage]}><strong>{item.stage}</strong><small>{serviceStages[item.stage]}</small></td>
                     <td><strong>{item.title}</strong>{!item.published ? <small>Masqué du site</small> : item.limited && <small>Selon disponibilités</small>}</td>
-                    <td>{item.place || '—'}</td>
                     <td><RowMenu label={`Actions pour ${item.title}`} items={rowItems({
                       item, index, items: services,
                       onEdit: () => open('form', 'services', item),
@@ -161,13 +160,12 @@ export default function ServicesPage({ session, onLogout }) {
             </header>
             <div className="table-scroll">
               <table>
-                <thead><tr><th>N°</th><th>Démarche</th><th>Domaine</th><th>Lien</th><th className="actions-heading">Actions</th></tr></thead>
+                <thead><tr><th>N°</th><th>Démarche</th><th>Domaine</th><th className="actions-heading">Actions</th></tr></thead>
                 <tbody>{procedures.map((item, index) => (
                   <tr key={item.id} className={item.published ? '' : 'is-muted'}>
                     <td>{index + 1}</td>
-                    <td><strong>{item.title}</strong>{!item.published && <small>Masquée du site</small>}</td>
-                    <td className="stand-nowrap">{procedureDomains[item.domain]}</td>
-                    <td>{item.url ? <a href={item.url} target="_blank" rel="noreferrer">Ouvrir</a> : '—'}</td>
+                    <td><strong>{item.title}</strong>{!item.published ? <small>Masquée du site</small> : !item.url && <small>Lien officiel à ajouter</small>}</td>
+                    <td>{procedureDomains[item.domain]}</td>
                     <td><RowMenu label={`Actions pour ${item.title}`} items={rowItems({
                       item, index, items: procedures,
                       onEdit: () => open('form', 'procedures', item),

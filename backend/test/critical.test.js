@@ -641,33 +641,45 @@ test('le compteur des joueurs scannés reste limité à l’occupant connecté',
   );
 });
 
-test('le passage requis termine le parcours avant la remise', async (context) => {
+test('« Trouvez les 5 étapes » : quatre stands de l’Espace Industrie, puis la dernière étape au Stand API-ZF', async (context) => {
   const passport = { id: 'passport-a', code: 'ABCD2345', displayName: 'Visiteur Test', status: 'active' };
+  const passages = [];
+  const spaces = { 'industry-1': 'industry', 'industry-2': 'industry', 'industry-3': 'industry', 'industry-4': 'industry', 'industry-5': 'industry', apizf: 'apizf' };
   let saved;
-  let passageValues;
   context.mock.method(challengePassageRepository.sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));
   context.mock.method(challengePassportRepository, 'findByCodeForUpdate', async () => passport);
-  context.mock.method(challengePassageRepository, 'findExisting', async () => null);
-  context.mock.method(challengePassageRepository, 'create', async (values) => {
-    passageValues = values;
-    return values;
-  });
-  context.mock.method(challengePassageRepository, 'countByPassport', async () => 3);
-  context.mock.method(challengePassportRepository, 'update', async (_passport, values) => {
-    saved = values;
-    return { ...passport, ...values };
-  });
+  context.mock.method(challengePassageRepository, 'findExisting', async (_id, occupantId) => passages.find((item) => item.occupantId === occupantId) || null);
+  context.mock.method(challengePassageRepository, 'findOccupant', async (id) => ({ id, space: spaces[id] }));
+  context.mock.method(challengePassageRepository, 'findByPassport', async () => passages.map((item) => ({ occupant: { space: spaces[item.occupantId] } })));
+  context.mock.method(challengePassageRepository, 'create', async (values) => { passages.push(values); return values; });
+  context.mock.method(challengePassageRepository, 'countByPassport', async () => passages.length);
+  context.mock.method(challengePassportRepository, 'update', async (_passport, values) => { saved = values; Object.assign(passport, values); return passport; });
+  const scan = (occupantId) => challengePassageService.validate({ id: 'user-c', occupantId }, { code: passport.code });
 
-  const result = await challengePassageService.validate(
-    { id: 'user-c', occupantId: 'occupant-c' },
-    { code: passport.code },
-  );
+  await assert.rejects(scan('apizf'), (error) => error.code === 'CHALLENGE_APIZF_LAST');
+  for (const stand of ['industry-1', 'industry-2', 'industry-3']) assert.equal((await scan(stand)).status, 'active');
+  await assert.rejects(scan('apizf'), (error) => error.code === 'CHALLENGE_APIZF_LAST');
+  assert.equal((await scan('industry-4')).passageCount, 4);
+  await assert.rejects(scan('industry-5'), (error) => error.code === 'CHALLENGE_FINISH_AT_APIZF');
 
+  const result = await scan('apizf');
   assert.equal(result.status, 'completed');
-  assert.equal('classification' in result, false);
-  assert.equal('classification' in passageValues, false);
+  assert.equal(result.requiredPassages, 5);
   assert.equal(saved.status, 'completed');
   assert.ok(saved.completedAt instanceof Date);
+});
+
+test('la remise d’une récompense respecte le stock suivi', async (context) => {
+  const passport = { id: 'passport-b', code: 'ABCD2346', status: 'completed', passages: [] };
+  context.mock.method(sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));
+  context.mock.method(challengePassportRepository, 'findByCodeForUpdate', async () => passport);
+  context.mock.method(challengePassportRepository, 'update', async (_passport, values) => Object.assign(passport, values));
+  context.mock.method(settingsService, 'challengeRewardStock', () => 10);
+  context.mock.method(challengePassportRepository, 'countRedeemed', async () => 10);
+  await assert.rejects(challengePassportService.redeemByCode({ id: 'animator-a', role: 'animateur' }, passport.code), (error) => error.code === 'REWARD_OUT_OF_STOCK');
+
+  context.mock.method(challengePassportRepository, 'countRedeemed', async () => 9);
+  assert.equal((await challengePassportService.redeemByCode({ id: 'animator-a', role: 'animateur' }, passport.code)).status, 'redeemed');
 });
 
 test('un animateur remet par code une récompense Défis une seule fois', async (context) => {
@@ -1178,11 +1190,12 @@ test('un module fermé depuis l’administration refuse les actions publiques', 
   assert.equal(settingsService.publicSettings().investorDeskOpen, false);
 });
 
-test('les réglages refusent un nombre de stands hors limites et une clé inconnue', () => {
-  assert.ok(settingsValidation.update.validate({ requiredPassages: 0 }).error);
+test('les réglages refusent un stock négatif, le nombre d’étapes (fixe) et une clé inconnue', () => {
+  assert.ok(settingsValidation.update.validate({ challengeRewardStock: -1 }).error);
+  assert.ok(settingsValidation.update.validate({ requiredPassages: 4 }).error);
   assert.ok(settingsValidation.update.validate({ inconnu: true }).error);
   assert.ok(settingsValidation.update.validate({}).error);
-  assert.equal(settingsValidation.update.validate({ wheelOpen: false, requiredPassages: 4 }).error, undefined);
+  assert.equal(settingsValidation.update.validate({ wheelOpen: false, challengeRewardStock: 200 }).error, undefined);
 });
 
 test('un joueur ne tourne la roue qu’une fois par jour et le code reste valable', async (context) => {

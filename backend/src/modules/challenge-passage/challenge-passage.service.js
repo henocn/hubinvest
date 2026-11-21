@@ -4,6 +4,7 @@ const challengePassportRepository = require('../challenge-passport/challenge-pas
 const challengePassageRepository = require('./challenge-passage.repository');
 const { events: realtime } = require('../realtime/realtime.service');
 const settingsService = require('../settings/settings.service');
+const { CHALLENGE_STEPS, INDUSTRY_STEPS } = require('../../shared/challenge-steps');
 
 
 const stats = async (user) => {
@@ -28,6 +29,17 @@ const validate = async (user, values) => {
       if (existing) throw new AppError(409, 'PASSAGE_ALREADY_VALIDATED', 'Ce stand a déjà validé ce parcours.');
       passportId = passport.id;
 
+      // « Trouvez les 5 étapes » : quatre étapes sur quatre stands de l'Espace Industrie, la cinquième au Stand API-ZF.
+      const occupant = await challengePassageRepository.findOccupant(user.occupantId, transaction);
+      const passages = await challengePassageRepository.findByPassport(passport.id, transaction);
+      const industryDone = passages.filter((passage) => passage.occupant?.space !== 'apizf').length;
+      if (occupant?.space === 'apizf' && industryDone < INDUSTRY_STEPS) {
+        throw new AppError(409, 'CHALLENGE_APIZF_LAST', `L’étape 5 se valide au Stand API-ZF après les ${INDUSTRY_STEPS} étapes de l’Espace Industrie (${industryDone} sur ${INDUSTRY_STEPS}).`);
+      }
+      if (occupant?.space !== 'apizf' && industryDone >= INDUSTRY_STEPS) {
+        throw new AppError(409, 'CHALLENGE_FINISH_AT_APIZF', 'Les quatre étapes de l’Espace Industrie sont validées : la dernière se valide au Stand API-ZF.');
+      }
+
       await challengePassageRepository.create({
         passportId: passport.id,
         occupantId: user.occupantId,
@@ -35,7 +47,7 @@ const validate = async (user, values) => {
       }, transaction);
 
       const passageCount = await challengePassageRepository.countByPassport(passport.id, transaction);
-      const completed = passageCount >= settingsService.requiredPassages();
+      const completed = passageCount >= CHALLENGE_STEPS;
       if (completed) {
         await challengePassportRepository.update(passport, {
           status: 'completed',

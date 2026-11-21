@@ -1,6 +1,7 @@
 const env = require('../../config/env');
 const AppError = require('../../shared/app-error');
 const { Op } = require('sequelize');
+const { CHALLENGE_STEPS } = require('../../shared/challenge-steps');
 const { AppSetting, StudioInvitation } = require('../../models');
 const { events: realtime } = require('../realtime/realtime.service');
 
@@ -16,7 +17,8 @@ const MODULES = Object.freeze({
 
 const defaults = () => ({
   ...Object.fromEntries(Object.keys(MODULES).map((key) => [key, true])),
-  requiredPassages: Math.max(1, env.challenge.requiredPassages),
+  // Récompenses du parcours en stock (document v4 : « récompenses à stock suivi ») ; 0 = stock non suivi.
+  challengeRewardStock: 0,
   // Parties de roue par joueur et par jour ; 0 = sans limite.
   wheelPlaysPerDay: 1,
   // Tours de roue donnés par un code de jeu (un code n'expire pas).
@@ -70,9 +72,12 @@ const load = async () => {
   return cache;
 };
 
-const current = () => ({ ...cache });
+// Le nombre d'étapes du parcours est fixe ; une ancienne valeur enregistrée est ignorée.
+const current = () => ({ ...cache, requiredPassages: CHALLENGE_STEPS });
 
-const requiredPassages = () => Math.max(1, Number(cache.requiredPassages) || 1);
+// Le parcours « Trouvez les 5 étapes » compte toujours cinq étapes.
+const requiredPassages = () => CHALLENGE_STEPS;
+const challengeRewardStock = () => Math.max(0, Number(cache.challengeRewardStock) || 0);
 
 const wheelPlaysPerDay = () => Math.max(0, Number(cache.wheelPlaysPerDay) || 0);
 
@@ -147,4 +152,4 @@ const publicSettings = () => {
   return rest;
 };
 
-module.exports = { MODULES, load, current, requiredPassages, wheelPlaysPerDay, wheelSpinsPerCode, b2bSchedule, studioSchedule, guichetSchedule, studioFormats, studioFormatLabel, investorFollowUpDelay, investorQualificationFields, assertOpen, update, publicSettings, _reset: () => { cache = defaults(); } };
+module.exports = { MODULES, load, current, requiredPassages, challengeRewardStock, wheelPlaysPerDay, wheelSpinsPerCode, b2bSchedule, studioSchedule, guichetSchedule, studioFormats, studioFormatLabel, investorFollowUpDelay, investorQualificationFields, assertOpen, update, publicSettings, _reset: () => { cache = defaults(); } };
