@@ -367,7 +367,7 @@ test('une demande Investor Desk exige le consentement API-ZF', () => {
   assert.ok(error);
 });
 
-test('le statut Investor Desk ne se saisit pas : il est calculé à partir de la classe et des relances', () => {
+test('le statut des guichets ne se saisit pas : il est calculé à partir de la classe et des relances', () => {
   const { update } = investorRequestValidation;
   assert.ok(update.validate({ status: 'closed', nextAction: 'x' }, { stripUnknown: true }).error);
   assert.deepEqual(update.validate({ classification: 'a', status: 'closed' }, { stripUnknown: true }).value, { classification: 'A' });
@@ -1373,55 +1373,113 @@ const investorSetup = (context, { request, followUps = 0 }) => {
   return { saved, reminders };
 };
 
-test('Investor Desk : la classe A fixe une relance sous 48 h, B sous 7 jours, C aucune', async (context) => {
+test('Guichets : la classe A fixe une relance sous 48 h, B sous 7 jours, C aucune', async (context) => {
   const request = { id: 'ir-1', classification: null, status: 'new' };
-  const { saved } = investorSetup(context, { request });
+  investorSetup(context, { request });
   const before = Date.now();
 
   await investorRequestService.update('ir-1', { classification: 'A' });
-  const dueA = saved.at(-1).nextFollowUpAt.getTime() - before;
+  const dueA = request.nextFollowUpAt.getTime() - before;
   assert.ok(dueA >= 48 * 3600000 && dueA < 48 * 3600000 + 5000);
-  assert.equal(saved.at(-1).status, 'in_progress');
+  assert.equal(request.status, 'in_progress');
 
   await investorRequestService.update('ir-1', { classification: 'B' });
-  const dueB = saved.at(-1).nextFollowUpAt.getTime() - before;
+  const dueB = request.nextFollowUpAt.getTime() - before;
   assert.ok(dueB >= 7 * 24 * 3600000 && dueB < 7 * 24 * 3600000 + 5000);
 
   await investorRequestService.update('ir-1', { classification: 'C' });
-  assert.equal(saved.at(-1).nextFollowUpAt, null);
-  assert.equal(saved.at(-1).status, 'closed');
+  assert.equal(request.nextFollowUpAt, null);
+  assert.equal(request.status, 'closed');
   assert.equal(investorRequestService.progressStatus({ nextFollowUpAt: null, classification: null }, false), 'new');
 });
 
-test('Investor Desk : l’interlocuteur est un membre de l’équipe API-ZF et la qualification ne garde que les champs réglés', async (context) => {
-  const request = { id: 'ir-2', classification: 'B', status: 'in_progress' };
+test('Guichets : le responsable est un membre de l’équipe API-ZF ; le diagnostic ne garde que les informations réglées et exige l’étape suivante', async (context) => {
+  const request = { id: 'ir-2', classification: 'B', status: 'in_progress', diagnosedAt: null };
   const { saved } = investorSetup(context, { request });
   await assert.rejects(investorRequestService.update('ir-2', { contactUserId: 'stand-admin' }), (error) => error.code === 'INVESTOR_CONTACT_INVALID');
+  await investorRequestService.update('ir-2', { contactUserId: 'apizf-1' });
+  assert.equal(request.contactUserId, 'apizf-1');
 
-  await investorRequestService.update('ir-2', { contactUserId: 'apizf-1', qualification: { sector: 'Industrie', jobs: '25', agreement: 'yes', unknown: 'x', origin: '' } });
-  assert.equal(saved.at(-1).contactUserId, 'apizf-1');
+  assert.ok(investorRequestValidation.diagnosis.validate({ qualification: {} }).error);
+  await investorRequestService.saveDiagnosis('ir-2', { qualification: { sector: 'Industrie', jobs: '25', agreement: 'yes', unknown: 'x', origin: '' }, nextAction: 'Rendez-vous au guichet régimes' });
   assert.deepEqual(saved.at(-1).qualification, { sector: 'Industrie', jobs: 25, agreement: true });
+  const firstDiagnosis = request.diagnosedAt;
+  assert.ok(firstDiagnosis instanceof Date);
+  await investorRequestService.saveDiagnosis('ir-2', { qualification: {}, nextAction: 'Envoyer l’Investor Pack' });
+  assert.equal(request.diagnosedAt, firstDiagnosis);
 });
 
-test('Investor Desk : une relance d’un contact A exige l’étape suivante et remplace la date de relance', async (context) => {
+test('Guichets : une relance d’un contact A exige l’étape suivante et remplace la date de relance', async (context) => {
   const request = { id: 'ir-3', classification: 'A', status: 'new', nextAction: null, nextFollowUpAt: new Date() };
-  const { saved, reminders } = investorSetup(context, { request, followUps: 1 });
+  const { reminders } = investorSetup(context, { request, followUps: 1 });
   await assert.rejects(investorRequestService.addFollowUp({ id: 'u1' }, 'ir-3', { channel: 'call' }), (error) => error.code === 'INVESTOR_NEXT_STEP_REQUIRED');
 
   const next = new Date(Date.now() + 3 * 24 * 3600000);
   const followUp = await investorRequestService.addFollowUp({ id: 'u1' }, 'ir-3', { channel: 'call', nextStep: 'Envoyer le dossier d’agrément', nextFollowUpAt: next });
   assert.equal(followUp.createdByUserId, 'u1');
-  assert.deepEqual(saved.at(-1), { nextAction: 'Envoyer le dossier d’agrément', nextFollowUpAt: next, status: 'in_progress' });
+  assert.equal(request.nextAction, 'Envoyer le dossier d’agrément');
+  assert.equal(request.nextFollowUpAt, next);
+  assert.equal(request.status, 'in_progress');
   assert.equal(reminders.length, 1);
 
-  // Relance sans prochaine date : la demande est terminée.
+  // Relance sans prochaine date : le contact est terminé.
   await investorRequestService.addFollowUp({ id: 'u1' }, 'ir-3', { channel: 'message', nextStep: 'Dossier envoyé' });
-  assert.equal(saved.at(-1).status, 'closed');
+  assert.equal(request.status, 'closed');
 
   // Une relance déjà faite garde sa date même si la classe change.
   await investorRequestService.update('ir-3', { classification: 'B' });
-  assert.equal('nextFollowUpAt' in saved.at(-1), false);
+  assert.equal(request.nextFollowUpAt, null);
+  assert.equal(request.status, 'closed');
 });
+
+test('Guichets : la fiche « Mon entreprise, mes difficultés » passe en Accompagnement, envoie l’engagement écrit et se termine à la réponse', async (context) => {
+  const request = { id: 'ir-4', classification: null, status: 'new', email: 'dg@usine.tg', commitmentNote: null, commitmentDueAt: null, commitmentServiceId: null, resolvedAt: null };
+  investorSetup(context, { request });
+  context.mock.method(investorRequestRepository, 'findService', async (id) => (id === 'svc-1' ? { id, title: 'Accompagnement après implantation' } : null));
+  const commitments = [];
+  context.mock.method(notificationService, 'investorCommitmentChanged', (item, options = {}) => { commitments.push(options); });
+  const difficulty = { company: 'Usine du Golfe', regime: 'free_zone', nature: 'Dédouanement', description: 'Retards à l’import des intrants.' };
+
+  await investorRequestService.saveDifficulty('ir-4', { difficulty });
+  assert.equal(request.classification, 'support');
+  assert.equal(request.status, 'new');
+
+  await assert.rejects(investorRequestService.saveDifficulty('ir-4', { difficulty, commitmentNote: 'Rendez-vous avec la douane' }), (error) => error.code === 'COMMITMENT_INCOMPLETE');
+  const due = new Date(Date.now() + 10 * 24 * 3600000);
+  await investorRequestService.saveDifficulty('ir-4', { difficulty, commitmentServiceId: 'svc-1', commitmentDueAt: due, commitmentNote: 'Rendez-vous avec la douane' });
+  assert.equal(request.status, 'in_progress');
+  assert.deepEqual(commitments.at(-1), { notifyCompany: true, serviceTitle: 'Accompagnement après implantation' });
+
+  // Même engagement réenregistré : pas de nouvel e-mail.
+  await investorRequestService.saveDifficulty('ir-4', { difficulty, commitmentServiceId: 'svc-1', commitmentDueAt: due, commitmentNote: 'Rendez-vous avec la douane' });
+  assert.equal(commitments.at(-1).notifyCompany, false);
+
+  await investorRequestService.resolve('ir-4', { resolved: true });
+  assert.equal(request.status, 'closed');
+});
+
+test('Guichets : un rendez-vous se réserve sur un créneau proposé, une seule fois par guichet', async (context) => {
+  const day = new Date(Date.now() + 3 * 24 * 3600000).toISOString().slice(0, 10);
+  context.mock.method(settingsService, 'guichetSchedule', () => ({ firstDay: day, lastDay: day, dayStart: '09:00', dayEnd: '10:00', minutes: 15 }));
+  context.mock.method(investorRequestRepository, 'findGuichetMeetingsBetween', async () => [{ startsAt: new Date(`${day}T09:15:00Z`) }]);
+  const { slots } = await investorRequestService.publicSlots('regime');
+  assert.deepEqual(slots, [`${day}T09:00:00.000Z`, `${day}T09:30:00.000Z`, `${day}T09:45:00.000Z`]);
+
+  const values = { guichet: 'regime', fullName: 'Kossi Mensah', email: 'K@b.tg', projectSummary: 'Usine de transformation de soja.' };
+  await assert.rejects(investorRequestService.book({ ...values, startsAt: `${day}T09:10:00Z` }), (error) => error.code === 'GUICHET_SLOT_INVALID');
+  context.mock.method(investorRequestRepository, 'createWithMeeting', async () => { throw new UniqueConstraintError({}); });
+  await assert.rejects(investorRequestService.book({ ...values, startsAt: `${day}T09:30:00Z` }), (error) => error.code === 'GUICHET_SLOT_TAKEN');
+
+  const sent = [];
+  context.mock.method(investorRequestRepository, 'createWithMeeting', async (request, meeting) => ({ investorRequest: request, meeting }));
+  context.mock.method(notificationService, 'investorRequestReceived', (item) => { sent.push(item.source); });
+  context.mock.method(notificationService, 'investorMeetingChanged', (kind) => { sent.push(kind); });
+  const result = await investorRequestService.book({ ...values, startsAt: `${day}T09:30:00Z` }, 'fr');
+  assert.equal(result.location, 'Stand API-ZF · guichet « Quel régime pour mon investissement ? »');
+  assert.deepEqual(sent, ['online_booking', 'scheduled']);
+});
+
+
 
 test('Investor Desk : un rendez-vous se valide après son heure, s’annule en prévenant l’investisseur, puis ne bouge plus', async (context) => {
   const request = { id: 'ir-9', email: 'a@b.tg' };
@@ -1507,4 +1565,17 @@ test('les formats du Studio se règlent dans Paramètres ; un format inconnu ou 
 
   context.mock.method(StudioInvitation, 'count', async () => 2);
   await assert.rejects(settingsService.update({ studioFormats: [{ key: 'two_minutes', label: '2 min avec…' }] }, admin), (error) => error.code === 'STUDIO_FORMAT_IN_USE');
+});
+
+test('l’accueil « Nos services » ne montre que les services et démarches publiés, sans champ interne', async (context) => {
+  const serviceService = require('../src/modules/service/service.service');
+  const serviceRepository = require('../src/modules/service/service.repository');
+  const asked = [];
+  context.mock.method(serviceRepository, 'findServices', async (publishedOnly) => { asked.push(publishedOnly); return [{ id: 's1', stage: 1, title: 'Accueil et orientation', promise: 'Diagnostic', place: 'Guichet', limited: false, published: true, position: 1 }]; });
+  context.mock.method(serviceRepository, 'findProcedures', async (publishedOnly) => { asked.push(publishedOnly); return [{ id: 'p1', title: 'Demande de Carnet Bleu', domain: 'blue_book', url: null, published: true, position: 1 }]; });
+
+  const result = await serviceService.getPublic('fr');
+  assert.deepEqual(asked, [true, true]);
+  assert.deepEqual(result.services, [{ id: 's1', stage: 1, title: 'Accueil et orientation', promise: 'Diagnostic', place: 'Guichet', limited: false }]);
+  assert.deepEqual(result.procedures, [{ id: 'p1', title: 'Demande de Carnet Bleu', domain: 'blue_book', url: null }]);
 });

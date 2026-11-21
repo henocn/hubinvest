@@ -6,7 +6,7 @@ export default function MeetingsPage() {
   const { t } = useTranslation();
   const choices = [
     { href: '/b2b', Icon: Handshake, title: t('meetings.b2bTitle'), text: t('meetings.b2bText') },
-    { href: '/investor-desk', Icon: BriefcaseBusiness, title: t('meetings.deskTitle'), text: t('meetings.deskText') },
+    { href: '/guichets', Icon: BriefcaseBusiness, title: t('meetings.deskTitle'), text: t('meetings.deskText') },
   ];
 
   return (

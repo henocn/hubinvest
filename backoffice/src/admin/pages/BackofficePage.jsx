@@ -25,6 +25,7 @@ import WheelCodeDialog from '../components/WheelCodeDialog';
 import { publicBaseUrl } from '../constants/access';
 import { tableSettings } from '../constants/tables';
 import { exportToExcel } from '../../lib/excel';
+import { guichetShortLabels } from '../constants/access';
 import { api } from '../lib/api';
 import { useRealtimeEvent } from '../../lib/realtime';
 import { adminSections, groupTabs, sectionGroups } from '../../navigation';
@@ -34,7 +35,7 @@ const sectionMeta = {
   occupants: { title: 'Stands' },
   users: { title: 'Utilisateurs' },
   program: { title: 'Programme' },
-  'investor-requests': { title: 'Investor Desk' },
+  'investor-requests': { title: 'Guichets' },
   b2b: { title: 'Rencontre B2B' },
   challenges: { title: 'Défi de passage' },
   wheel: { title: 'Roue des opportunités' },
@@ -53,7 +54,7 @@ export default function BackofficePage({ session, onLogout, section }) {
   const detailId = section === 'occupants' ? location.pathname.split('/')[2] || null : null;
   // Fiche d'une demande B2B : /b2b/<id> (rendez-vous et comptes rendus).
   const b2bDetailId = section === 'b2b' ? location.pathname.split('/')[2] || null : null;
-  // Fiche Investor Desk : /investor-desk/<id> (qualification, classe, relances, rendez-vous).
+  // Fiche d'un contact des guichets : /guichets/<id> (diagnostic ou difficulté, classe, rendez-vous, relances).
   const investorDetailId = section === 'investor-requests' ? location.pathname.split('/')[2] || null : null;
   const [occupants, setOccupants] = useState([]);
   const [users, setUsers] = useState([]);
@@ -184,7 +185,8 @@ export default function BackofficePage({ session, onLogout, section }) {
   const query = search.trim().toLowerCase();
   const visibleOccupants = useMemo(() => occupants.filter((occupant) => !query || [occupant.name, occupant.activity, occupant.standLabel].some((value) => String(value || '').toLowerCase().includes(query))), [occupants, query]);
   const visibleUsers = useMemo(() => users.filter((user) => !query || [user.firstName, user.lastName, user.email, user.role, user.occupant?.name].some((value) => String(value || '').toLowerCase().includes(query))), [users, query]);
-  const visibleInvestorRequests = useMemo(() => investorRequests.filter((item) => !query || [item.fullName, item.email, item.projectSummary, item.nextAction].some((value) => String(value || '').toLowerCase().includes(query))), [investorRequests, query]);
+  const [guichetFilter, setGuichetFilter] = useState('');
+  const visibleInvestorRequests = useMemo(() => investorRequests.filter((item) => (!guichetFilter || item.guichet === guichetFilter) && (!query || [item.fullName, item.email, item.organization, item.projectSummary, item.nextAction].some((value) => String(value || '').toLowerCase().includes(query)))), [investorRequests, query, guichetFilter]);
   const visibleB2bProposals = useMemo(() => b2bProposals.filter((item) => !query || [item.fullName, item.email, item.phone, item.message, item.need?.title, item.need?.occupant?.name].some((value) => String(value || '').toLowerCase().includes(query))), [b2bProposals, query]);
   const visibleProgramEvents = useMemo(() => programEvents.filter((item) => !query || [item.title, item.location, item.description, item.occupant?.name].some((value) => String(value || '').toLowerCase().includes(query))), [programEvents, query]);
   const visibleChallengePassports = useMemo(() => challengePassports.filter((item) => !query || [item.displayName, item.email, item.phone, item.contact, item.code, ...(item.passages || []).flatMap((passage) => [passage.occupant?.name, passage.validatedBy?.firstName, passage.validatedBy?.lastName])].some((value) => String(value || '').toLowerCase().includes(query))), [challengePassports, query]);
@@ -397,7 +399,7 @@ export default function BackofficePage({ session, onLogout, section }) {
             {section === 'challenges' && <button className="button button-secondary" type="button" onClick={() => setQrCode({ title: 'QR des Défis', url: `${publicBaseUrl}/defis`, fileName: 'hubinvest-defis' })}><QrCode size={16} /> QR des Défis</button>}
             {section === 'program' && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: 'program', item: null })}><Plus size={16} /> Ajouter au programme</button>}
             {section === 'wheel' && <button className="button button-primary" type="button" onClick={() => setWheelCode({ data: null, loading: false, error: '' })}><Ticket size={16} /> Code de jeu</button>}
-            {(section === 'occupants' || section === 'users' || section === 'investor-requests') && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: section === 'occupants' ? 'occupant' : section === 'users' ? 'user' : 'investor-request', item: null })}><Plus size={16} /> {section === 'occupants' ? 'Stand' : section === 'users' ? 'Nouvel utilisateur' : 'Demande'}</button>}
+            {(section === 'occupants' || section === 'users' || section === 'investor-requests') && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: section === 'occupants' ? 'occupant' : section === 'users' ? 'user' : 'investor-request', item: null })}><Plus size={16} /> {section === 'occupants' ? 'Stand' : section === 'users' ? 'Nouvel utilisateur' : 'Contact'}</button>}
           </div>}
         </header>
 
@@ -406,6 +408,12 @@ export default function BackofficePage({ session, onLogout, section }) {
             <div className="data-toolbar-controls">
               <label className="admin-search-field"><Search size={15} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Rechercher" aria-label={section === 'occupants' ? 'Rechercher un occupant' : section === 'users' ? 'Rechercher un utilisateur' : section === 'program' ? 'Rechercher dans le programme' : section === 'b2b' ? 'Rechercher une demande B2B' : section === 'challenges' ? 'Rechercher un participant' : section === 'wheel' ? 'Rechercher une partie' : 'Rechercher une demande'} /></label>
               {toolbarNote && <span className="data-note">{toolbarNote}</span>}
+              {section === 'investor-requests' && (
+                <select value={guichetFilter} onChange={(event) => setGuichetFilter(event.target.value)} aria-label="Guichet">
+                  <option value="">Tous les guichets</option>
+                  {Object.entries(guichetShortLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              )}
               <select value={sortValue || settings.sorts[0].value} onChange={(event) => setSortValue(event.target.value)} aria-label="Trier">
                 {settings.sorts.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
               </select>
@@ -420,7 +428,7 @@ export default function BackofficePage({ session, onLogout, section }) {
           {!loading && !error && section === 'occupants' && <OccupantsTable selection={selection} occupants={rows} contactStats={contactStats} query={query} onEdit={(item) => setDrawer({ type: 'occupant', item })} onDelete={requestOccupantDelete} />}
           {!loading && !error && section === 'users' && <UsersTable selection={selection} users={rows} query={query} currentUserId={session.user.id} onEdit={(item) => setDrawer({ type: 'user', item })} onDelete={requestUserDelete} />}
           {!loading && !error && section === 'program' && <ProgramEventsTable selection={selection} events={rows} query={query} onEdit={(item) => setDrawer({ type: 'program', item })} onDelete={requestProgramDelete} />}
-          {!loading && !error && section === 'investor-requests' && <InvestorRequestsTable selection={selection} requests={rows} query={query} onOpen={(item) => navigate(`/investor-desk/${item.id}`)} />}
+          {!loading && !error && section === 'investor-requests' && <InvestorRequestsTable selection={selection} requests={rows} query={query} onOpen={(item) => navigate(`/guichets/${item.id}`)} />}
           {!loading && !error && section === 'b2b' && <B2bProposalsTable selection={selection} proposals={rows} query={query} showStand={isSuperAdmin} onOpen={(item) => navigate(`/b2b/${item.id}`)} onDecide={requestDecision} onEdit={(item) => setDrawer({ type: 'b2b-proposal', item })} onDelete={requestB2bProposalDelete} />}
           {!loading && !error && section === 'challenges' && <ChallengePassportsTable selection={selection} passports={rows} query={query} allowReward={isSuperAdmin} onRedeem={(passport) => { setRewardError(''); setPendingReward(passport); }} onDelete={isSuperAdmin ? requestPassportDelete : undefined} />}
           {!loading && !error && section === 'wheel' && <WheelPlaysTable selection={selection} plays={rows} query={query} onClaim={(play) => { setRewardError(''); setPendingClaim(play); }} onDelete={isSuperAdmin ? requestWheelPlayDelete : undefined} />}

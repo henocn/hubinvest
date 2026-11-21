@@ -5,7 +5,9 @@ export const SITE_NAME = 'Hub de l’Investissement';
 const titles = {
   '/': `${SITE_NAME} · Investir au Togo avec l’API-ZF`,
   '/stands': `Stands et exposants · ${SITE_NAME}`,
-  '/investor-desk': `Investor Desk · Investir au Togo · ${SITE_NAME}`,
+  '/guichets': `Les guichets du Stand API-ZF · ${SITE_NAME}`,
+  '/guichets/rappel': `Les guichets du Stand API-ZF · ${SITE_NAME}`,
+  '/investor-desk': `Les guichets du Stand API-ZF · ${SITE_NAME}`,
   '/rencontres': `Rencontres professionnelles · ${SITE_NAME}`,
   '/b2b': `Besoins B2B des exposants · ${SITE_NAME}`,
   '/defis': `Défis et roue des opportunités · ${SITE_NAME}`,

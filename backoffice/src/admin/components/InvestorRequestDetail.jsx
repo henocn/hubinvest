@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, CalendarPlus, PhoneCall, X } from 'lucide-react';
 import { api } from '../lib/api';
 import { useRealtimeEvent } from '../../lib/realtime';
-import { investorChannelLabels, investorClassHints, investorClassLabels, investorStatusLabels } from '../constants/access';
+import { companyRegimeLabels, contactSourceLabels, guichetLabels, investorChannelLabels, investorClassHints, investorClassLabels, investorClassShort, investorStatusLabel } from '../constants/access';
 import ConfirmDelete from './ConfirmDelete';
 import RowMenu from './RowMenu';
 
@@ -14,6 +14,10 @@ const fullName = (user) => [user?.firstName, user?.lastName].filter(Boolean).joi
 // Heure de Lomé = UTC : un champ date-heure se lit et s'écrit en UTC.
 const toInput = (value) => (value ? new Date(value).toISOString().slice(0, 16) : '');
 const fromInput = (value) => (value ? new Date(`${value}:00Z`).toISOString() : null);
+const day = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Africa/Lome', weekday: 'long', day: 'numeric', month: 'long' });
+// Une réponse promise est due jusqu'à la fin du jour choisi.
+const dayToInput = (value) => (value ? new Date(value).toISOString().slice(0, 10) : '');
+const dayFromInput = (value) => (value ? new Date(`${value}T23:59:00Z`).toISOString() : null);
 
 function Field({ label, children }) {
   const empty = children === null || children === undefined || children === '';
@@ -59,13 +63,14 @@ function FollowUpForm({ request, loading, error, onClose, onSave }) {
 }
 
 function MeetingForm({ request, meeting, loading, error, onClose, onSave }) {
-  const [form, setForm] = useState({ startsAt: toInput(meeting?.startsAt), location: meeting?.location || 'Investor Desk, Hub de l’Investissement' });
-  const set = (key) => (event) => setForm({ ...form, [key]: event.target.value });
+  const [form, setForm] = useState({ startsAt: toInput(meeting?.startsAt), atGuichet: meeting ? Boolean(meeting.guichet) : true, location: meeting && !meeting.guichet ? meeting.location : '' });
+  const set = (key) => (event) => setForm({ ...form, [key]: event.target.type === 'checkbox' ? event.target.checked : event.target.value });
   return (
     <Modal eyebrow={request.fullName} title={meeting ? 'Modifier le rendez-vous' : 'Fixer un rendez-vous'} error={error} loading={loading} submitLabel={meeting ? 'Déplacer le rendez-vous' : 'Fixer le rendez-vous'} onClose={onClose}
-      onSubmit={() => onSave({ startsAt: fromInput(form.startsAt), location: form.location })}>
-      <label>Date et heure<input type="datetime-local" value={form.startsAt} onChange={set('startsAt')} required /><span className="field-hint">Heure de Lomé. L’investisseur reçoit le rendez-vous par e-mail.</span></label>
-      <label>Lieu<input value={form.location} onChange={set('location')} minLength={2} maxLength={160} required /></label>
+      onSubmit={() => onSave({ startsAt: fromInput(form.startsAt), atGuichet: form.atGuichet, ...(!form.atGuichet && { location: form.location }) })}>
+      <label>Date et heure<input type="datetime-local" value={form.startsAt} onChange={set('startsAt')} required /><span className="field-hint">Heure de Lomé. La personne reçoit le rendez-vous par e-mail, puis un rappel la veille et une heure avant.</span></label>
+      <label className="checkbox-field"><input type="checkbox" checked={form.atGuichet} onChange={set('atGuichet')} /> Au guichet « {guichetLabels[request.guichet]} »</label>
+      {!form.atGuichet && <label>Lieu<input value={form.location} onChange={set('location')} minLength={2} maxLength={160} required /></label>}
     </Modal>
   );
 }
@@ -78,7 +83,7 @@ function ConfirmMeeting({ meeting, cancel, loading, error, onCancel, onConfirm }
       <section className="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="meeting-status-title" onMouseDown={(event) => event.stopPropagation()}>
         <div>
           <h2 id="meeting-status-title">{cancel ? 'Annuler le rendez-vous' : 'Valider le rendez-vous'}</h2>
-          <p>{cancel ? `Le rendez-vous du ${when} est annulé ; l’investisseur en est prévenu par e-mail.` : `Le rendez-vous du ${when} a bien eu lieu.`}</p>
+          <p>{cancel ? `Le rendez-vous du ${when} est annulé ; la personne en est prévenue par e-mail.` : `Le rendez-vous du ${when} a bien eu lieu.`}</p>
         </div>
         {error && <p className="admin-form-error dialog-error">{error}</p>}
         <footer>
@@ -94,14 +99,16 @@ function ConfirmMeeting({ meeting, cancel, loading, error, onCancel, onConfirm }
 function ConfirmClass({ request, classification, loading, error, onCancel, onConfirm }) {
   const change = Boolean(request.classification);
   const relanced = (request.followUps || []).length > 0;
-  const effect = classification === 'C'
-    ? 'Aucune relance individuelle : la demande passe à « Terminé ».'
+  const effect = classification === 'support'
+    ? 'Le suivi passe par la fiche « Mon entreprise, mes difficultés » et son engagement de suivi écrit.'
+    : classification === 'C'
+    ? 'Intégré à la lettre d’information, sans relance individuelle : le contact passe à « Terminé ».'
     : relanced ? 'Une relance a déjà été faite : la date de la prochaine relance ne change pas.' : `La relance est prévue ${classification === 'A' ? 'sous 48 h' : 'sous 7 jours'}.`;
   return (
     <div className="dialog-backdrop" role="presentation" onMouseDown={onCancel}>
       <section className="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="class-title" onMouseDown={(event) => event.stopPropagation()}>
         <div>
-          <h2 id="class-title">{change ? 'Changer la classe' : 'Classer la demande'}</h2>
+          <h2 id="class-title">{change ? 'Changer la classe' : 'Classer le contact'}</h2>
           <p>{change
             ? <>Vous changez la classe de {request.fullName} : <strong>{investorClassLabels[request.classification]}</strong> devient <strong>{investorClassLabels[classification]}</strong>.</>
             : <>Vous classez {request.fullName} en <strong>{investorClassLabels[classification]}</strong>.</>}</p>
@@ -128,13 +135,98 @@ function QualificationInput({ field, value, onChange }) {
   return <input type={field.type === 'number' ? 'number' : 'text'} min={field.type === 'number' ? 0 : undefined} value={value ?? ''} onChange={(event) => onChange(event.target.value)} maxLength={500} />;
 }
 
-// Fiche Investor Desk : la demande, sa qualification (neuf informations), sa classe A·B·C, son interlocuteur nommé,
-// ses relances et ses rendez-vous. Une relance A dépassée est signalée en rouge.
+// Fiche de diagnostic (15 minutes) : les neuf informations, le service vers lequel la personne est orientée et l'étape suivante.
+function DiagnosisForm({ request, busy, saved, onSave }) {
+  const fields = request.qualificationFields || [];
+  const [answers, setAnswers] = useState(request.qualification || {});
+  const [serviceId, setServiceId] = useState(request.recommendedServiceId || '');
+  const [nextAction, setNextAction] = useState(request.nextAction || '');
+  return (
+    <section className="data-panel stand-panel">
+      <header className="settings-panel-head">
+        <h2>Diagnostic</h2>
+        {saved ? <span className="investor-saved">Enregistré</span> : <span className="data-note">{request.diagnosedAt ? `Réalisé le ${dateTime.format(new Date(request.diagnosedAt))}` : 'À faire'}</span>}
+      </header>
+      <form className="investor-qualification" onSubmit={(event) => { event.preventDefault(); onSave({ qualification: answers, recommendedServiceId: serviceId || null, nextAction }); }}>
+        <div className="investor-qualification-grid">
+          {fields.map((field) => (
+            <label key={field.key}>{field.label}
+              <QualificationInput field={field} value={answers[field.key]} onChange={(value) => setAnswers({ ...answers, [field.key]: value })} />
+            </label>
+          ))}
+          <label>Service vers lequel la personne est orientée
+            <select value={serviceId} onChange={(event) => setServiceId(event.target.value)}><option value="">—</option>{(request.services || []).map((service) => <option key={service.id} value={service.id}>{service.title}</option>)}</select>
+          </label>
+          <label>Étape suivante<input value={nextAction} onChange={(event) => setNextAction(event.target.value)} minLength={2} maxLength={255} required /></label>
+        </div>
+        <div className="investor-form-actions"><button className="button button-primary" type="submit" disabled={busy}>Enregistrer le diagnostic</button></div>
+      </form>
+    </section>
+  );
+}
+
+// Fiche « Mon entreprise, mes difficultés » et engagement de suivi écrit, envoyé à l'entreprise par e-mail.
+function DifficultyForm({ request, busy, saved, onSave, onResolve }) {
+  const initial = request.difficulty || {};
+  const [form, setForm] = useState({
+    company: initial.company || request.organization || '',
+    regime: initial.regime || 'free_zone',
+    nature: initial.nature || '',
+    description: initial.description || request.projectSummary || '',
+    serviceId: request.commitmentServiceId || '',
+    dueAt: dayToInput(request.commitmentDueAt),
+    note: request.commitmentNote || '',
+  });
+  const set = (key) => (event) => setForm({ ...form, [key]: event.target.value });
+  const committed = Boolean(request.commitmentDueAt);
+  const submit = (event) => {
+    event.preventDefault();
+    onSave({
+      difficulty: { company: form.company, regime: form.regime, nature: form.nature, description: form.description },
+      commitmentServiceId: form.serviceId || null,
+      commitmentDueAt: dayFromInput(form.dueAt),
+      commitmentNote: form.note.trim() || null,
+    });
+  };
+  return (
+    <section className="data-panel stand-panel">
+      <header className="settings-panel-head">
+        <h2>Mon entreprise, mes difficultés</h2>
+        {saved && <span className="investor-saved">Enregistré</span>}
+      </header>
+      {committed && (
+        <div className={`investor-commitment${request.resolvedAt ? ' is-done' : ''}`}>
+          <span>{request.resolvedAt ? `Réponse donnée le ${dateTime.format(new Date(request.resolvedAt))}` : `Réponse promise au plus tard le ${day.format(new Date(request.commitmentDueAt))}`}</span>
+          <button className="button button-secondary" type="button" disabled={busy} onClick={() => onResolve(!request.resolvedAt)}>{request.resolvedAt ? 'Rouvrir' : 'Réponse donnée'}</button>
+        </div>
+      )}
+      <form className="investor-qualification" onSubmit={submit}>
+        <div className="investor-qualification-grid">
+          <label>Entreprise<input value={form.company} onChange={set('company')} minLength={2} maxLength={160} required /></label>
+          <label>Régime<select value={form.regime} onChange={set('regime')}>{Object.entries(companyRegimeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+          <label>Nature de la difficulté<input value={form.nature} onChange={set('nature')} minLength={2} maxLength={160} required /></label>
+          <label className="is-wide">Description<textarea rows="4" value={form.description} onChange={set('description')} minLength={2} maxLength={4000} required /></label>
+        </div>
+        <h3 className="investor-subtitle">Engagement de suivi écrit</h3>
+        <div className="investor-qualification-grid">
+          <label>Service concerné<select value={form.serviceId} onChange={set('serviceId')}><option value="">—</option>{(request.services || []).map((service) => <option key={service.id} value={service.id}>{service.title}</option>)}</select></label>
+          <label>Réponse au plus tard le<input type="date" value={form.dueAt} onChange={set('dueAt')} required={Boolean(form.note.trim())} /></label>
+          <label className="is-wide">Engagement pris auprès de l’entreprise<textarea rows="3" value={form.note} onChange={set('note')} maxLength={2000} required={Boolean(form.dueAt)} /></label>
+        </div>
+        <p className="field-hint">Un nouvel engagement, ou un engagement modifié, est envoyé par e-mail à {request.email}. Le responsable est alerté à l’échéance si la réponse n’est pas notée.</p>
+        <div className="investor-form-actions"><button className="button button-primary" type="submit" disabled={busy}>Enregistrer la fiche</button></div>
+      </form>
+    </section>
+  );
+}
+
+// Fiche d'un contact des guichets : coordonnées, guichet, responsable nommé et classe ; fiche de diagnostic ou fiche
+// « Mon entreprise, mes difficultés » ; rendez-vous ; relances. Une échéance dépassée est signalée en rouge.
 export default function InvestorRequestDetail({ id, session, onLogout }) {
   const [request, setRequest] = useState(null);
   const [error, setError] = useState('');
   const [notFound, setNotFound] = useState(false);
-  const [answers, setAnswers] = useState({});
+  const [formKey, setFormKey] = useState(0);
   const [tab, setTab] = useState('details');
   const [dialog, setDialog] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -147,9 +239,7 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
     try {
       const data = await api.investorRequest(session.token, id);
       setRequest(data);
-      if (resetForms) {
-        setAnswers(data.qualification || {});
-      }
+      if (resetForms) setFormKey((key) => key + 1);
       setError('');
     } catch (requestError) {
       if (requestError.status === 401) onLogout();
@@ -186,31 +276,34 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
     }
   };
 
-  if (notFound) return <main className="admin-workspace"><p className="panel-message">Cette demande n’existe plus. <Link to="/investor-desk">Retour à l’Investor Desk</Link></p></main>;
+  if (notFound) return <main className="admin-workspace"><p className="panel-message">Ce contact n’existe plus. <Link to="/guichets">Retour aux guichets</Link></p></main>;
   if (!request) return <main className="admin-workspace"><p className="panel-message">{error || 'Chargement…'}</p></main>;
 
-  const overdue = request.nextFollowUpAt && new Date(request.nextFollowUpAt) < new Date() && request.status !== 'closed';
+  const overdue = request.classification !== 'support' && request.nextFollowUpAt && new Date(request.nextFollowUpAt) < new Date() && request.status !== 'closed';
+  const commitmentLate = request.classification === 'support' && request.commitmentDueAt && !request.resolvedAt && new Date(request.commitmentDueAt) < new Date();
   const followUps = request.followUps || [];
   const meetings = request.meetings || [];
-  const fields = request.qualificationFields || [];
-  const filled = fields.filter((field) => request.qualification?.[field.key] !== undefined).length;
+  // Une entreprise installée en difficulté a sa fiche « difficultés » ; les autres contacts, la fiche de diagnostic.
+  const companyCase = request.guichet === 'company' || request.classification === 'support';
 
   return (
     <main className="admin-workspace">
       <header className="workspace-header">
         <div className="stand-title">
-          <Link className="admin-icon-button" to="/investor-desk" aria-label="Retour à l’Investor Desk" title="Retour à l’Investor Desk"><ArrowLeft size={16} /></Link>
+          <Link className="admin-icon-button" to="/guichets" aria-label="Retour aux guichets" title="Retour aux guichets"><ArrowLeft size={16} /></Link>
           <h1>{request.fullName}</h1>
-          {request.classification && <span className={`investor-class is-${request.classification}`} title={investorClassHints[request.classification]}>{request.classification}</span>}
-          <span className={`status-pill${statusClass[request.status] ?? ''}`}>{investorStatusLabels[request.status]}</span>
+          {request.classification && <span className={`investor-class is-${request.classification}`} title={investorClassHints[request.classification]}>{investorClassShort[request.classification]}</span>}
+          <span className={`status-pill${statusClass[request.status] ?? ''}`}>{investorStatusLabel(request)}</span>
         </div>
       </header>
 
       {overdue && <p className="panel-message is-error investor-overdue" role="alert">Relance en retard depuis le {dateTime.format(new Date(request.nextFollowUpAt))}.</p>}
+      {commitmentLate && <p className="panel-message is-error investor-overdue" role="alert">Réponse promise pour le {day.format(new Date(request.commitmentDueAt))}, pas encore donnée.</p>}
       {actionError && !dialog && <p className="panel-message is-error" role="alert">{actionError}</p>}
-      {/* Trois onglets, comme sur la Semaine de l'Industrie : détails et classe, rendez-vous, relances. */}
-      <nav className="section-tabs detail-tabs" aria-label="Fiche de la demande">
+      {/* Onglets : détails et classe, la fiche du guichet (diagnostic ou difficultés), rendez-vous, relances. */}
+      <nav className="section-tabs detail-tabs" aria-label="Fiche du contact">
         <button type="button" className={tab === 'details' ? 'is-active' : ''} onClick={() => setTab('details')} aria-pressed={tab === 'details'}>Détails</button>
+        <button type="button" className={tab === 'sheet' ? 'is-active' : ''} onClick={() => setTab('sheet')} aria-pressed={tab === 'sheet'}>{companyCase ? 'Difficultés' : 'Diagnostic'}</button>
         <button type="button" className={tab === 'meetings' ? 'is-active' : ''} onClick={() => setTab('meetings')} aria-pressed={tab === 'meetings'}>Rendez-vous <b>{meetings.length}</b></button>
         <button type="button" className={tab === 'follow-ups' ? 'is-active' : ''} onClick={() => setTab('follow-ups')} aria-pressed={tab === 'follow-ups'}>Relances <b>{followUps.length}</b></button>
       </nav>
@@ -218,9 +311,12 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
       {tab === 'details' && <>
 
       <section className="data-panel stand-panel">
-        <h2>Demande</h2>
+        <h2>Contact</h2>
         <dl className="stand-fields">
-          <Field label="Reçue le">{dateTime.format(new Date(request.createdAt))}</Field>
+          <Field label="Reçu le">{dateTime.format(new Date(request.createdAt))}</Field>
+          <Field label="Origine">{contactSourceLabels[request.source]}</Field>
+          <Field label="Guichet">{guichetLabels[request.guichet]}</Field>
+          <Field label="Structure">{request.organization}</Field>
           <Field label="Téléphone">{request.phone && <a href={`tel:${request.phone}`}>{request.phone}</a>}</Field>
           <Field label="E-mail"><a href={`mailto:${request.email}`}>{request.email}</a></Field>
           <Field label="Accord API-ZF">{request.consentApizf ? 'Oui' : 'Non'}</Field>
@@ -232,6 +328,12 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
         <header className="settings-panel-head"><h2>Suivi</h2>{saved === 'follow' && <span className="investor-saved">Enregistré</span>}</header>
         {/* Un clic sur une classe demande confirmation (classement, ou changement de classe). */}
         <div className="investor-follow">
+          <label className="investor-owner">Responsable
+            <select value={request.contactUserId || ''} disabled={busy} onChange={(event) => { void run(() => api.updateInvestorRequest(session.token, request.id, { contactUserId: event.target.value || null }), 'follow'); }}>
+              <option value="">À désigner</option>
+              {(request.team || []).map((member) => <option key={member.id} value={member.id}>{fullName(member)}</option>)}
+            </select>
+          </label>
           <fieldset className="investor-classes" disabled={busy}>
             <legend>Classe</legend>
             {Object.entries(investorClassLabels).map(([value, label]) => (
@@ -245,23 +347,11 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
         </div>
       </section>
 
-      {/* Qualification en neuf informations : masquée en attendant que l'API-ZF confirme la liste ; le serveur la garde.
-      <section className="data-panel stand-panel">
-        <header className="settings-panel-head"><h2>Qualification <span>{filled} / {fields.length}</span></h2>{saved === 'qualification' && <span className="investor-saved">Enregistré</span>}</header>
-        <form className="investor-qualification" onSubmit={(event) => { event.preventDefault(); void run(() => api.updateInvestorRequest(session.token, request.id, { qualification: answers }), 'qualification'); }}>
-          <div className="investor-qualification-grid">
-            {fields.map((field) => (
-              <label key={field.key}>{field.label}
-                <QualificationInput field={field} value={answers[field.key]} onChange={(value) => setAnswers({ ...answers, [field.key]: value })} />
-              </label>
-            ))}
-          </div>
-          <div className="investor-form-actions"><button className="button button-primary" type="submit" disabled={busy}>Enregistrer la qualification</button></div>
-        </form>
-      </section>
-
-      */}
       </>}
+
+      {tab === 'sheet' && (companyCase
+        ? <DifficultyForm key={formKey} request={request} busy={busy} saved={saved === 'sheet'} onSave={(values) => run(() => api.saveInvestorDifficulty(session.token, request.id, values), 'sheet')} onResolve={(resolved) => run(() => api.resolveInvestorCommitment(session.token, request.id, resolved), 'sheet')} />
+        : <DiagnosisForm key={formKey} request={request} busy={busy} saved={saved === 'sheet'} onSave={(values) => run(() => api.saveInvestorDiagnosis(session.token, request.id, values), 'sheet')} />)}
 
       {tab === 'meetings' && (
       <section className="data-panel stand-panel">
@@ -326,7 +416,7 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
       {dialog?.type === 'delete-follow-up' && <ConfirmDelete subject={{ label: `la relance du ${dateTime.format(new Date(dialog.item.doneAt))}` }} loading={busy} error={actionError} onCancel={close} onConfirm={() => run(() => api.deleteInvestorFollowUp(session.token, request.id, dialog.item.id))} />}
       {(dialog?.type === 'hold-meeting' || dialog?.type === 'cancel-meeting') && <ConfirmMeeting meeting={dialog.item} cancel={dialog.type === 'cancel-meeting'} loading={busy} error={actionError} onCancel={close}
         onConfirm={() => run(() => api.setInvestorMeetingStatus(session.token, request.id, dialog.item.id, dialog.type === 'cancel-meeting' ? 'cancelled' : 'held'))} />}
-      {dialog?.type === 'delete-meeting' && <ConfirmDelete subject={{ label: `le rendez-vous du ${dateTime.format(new Date(dialog.item.startsAt))} (sans prévenir l’investisseur : pour le décommander, annulez-le)` }} loading={busy} error={actionError} onCancel={close} onConfirm={() => run(() => api.deleteInvestorMeeting(session.token, request.id, dialog.item.id))} />}
+      {dialog?.type === 'delete-meeting' && <ConfirmDelete subject={{ label: `le rendez-vous du ${dateTime.format(new Date(dialog.item.startsAt))} (sans prévenir la personne : pour le décommander, annulez-le)` }} loading={busy} error={actionError} onCancel={close} onConfirm={() => run(() => api.deleteInvestorMeeting(session.token, request.id, dialog.item.id))} />}
     </main>
   );
 }

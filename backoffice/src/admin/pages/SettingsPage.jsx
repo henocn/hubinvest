@@ -9,7 +9,7 @@ import StudioFormatSettings from '../components/StudioFormatSettings';
 
 const modules = [
   { key: 'contactRequestsOpen', title: 'Demandes de contact aux stands' },
-  { key: 'investorDeskOpen', title: 'Investor Desk' },
+  { key: 'investorDeskOpen', title: 'Guichets : rendez-vous et rappels en ligne' },
   { key: 'b2bOpen', title: 'Propositions B2B' },
   { key: 'challengeOpen', title: 'Défi de passage' },
   { key: 'wheelOpen', title: 'Roue des opportunités' },
@@ -163,7 +163,12 @@ export default function SettingsPage({ session, onLogout }) {
           </section>
 
           <section className="data-panel settings-panel">
-            <h2>Investor Desk</h2>
+            <h2>Guichets</h2>
+            <SettingField settingKey="guichetFirstDay" label="Premier jour des rendez-vous" type="date" value={settings.guichetFirstDay} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="guichetLastDay" label="Dernier jour des rendez-vous" type="date" value={settings.guichetLastDay} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="guichetDayStart" label="Premier rendez-vous de la journée" type="time" value={settings.guichetDayStart} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="guichetDayEnd" label="Fin des rendez-vous" hint="Le dernier rendez-vous se termine au plus tard à cette heure" type="time" value={settings.guichetDayEnd} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="guichetSlotMinutes" label="Durée d’un rendez-vous (minutes)" hint="Diagnostic en 15 minutes selon le document" type="number" min="5" max="120" value={settings.guichetSlotMinutes} saving={savingKey} saved={savedKey} onSave={save} />
             <SettingField settingKey="investorDelayAHours" label="Relance d’un contact A (heures)" hint="48 heures selon le document" type="number" min="1" max="720" value={settings.investorDelayAHours} saving={savingKey} saved={savedKey} onSave={save} />
             <SettingField settingKey="investorDelayBDays" label="Relance d’un contact B (jours)" hint="7 jours selon le document" type="number" min="1" max="90" value={settings.investorDelayBDays} saving={savingKey} saved={savedKey} onSave={save} />
             <InvestorQualificationSettings fields={settings.investorQualificationFields} saving={savingKey === 'investorQualificationFields'} saved={savedKey === 'investorQualificationFields'} onSave={save} />

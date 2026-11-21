@@ -1,6 +1,21 @@
 # TODO — HubInvest
 
-Référence prioritaire : `APIZF - FIL2026 - DK.pdf` (dispositif complet, § 8 « HubInvest »). Le cahier des charges `Volume2_HubInvest_Cahier_des_charges_API-ZF_V1.docx` reste la description détaillée de chaque module ; en cas d’écart, le PDF l’emporte. Les deux restent des documents de travail : leurs objectifs chiffrés ne sont jamais affichés comme des résultats.
+Référence prioritaire : `APIZF-FIL2026-v4.pdf` (proposition d’octobre 2026, § 10 « HubInvest, l’outil au service de l’offre »), qui remplace `APIZF - FIL2026 - DK.pdf`. Le cahier des charges `Volume2_HubInvest_Cahier_des_charges_API-ZF_V1.docx` reste la description détaillée de chaque module ; en cas d’écart, le PDF l’emporte. Leurs objectifs chiffrés ne sont jamais affichés comme des résultats.
+
+## Refonte v4 (branche brief-v4)
+
+Le Hub devient deux espaces : le Stand API-ZF (3 stands, 3 guichets) et l’Espace Industrie (16 stands). On parle d’« entreprises », plus d’« occupants ». Signature : « Investir au Togo, nous facilitons votre réussite. » La roue des opportunités n’est plus citée mais reste (décision du 21/11/2026).
+
+- [x] Services : les 6 services et les 12 démarches en ligne, gérés dans l’administration (rubrique Services, super administrateur) : étape, promesse, lieu, « selon disponibilités », lien officiel, ordre, publier ou masquer (M9).
+- [ ] Liens des 12 démarches vers la plateforme officielle : adresses à obtenir de l’API-ZF.
+- [ ] Brochure « Investir au Togo en 5 étapes » et Investor Pack : fichiers à déposer dans l’administration et à proposer par QR code.
+- [~] Accueil « Nos services » (fait : signature, trois actions vers les guichets et les Défis, 5 étapes et leurs services, démarches en ligne ; reste : brochure, plan) : 6 services, 12 démarches avec lien vers la plateforme officielle, brochure « 5 étapes » ; puis programme, entreprises, plan ; boutons « Prendre rendez-vous », « Être recontacté », « Jouer » (M1).
+- [x] Guichets et registre unique (fait le 21/11/2026 ; reste à confirmer les neuf informations du diagnostic et les heures d’ouverture des guichets) : rendez-vous aux 3 guichets, fiche de diagnostic en 15 minutes, fiche « Mon entreprise, mes difficultés », A·B·C en neuf informations, un responsable par contact, alerte A sous 48 h, classe « Accompagnement » (M3).
+- [ ] Défis : parcours « Trouvez les 5 étapes », chaque étape sur un stand de l’Espace Industrie, la dernière au Stand API-ZF (M6).
+- [ ] Grand écran : service du jour, entreprise à la une, prochaine interview, compteurs, capsules (M7).
+- [ ] Tableau de bord : diagnostics et sollicitations d’accompagnement ; huit indicateurs ; rapport PDF par entreprise avant le 18 décembre (M8).
+- [ ] Vocabulaire : entreprises, Stand API-ZF, Espace Industrie, nouvelle signature.
+- [ ] À confirmer : dates superposées dans le PDF (28 octobre / 26 novembre) pour le pré-lancement et l’ouverture des rendez-vous aux guichets.
 
 Principe directeur commun aux deux documents : **fiabilité avant sophistication**. Un module souhaitable non prêt est remplacé par une solution manuelle. Chaque parcours reste livré de bout en bout (données, API, écran, droits, vérification sur téléphone) avant d’ouvrir le suivant. Les dates des documents ne fixent pas l’ordre du travail.
 

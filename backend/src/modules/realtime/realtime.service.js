@@ -138,6 +138,7 @@ const events = {
   // Compte modifié, désactivé ou supprimé : ses écrans revérifient leur session.
   accountChanged: (userId) => safePublish([channels.user(userId)], 'account'),
   programChanged: () => safePublish([channels.superAdmins], 'program'),
+  servicesChanged: () => safePublish([channels.superAdmins], 'services'),
   // Roue des opportunités : cases, stock et codes, partagés par toute l'administration.
   wheelChanged: () => safePublish([channels.superAdmins, channels.admins], 'wheel'),
   // Modules ouverts ou fermés, nombre de stands des Défis : toute l'équipe.

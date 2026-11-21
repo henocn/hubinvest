@@ -1,17 +1,21 @@
 const { Op } = require('sequelize');
-const { InvestorRequest, InvestorFollowUp, InvestorMeeting, User } = require('../../models');
+const { InvestorRequest, InvestorFollowUp, InvestorMeeting, User, Service, sequelize } = require('../../models');
 const roles = require('../../shared/roles');
 
 const person = ['id', 'firstName', 'lastName'];
 const contactUserInclude = { model: User, as: 'contactUser', attributes: person, required: false };
 
-const findAll = ({ status, search, limit, offset }) => {
+const serviceAttributes = ['id', 'title'];
+
+const findAll = ({ status, guichet, search, limit, offset }) => {
   const where = {};
   if (status) where.status = status;
+  if (guichet) where.guichet = guichet;
   if (search) {
     where[Op.or] = [
       { fullName: { [Op.iLike]: `%${search}%` } },
       { email: { [Op.iLike]: `%${search}%` } },
+      { organization: { [Op.iLike]: `%${search}%` } },
       { projectSummary: { [Op.iLike]: `%${search}%` } },
     ];
   }
@@ -31,6 +35,8 @@ const findById = (id) => InvestorRequest.findByPk(id, { include: [contactUserInc
 const findDetail = (id) => InvestorRequest.findByPk(id, {
   include: [
     contactUserInclude,
+    { model: Service, as: 'recommendedService', attributes: serviceAttributes, required: false },
+    { model: Service, as: 'commitmentService', attributes: serviceAttributes, required: false },
     { model: InvestorFollowUp, as: 'followUps', required: false, include: [{ model: User, as: 'createdBy', attributes: person }] },
     { model: InvestorMeeting, as: 'meetings', required: false, include: [{ model: User, as: 'createdBy', attributes: person }] },
   ],
@@ -41,6 +47,23 @@ const findDetail = (id) => InvestorRequest.findByPk(id, {
 });
 
 const create = (values) => InvestorRequest.create(values);
+
+// Rendez-vous réservé en ligne : le contact et son rendez-vous sont créés ensemble, ou pas du tout.
+const createWithMeeting = (values, meetingValues) => sequelize.transaction(async (transaction) => {
+  const investorRequest = await InvestorRequest.create(values, { transaction });
+  const meeting = await InvestorMeeting.create({ ...meetingValues, investorRequestId: investorRequest.id, status: 'scheduled' }, { transaction });
+  return { investorRequest, meeting };
+});
+
+// Rendez-vous prévus à un guichet entre deux instants (créneaux déjà pris).
+const findGuichetMeetingsBetween = (guichet, from, to) => InvestorMeeting.findAll({
+  where: { guichet, status: 'scheduled', startsAt: { [Op.gte]: from, [Op.lt]: to } },
+  attributes: ['id', 'startsAt'],
+});
+
+// Services de l'API-ZF proposés pour l'orientation et l'engagement de suivi.
+const findServices = () => Service.findAll({ attributes: serviceAttributes, order: [['position', 'ASC']] });
+const findService = (id) => Service.findByPk(id, { attributes: serviceAttributes });
 const update = (request, values) => request.update(values);
 
 // L'interlocuteur nommé est un membre actif de l'équipe API-ZF (super administrateur).
@@ -67,6 +90,10 @@ module.exports = {
   findById,
   findDetail,
   create,
+  createWithMeeting,
+  findGuichetMeetingsBetween,
+  findServices,
+  findService,
   update,
   findTeamMember,
   findTeam,

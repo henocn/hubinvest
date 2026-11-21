@@ -6,12 +6,14 @@ import { publicErrorMessage } from '../lib/public-error';
 import PhoneField from './PhoneField';
 import { isValidPhone, toInternationalPhone } from '../lib/phone';
 
-export default function InvestorRequestForm() {
+// « Être recontacté » par l'API-ZF : la demande, puis les coordonnées, pour le guichet choisi.
+export default function InvestorRequestForm({ guichet = 'project' }) {
   const { t } = useTranslation();
   const [form, setForm] = useState({
     fullName: '',
     email: '',
     phone: '',
+    organization: '',
     projectSummary: '',
     consentApizf: false,
   });
@@ -36,7 +38,7 @@ export default function InvestorRequestForm() {
     setLoading(true);
     setError('');
     try {
-      await api.createInvestorRequest({ ...form, phone: toInternationalPhone(form.phone) });
+      await api.createInvestorRequest({ ...form, guichet, phone: toInternationalPhone(form.phone) });
       setReceived(true);
     } catch (requestError) {
       setError(publicErrorMessage(t, requestError));
@@ -63,7 +65,7 @@ export default function InvestorRequestForm() {
 
       {step === 1 ? (
         <div className="investor-step">
-          <label>{t('investor.question')}<textarea value={form.projectSummary} onChange={(event) => field('projectSummary', event.target.value)} autoFocus rows={7} minLength={10} maxLength={6000} required /></label>
+          <label>{t(guichet === 'company' ? 'investor.questionCompany' : 'investor.question')}<textarea value={form.projectSummary} onChange={(event) => field('projectSummary', event.target.value)} autoFocus rows={7} minLength={10} maxLength={6000} required /></label>
           {error && <p className="request-error" role="alert">{error}</p>}
           <button className="button button-primary investor-next-button" type="submit">{t('common.continue')} <ArrowRight size={17} /></button>
         </div>
@@ -75,6 +77,7 @@ export default function InvestorRequestForm() {
             <label>{t('fields.email')}<input type="email" value={form.email} onChange={(event) => field('email', event.target.value)} maxLength={180} autoComplete="email" required /></label>
             <PhoneField value={form.phone} onChange={(phone) => field('phone', phone)} showError={phoneChecked} />
           </div>
+          <label>{t('guichets.organization')} <small>({t('common.optional')})</small><input value={form.organization} onChange={(event) => field('organization', event.target.value)} maxLength={160} autoComplete="organization" /></label>
           <label className="request-consent investor-consent">
             <input type="checkbox" checked={form.consentApizf} onChange={(event) => field('consentApizf', event.target.checked)} required />
             <span>{t('investor.consent')}</span>

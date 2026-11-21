@@ -24,6 +24,11 @@ const update = Joi.object({
   studioDayStart: Joi.string().pattern(timeOfDay),
   studioDayEnd: Joi.string().pattern(timeOfDay),
   studioSlotMinutes: Joi.number().integer().min(5).max(120),
+  guichetFirstDay: Joi.string().pattern(isoDay),
+  guichetLastDay: Joi.string().pattern(isoDay),
+  guichetDayStart: Joi.string().pattern(timeOfDay),
+  guichetDayEnd: Joi.string().pattern(timeOfDay),
+  guichetSlotMinutes: Joi.number().integer().min(5).max(120),
   // Formats de tournage du Studio : la clé reste fixe pour garder les invitations déjà faites.
   studioFormats: Joi.array().min(1).max(20).items(Joi.object({
     key: Joi.string().pattern(/^[A-Za-z][A-Za-z0-9_-]{0,29}$/).required(),

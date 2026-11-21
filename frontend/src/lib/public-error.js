@@ -3,6 +3,8 @@ const errorKeys = {
   VALIDATION_ERROR: 'common.validationFailed',
   RATE_LIMITED: 'common.rateLimited',
   STUDIO_SLOT_TAKEN: 'studio.errors.taken',
+  GUICHET_SLOT_TAKEN: 'guichets.errors.taken',
+  GUICHET_SLOT_INVALID: 'guichets.errors.invalid',
   STUDIO_TOO_LATE: 'studio.errors.tooLate',
   STUDIO_INVITATION_CLOSED: 'studio.errors.closed',
   STUDIO_INVITATION_NOT_FOUND: 'studio.notFound',

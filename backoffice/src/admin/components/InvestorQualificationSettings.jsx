@@ -6,7 +6,7 @@ const typeLabels = { select: 'Liste de choix', text: 'Texte', number: 'Nombre', 
 const newKey = () => `f${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 const toDraft = (fields) => (fields || []).map((field) => ({ ...field, optionsText: (field.options || []).join(', ') }));
 
-// Les informations de qualification de l'Investor Desk (neuf selon le document, liste non fournie) : libellé, type, choix.
+// Les neuf informations de qualification de la fiche de diagnostic (liste non fournie par le document) : libellé, type, choix.
 export default function InvestorQualificationSettings({ fields, saving, saved, onSave }) {
   const [draft, setDraft] = useState(toDraft(fields));
   useEffect(() => { setDraft(toDraft(fields)); }, [fields]);
@@ -26,7 +26,7 @@ export default function InvestorQualificationSettings({ fields, saving, saved, o
 
   return (
     <form className="qualification-settings" onSubmit={(event) => { event.preventDefault(); if (valid && changed) void onSave('investorQualificationFields', values); }}>
-      <p className="field-hint">Informations remplies par le cadre de l’Investor Desk sur chaque fiche. Pour une liste de choix, séparez les choix par des virgules. Retirer une information masque ses réponses sans les effacer.</p>
+      <p className="field-hint">Informations remplies au guichet sur la fiche de diagnostic. Pour une liste de choix, séparez les choix par des virgules. Retirer une information masque ses réponses sans les effacer.</p>
       {draft.map((field, index) => (
         <div className="qualification-setting" key={field.key}>
           <span className="qualification-setting-number">{index + 1}</span>

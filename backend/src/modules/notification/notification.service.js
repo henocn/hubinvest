@@ -55,11 +55,13 @@ const contactReminderChanged = (contact) => dispatch(async () => {
 });
 
 // Prévient l'équipe de l'API-ZF (super administrateurs) et confirme à l'investisseur la réception de sa demande.
+// Nouveau contact aux guichets : l'équipe API-ZF est prévenue ; une demande de rappel est confirmée par e-mail
+// (un rendez-vous réservé reçoit sa propre confirmation, avec ses rappels).
 const investorRequestReceived = (request) => dispatch(async () => {
   const team = await notificationRepository.findSuperAdmins();
   await notificationRepository.enqueue([
-    ...forUsers(team, (user) => templates.investorRequestReceived({ user })),
-    { channel: 'email', recipient: request.email, payload: templates.investorRequestConfirmation({ request }) },
+    ...forUsers(team, (user) => templates.investorRequestReceived({ user, request })),
+    ...(request.source === 'callback' ? [{ channel: 'email', recipient: request.email, payload: templates.investorRequestConfirmation({ request }) }] : []),
   ]);
 });
 
@@ -80,11 +82,35 @@ const investorFollowUpChanged = (request) => dispatch(async () => {
   ));
 });
 
-// Rendez-vous Investor Desk fixé, déplacé ou annulé : l'investisseur reçoit un e-mail.
+// Rendez-vous aux guichets fixé, déplacé ou annulé : la personne reçoit un e-mail, puis un rappel la veille et une heure
+// avant ; un déplacement remplace les rappels, une annulation les retire.
 const investorMeetingChanged = (kind, meeting, request) => dispatch(async () => {
-  await notificationRepository.enqueue([
-    { channel: 'email', recipient: request.email, payload: templates.investorMeeting({ kind, meeting, request }) },
-  ]);
+  const dedupeKey = `investor-meeting-reminder:${meeting.id}`;
+  await notificationRepository.cancelPending(dedupeKey);
+  const email = (payload, extra = {}) => ({ channel: 'email', recipient: request.email, payload, ...extra });
+  const start = new Date(meeting.startsAt).getTime();
+  const reminders = kind === 'cancelled' ? [] : [start - 24 * 60 * 60 * 1000, start - 60 * 60 * 1000]
+    .filter((time) => time > Date.now())
+    .map((time) => email(templates.investorMeeting({ kind: 'reminder', meeting, request }), { dedupeKey, availableAt: new Date(time) }));
+  await notificationRepository.enqueue([email(templates.investorMeeting({ kind, meeting, request })), ...reminders]);
+});
+
+// Rendez-vous retiré sans prévenir la personne (erreur de saisie) : ses rappels disparaissent.
+const investorMeetingRemoved = (meeting) => dispatch(() => notificationRepository.cancelPending(`investor-meeting-reminder:${meeting.id}`));
+
+// Engagement de suivi d'une entreprise en difficulté : l'engagement écrit lui est envoyé ; le responsable (ou l'équipe API-ZF)
+// est alerté à l'échéance si aucune réponse n'est enregistrée. Une réponse enregistrée retire l'alerte.
+const investorCommitmentChanged = (request, { notifyCompany = false, serviceTitle = null } = {}) => dispatch(async () => {
+  const dedupeKey = `investor-commitment:${request.id}`;
+  await notificationRepository.cancelPending(dedupeKey);
+  const jobs = notifyCompany ? [{ channel: 'email', recipient: request.email, payload: templates.investorSupportCommitment({ request, serviceTitle }) }] : [];
+  const dueAt = request.commitmentDueAt ? new Date(request.commitmentDueAt) : null;
+  if (dueAt && dueAt > new Date() && !request.resolvedAt) {
+    const contact = request.contactUserId ? await notificationRepository.findActiveUser(request.contactUserId) : null;
+    const users = contact ? [contact] : await notificationRepository.findSuperAdmins();
+    jobs.push(...forUsers(users, (user) => ({ ...templates.investorCommitmentDue({ user, request }), tag: dedupeKey }), { dedupeKey, availableAt: dueAt }));
+  }
+  if (jobs.length) await notificationRepository.enqueue(jobs);
 });
 
 // Prévient l'équipe du stand et confirme au professionnel l'envoi de sa proposition.
@@ -174,6 +200,8 @@ module.exports = {
   investorRequestReceived,
   investorFollowUpChanged,
   investorMeetingChanged,
+  investorMeetingRemoved,
+  investorCommitmentChanged,
   b2bProposalReceived,
   b2bProposalDecided,
   b2bMeetingScheduled,

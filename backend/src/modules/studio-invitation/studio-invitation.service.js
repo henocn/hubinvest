@@ -7,11 +7,10 @@ const studioInvitationRepository = require('./studio-invitation.repository');
 const notificationService = require('../notification/notification.service');
 const { events: realtime } = require('../realtime/realtime.service');
 const settingsService = require('../settings/settings.service');
+const { MINUTE, slotGrid } = require('../../shared/slot-grid');
 
 // Studio (document, module M5) : invitation personnelle, créneau réservé par l'invité, rappels automatiques,
 // livraison de la capsule. Heures de Lomé = UTC.
-const MINUTE = 60 * 1000;
-const DAY = 24 * 60 * MINUTE;
 // L'invité peut changer de créneau jusqu'à une heure avant.
 const CHANGE_LIMIT = 60 * MINUTE;
 
@@ -23,21 +22,8 @@ const standFor = (user) => {
   return user.occupantId;
 };
 
-const toMinutes = (time) => {
-  const [hours, minutes] = time.split(':').map(Number);
-  return hours * 60 + minutes;
-};
-
 // Tous les créneaux du Studio, jour par jour, selon les réglages.
-const allSlots = () => {
-  const { firstDay, lastDay, dayStart, dayEnd, minutes } = settingsService.studioSchedule();
-  const slots = [];
-  for (let day = Date.parse(`${firstDay}T00:00:00Z`); day <= Date.parse(`${lastDay}T00:00:00Z`); day += DAY) {
-    const last = day + toMinutes(dayEnd) * MINUTE;
-    for (let start = day + toMinutes(dayStart) * MINUTE; start + minutes * MINUTE <= last; start += minutes * MINUTE) slots.push(start);
-  }
-  return slots;
-};
+const allSlots = () => slotGrid(settingsService.studioSchedule());
 
 // Créneaux à venir encore libres (le créneau actuel de l'invité compte comme libre pour lui).
 const freeSlots = async (ownId = null) => {

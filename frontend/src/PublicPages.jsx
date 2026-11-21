@@ -5,7 +5,7 @@ import BrandFooter from './components/BrandFooter';
 import B2bDetailPage from './pages/B2bDetailPage';
 import B2bListPage from './pages/B2bListPage';
 import HomePage from './pages/HomePage';
-import InvestorDeskPage from './pages/InvestorDeskPage';
+import GuichetsPage from './pages/GuichetsPage';
 import NotFoundPage from './pages/NotFoundPage';
 import StandDetailPage from './pages/StandDetailPage';
 import StandListPage from './pages/StandListPage';
@@ -35,8 +35,10 @@ export default function PublicPages({ path }) {
     page = <StandListPage />;
   } else if (standDetail) {
     page = <StandDetailPage key={standDetail[1]} slug={standDetail[1]} />;
-  } else if (path === '/investor-desk') {
-    page = <InvestorDeskPage />;
+  } else if (path === '/guichets') {
+    page = <GuichetsPage mode="book" />;
+  } else if (path === '/guichets/rappel' || path === '/investor-desk') {
+    page = <GuichetsPage mode="callback" />;
   } else if (path === '/b2b') {
     page = <B2bListPage />;
   } else if (path === '/rencontres') {

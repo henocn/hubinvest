@@ -7,7 +7,7 @@ const { events: realtime } = require('../realtime/realtime.service');
 // Modules du site public qu'on peut ouvrir ou fermer depuis l'administration, avec le message affiché une fois fermé.
 const MODULES = Object.freeze({
   contactRequestsOpen: 'Les demandes de contact aux stands sont closes.',
-  investorDeskOpen: 'L’Investor Desk ne reçoit plus de nouvelles demandes.',
+  investorDeskOpen: 'Les guichets ne prennent plus de rendez-vous ni de demandes de rappel en ligne.',
   b2bOpen: 'Les propositions de rencontre B2B sont closes.',
   challengeOpen: 'Les Défis sont terminés.',
   wheelOpen: 'La roue des opportunités est fermée.',
@@ -32,6 +32,12 @@ const defaults = () => ({
   studioDayStart: '14:00',
   studioDayEnd: '18:00',
   studioSlotMinutes: 20,
+  // Guichets du Stand API-ZF : créneaux de rendez-vous réservables en ligne (diagnostic en 15 minutes).
+  guichetFirstDay: '2026-11-27',
+  guichetLastDay: '2026-12-13',
+  guichetDayStart: '09:00',
+  guichetDayEnd: '18:00',
+  guichetSlotMinutes: 15,
   // Formats de tournage proposés aux invités (ceux du document) ; la clé reste fixe pour les invitations déjà faites.
   studioFormats: [
     { key: 'two_minutes', label: '2 min avec…', labelEn: '2 min with…' },
@@ -87,6 +93,14 @@ const studioSchedule = () => ({
   minutes: Math.max(5, Number(cache.studioSlotMinutes) || 20),
 });
 
+const guichetSchedule = () => ({
+  firstDay: cache.guichetFirstDay || '2026-11-27',
+  lastDay: cache.guichetLastDay || '2026-12-13',
+  dayStart: cache.guichetDayStart || '09:00',
+  dayEnd: cache.guichetDayEnd || '18:00',
+  minutes: Math.max(5, Number(cache.guichetSlotMinutes) || 15),
+});
+
 const studioFormats = () => (Array.isArray(cache.studioFormats) ? cache.studioFormats : []);
 
 // Libellé d'un format dans la langue de l'invité (le français à défaut de traduction).
@@ -133,4 +147,4 @@ const publicSettings = () => {
   return rest;
 };
 
-module.exports = { MODULES, load, current, requiredPassages, wheelPlaysPerDay, wheelSpinsPerCode, b2bSchedule, studioSchedule, studioFormats, studioFormatLabel, investorFollowUpDelay, investorQualificationFields, assertOpen, update, publicSettings, _reset: () => { cache = defaults(); } };
+module.exports = { MODULES, load, current, requiredPassages, wheelPlaysPerDay, wheelSpinsPerCode, b2bSchedule, studioSchedule, guichetSchedule, studioFormats, studioFormatLabel, investorFollowUpDelay, investorQualificationFields, assertOpen, update, publicSettings, _reset: () => { cache = defaults(); } };

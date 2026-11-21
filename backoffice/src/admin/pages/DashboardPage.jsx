@@ -28,8 +28,9 @@ export default function DashboardPage({ session }) {
           <section className="dashboard-group" aria-labelledby="dashboard-todo">
             <h2 id="dashboard-todo">À traiter</h2>
             <div className="dashboard-grid">
-              {isSuperAdmin && <Stat value={data.investor.new} label="Investor Desk" detail="demandes à traiter" to="/investor-desk" urgent />}
-              {isSuperAdmin && <Stat value={data.investor.overdue ?? 0} label="Relances A en retard" detail="Investor Desk, délai dépassé" to="/investor-desk" urgent />}
+              {isSuperAdmin && <Stat value={data.investor.new} label="Guichets" detail="contacts à traiter" to="/guichets" urgent />}
+              {isSuperAdmin && <Stat value={data.investor.overdue ?? 0} label="Relances A en retard" detail="délai de 48 h dépassé" to="/guichets" urgent />}
+              {isSuperAdmin && <Stat value={data.investor.commitmentsOverdue ?? 0} label="Engagements en retard" detail="réponse promise non donnée" to="/guichets" urgent />}
               <Stat value={data.b2b.pendingProposals} label="Demandes B2B" detail="à traiter" to="/b2b" urgent />
               <Stat value={data.studio.pending} label="Studio" detail="invités sans créneau" to="/studio" />
               <Stat value={data.challenges.rewardsToHand} label="Récompenses des Défis" detail="parcours terminés, à remettre" to="/participants" urgent />
@@ -44,7 +45,9 @@ export default function DashboardPage({ session }) {
               {isSuperAdmin && <Stat value={data.contacts.total} label="Contacts captés" detail={`dont ${data.contacts.today} aujourd’hui · ${data.contacts.fromSite} via le site`} />}
               <Stat value={data.challenges.players} label={isSuperAdmin ? 'Joueurs des Défis' : 'Joueurs passés par le stand'} detail={`${data.challenges.rewardsHanded} récompense${data.challenges.rewardsHanded > 1 ? 's' : ''} remise${data.challenges.rewardsHanded > 1 ? 's' : ''}`} to="/participants" />
               <Stat value={data.wheel.played} label="Parties de roue" detail={`dont ${data.wheel.playedToday} aujourd’hui`} to="/roue" />
-              {isSuperAdmin && <Stat value={data.investor.total} label="Projets Investor Desk" detail={`${data.investor.inProgress} à relancer`} to="/investor-desk" />}
+              {isSuperAdmin && <Stat value={data.investor.total} label="Contacts aux guichets" detail={`${data.investor.inProgress} en suivi`} to="/guichets" />}
+              {isSuperAdmin && <Stat value={data.investor.diagnosed ?? 0} label="Diagnostics réalisés" detail="fiches de diagnostic en 15 minutes" to="/guichets" />}
+              {isSuperAdmin && <Stat value={data.investor.supportTaken ?? 0} label="Sollicitations d’accompagnement" detail="prises en charge avec un engagement de suivi" to="/guichets" />}
               <Stat value={data.b2b.openNeeds} label="Besoins B2B ouverts" to="/parametres" />
               <Stat value={data.studio.confirmed} label="Passages au Studio" detail="réservés, à venir" to="/studio" />
             </div>

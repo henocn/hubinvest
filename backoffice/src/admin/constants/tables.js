@@ -1,5 +1,5 @@
 import { formatDate } from '../../lib/excel';
-import { b2bProposalLabels, challengeStatusLabels, investorStatusLabels, programTypeLabels, roleLabels, wheelPlayStatus } from './access';
+import { b2bProposalLabels, challengeStatusLabels, companyRegimeLabels, contactSourceLabels, guichetLabels, investorClassLabels, investorStatusLabel, programTypeLabels, roleLabels, wheelPlayStatus } from './access';
 
 const isToClaim = (item) => item.result?.kind === 'prize' && !item.claimedAt;
 const fullName = (person) => (person ? [person.firstName, person.lastName].filter(Boolean).join(' ') : '');
@@ -74,16 +74,26 @@ export const tableSettings = {
         return new Date(a.nextFollowUpAt) - new Date(b.nextFollowUpAt);
       } },
     ],
-    exportName: 'investor-desk',
+    exportName: 'registre-guichets',
     columns: () => [
-      { header: 'Reçue le', value: (item) => formatDate(item.createdAt), width: 18 },
+      { header: 'Reçu le', value: (item) => formatDate(item.createdAt), width: 18 },
+      { header: 'Guichet', value: (item) => guichetLabels[item.guichet] || item.guichet, width: 32 },
+      { header: 'Origine', value: (item) => contactSourceLabels[item.source] || item.source, width: 20 },
       { header: 'Nom', value: (item) => item.fullName, width: 26 },
+      { header: 'Structure', value: (item) => item.organization || item.difficulty?.company, width: 28 },
       { header: 'E-mail', value: (item) => item.email, width: 30 },
       { header: 'Téléphone', value: (item) => item.phone, width: 18 },
-      { header: 'Projet', value: (item) => item.projectSummary, width: 60 },
-      { header: 'Classe', value: (item) => item.classification, width: 8 },
+      { header: 'Projet ou besoin', value: (item) => item.projectSummary, width: 60 },
+      { header: 'Classe', value: (item) => investorClassLabels[item.classification] || '', width: 22 },
+      { header: 'Responsable', value: (item) => [item.contactUser?.firstName, item.contactUser?.lastName].filter(Boolean).join(' '), width: 22 },
+      { header: 'Diagnostic le', value: (item) => formatDate(item.diagnosedAt), width: 18 },
+      { header: 'Régime', value: (item) => companyRegimeLabels[item.difficulty?.regime] || '', width: 22 },
+      { header: 'Difficulté', value: (item) => item.difficulty?.nature, width: 30 },
+      { header: 'Engagement', value: (item) => item.commitmentNote, width: 40 },
+      { header: 'Réponse due le', value: (item) => formatDate(item.commitmentDueAt), width: 18 },
+      { header: 'Réponse donnée le', value: (item) => formatDate(item.resolvedAt), width: 18 },
       { header: 'Prochaine relance', value: (item) => formatDate(item.nextFollowUpAt), width: 18 },
-      { header: 'Statut', value: (item) => investorStatusLabels[item.status] || item.status, width: 14 },
+      { header: 'Statut', value: (item) => investorStatusLabel(item) || item.status, width: 16 },
       { header: 'Étape suivante', value: (item) => item.nextAction, width: 36 },
       { header: 'Accord API-ZF', value: (item) => Boolean(item.consentApizf), width: 14 },
     ],

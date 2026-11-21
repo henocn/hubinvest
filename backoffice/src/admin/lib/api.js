@@ -70,7 +70,10 @@ export const api = {
   investorRequests: (token) => request('/investor-requests', authorized(token)),
   createInvestorRequest: (token, values) =>
     request('/investor-requests', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
-  // Fiche Investor Desk : qualification, relances et rendez-vous.
+  // Fiche d'un contact des guichets : diagnostic, difficulté, relances et rendez-vous.
+  saveInvestorDiagnosis: (token, id, values) => request(`/investor-requests/${id}/diagnosis`, authorized(token, { method: 'PUT', body: JSON.stringify(values) })),
+  saveInvestorDifficulty: (token, id, values) => request(`/investor-requests/${id}/difficulty`, authorized(token, { method: 'PUT', body: JSON.stringify(values) })),
+  resolveInvestorCommitment: (token, id, resolved) => request(`/investor-requests/${id}/resolution`, authorized(token, { method: 'PATCH', body: JSON.stringify({ resolved }) })),
   investorRequest: (token, id) => request(`/investor-requests/${id}`, authorized(token)),
   addInvestorFollowUp: (token, id, values) => request(`/investor-requests/${id}/follow-ups`, authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   deleteInvestorFollowUp: (token, id, followUpId) => request(`/investor-requests/${id}/follow-ups/${followUpId}`, authorized(token, { method: 'DELETE' })),
@@ -107,6 +110,12 @@ export const api = {
     request(`/b2b-proposals/${id}`, authorized(token, { method: 'DELETE' })),
   updateB2bProposal: (token, id, values) =>
     request(`/b2b-proposals/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
+  services: (token) => request('/services', authorized(token)),
+  // kind : 'services' ou 'procedures' (démarches en ligne).
+  createServiceItem: (token, kind, values) => request(kind === 'services' ? '/services' : '/services/procedures', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
+  updateServiceItem: (token, kind, id, values) => request(`${kind === 'services' ? '/services' : '/services/procedures'}/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
+  deleteServiceItem: (token, kind, id) => request(`${kind === 'services' ? '/services' : '/services/procedures'}/${id}`, authorized(token, { method: 'DELETE' })),
+  reorderServiceItems: (token, kind, ids) => request(kind === 'services' ? '/services/order' : '/services/procedures/order', authorized(token, { method: 'PUT', body: JSON.stringify({ ids }) })),
   programEvents: (token) => request('/program-events', authorized(token)),
   createProgramEvent: (token, values) =>
     request('/program-events', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
