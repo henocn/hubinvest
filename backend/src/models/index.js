@@ -20,8 +20,6 @@ const defineWheelCode = require('./wheel-code.model');
 const defineWheelPlay = require('./wheel-play.model');
 const defineAppSetting = require('./app-setting.model');
 const defineLiveQuestion = require('./live-question.model');
-const defineService = require('./service.model');
-const defineOnlineProcedure = require('./online-procedure.model');
 
 const Occupant = defineOccupant(sequelize, DataTypes);
 const User = defineUser(sequelize, DataTypes);
@@ -43,8 +41,6 @@ const WheelCode = defineWheelCode(sequelize, DataTypes);
 const WheelPlay = defineWheelPlay(sequelize, DataTypes);
 const AppSetting = defineAppSetting(sequelize, DataTypes);
 const LiveQuestion = defineLiveQuestion(sequelize, DataTypes);
-const Service = defineService(sequelize, DataTypes);
-const OnlineProcedure = defineOnlineProcedure(sequelize, DataTypes);
 
 Occupant.hasMany(User, { foreignKey: 'occupantId', as: 'users' });
 User.belongsTo(Occupant, { foreignKey: 'occupantId', as: 'occupant' });
@@ -68,8 +64,6 @@ B2bProposal.belongsTo(B2bNeed, { foreignKey: 'b2bNeedId', as: 'need' });
 User.hasMany(B2bProposal, { foreignKey: 'handledByUserId', as: 'handledB2bProposals' });
 B2bProposal.belongsTo(User, { foreignKey: 'handledByUserId', as: 'handledBy' });
 InvestorRequest.belongsTo(User, { foreignKey: 'contactUserId', as: 'contactUser' });
-InvestorRequest.belongsTo(Service, { foreignKey: 'recommendedServiceId', as: 'recommendedService' });
-InvestorRequest.belongsTo(Service, { foreignKey: 'commitmentServiceId', as: 'commitmentService' });
 InvestorRequest.hasMany(InvestorFollowUp, { foreignKey: 'investorRequestId', as: 'followUps' });
 InvestorFollowUp.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
 InvestorRequest.hasMany(InvestorMeeting, { foreignKey: 'investorRequestId', as: 'meetings' });
@@ -117,8 +111,6 @@ LiveQuestion.belongsTo(User, { foreignKey: 'handledByUserId', as: 'handledBy' })
 
 module.exports = {
   sequelize,
-  Service,
-  OnlineProcedure,
   Occupant,
   User,
   Contact,

@@ -8,14 +8,14 @@ module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.sequelize.transaction(async (transaction) => {
       const add = (column, definition) => queryInterface.addColumn('investor_requests', column, definition, { transaction });
-      const serviceReference = { type: Sequelize.UUID, allowNull: true, references: { model: 'services', key: 'id' }, onDelete: 'SET NULL', onUpdate: 'CASCADE' };
       await add('guichet', { type: Sequelize.STRING(20), allowNull: false, defaultValue: 'project' });
       await add('source', { type: Sequelize.STRING(20), allowNull: false, defaultValue: 'callback' });
       await add('organization', { type: Sequelize.STRING(160), allowNull: true });
-      await add('recommended_service_id', serviceReference);
+      // Clé d'un des six services de l'API-ZF (catalogue écrit dans le code, shared/services.js).
+      await add('recommended_service', { type: Sequelize.STRING(40), allowNull: true });
       await add('diagnosed_at', { type: Sequelize.DATE, allowNull: true });
       await add('difficulty', { type: Sequelize.JSONB, allowNull: true });
-      await add('commitment_service_id', serviceReference);
+      await add('commitment_service', { type: Sequelize.STRING(40), allowNull: true });
       await add('commitment_due_at', { type: Sequelize.DATE, allowNull: true });
       await add('commitment_note', { type: Sequelize.TEXT, allowNull: true });
       await add('resolved_at', { type: Sequelize.DATE, allowNull: true });
@@ -44,7 +44,7 @@ module.exports = {
       await queryInterface.changeColumn('investor_requests', 'classification', { type: Sequelize.STRING(1), allowNull: true }, { transaction });
       await queryInterface.sequelize.query("UPDATE investor_requests SET project_summary = 'Rendez-vous au guichet' WHERE project_summary IS NULL", { transaction });
       await queryInterface.changeColumn('investor_requests', 'project_summary', { type: Sequelize.TEXT, allowNull: false }, { transaction });
-      for (const column of ['guichet', 'source', 'organization', 'recommended_service_id', 'diagnosed_at', 'difficulty', 'commitment_service_id', 'commitment_due_at', 'commitment_note', 'resolved_at']) {
+      for (const column of ['guichet', 'source', 'organization', 'recommended_service', 'diagnosed_at', 'difficulty', 'commitment_service', 'commitment_due_at', 'commitment_note', 'resolved_at']) {
         await queryInterface.removeColumn('investor_requests', column, { transaction });
       }
     });

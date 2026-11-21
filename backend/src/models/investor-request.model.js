@@ -53,12 +53,12 @@ module.exports = (sequelize, DataTypes) =>
       source: { type: DataTypes.STRING(20), allowNull: false, defaultValue: 'callback', validate: { isIn: [CONTACT_SOURCES] } },
       organization: { type: DataTypes.STRING(160), allowNull: true },
       // Fiche de diagnostic (15 minutes) : le service vers lequel la personne est orientée, et quand le diagnostic a été fait.
-      recommendedServiceId: { type: DataTypes.UUID, allowNull: true, field: 'recommended_service_id' },
+      recommendedService: { type: DataTypes.STRING(40), allowNull: true, field: 'recommended_service' },
       diagnosedAt: { type: DataTypes.DATE, allowNull: true, field: 'diagnosed_at' },
       // Fiche « Mon entreprise, mes difficultés » : entreprise, régime, nature et description de la difficulté.
       difficulty: { type: DataTypes.JSONB, allowNull: true },
       // Engagement de suivi écrit : service concerné, délai de réponse, texte de l'engagement, réponse apportée.
-      commitmentServiceId: { type: DataTypes.UUID, allowNull: true, field: 'commitment_service_id' },
+      commitmentService: { type: DataTypes.STRING(40), allowNull: true, field: 'commitment_service' },
       commitmentDueAt: { type: DataTypes.DATE, allowNull: true, field: 'commitment_due_at' },
       commitmentNote: { type: DataTypes.TEXT, allowNull: true, field: 'commitment_note' },
       resolvedAt: { type: DataTypes.DATE, allowNull: true, field: 'resolved_at' },

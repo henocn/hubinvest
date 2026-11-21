@@ -16,7 +16,6 @@ const challengePassportRoutes = require('./modules/challenge-passport/challenge-
 const challengePassageRoutes = require('./modules/challenge-passage/challenge-passage.route');
 const pushSubscriptionRoutes = require('./modules/push-subscription/push-subscription.route');
 const programEventRoutes = require('./modules/program-event/program-event.route');
-const serviceRoutes = require('./modules/service/service.route');
 const wheelRoutes = require('./modules/wheel/wheel.route');
 const realtimeRoutes = require('./modules/realtime/realtime.route');
 const settingsRoutes = require('./modules/settings/settings.route');
@@ -63,7 +62,6 @@ app.use('/api/challenge-passports', challengePassportRoutes);
 app.use('/api/challenge-passages', challengePassageRoutes);
 app.use('/api/push-subscriptions', pushSubscriptionRoutes);
 app.use('/api/program-events', programEventRoutes);
-app.use('/api/services', serviceRoutes);
 app.use('/api/wheel', wheelRoutes);
 app.use('/api/realtime', realtimeRoutes);
 app.use('/api/settings', settingsRoutes);

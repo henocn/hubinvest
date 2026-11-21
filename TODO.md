@@ -6,7 +6,7 @@ Référence prioritaire : `APIZF-FIL2026-v4.pdf` (proposition d’octobre 2026, 
 
 Le Hub devient deux espaces : le Stand API-ZF (3 stands, 3 guichets) et l’Espace Industrie (16 stands). On parle d’« entreprises », plus d’« occupants ». Signature : « Investir au Togo, nous facilitons votre réussite. » La roue des opportunités n’est plus citée mais reste (décision du 21/11/2026).
 
-- [x] Services : les 6 services et les 12 démarches en ligne, gérés dans l’administration (rubrique Services, super administrateur) : étape, promesse, lieu, « selon disponibilités », lien officiel, ordre, publier ou masquer (M9).
+- [x] Services : les 6 services et les 12 démarches en ligne, écrits dans le code (décision du 21/11/2026 : contenu statique, une mise à jour se fait dans `frontend/src/content/services.js` et `backend/src/shared/services.js`).
 - [ ] Liens des 12 démarches vers la plateforme officielle : adresses à obtenir de l’API-ZF.
 - [ ] Brochure « Investir au Togo en 5 étapes » et Investor Pack : fichiers à déposer dans l’administration et à proposer par QR code.
 - [~] Accueil « Nos services » (fait : signature, trois actions vers les guichets et les Défis, 5 étapes et leurs services, démarches en ligne ; reste : brochure, plan) : 6 services, 12 démarches avec lien vers la plateforme officielle, brochure « 5 étapes » ; puis programme, entreprises, plan ; boutons « Prendre rendez-vous », « Être recontacté », « Jouer » (M1).

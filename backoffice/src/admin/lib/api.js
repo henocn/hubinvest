@@ -110,12 +110,6 @@ export const api = {
     request(`/b2b-proposals/${id}`, authorized(token, { method: 'DELETE' })),
   updateB2bProposal: (token, id, values) =>
     request(`/b2b-proposals/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
-  services: (token) => request('/services', authorized(token)),
-  // kind : 'services' ou 'procedures' (démarches en ligne).
-  createServiceItem: (token, kind, values) => request(kind === 'services' ? '/services' : '/services/procedures', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
-  updateServiceItem: (token, kind, id, values) => request(`${kind === 'services' ? '/services' : '/services/procedures'}/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
-  deleteServiceItem: (token, kind, id) => request(`${kind === 'services' ? '/services' : '/services/procedures'}/${id}`, authorized(token, { method: 'DELETE' })),
-  reorderServiceItems: (token, kind, ids) => request(kind === 'services' ? '/services/order' : '/services/procedures/order', authorized(token, { method: 'PUT', body: JSON.stringify({ ids }) })),
   programEvents: (token) => request('/program-events', authorized(token)),
   createProgramEvent: (token, values) =>
     request('/program-events', authorized(token, { method: 'POST', body: JSON.stringify(values) })),

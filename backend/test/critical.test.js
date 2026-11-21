@@ -1446,9 +1446,8 @@ test('Guichets : une relance d’un contact A exige l’étape suivante et rempl
 });
 
 test('Guichets : la fiche « Mon entreprise, mes difficultés » passe en Accompagnement, envoie l’engagement écrit et se termine à la réponse', async (context) => {
-  const request = { id: 'ir-4', classification: null, status: 'new', email: 'dg@usine.tg', commitmentNote: null, commitmentDueAt: null, commitmentServiceId: null, resolvedAt: null };
+  const request = { id: 'ir-4', classification: null, status: 'new', email: 'dg@usine.tg', commitmentNote: null, commitmentDueAt: null, commitmentService: null, resolvedAt: null, language: 'fr' };
   investorSetup(context, { request });
-  context.mock.method(investorRequestRepository, 'findService', async (id) => (id === 'svc-1' ? { id, title: 'Accompagnement après implantation' } : null));
   const commitments = [];
   context.mock.method(notificationService, 'investorCommitmentChanged', (item, options = {}) => { commitments.push(options); });
   const difficulty = { company: 'Usine du Golfe', regime: 'free_zone', nature: 'Dédouanement', description: 'Retards à l’import des intrants.' };
@@ -1459,12 +1458,12 @@ test('Guichets : la fiche « Mon entreprise, mes difficultés » passe en Accomp
 
   await assert.rejects(investorRequestService.saveDifficulty('ir-4', { difficulty, commitmentNote: 'Rendez-vous avec la douane' }), (error) => error.code === 'COMMITMENT_INCOMPLETE');
   const due = new Date(Date.now() + 10 * 24 * 3600000);
-  await investorRequestService.saveDifficulty('ir-4', { difficulty, commitmentServiceId: 'svc-1', commitmentDueAt: due, commitmentNote: 'Rendez-vous avec la douane' });
+  await investorRequestService.saveDifficulty('ir-4', { difficulty, commitmentService: 'aftercare', commitmentDueAt: due, commitmentNote: 'Rendez-vous avec la douane' });
   assert.equal(request.status, 'in_progress');
   assert.deepEqual(commitments.at(-1), { notifyCompany: true, serviceTitle: 'Accompagnement après implantation' });
 
   // Même engagement réenregistré : pas de nouvel e-mail.
-  await investorRequestService.saveDifficulty('ir-4', { difficulty, commitmentServiceId: 'svc-1', commitmentDueAt: due, commitmentNote: 'Rendez-vous avec la douane' });
+  await investorRequestService.saveDifficulty('ir-4', { difficulty, commitmentService: 'aftercare', commitmentDueAt: due, commitmentNote: 'Rendez-vous avec la douane' });
   assert.equal(commitments.at(-1).notifyCompany, false);
 
   await investorRequestService.resolve('ir-4', { resolved: true });
@@ -1580,15 +1579,11 @@ test('les formats du Studio se règlent dans Paramètres ; un format inconnu ou 
   await assert.rejects(settingsService.update({ studioFormats: [{ key: 'two_minutes', label: '2 min avec…' }] }, admin), (error) => error.code === 'STUDIO_FORMAT_IN_USE');
 });
 
-test('l’accueil « Nos services » ne montre que les services et démarches publiés, sans champ interne', async (context) => {
-  const serviceService = require('../src/modules/service/service.service');
-  const serviceRepository = require('../src/modules/service/service.repository');
-  const asked = [];
-  context.mock.method(serviceRepository, 'findServices', async (publishedOnly) => { asked.push(publishedOnly); return [{ id: 's1', stage: 1, title: 'Accueil et orientation', promise: 'Diagnostic', place: 'Guichet', limited: false, published: true, position: 1 }]; });
-  context.mock.method(serviceRepository, 'findProcedures', async (publishedOnly) => { asked.push(publishedOnly); return [{ id: 'p1', title: 'Demande de Carnet Bleu', domain: 'blue_book', url: null, published: true, position: 1 }]; });
-
-  const result = await serviceService.getPublic('fr');
-  assert.deepEqual(asked, [true, true]);
-  assert.deepEqual(result.services, [{ id: 's1', stage: 1, title: 'Accueil et orientation', promise: 'Diagnostic', place: 'Guichet', limited: false }]);
-  assert.deepEqual(result.procedures, [{ id: 'p1', title: 'Demande de Carnet Bleu', domain: 'blue_book', url: null }]);
+test('un service inconnu est refusé au diagnostic et à l’engagement de suivi', async (context) => {
+  const request = { id: 'ir-5', classification: null, status: 'new', diagnosedAt: null };
+  investorSetup(context, { request });
+  await assert.rejects(investorRequestService.saveDiagnosis('ir-5', { qualification: {}, recommendedService: 'inconnu', nextAction: 'Rappeler' }), (error) => error.code === 'SERVICE_NOT_FOUND');
+  await investorRequestService.saveDiagnosis('ir-5', { qualification: {}, recommendedService: 'regimes', nextAction: 'Rappeler' });
+  assert.equal(request.recommendedService, 'regimes');
+  assert.ok(investorRequestValidation.difficulty.validate({ difficulty: { company: 'Usine', regime: 'free_zone', nature: 'Douane', description: 'Retards' }, commitmentService: 'inconnu' }).error);
 });

@@ -1,13 +1,17 @@
 import { ExternalLink, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { procedures as allProcedures, services as allServices } from '../content/services';
 
 const STAGES = [1, 2, 3, 4, 5];
 const DOMAINS = ['free_zone', 'investment_code', 'blue_book'];
 
 // « Nos services » (document v4, M1) : le parcours en 5 étapes avec les services de l'API-ZF,
-// puis les démarches déjà en ligne avec leur lien vers la plateforme officielle.
-export default function HomeServices({ services, procedures }) {
-  const { t } = useTranslation();
+// puis les démarches déjà en ligne avec leur lien vers la plateforme officielle. Contenu statique : content/services.js.
+export default function HomeServices() {
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage?.startsWith('en') ? 'en' : 'fr';
+  const services = allServices.map((item) => ({ id: item.key, stage: item.stage, limited: Boolean(item.limited), ...item[language] }));
+  const procedures = allProcedures.map((item) => ({ id: item.id, domain: item.domain, url: item.url, title: item[language] }));
   const byStage = STAGES.map((stage) => ({ stage, items: services.filter((item) => item.stage === stage) }));
   const byDomain = DOMAINS.map((domain) => ({ domain, items: procedures.filter((item) => item.domain === domain) })).filter((group) => group.items.length);
 

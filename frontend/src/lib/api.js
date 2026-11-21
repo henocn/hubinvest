@@ -33,7 +33,6 @@ export const resolveAssetUrl = (value) => {
 export const api = {
   publicSettings: () => request('/settings/public'),
   publicToday: () => request('/program-events/public/today'),
-  publicServices: () => request('/services/public'),
   publicWheel: () => request('/wheel/public'),
   spinWheel: (code, player) => request('/wheel/public/spin', { method: 'POST', body: JSON.stringify({ code, player }) }),
   publicOccupants: () => request('/occupants/public'),
