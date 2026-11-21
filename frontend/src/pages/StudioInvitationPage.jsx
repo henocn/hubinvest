@@ -98,7 +98,7 @@ export default function StudioInvitationPage({ token }) {
       <section className="studio-response-panel">
         <span className="studio-eyebrow">{t('studio.eyebrow')}</span>
         <h1>{t('studio.invitation', { name: invitation.guestName })}</h1>
-        <p className="studio-subject">{t('studio.format', { format: t(`studio.formats.${invitation.format}`) })}{invitation.subject ? ` · ${invitation.subject}` : ''}</p>
+        <p className="studio-subject">{[invitation.formatLabel && t('studio.format', { format: invitation.formatLabel }), invitation.subject].filter(Boolean).join(' · ')}</p>
 
         {status === 'booked' && !choosing && (
           <>

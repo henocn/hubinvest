@@ -5,6 +5,7 @@ import { useRealtimeEvent } from '../../lib/realtime';
 import B2bNeedsSettings from '../components/B2bNeedsSettings';
 import WheelSettings from '../components/WheelSettings';
 import InvestorQualificationSettings from '../components/InvestorQualificationSettings';
+import StudioFormatSettings from '../components/StudioFormatSettings';
 
 const modules = [
   { key: 'contactRequestsOpen', title: 'Demandes de contact aux stands' },
@@ -147,9 +148,10 @@ export default function SettingsPage({ session, onLogout }) {
             <h2>Studio</h2>
             <SettingField settingKey="studioFirstDay" label="Premier jour des créneaux" type="date" value={settings.studioFirstDay} saving={savingKey} saved={savedKey} onSave={save} />
             <SettingField settingKey="studioLastDay" label="Dernier jour des créneaux" type="date" value={settings.studioLastDay} saving={savingKey} saved={savedKey} onSave={save} />
-            <SettingField settingKey="studioDayStart" label="Premier créneau de la journée" hint="Heure de Lomé ; le document place le Studio l’après-midi" type="time" value={settings.studioDayStart} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="studioDayStart" label="Premier créneau de la journée" type="time" value={settings.studioDayStart} saving={savingKey} saved={savedKey} onSave={save} />
             <SettingField settingKey="studioDayEnd" label="Fin des créneaux" hint="Le dernier passage se termine au plus tard à cette heure" type="time" value={settings.studioDayEnd} saving={savingKey} saved={savedKey} onSave={save} />
             <SettingField settingKey="studioSlotMinutes" label="Durée d’un passage (minutes)" type="number" min="5" max="120" value={settings.studioSlotMinutes} saving={savingKey} saved={savedKey} onSave={save} />
+            <StudioFormatSettings formats={settings.studioFormats} saving={savingKey === 'studioFormats'} saved={savedKey === 'studioFormats'} onSave={save} />
           </section>
 
           <section className="data-panel settings-panel">

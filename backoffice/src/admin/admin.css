@@ -233,6 +233,7 @@
 /* Paramètres de l'Investor Desk : liste des informations de qualification. */
 .admin-app .qualification-settings { display: grid; gap: 8px; padding: 12px; }
 .admin-app .qualification-setting { display: grid; grid-template-columns: 24px minmax(0, 1.4fr) 140px minmax(0, 1.6fr) 28px; align-items: center; gap: 8px; }
+.admin-app .qualification-setting.studio-format-setting { grid-template-columns: 24px minmax(0, 1fr) minmax(0, 1fr) 28px; }
 .admin-app .qualification-setting-number { color: var(--muted); font-size: 12px; font-weight: 700; text-align: right; }
 .admin-app .qualification-settings-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 6px; }
 .admin-app .qualification-settings-actions .button-secondary { margin-right: auto; }

@@ -207,14 +207,10 @@ const investorMeeting = ({ kind, meeting, request }) => {
 
 // Studio : le lien personnel de l'invité, ses formats et ses e-mails dans sa langue.
 const studioLink = (invitation) => `${env.appUrls.public}/studio/${invitation.token}`;
-const studioFormatNames = {
-  fr: { two_minutes: '« 2 min avec… »', sixty_seconds: '« API-ZF en 60 secondes »', face_to_face: 'le Face-à-face' },
-  en: { two_minutes: '“2 min with…”', sixty_seconds: '“API-ZF in 60 seconds”', face_to_face: 'the Face-to-face interview' },
-};
 const studioCopy = {
   fr: {
     inviteSubject: 'Votre invitation au Studio du Hub de l’Investissement',
-    invite: (format, link) => `Vous êtes invité(e) à enregistrer ${format} au Studio du Hub de l’Investissement (FIL 2026). Choisissez vous-même votre créneau sur votre page personnelle : ${link}`,
+    invite: (format, link) => `Vous êtes invité(e) à enregistrer « ${format} » au Studio du Hub de l’Investissement (FIL 2026). Choisissez vous-même votre créneau sur votre page personnelle : ${link}`,
     bookedSubject: 'Votre passage au Studio est réservé',
     movedSubject: 'Votre passage au Studio est déplacé',
     booked: (when, minutes, link) => `Votre passage au Studio est réservé le ${when} (heure de Lomé), pour ${minutes} minutes. Vous pouvez changer de créneau jusqu’à une heure avant : ${link}`,
@@ -227,7 +223,7 @@ const studioCopy = {
   },
   en: {
     inviteSubject: 'Your invitation to the Investment Hub Studio',
-    invite: (format, link) => `You are invited to record ${format} at the Investment Hub Studio (FIL 2026). Choose your own time slot on your personal page: ${link}`,
+    invite: (format, link) => `You are invited to record “${format}” at the Investment Hub Studio (FIL 2026). Choose your own time slot on your personal page: ${link}`,
     bookedSubject: 'Your Studio session is booked',
     movedSubject: 'Your Studio session has been moved',
     booked: (when, minutes, link) => `Your Studio session is booked for ${when} (Lomé time), for ${minutes} minutes. You can change your slot up to one hour before: ${link}`,
@@ -244,7 +240,7 @@ const studioWhen = (invitation) => meetingWhen({ startsAt: invitation.scheduledA
 
 const studioInvitation = ({ invitation }) => {
   const text = studioText(invitation);
-  const format = (studioFormatNames[invitation.language] || studioFormatNames.fr)[invitation.format];
+  const format = settingsService.studioFormatLabel(invitation.format, invitation.language) || 'Studio';
   return publicEmail(copyFor(invitation.language), invitation.guestName, text.inviteSubject, text.invite(format, studioLink(invitation)));
 };
 

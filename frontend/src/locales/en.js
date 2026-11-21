@@ -135,7 +135,6 @@ export default {
     notFound: "Invitation not found.",
     eyebrow: "Investment Hub Studio",
     invitation: "{{name}}, you are invited to the Studio",
-    formats: { two_minutes: "“2 min with…”", sixty_seconds: "“API-ZF in 60 seconds”", face_to_face: "Face-to-face interview" },
     format: "Format: {{format}}",
     choose: "Choose your time slot",
     chooseHint: "A {{minutes}}-minute session, Lomé time. You will receive a reminder the day before and one hour before.",

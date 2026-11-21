@@ -135,7 +135,6 @@ export default {
     notFound: "Invitation introuvable.",
     eyebrow: "Studio du Hub de l’Investissement",
     invitation: "{{name}}, vous êtes invité(e) au Studio",
-    formats: { two_minutes: "« 2 min avec… »", sixty_seconds: "« API-ZF en 60 secondes »", face_to_face: "Face-à-face" },
     format: "Format : {{format}}",
     choose: "Choisissez votre créneau",
     chooseHint: "Passage de {{minutes}} minutes, heure de Lomé. Vous recevrez un rappel la veille et une heure avant.",

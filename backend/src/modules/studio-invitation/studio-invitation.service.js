@@ -50,12 +50,13 @@ const freeSlots = async (ownId = null) => {
 };
 
 // Ce que l'invité voit sur sa page : jamais le lien interne ni l'auteur de l'invitation.
-const publicPayload = (invitation) => {
+const publicPayload = (invitation, language) => {
   const values = plain(invitation);
   return {
     guestName: values.guestName,
     organization: values.organization || values.occupant?.name || null,
     format: values.format,
+    formatLabel: settingsService.studioFormatLabel(values.format, language),
     subject: values.subject || null,
     status: values.status,
     scheduledAt: values.scheduledAt,
@@ -70,7 +71,7 @@ const getByToken = async (token) => {
   return invitation;
 };
 
-const getPublic = async (token, language) => translatePublicContent(publicPayload(await getByToken(token)), ['subject'], language);
+const getPublic = async (token, language) => translatePublicContent(publicPayload(await getByToken(token), language), ['subject'], language);
 
 const publicSlots = async (token) => {
   const invitation = await getByToken(token);
@@ -99,7 +100,7 @@ const book = async (token, startsAt, language) => {
   }
   notificationService.studioBooked(invitation, previousStatus === 'booked');
   realtime.studioChanged(invitation.occupantId);
-  return translatePublicContent(publicPayload(invitation), ['subject'], language);
+  return translatePublicContent(publicPayload(invitation, language), ['subject'], language);
 };
 
 // L'invité ne peut pas venir : l'équipe est prévenue, les rappels sont annulés.
@@ -109,7 +110,7 @@ const decline = async (token, language) => {
   await studioInvitationRepository.update(invitation, { status: 'declined', scheduledAt: null, respondedAt: new Date() });
   notificationService.studioDeclined(invitation);
   realtime.studioChanged(invitation.occupantId);
-  return translatePublicContent(publicPayload(invitation), ['subject'], language);
+  return translatePublicContent(publicPayload(invitation, language), ['subject'], language);
 };
 
 const list = (user) => studioInvitationRepository.findAll(standFor(user));
@@ -120,6 +121,13 @@ const get = async (user, id) => {
   return invitation;
 };
 
+// Le format doit être l'un de ceux réglés dans Paramètres.
+const assertFormat = (format) => {
+  if (format && !settingsService.studioFormatLabel(format)) throw new AppError(422, 'STUDIO_FORMAT_UNKNOWN', 'Ce format de tournage n’existe pas.');
+};
+
+const formats = () => settingsService.studioFormats();
+
 const assertOccupant = async (occupantId) => {
   if (occupantId && !(await studioInvitationRepository.findOccupantById(occupantId))) throw new AppError(422, 'OCCUPANT_NOT_FOUND', 'Stand introuvable.');
 };
@@ -128,6 +136,7 @@ const assertOccupant = async (occupantId) => {
 const create = async (user, values) => {
   const occupantId = standFor(user) || values.occupantId || null;
   await assertOccupant(occupantId);
+  assertFormat(values.format);
   const invitation = await studioInvitationRepository.create({
     occupantId,
     createdByUserId: user.id,
@@ -155,6 +164,7 @@ const update = async (user, id, values) => {
   const next = { ...values };
   if (user.role === roles.ADMIN) delete next.occupantId;
   if ('occupantId' in next) await assertOccupant(next.occupantId);
+  if (next.format && next.format !== invitation.format) assertFormat(next.format);
   if (next.email) next.email = next.email.toLowerCase();
   ['phone', 'organization', 'subject'].forEach((key) => { if (next[key] === '') next[key] = null; });
   const updated = await studioInvitationRepository.update(invitation, next);
@@ -199,4 +209,4 @@ const remove = async (user, id) => {
   realtime.studioChanged(invitation.occupantId);
 };
 
-module.exports = { getPublic, publicSlots, book, decline, list, create, update, resend, cancel, deliver, remove, allSlots, freeSlots };
+module.exports = { getPublic, publicSlots, book, decline, list, formats, create, update, resend, cancel, deliver, remove, allSlots, freeSlots };

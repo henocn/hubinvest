@@ -1,6 +1,5 @@
 // Invitation au Studio (document, module M5) : l'invité reçoit un lien personnel, réserve lui-même son créneau,
 // reçoit des rappels, puis sa capsule prête à partager.
-const STUDIO_FORMATS = ['two_minutes', 'sixty_seconds', 'face_to_face'];
 const STUDIO_STATUSES = ['invited', 'booked', 'declined', 'cancelled', 'delivered'];
 
 module.exports = (sequelize, DataTypes) =>
@@ -16,8 +15,8 @@ module.exports = (sequelize, DataTypes) =>
       email: { type: DataTypes.STRING(180), allowNull: true },
       phone: { type: DataTypes.STRING(32), allowNull: true },
       organization: { type: DataTypes.STRING(160), allowNull: true },
-      // « 2 min avec… », « API-ZF en 60 secondes » ou Face-à-face.
-      format: { type: DataTypes.STRING(30), allowNull: false, defaultValue: 'two_minutes', validate: { isIn: [STUDIO_FORMATS] } },
+      // Clé d'un des formats de tournage réglés dans Paramètres.
+      format: { type: DataTypes.STRING(30), allowNull: false, defaultValue: 'two_minutes' },
       subject: { type: DataTypes.STRING(180), allowNull: true },
       language: { type: DataTypes.STRING(2), allowNull: false, defaultValue: 'fr', validate: { isIn: [['fr', 'en']] } },
       // Créneau choisi par l'invité (vide tant qu'il n'a pas réservé).
@@ -31,5 +30,4 @@ module.exports = (sequelize, DataTypes) =>
     { tableName: 'studio_invitations', underscored: true },
   );
 
-module.exports.STUDIO_FORMATS = STUDIO_FORMATS;
 module.exports.STUDIO_STATUSES = STUDIO_STATUSES;

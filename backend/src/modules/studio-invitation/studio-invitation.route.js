@@ -20,6 +20,7 @@ router.post('/public/:token/decline', tokenLimit, validate(v.tokenParams, 'param
 
 router.use(asyncHandler(authenticate), studioTeamOnly);
 router.get('/', asyncHandler(c.list));
+router.get('/formats', c.formats);
 router.post('/', validate(v.create), asyncHandler(c.create));
 router.patch('/:id', validate(v.idParams, 'params'), validate(v.update), asyncHandler(c.update));
 router.post('/:id/resend', validate(v.idParams, 'params'), asyncHandler(c.resend));

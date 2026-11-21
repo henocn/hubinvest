@@ -9,6 +9,7 @@ const decline = async (request, response) => response.json({ data: await studioI
 
 // Équipe : invitations, envoi, annulation, livraison de la capsule.
 const list = async (request, response) => response.json({ data: await studioInvitationService.list(request.user) });
+const formats = (request, response) => response.json({ data: studioInvitationService.formats() });
 const create = async (request, response) => response.status(201).json({ data: await studioInvitationService.create(request.user, request.body), message: 'Invitation envoyée.' });
 const update = async (request, response) => response.json({ data: await studioInvitationService.update(request.user, request.params.id, request.body), message: 'Invitation mise à jour.' });
 const resend = async (request, response) => response.json({ data: await studioInvitationService.resend(request.user, request.params.id), message: 'Invitation renvoyée.' });
@@ -20,4 +21,4 @@ const remove = async (request, response) => {
   response.json({ message: 'Invitation supprimée.' });
 };
 
-module.exports = { getPublic, publicSlots, book, decline, list, create, update, resend, cancel, deliver, remove };
+module.exports = { getPublic, publicSlots, book, decline, list, formats, create, update, resend, cancel, deliver, remove };

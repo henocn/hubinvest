@@ -1,6 +1,7 @@
 const env = require('../../config/env');
 const AppError = require('../../shared/app-error');
-const { AppSetting } = require('../../models');
+const { Op } = require('sequelize');
+const { AppSetting, StudioInvitation } = require('../../models');
 const { events: realtime } = require('../realtime/realtime.service');
 
 // Modules du site public qu'on peut ouvrir ou fermer depuis l'administration, avec le message affiché une fois fermé.
@@ -31,6 +32,12 @@ const defaults = () => ({
   studioDayStart: '14:00',
   studioDayEnd: '18:00',
   studioSlotMinutes: 20,
+  // Formats de tournage proposés aux invités (ceux du document) ; la clé reste fixe pour les invitations déjà faites.
+  studioFormats: [
+    { key: 'two_minutes', label: '2 min avec…', labelEn: '2 min with…' },
+    { key: 'sixty_seconds', label: 'API-ZF en 60 secondes', labelEn: 'API-ZF in 60 seconds' },
+    { key: 'face_to_face', label: 'Face-à-face', labelEn: 'Face-to-face interview' },
+  ],
   // Investor Desk : délais de relance du document (A sous 48 h, B sous 7 jours).
   investorDelayAHours: 48,
   investorDelayBDays: 7,
@@ -80,6 +87,15 @@ const studioSchedule = () => ({
   minutes: Math.max(5, Number(cache.studioSlotMinutes) || 20),
 });
 
+const studioFormats = () => (Array.isArray(cache.studioFormats) ? cache.studioFormats : []);
+
+// Libellé d'un format dans la langue de l'invité (le français à défaut de traduction).
+const studioFormatLabel = (key, language = 'fr') => {
+  const format = studioFormats().find((item) => item.key === key);
+  if (!format) return null;
+  return (language === 'en' && format.labelEn) || format.label;
+};
+
 // Délai avant la relance d'une classe (en millisecondes) ; C n'a pas de relance individuelle (newsletter).
 const investorFollowUpDelay = (classification) => {
   if (classification === 'A') return Math.max(1, Number(cache.investorDelayAHours) || 48) * 60 * 60 * 1000;
@@ -96,6 +112,11 @@ const assertOpen = (key) => {
 
 const update = async (values, user) => {
   const known = Object.entries(values).filter(([key]) => key in defaults());
+  // Un format encore utilisé par une invitation ne se retire pas : on le renomme.
+  if (Array.isArray(values.studioFormats)) {
+    const used = await StudioInvitation.count({ where: { format: { [Op.notIn]: values.studioFormats.map((item) => item.key) } } });
+    if (used) throw new AppError(409, 'STUDIO_FORMAT_IN_USE', 'Un format retiré est encore utilisé par des invitations : renommez-le plutôt.');
+  }
   await AppSetting.sequelize.transaction(async (transaction) => {
     for (const [key, value] of known) {
       await AppSetting.upsert({ key, value, updatedByUserId: user.id }, { transaction });
@@ -112,4 +133,4 @@ const publicSettings = () => {
   return rest;
 };
 
-module.exports = { MODULES, load, current, requiredPassages, wheelPlaysPerDay, wheelSpinsPerCode, b2bSchedule, studioSchedule, investorFollowUpDelay, investorQualificationFields, assertOpen, update, publicSettings, _reset: () => { cache = defaults(); } };
+module.exports = { MODULES, load, current, requiredPassages, wheelPlaysPerDay, wheelSpinsPerCode, b2bSchedule, studioSchedule, studioFormats, studioFormatLabel, investorFollowUpDelay, investorQualificationFields, assertOpen, update, publicSettings, _reset: () => { cache = defaults(); } };

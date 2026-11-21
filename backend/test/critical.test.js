@@ -1494,3 +1494,17 @@ test('une demande Investor Desk saisie dans le back office n’est rattachée à
   assert.equal(investorRequestValidation.createManual.validate({ ...values, email: 'pas-un-email' }).error?.details[0].path[0], 'email');
   assert.equal(investorRequestValidation.createPublic.validate({ ...values, occupantId: 'ancien-client', consentApizf: true }, { stripUnknown: true }).value.occupantId, undefined);
 });
+
+test('les formats du Studio se règlent dans Paramètres ; un format inconnu ou encore utilisé est refusé', async (context) => {
+  const { StudioInvitation } = require('../src/models');
+  context.mock.method(studioInvitationRepository, 'create', async (values) => values);
+  context.mock.method(notificationService, 'studioInvited', () => {});
+  const admin = { id: 'u1', role: 'super-admin' };
+
+  await assert.rejects(studioInvitationService.create(admin, { guestName: 'Kossi', email: 'k@b.tg', format: 'podcast' }), (error) => error.code === 'STUDIO_FORMAT_UNKNOWN');
+  assert.equal(settingsService.studioFormatLabel('face_to_face', 'en'), 'Face-to-face interview');
+  assert.equal(settingsService.studioFormatLabel('face_to_face', 'fr'), 'Face-à-face');
+
+  context.mock.method(StudioInvitation, 'count', async () => 2);
+  await assert.rejects(settingsService.update({ studioFormats: [{ key: 'two_minutes', label: '2 min avec…' }] }, admin), (error) => error.code === 'STUDIO_FORMAT_IN_USE');
+});

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Clapperboard, Plus, Search, X } from 'lucide-react';
 import { api } from '../lib/api';
 import { useRealtimeEvent } from '../../lib/realtime';
-import { publicBaseUrl, studioFormatLabels, studioStatusLabels } from '../constants/access';
+import { publicBaseUrl, studioStatusLabels } from '../constants/access';
 import ConfirmDelete from '../components/ConfirmDelete';
 import EmptyState from '../components/EmptyState';
 import RowMenu from '../components/RowMenu';
@@ -34,13 +34,13 @@ function Modal({ eyebrow, title, error, loading, submitLabel, onClose, onSubmit,
 }
 
 // Invitation personnelle : l'invité reçoit son lien par e-mail et choisit lui-même son créneau.
-function InvitationForm({ invitation, occupants, fixedOccupant, loading, error, onClose, onSave }) {
+function InvitationForm({ invitation, formats, occupants, fixedOccupant, loading, error, onClose, onSave }) {
   const [form, setForm] = useState({
     guestName: invitation?.guestName || '',
     email: invitation?.email || '',
     phone: invitation?.phone || '',
     organization: invitation?.organization || '',
-    format: invitation?.format || 'two_minutes',
+    format: invitation?.format || formats[0]?.key || '',
     subject: invitation?.subject || '',
     language: invitation?.language || 'fr',
     occupantId: invitation?.occupantId || '',
@@ -64,7 +64,7 @@ function InvitationForm({ invitation, occupants, fixedOccupant, loading, error, 
         <label>Téléphone<input type="tel" value={form.phone} onChange={set('phone')} minLength={6} maxLength={32} /></label>
       </div>
       <div className="field-row">
-        <label>Format<select value={form.format} onChange={set('format')}>{Object.entries(studioFormatLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+        <label>Format<select value={form.format} onChange={set('format')}>{formats.map((format) => <option key={format.key} value={format.key}>{format.label}</option>)}</select></label>
         <label>Langue des e-mails<select value={form.language} onChange={set('language')}><option value="fr">Français</option><option value="en">Anglais</option></select></label>
       </div>
       {fixedOccupant
@@ -110,6 +110,7 @@ function ConfirmCancel({ invitation, loading, error, onCancel, onConfirm }) {
 export default function StudioPage({ session, onLogout }) {
   const isSuperAdmin = session.user.role === 'super-admin';
   const [invitations, setInvitations] = useState(null);
+  const [formats, setFormats] = useState([]);
   const [occupants, setOccupants] = useState([]);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
@@ -120,11 +121,13 @@ export default function StudioPage({ session, onLogout }) {
 
   const load = useCallback(async () => {
     try {
-      const [data, occupantData] = await Promise.all([
+      const [data, formatData, occupantData] = await Promise.all([
         api.studioInvitations(session.token),
+        api.studioFormats(session.token),
         isSuperAdmin ? api.occupants(session.token) : Promise.resolve([]),
       ]);
       setInvitations(data);
+      setFormats(formatData);
       setOccupants(occupantData);
       setError('');
     } catch (requestError) {
@@ -169,6 +172,7 @@ export default function StudioPage({ session, onLogout }) {
     }
   };
 
+  const formatLabel = (key) => formats.find((format) => format.key === key)?.label || key;
   const query = search.trim().toLowerCase();
   const rows = useMemo(() => (invitations || []).filter((item) => !query || [item.guestName, item.email, item.organization, item.occupant?.name, item.subject]
     .some((value) => String(value || '').toLowerCase().includes(query))), [invitations, query]);
@@ -202,7 +206,7 @@ export default function StudioPage({ session, onLogout }) {
               <tbody>{rows.map((item) => (
                 <tr key={item.id}>
                   <td><strong>{item.guestName}</strong><small>{item.organization || item.occupant?.name || item.email}</small></td>
-                  <td>{studioFormatLabels[item.format]}{item.subject && <small>{item.subject}</small>}</td>
+                  <td>{formatLabel(item.format)}{item.subject && <small>{item.subject}</small>}</td>
                   <td className="stand-nowrap">{item.scheduledAt ? dateTime.format(new Date(item.scheduledAt)) : '—'}</td>
                   <td><span className={`status-pill${statusClass[item.status] || ''}`}>{studioStatusLabels[item.status]}</span></td>
                   <td><RowMenu label={`Actions pour ${item.guestName}`} items={[
@@ -220,7 +224,7 @@ export default function StudioPage({ session, onLogout }) {
         )}
       </section>
 
-      {dialog?.type === 'form' && <InvitationForm invitation={dialog.item} occupants={occupants} fixedOccupant={isSuperAdmin ? null : session.user.occupant} loading={busy} error={actionError} onClose={close}
+      {dialog?.type === 'form' && <InvitationForm invitation={dialog.item} formats={formats} occupants={occupants} fixedOccupant={isSuperAdmin ? null : session.user.occupant} loading={busy} error={actionError} onClose={close}
         onSave={(values) => run(() => (dialog.item ? api.updateStudioInvitation(session.token, dialog.item.id, values) : api.createStudioInvitation(session.token, values)), dialog.item ? '' : `Invitation envoyée à ${values.email}.`)} />}
       {dialog?.type === 'deliver' && <DeliverForm invitation={dialog.item} loading={busy} error={actionError} onClose={close} onSave={(url) => run(() => api.deliverStudioCapsule(session.token, dialog.item.id, url), `Capsule envoyée à ${dialog.item.guestName}.`)} />}
       {dialog?.type === 'cancel' && <ConfirmCancel invitation={dialog.item} loading={busy} error={actionError} onCancel={close} onConfirm={() => run(() => api.cancelStudioInvitation(session.token, dialog.item.id))} />}

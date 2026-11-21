@@ -87,6 +87,7 @@ export const api = {
     request(`/b2b-needs/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
   // Studio : invitations, renvoi, annulation, livraison de la capsule.
   studioInvitations: (token) => request('/studio-invitations', authorized(token)),
+  studioFormats: (token) => request('/studio-invitations/formats', authorized(token)),
   createStudioInvitation: (token, values) => request('/studio-invitations', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   updateStudioInvitation: (token, id, values) => request(`/studio-invitations/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
   resendStudioInvitation: (token, id) => request(`/studio-invitations/${id}/resend`, authorized(token, { method: 'POST' })),

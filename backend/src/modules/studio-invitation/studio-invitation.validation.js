@@ -1,5 +1,4 @@
 const Joi = require('joi');
-const { STUDIO_FORMATS } = require('../../models/studio-invitation.model');
 
 const uuid = Joi.string().guid({ version: ['uuidv4'] });
 
@@ -13,7 +12,7 @@ const fields = {
   email: Joi.string().trim().email().max(180),
   phone: Joi.string().trim().min(6).max(32).allow('', null),
   organization: Joi.string().trim().max(160).allow('', null),
-  format: Joi.string().valid(...STUDIO_FORMATS),
+  format: Joi.string().pattern(/^[A-Za-z][A-Za-z0-9_-]{0,29}$/),
   subject: Joi.string().trim().max(180).allow('', null),
   language: Joi.string().valid('fr', 'en'),
 };

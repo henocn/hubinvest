@@ -24,6 +24,12 @@ const update = Joi.object({
   studioDayStart: Joi.string().pattern(timeOfDay),
   studioDayEnd: Joi.string().pattern(timeOfDay),
   studioSlotMinutes: Joi.number().integer().min(5).max(120),
+  // Formats de tournage du Studio : la clé reste fixe pour garder les invitations déjà faites.
+  studioFormats: Joi.array().min(1).max(20).items(Joi.object({
+    key: Joi.string().pattern(/^[A-Za-z][A-Za-z0-9_-]{0,29}$/).required(),
+    label: Joi.string().trim().min(1).max(80).required(),
+    labelEn: Joi.string().trim().max(80).allow(''),
+  })).unique('key'),
   investorDelayAHours: Joi.number().integer().min(1).max(720),
   investorDelayBDays: Joi.number().integer().min(1).max(90),
   // Informations de qualification de l'Investor Desk : la clé reste fixe pour garder les réponses déjà saisies.
