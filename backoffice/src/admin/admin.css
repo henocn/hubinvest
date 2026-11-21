@@ -377,6 +377,15 @@
 .admin-app .section-tabs a.is-active { color: #fff; background: var(--green); }
 .admin-app .section-tabs a.is-active:hover { background: var(--green-dark); }
 .admin-app .section-tabs a.is-active b { color: var(--red); background: #fff; }
+/* Onglets d'une fiche (boutons) : même apparence que les onglets de rubrique. */
+.admin-app .detail-tabs { justify-content: flex-start; margin: 0 0 14px; }
+.admin-app .detail-tabs button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 18px; border: 1px solid var(--frame); color: var(--ink); background: #fff; font: inherit; font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+.admin-app .detail-tabs button:hover { background: #eceeee; }
+.admin-app .detail-tabs button + button { border-left: 0; }
+.admin-app .detail-tabs button.is-active { color: #fff; background: var(--green); }
+.admin-app .detail-tabs button.is-active:hover { background: var(--green-dark); }
+.admin-app .detail-tabs b { color: var(--ink); background: #e4e6e8; }
+.admin-app .detail-tabs button.is-active b { color: var(--green); background: #fff; }
 .admin-app .section-tabs b { min-width: 18px; padding: 0 5px; border-radius: 9px; color: #fff; background: var(--red); font-size: 11px; line-height: 18px; text-align: center; }
 
 /* Case à cocher dans un formulaire : sur la même ligne que son libellé. */

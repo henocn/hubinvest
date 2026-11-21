@@ -86,6 +86,7 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
   const [error, setError] = useState('');
   const [notFound, setNotFound] = useState(false);
   const [answers, setAnswers] = useState({});
+  const [tab, setTab] = useState('details');
   const [dialog, setDialog] = useState(null);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState('');
@@ -155,13 +156,21 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
           <span className={`status-pill${statusClass[request.status] ?? ''}`}>{investorStatusLabels[request.status]}</span>
         </div>
         <div className="workspace-actions">
-          <button className="button button-primary" type="button" onClick={() => open('follow-up')}><PhoneCall size={16} /> Relancer</button>
-          <button className="button button-secondary" type="button" onClick={() => open('meeting')}><CalendarPlus size={16} /> Rendez-vous</button>
+          <button className="button button-primary" type="button" onClick={() => { setTab('follow-ups'); open('follow-up'); }}><PhoneCall size={16} /> Relancer</button>
+          <button className="button button-secondary" type="button" onClick={() => { setTab('meetings'); open('meeting'); }}><CalendarPlus size={16} /> Rendez-vous</button>
         </div>
       </header>
 
       {overdue && <p className="panel-message is-error investor-overdue" role="alert">Relance en retard depuis le {dateTime.format(new Date(request.nextFollowUpAt))}.</p>}
       {actionError && !dialog && <p className="panel-message is-error" role="alert">{actionError}</p>}
+      {/* Trois onglets, comme sur la Semaine de l'Industrie : détails et classe, rendez-vous, relances. */}
+      <nav className="section-tabs detail-tabs" aria-label="Fiche de la demande">
+        <button type="button" className={tab === 'details' ? 'is-active' : ''} onClick={() => setTab('details')} aria-pressed={tab === 'details'}>Détails</button>
+        <button type="button" className={tab === 'meetings' ? 'is-active' : ''} onClick={() => setTab('meetings')} aria-pressed={tab === 'meetings'}>Rendez-vous <b>{meetings.length}</b></button>
+        <button type="button" className={tab === 'follow-ups' ? 'is-active' : ''} onClick={() => setTab('follow-ups')} aria-pressed={tab === 'follow-ups'}>Relances <b>{followUps.length}</b></button>
+      </nav>
+
+      {tab === 'details' && <>
 
       <section className="data-panel stand-panel">
         <h2>Demande</h2>
@@ -207,6 +216,9 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
       </section>
 
       */}
+      </>}
+
+      {tab === 'meetings' && (
       <section className="data-panel stand-panel">
         <h2>Rendez-vous <span>{meetings.length}</span></h2>
         {!meetings.length ? <p className="panel-message">Aucun rendez-vous fixé.</p> : (
@@ -227,7 +239,9 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
           </div>
         )}
       </section>
+      )}
 
+      {tab === 'follow-ups' && (
       <section className="data-panel stand-panel">
         <h2>Relances <span>{followUps.length}</span></h2>
         {!followUps.length ? <p className="panel-message">Aucune relance enregistrée.</p> : (
@@ -247,6 +261,7 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
           </div>
         )}
       </section>
+      )}
 
 
       {dialog?.type === 'follow-up' && <FollowUpForm request={request} loading={busy} error={actionError} onClose={close} onSave={(values) => run(() => api.addInvestorFollowUp(session.token, request.id, values))} />}
