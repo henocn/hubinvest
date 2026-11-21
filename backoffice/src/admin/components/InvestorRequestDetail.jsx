@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, CalendarPlus, PhoneCall, Pencil, Trash2, X } from 'lucide-react';
+import { ArrowLeft, CalendarPlus, PhoneCall, X } from 'lucide-react';
 import { api } from '../lib/api';
 import { useRealtimeEvent } from '../../lib/realtime';
 import { investorChannelLabels, investorClassHints, investorClassLabels, investorStatusLabels } from '../constants/access';
 import ConfirmDelete from './ConfirmDelete';
+import RowMenu from './RowMenu';
 
 const dateTime = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Africa/Lome', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 const statusClass = { new: ' is-new', in_progress: ' is-active', closed: '' };
+const meetingStatus = { scheduled: ['Prévu', ' is-new'], held: ['Tenu', ' is-done'], cancelled: ['Annulé', ' is-lost'] };
 const fullName = (user) => [user?.firstName, user?.lastName].filter(Boolean).join(' ');
 // Heure de Lomé = UTC : un champ date-heure se lit et s'écrit en UTC.
 const toInput = (value) => (value ? new Date(value).toISOString().slice(0, 16) : '');
@@ -65,6 +67,53 @@ function MeetingForm({ request, meeting, loading, error, onClose, onSave }) {
       <label>Date et heure<input type="datetime-local" value={form.startsAt} onChange={set('startsAt')} required /><span className="field-hint">Heure de Lomé. L’investisseur reçoit le rendez-vous par e-mail.</span></label>
       <label>Lieu<input value={form.location} onChange={set('location')} minLength={2} maxLength={160} required /></label>
     </Modal>
+  );
+}
+
+// Valider (le rendez-vous a eu lieu) ou annuler (l'investisseur est prévenu par e-mail) un rendez-vous prévu.
+function ConfirmMeeting({ meeting, cancel, loading, error, onCancel, onConfirm }) {
+  const when = dateTime.format(new Date(meeting.startsAt));
+  return (
+    <div className="dialog-backdrop" role="presentation" onMouseDown={onCancel}>
+      <section className="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="meeting-status-title" onMouseDown={(event) => event.stopPropagation()}>
+        <div>
+          <h2 id="meeting-status-title">{cancel ? 'Annuler le rendez-vous' : 'Valider le rendez-vous'}</h2>
+          <p>{cancel ? `Le rendez-vous du ${when} est annulé ; l’investisseur en est prévenu par e-mail.` : `Le rendez-vous du ${when} a bien eu lieu.`}</p>
+        </div>
+        {error && <p className="admin-form-error dialog-error">{error}</p>}
+        <footer>
+          <button className="button button-secondary" type="button" onClick={onCancel} disabled={loading}>Retour</button>
+          <button className={`button ${cancel ? 'button-danger' : 'button-primary'}`} type="button" onClick={onConfirm} disabled={loading}>{loading ? 'Enregistrement…' : cancel ? 'Annuler le rendez-vous' : 'Valider'}</button>
+        </footer>
+      </section>
+    </div>
+  );
+}
+
+// Confirmation du classement ; un changement de classe est signalé, avec son effet sur la relance prévue.
+function ConfirmClass({ request, classification, loading, error, onCancel, onConfirm }) {
+  const change = Boolean(request.classification);
+  const relanced = (request.followUps || []).length > 0;
+  const effect = classification === 'C'
+    ? 'Aucune relance individuelle : la demande passe à « Terminé ».'
+    : relanced ? 'Une relance a déjà été faite : la date de la prochaine relance ne change pas.' : `La relance est prévue ${classification === 'A' ? 'sous 48 h' : 'sous 7 jours'}.`;
+  return (
+    <div className="dialog-backdrop" role="presentation" onMouseDown={onCancel}>
+      <section className="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="class-title" onMouseDown={(event) => event.stopPropagation()}>
+        <div>
+          <h2 id="class-title">{change ? 'Changer la classe' : 'Classer la demande'}</h2>
+          <p>{change
+            ? <>Vous changez la classe de {request.fullName} : <strong>{investorClassLabels[request.classification]}</strong> devient <strong>{investorClassLabels[classification]}</strong>.</>
+            : <>Vous classez {request.fullName} en <strong>{investorClassLabels[classification]}</strong>.</>}</p>
+          <p>{effect}</p>
+        </div>
+        {error && <p className="admin-form-error dialog-error">{error}</p>}
+        <footer>
+          <button className="button button-secondary" type="button" onClick={onCancel} disabled={loading}>Annuler</button>
+          <button className="button button-primary" type="button" onClick={onConfirm} disabled={loading}>{loading ? 'Enregistrement…' : change ? 'Changer la classe' : 'Classer'}</button>
+        </footer>
+      </section>
+    </div>
   );
 }
 
@@ -155,10 +204,6 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
           {request.classification && <span className={`investor-class is-${request.classification}`} title={investorClassHints[request.classification]}>{request.classification}</span>}
           <span className={`status-pill${statusClass[request.status] ?? ''}`}>{investorStatusLabels[request.status]}</span>
         </div>
-        <div className="workspace-actions">
-          <button className="button button-primary" type="button" onClick={() => { setTab('follow-ups'); open('follow-up'); }}><PhoneCall size={16} /> Relancer</button>
-          <button className="button button-secondary" type="button" onClick={() => { setTab('meetings'); open('meeting'); }}><CalendarPlus size={16} /> Rendez-vous</button>
-        </div>
       </header>
 
       {overdue && <p className="panel-message is-error investor-overdue" role="alert">Relance en retard depuis le {dateTime.format(new Date(request.nextFollowUpAt))}.</p>}
@@ -185,14 +230,14 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
 
       <section className="data-panel stand-panel">
         <header className="settings-panel-head"><h2>Suivi</h2>{saved === 'follow' && <span className="investor-saved">Enregistré</span>}</header>
-        {/* Un clic sur une classe l'enregistre aussitôt. */}
+        {/* Un clic sur une classe demande confirmation (classement, ou changement de classe). */}
         <div className="investor-follow">
           <fieldset className="investor-classes" disabled={busy}>
             <legend>Classe</legend>
             {Object.entries(investorClassLabels).map(([value, label]) => (
               <label key={value} className={`investor-class-option${request.classification === value ? ' is-selected' : ''}`}>
                 <input type="radio" name="classification" value={value} checked={request.classification === value}
-                  onChange={() => { void run(() => api.updateInvestorRequest(session.token, request.id, { classification: value }), 'follow'); }} />
+                  onChange={() => open('classify', value)} />
                 <span><strong>{label}</strong><small>{investorClassHints[value]}</small></span>
               </label>
             ))}
@@ -220,19 +265,25 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
 
       {tab === 'meetings' && (
       <section className="data-panel stand-panel">
-        <h2>Rendez-vous <span>{meetings.length}</span></h2>
+        <header className="settings-panel-head">
+          <h2>Rendez-vous <span>{meetings.length}</span></h2>
+          <button className="button button-primary" type="button" onClick={() => open('meeting')}><CalendarPlus size={16} /> Rendez-vous</button>
+        </header>
         {!meetings.length ? <p className="panel-message">Aucun rendez-vous fixé.</p> : (
           <div className="table-scroll">
             <table>
-              <thead><tr><th>Date et heure</th><th>Lieu</th><th className="actions-heading">Actions</th></tr></thead>
+              <thead><tr><th>Date et heure</th><th>Lieu</th><th>Statut</th><th className="actions-heading">Actions</th></tr></thead>
               <tbody>{meetings.map((item) => (
                 <tr key={item.id}>
                   <td className="stand-nowrap"><strong>{dateTime.format(new Date(item.startsAt))}</strong><small>{fullName(item.createdBy)}</small></td>
                   <td>{item.location}</td>
-                  <td><div className="row-actions">
-                    <button className="table-action is-icon" type="button" onClick={() => open('meeting', item)} title="Modifier le rendez-vous" aria-label="Modifier le rendez-vous"><Pencil size={16} /></button>
-                    <button className="table-action is-icon is-danger" type="button" onClick={() => open('delete-meeting', item)} title="Annuler le rendez-vous" aria-label="Annuler le rendez-vous"><Trash2 size={16} /></button>
-                  </div></td>
+                  <td><span className={`status-pill${meetingStatus[item.status]?.[1] || ''}`}>{meetingStatus[item.status]?.[0]}</span></td>
+                  <td><RowMenu label="Actions du rendez-vous" items={[
+                    { label: 'Valider', onClick: () => open('hold-meeting', item), disabled: item.status !== 'scheduled' || new Date(item.startsAt) > new Date(), hint: item.status !== 'scheduled' ? 'Rendez-vous déjà tenu ou annulé' : 'Se valide une fois l’heure passée' },
+                    { label: 'Modifier', onClick: () => open('meeting', item), disabled: item.status !== 'scheduled', hint: 'Rendez-vous déjà tenu ou annulé' },
+                    { label: 'Annuler', onClick: () => open('cancel-meeting', item), disabled: item.status !== 'scheduled', hint: 'Rendez-vous déjà tenu ou annulé' },
+                    { label: 'Supprimer', onClick: () => open('delete-meeting', item), danger: true },
+                  ]} /></td>
                 </tr>
               ))}</tbody>
             </table>
@@ -243,7 +294,10 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
 
       {tab === 'follow-ups' && (
       <section className="data-panel stand-panel">
-        <h2>Relances <span>{followUps.length}</span></h2>
+        <header className="settings-panel-head">
+          <h2>Relances <span>{followUps.length}</span></h2>
+          <button className="button button-primary" type="button" onClick={() => open('follow-up')}><PhoneCall size={16} /> Relancer</button>
+        </header>
         {!followUps.length ? <p className="panel-message">Aucune relance enregistrée.</p> : (
           <div className="table-scroll">
             <table>
@@ -254,7 +308,7 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
                   <td>{investorChannelLabels[item.channel]}</td>
                   <td className="meeting-note-cell">{item.note || '—'}</td>
                   <td>{item.nextStep || '—'}</td>
-                  <td><div className="row-actions"><button className="table-action is-icon is-danger" type="button" onClick={() => open('delete-follow-up', item)} title="Supprimer la relance" aria-label="Supprimer la relance"><Trash2 size={16} /></button></div></td>
+                  <td><RowMenu label="Actions de la relance" items={[{ label: 'Supprimer', onClick: () => open('delete-follow-up', item), danger: true }]} /></td>
                 </tr>
               ))}</tbody>
             </table>
@@ -264,11 +318,15 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
       )}
 
 
+      {dialog?.type === 'classify' && <ConfirmClass request={request} classification={dialog.item} loading={busy} error={actionError} onCancel={close}
+        onConfirm={() => run(() => api.updateInvestorRequest(session.token, request.id, { classification: dialog.item }), 'follow')} />}
       {dialog?.type === 'follow-up' && <FollowUpForm request={request} loading={busy} error={actionError} onClose={close} onSave={(values) => run(() => api.addInvestorFollowUp(session.token, request.id, values))} />}
       {dialog?.type === 'meeting' && <MeetingForm request={request} meeting={dialog.item} loading={busy} error={actionError} onClose={close}
         onSave={(values) => run(() => (dialog.item ? api.updateInvestorMeeting(session.token, request.id, dialog.item.id, values) : api.addInvestorMeeting(session.token, request.id, values)))} />}
       {dialog?.type === 'delete-follow-up' && <ConfirmDelete subject={{ label: `la relance du ${dateTime.format(new Date(dialog.item.doneAt))}` }} loading={busy} error={actionError} onCancel={close} onConfirm={() => run(() => api.deleteInvestorFollowUp(session.token, request.id, dialog.item.id))} />}
-      {dialog?.type === 'delete-meeting' && <ConfirmDelete subject={{ label: `le rendez-vous du ${dateTime.format(new Date(dialog.item.startsAt))} (l’investisseur est prévenu par e-mail s’il n’a pas encore eu lieu)` }} loading={busy} error={actionError} onCancel={close} onConfirm={() => run(() => api.deleteInvestorMeeting(session.token, request.id, dialog.item.id))} />}
+      {(dialog?.type === 'hold-meeting' || dialog?.type === 'cancel-meeting') && <ConfirmMeeting meeting={dialog.item} cancel={dialog.type === 'cancel-meeting'} loading={busy} error={actionError} onCancel={close}
+        onConfirm={() => run(() => api.setInvestorMeetingStatus(session.token, request.id, dialog.item.id, dialog.type === 'cancel-meeting' ? 'cancelled' : 'held'))} />}
+      {dialog?.type === 'delete-meeting' && <ConfirmDelete subject={{ label: `le rendez-vous du ${dateTime.format(new Date(dialog.item.startsAt))} (sans prévenir l’investisseur : pour le décommander, annulez-le)` }} loading={busy} error={actionError} onCancel={close} onConfirm={() => run(() => api.deleteInvestorMeeting(session.token, request.id, dialog.item.id))} />}
     </main>
   );
 }

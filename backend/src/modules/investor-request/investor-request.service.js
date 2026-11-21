@@ -178,8 +178,14 @@ const getMeeting = async (id, meetingId) => {
   return { investorRequest, meeting };
 };
 
+const assertScheduled = (meeting) => {
+  if (meeting.status !== 'scheduled') throw new AppError(409, 'INVESTOR_MEETING_CLOSED', 'Ce rendez-vous est déjà tenu ou annulé.');
+};
+
+// Modifier : seulement un rendez-vous prévu ; l'investisseur reçoit la nouvelle date.
 const updateMeeting = async (id, meetingId, { startsAt, location }) => {
   const { investorRequest, meeting } = await getMeeting(id, meetingId);
+  assertScheduled(meeting);
   if (new Date(startsAt).getTime() <= Date.now()) throw new AppError(422, 'INVESTOR_MEETING_IN_PAST', 'Choisissez une date à venir.');
   await investorRequestRepository.updateMeeting(meeting, { startsAt, location });
   notificationService.investorMeetingChanged('moved', meeting, investorRequest);
@@ -187,10 +193,23 @@ const updateMeeting = async (id, meetingId, { startsAt, location }) => {
   return meeting;
 };
 
-const removeMeeting = async (id, meetingId) => {
+// Valider (le rendez-vous a eu lieu, une fois son heure passée) ou annuler (l'investisseur est prévenu par e-mail).
+const setMeetingStatus = async (id, meetingId, status) => {
   const { investorRequest, meeting } = await getMeeting(id, meetingId);
+  assertScheduled(meeting);
+  if (status === 'held' && new Date(meeting.startsAt).getTime() > Date.now()) {
+    throw new AppError(409, 'INVESTOR_MEETING_NOT_STARTED', 'Un rendez-vous se valide une fois son heure passée.');
+  }
+  await investorRequestRepository.updateMeeting(meeting, { status });
+  if (status === 'cancelled' && new Date(meeting.startsAt).getTime() > Date.now()) notificationService.investorMeetingChanged('cancelled', meeting, investorRequest);
+  realtime.investorRequestsChanged();
+  return meeting;
+};
+
+// Supprimer efface le rendez-vous (erreur de saisie) sans prévenir l'investisseur : pour le décommander, on l'annule.
+const removeMeeting = async (id, meetingId) => {
+  const { meeting } = await getMeeting(id, meetingId);
   await investorRequestRepository.destroyMeeting(meeting);
-  if (new Date(meeting.startsAt).getTime() > Date.now()) notificationService.investorMeetingChanged('cancelled', meeting, investorRequest);
   realtime.investorRequestsChanged();
 };
 
@@ -204,6 +223,7 @@ module.exports = {
   removeFollowUp,
   addMeeting,
   updateMeeting,
+  setMeetingStatus,
   removeMeeting,
   cleanQualification,
   progressStatus,

@@ -237,6 +237,13 @@
 .admin-app .qualification-settings-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 6px; }
 .admin-app .qualification-settings-actions .button-secondary { margin-right: auto; }
 @media (max-width: 720px) { .admin-app .qualification-setting { grid-template-columns: 24px minmax(0, 1fr) 28px; } .admin-app .qualification-setting select, .admin-app .qualification-setting > input:nth-of-type(2), .admin-app .qualification-setting > span:not(.qualification-setting-number) { grid-column: 2; } }
+/* Menu contextuel d'une ligne (trois points verticaux). */
+.admin-app .row-menu { position: relative; display: inline-flex; }
+.admin-app .row-menu-list { position: fixed; z-index: 40; min-width: 170px; margin: 0; padding: 4px 0; border: 1px solid var(--frame); border-radius: 4px; background: #fff; box-shadow: 0 8px 24px rgba(15, 24, 34, .14); list-style: none; }
+.admin-app .row-menu-list button { width: 100%; padding: 8px 14px; border: 0; color: var(--ink); background: none; font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.admin-app .row-menu-list button:hover:not(:disabled) { background: #f4f5f5; }
+.admin-app .row-menu-list button:disabled { color: #a3a7ab; cursor: not-allowed; }
+.admin-app .row-menu-list button.is-danger { color: #a62039; }
 /* Investor Desk : classe A·B·C, relance en retard, formulaires de suivi et de qualification. */
 .admin-app .investor-class { width: 24px; height: 24px; display: inline-grid; place-items: center; border-radius: 4px; color: #fff; font-size: 12px; font-weight: 800; }
 .admin-app .investor-class.is-A { background: var(--red); }
@@ -378,7 +385,7 @@
 .admin-app .section-tabs a.is-active:hover { background: var(--green-dark); }
 .admin-app .section-tabs a.is-active b { color: var(--red); background: #fff; }
 /* Onglets d'une fiche (boutons) : même apparence que les onglets de rubrique. */
-.admin-app .detail-tabs { justify-content: flex-start; margin: 0 0 14px; }
+.admin-app .detail-tabs { justify-content: flex-start; margin: 22px 0 16px; }
 .admin-app .detail-tabs button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 18px; border: 1px solid var(--frame); color: var(--ink); background: #fff; font: inherit; font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer; }
 .admin-app .detail-tabs button:hover { background: #eceeee; }
 .admin-app .detail-tabs button + button { border-left: 0; }

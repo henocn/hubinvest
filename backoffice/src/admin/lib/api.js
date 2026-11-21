@@ -76,6 +76,7 @@ export const api = {
   deleteInvestorFollowUp: (token, id, followUpId) => request(`/investor-requests/${id}/follow-ups/${followUpId}`, authorized(token, { method: 'DELETE' })),
   addInvestorMeeting: (token, id, values) => request(`/investor-requests/${id}/meetings`, authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   updateInvestorMeeting: (token, id, meetingId, values) => request(`/investor-requests/${id}/meetings/${meetingId}`, authorized(token, { method: 'PUT', body: JSON.stringify(values) })),
+  setInvestorMeetingStatus: (token, id, meetingId, status) => request(`/investor-requests/${id}/meetings/${meetingId}`, authorized(token, { method: 'PATCH', body: JSON.stringify({ status }) })),
   deleteInvestorMeeting: (token, id, meetingId) => request(`/investor-requests/${id}/meetings/${meetingId}`, authorized(token, { method: 'DELETE' })),
   updateInvestorRequest: (token, id, values) =>
     request(`/investor-requests/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),

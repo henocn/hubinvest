@@ -41,6 +41,9 @@ const meeting = Joi.object({
   location: Joi.string().trim().min(2).max(160).required(),
 });
 
+// Valider (tenu) ou annuler un rendez-vous prévu.
+const meetingStatus = Joi.object({ status: Joi.string().valid('held', 'cancelled').required() });
+
 const params = Joi.object({ id: uuid.required() });
 const followUpParams = Joi.object({ id: uuid.required(), followUpId: uuid.required() });
 const meetingParams = Joi.object({ id: uuid.required(), meetingId: uuid.required() });
@@ -53,4 +56,4 @@ const query = Joi.object({
   offset: Joi.number().integer().min(0).default(0),
 });
 
-module.exports = { createPublic, createManual, update, followUp, meeting, params, followUpParams, meetingParams, query };
+module.exports = { createPublic, createManual, update, followUp, meeting, meetingStatus, params, followUpParams, meetingParams, query };

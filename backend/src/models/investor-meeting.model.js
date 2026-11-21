@@ -7,6 +7,8 @@ module.exports = (sequelize, DataTypes) =>
       investorRequestId: { type: DataTypes.UUID, allowNull: false, field: 'investor_request_id' },
       startsAt: { type: DataTypes.DATE, allowNull: false, field: 'starts_at' },
       location: { type: DataTypes.STRING(160), allowNull: false },
+      // Prévu, tenu (validé après l'heure du rendez-vous) ou annulé (l'investisseur est prévenu).
+      status: { type: DataTypes.STRING(20), allowNull: false, defaultValue: 'scheduled', validate: { isIn: [['scheduled', 'held', 'cancelled']] } },
       createdByUserId: { type: DataTypes.UUID, allowNull: true, field: 'created_by_user_id' },
     },
     { tableName: 'investor_meetings', underscored: true },

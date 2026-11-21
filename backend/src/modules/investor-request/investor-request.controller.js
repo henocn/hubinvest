@@ -32,9 +32,10 @@ const removeFollowUp = async (request, response) => {
 };
 const addMeeting = async (request, response) => response.status(201).json({ data: await investorRequestService.addMeeting(request.user, request.params.id, request.body), message: 'Rendez-vous fixé.' });
 const updateMeeting = async (request, response) => response.json({ data: await investorRequestService.updateMeeting(request.params.id, request.params.meetingId, request.body), message: 'Rendez-vous déplacé.' });
+const setMeetingStatus = async (request, response) => response.json({ data: await investorRequestService.setMeetingStatus(request.params.id, request.params.meetingId, request.body.status), message: request.body.status === 'held' ? 'Rendez-vous validé.' : 'Rendez-vous annulé.' });
 const removeMeeting = async (request, response) => {
   await investorRequestService.removeMeeting(request.params.id, request.params.meetingId);
   response.status(204).end();
 };
 
-module.exports = { list, createPublic, createManual, update, detail, addFollowUp, removeFollowUp, addMeeting, updateMeeting, removeMeeting };
+module.exports = { list, createPublic, createManual, update, detail, addFollowUp, removeFollowUp, addMeeting, updateMeeting, setMeetingStatus, removeMeeting };

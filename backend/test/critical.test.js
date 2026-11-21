@@ -1397,6 +1397,24 @@ test('Investor Desk : une relance d’un contact A exige l’étape suivante et 
   assert.equal('nextFollowUpAt' in saved.at(-1), false);
 });
 
+test('Investor Desk : un rendez-vous se valide après son heure, s’annule en prévenant l’investisseur, puis ne bouge plus', async (context) => {
+  const request = { id: 'ir-9', email: 'a@b.tg' };
+  const past = { id: 'm-past', startsAt: new Date(Date.now() - 60000), status: 'scheduled' };
+  const future = { id: 'm-future', startsAt: new Date(Date.now() + 3600000), status: 'scheduled' };
+  const emails = [];
+  context.mock.method(investorRequestRepository, 'findById', async () => request);
+  context.mock.method(investorRequestRepository, 'findMeeting', async (id) => ({ 'm-past': past, 'm-future': future })[id] || null);
+  context.mock.method(investorRequestRepository, 'updateMeeting', async (meeting, values) => Object.assign(meeting, values));
+  context.mock.method(notificationService, 'investorMeetingChanged', (kind) => { emails.push(kind); });
+
+  await assert.rejects(investorRequestService.setMeetingStatus('ir-9', 'm-future', 'held'), (error) => error.code === 'INVESTOR_MEETING_NOT_STARTED');
+  await investorRequestService.setMeetingStatus('ir-9', 'm-past', 'held');
+  assert.equal(past.status, 'held');
+  await investorRequestService.setMeetingStatus('ir-9', 'm-future', 'cancelled');
+  assert.deepEqual(emails, ['cancelled']);
+  await assert.rejects(investorRequestService.updateMeeting('ir-9', 'm-future', { startsAt: new Date(Date.now() + 7200000), location: 'Hub' }), (error) => error.code === 'INVESTOR_MEETING_CLOSED');
+});
+
 const liveQuestionService = require('../src/modules/live-question/live-question.service');
 const liveQuestionRepository = require('../src/modules/live-question/live-question.repository');
 
