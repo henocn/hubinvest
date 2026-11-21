@@ -4,6 +4,8 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 
 ## UI et direction visuelle
 
+- Design system de référence (21/11/2026) : « API-ZF · Hub de l’investissement » (https://claude.ai/artifact/UBNnyJ9R72xJx9zxbu1r4a), tiré de la charte d’août 2026. Thème Clair pour le web : fond blanc, angles droits partout (seules les pastilles rondes restent rondes), proportion 60/30/10 (vert dominant, jaune et rouge en accents), filet jaune au-dessus du titre de page, Sen pour les titres, Arial pour le texte, un seul mot d’accroche en Aleo italique extra-gras (« Investir » sur l’accueil), mosaïque de la charte en bandeau (pied de page), jamais de texte dessus. Les guichets suivent le panneau de la charte (vert foncé, barre jaune, « GUICHET 1 », question, promesse). Il remplace la règle des boutons et champs arrondis à 10 px.
+
 - Interface sobre, propre, simple et directement compréhensible, inspirée de la clarté de Postman sans la copier.
 - Éviter les signes de design généré par IA : textes de remplissage, cartes imbriquées, badges décoratifs, détails gratuits et grands espaces sans fonction.
 - Suivre la charte graphique du Hub (couleurs, Sen pour les titres, Arial pour le texte, boutons arrondis à 10 px comme les champs, action principale rouge) sans alourdir l’UX : pas de supergraphie dans les écrans de travail. Le logo du Hub (`frontend/src/assets/brand/`, tiré de `assets/Logo Hub couleur.png` et `assets/Logo Hub blanc.png`) signe toutes les interfaces ; l’API-ZF apparaît uniquement en pied de page (« Une initiative de » + logo API-ZF), jamais dans l’en-tête. Le symbole seul sert au favicon, aux icônes de l’application et en filigrane léger (bandeaux, page de connexion), jamais comme signature principale. Icônes Lucide, aucun emoji.

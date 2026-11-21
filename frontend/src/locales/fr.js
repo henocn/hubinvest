@@ -39,7 +39,8 @@ export default {
   },
   home: {
     title: "Aujourd’hui au Hub",
-    signature: "Investir au Togo, nous facilitons votre réussite.",
+    signatureLead: "Investir",
+    signatureRest: "au Togo, nous facilitons votre réussite.",
     actions: "Actions principales",
     book: "Prendre rendez‑vous",
     callBack: "Être recontacté",
@@ -102,7 +103,6 @@ export default {
     fullName: "Nom complet",
     phone: "Téléphone",
     request: "Votre demande",
-    consent: "J’accepte que {{name}} utilise mes coordonnées pour répondre à cette demande.",
     submit: "Envoyer ma demande",
   },
   meetings: {
@@ -143,6 +143,7 @@ export default {
     title: "Les guichets du Stand API‑ZF",
     modes: "Rendez-vous ou rappel",
     choose: "Quelle question vous amène ?",
+    number: "GUICHET {{number}}",
     names: { project: "Mon projet d’investissement", regime: "Quel régime pour mon investissement ?", company: "Mon entreprise, mes difficultés" },
     hints: { project: "Diagnostic de votre projet en 15 minutes et orientation.", regime: "Code des investissements, Zone Franche, agréments, foncier.", company: "Entreprise installée : une difficulté, une extension, un réinvestissement." },
     chooseSlot: "Choisissez votre créneau",

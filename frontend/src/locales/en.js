@@ -39,7 +39,8 @@ export default {
   },
   home: {
     title: "Today at the Hub",
-    signature: "Invest in Togo, we make your success easier.",
+    signatureLead: "Invest",
+    signatureRest: "in Togo, we make your success easier.",
     actions: "Main actions",
     book: "Book a meeting",
     callBack: "Get a call back",
@@ -102,7 +103,6 @@ export default {
     fullName: "Full name",
     phone: "Phone",
     request: "Your request",
-    consent: "I agree that {{name}} may use my contact details to respond to this request.",
     submit: "Send my request",
   },
   meetings: {
@@ -143,6 +143,7 @@ export default {
     title: "The API-ZF Stand desks",
     modes: "Meeting or call back",
     choose: "What brings you here?",
+    number: "DESK {{number}}",
     names: { project: "My investment project", regime: "Which regime for my investment?", company: "My company, my difficulties" },
     hints: { project: "A 15-minute diagnosis of your project and guidance.", regime: "Investment Code, Free Zone, approvals, land.", company: "Established company: a difficulty, an expansion, a reinvestment." },
     chooseSlot: "Choose your time slot",

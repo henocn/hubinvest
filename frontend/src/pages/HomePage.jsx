@@ -78,7 +78,7 @@ function HomeHero({ data, formats, now }) {
       <div className="public-container">
         <div className="home-hero-heading">
           <p className="home-hero-date">{formats.day.format(data ? new Date(data.date) : new Date(now))}</p>
-          <h1>{t('home.signature')}</h1>
+          <h1><em className="accroche">{t('home.signatureLead')}</em> {t('home.signatureRest')}</h1>
         </div>
         <nav className="home-hero-actions" aria-label={t('home.actions')}>
           <Link className="button button-primary" to="/guichets"><CalendarCheck size={18} aria-hidden="true" />{t('home.book')}</Link>
