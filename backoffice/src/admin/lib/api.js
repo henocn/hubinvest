@@ -78,6 +78,12 @@ export const api = {
   updateB2bNeed: (token, id, values) =>
     request(`/b2b-needs/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
   b2bAllProposals: (token) => request('/b2b-proposals', authorized(token)),
+  // Fiche d'une demande B2B : rendez-vous, créneaux libres, compte rendu.
+  b2bProposal: (token, id) => request(`/b2b-proposals/${id}`, authorized(token)),
+  b2bSlots: (token, id, date) => request(`/b2b-proposals/${id}/slots?date=${encodeURIComponent(date)}`, authorized(token)),
+  createB2bMeeting: (token, id, values) => request(`/b2b-proposals/${id}/meetings`, authorized(token, { method: 'POST', body: JSON.stringify(values) })),
+  updateB2bMeeting: (token, id, meetingId, values) => request(`/b2b-proposals/${id}/meetings/${meetingId}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
+  deleteB2bMeeting: (token, id, meetingId) => request(`/b2b-proposals/${id}/meetings/${meetingId}`, authorized(token, { method: 'DELETE' })),
   b2bProposals: (token, needId) => request(`/b2b-proposals/need/${needId}`, authorized(token)),
   deleteB2bProposal: (token, id) =>
     request(`/b2b-proposals/${id}`, authorized(token, { method: 'DELETE' })),

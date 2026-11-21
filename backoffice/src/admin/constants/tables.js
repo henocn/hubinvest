@@ -92,6 +92,7 @@ export const tableSettings = {
       { header: 'Message', value: (item) => item.message, width: 60 },
       { header: 'Statut', value: (item) => b2bProposalLabels[item.status] || item.status, width: 14 },
       { header: 'Traitée par', value: (item) => fullName(item.handledBy), width: 24 },
+      { header: 'Rendez-vous fixés', value: (item) => item.meetingCount || 0, width: 16 },
     ],
   },
   challenges: {

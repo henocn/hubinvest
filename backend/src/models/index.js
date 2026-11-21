@@ -6,6 +6,7 @@ const defineContact = require('./contact.model');
 const defineInvestorRequest = require('./investor-request.model');
 const defineB2bNeed = require('./b2b-need.model');
 const defineB2bProposal = require('./b2b-proposal.model');
+const defineB2bMeeting = require('./b2b-meeting.model');
 const defineStudioInvitation = require('./studio-invitation.model');
 const defineChallengePassport = require('./challenge-passport.model');
 const defineChallengePassage = require('./challenge-passage.model');
@@ -24,6 +25,7 @@ const Contact = defineContact(sequelize, DataTypes);
 const InvestorRequest = defineInvestorRequest(sequelize, DataTypes);
 const B2bNeed = defineB2bNeed(sequelize, DataTypes);
 const B2bProposal = defineB2bProposal(sequelize, DataTypes);
+const B2bMeeting = defineB2bMeeting(sequelize, DataTypes);
 const StudioInvitation = defineStudioInvitation(sequelize, DataTypes);
 const ChallengePassport = defineChallengePassport(sequelize, DataTypes);
 const ChallengePassage = defineChallengePassage(sequelize, DataTypes);
@@ -57,6 +59,9 @@ B2bProposal.belongsTo(B2bNeed, { foreignKey: 'b2bNeedId', as: 'need' });
 
 User.hasMany(B2bProposal, { foreignKey: 'handledByUserId', as: 'handledB2bProposals' });
 B2bProposal.belongsTo(User, { foreignKey: 'handledByUserId', as: 'handledBy' });
+B2bProposal.hasMany(B2bMeeting, { foreignKey: 'b2bProposalId', as: 'meetings' });
+B2bMeeting.belongsTo(B2bProposal, { foreignKey: 'b2bProposalId', as: 'proposal' });
+B2bMeeting.belongsTo(User, { foreignKey: 'reportedByUserId', as: 'reportedBy' });
 
 User.hasMany(StudioInvitation, { foreignKey: 'createdByUserId', as: 'createdStudioInvitations' });
 StudioInvitation.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
@@ -103,6 +108,7 @@ module.exports = {
   InvestorRequest,
   B2bNeed,
   B2bProposal,
+  B2bMeeting,
   StudioInvitation,
   ChallengePassport,
   ChallengePassage,

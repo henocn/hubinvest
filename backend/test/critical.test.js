@@ -1252,6 +1252,76 @@ test('un contact de stand se qualifie A, B ou C ; les anciennes valeurs chaud, t
   assert.ok(contactValidation.query.validate({ qualification: 'D' }).error);
 });
 
+const b2bMeetingService = require('../src/modules/b2b-proposal/b2b-meeting.service');
+const b2bMeetingRepository = require('../src/modules/b2b-proposal/b2b-meeting.repository');
+
+const meetingSetup = (context, { status = 'accepted', occupantId = 'stand-a', existing = [] } = {}) => {
+  const proposal = { id: 'prop-1', status, need: { occupantId, title: 'Emballages', occupant: { id: occupantId, name: 'WAFO' } }, email: 'kossi@example.com', language: 'fr' };
+  const created = [];
+  context.mock.method(b2bProposalService, 'getManaged', async () => proposal);
+  context.mock.method(b2bMeetingRepository.sequelize, 'transaction', async (callback) => callback({}));
+  context.mock.method(b2bMeetingRepository, 'lockSchedule', async () => {});
+  context.mock.method(b2bMeetingRepository, 'findStartingBetween', async () => existing);
+  context.mock.method(b2bMeetingRepository, 'create', async (values) => { created.push(values); return values; });
+  context.mock.method(notificationService, 'b2bMeetingScheduled', () => {});
+  return { proposal, created };
+};
+
+const futureDay = () => new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+const busyMeeting = (startsAt, tableNumber, occupantId) => ({ id: `m-${tableNumber}`, startsAt: new Date(startsAt), durationMinutes: 20, tableNumber, proposal: { need: { occupantId } } });
+
+test('un rendez-vous B2B se fixe sur une demande acceptée, une table libre et un stand libre', async (context) => {
+  const day = futureDay();
+  const { created } = meetingSetup(context, { existing: [busyMeeting(`${day}T10:00:00Z`, 1, 'stand-b')] });
+
+  await assert.rejects(b2bMeetingService.schedule({ id: 'u1' }, 'prop-1', { startsAt: `${day}T10:00:00Z`, tableNumber: 1 }), (error) => error.code === 'B2B_TABLE_TAKEN');
+  await assert.rejects(b2bMeetingService.schedule({ id: 'u1' }, 'prop-1', { startsAt: `${day}T10:00:00Z`, tableNumber: 9 }), (error) => error.code === 'B2B_TABLE_UNKNOWN');
+  await assert.rejects(b2bMeetingService.schedule({ id: 'u1' }, 'prop-1', { startsAt: '2020-01-01T10:00:00Z', tableNumber: 2 }), (error) => error.code === 'B2B_MEETING_IN_PAST');
+
+  const meeting = await b2bMeetingService.schedule({ id: 'u1' }, 'prop-1', { startsAt: `${day}T10:00:00Z`, tableNumber: 2 });
+  assert.equal(meeting.tableNumber, 2);
+  assert.equal(meeting.durationMinutes, 20);
+  assert.equal(created.length, 1);
+});
+
+test('un stand ne peut pas avoir deux rendez-vous B2B en même temps, et une demande non acceptée n’en reçoit pas', async (context) => {
+  const day = futureDay();
+  meetingSetup(context, { existing: [busyMeeting(`${day}T10:10:00Z`, 3, 'stand-a')] });
+  await assert.rejects(b2bMeetingService.schedule({ id: 'u1' }, 'prop-1', { startsAt: `${day}T10:00:00Z`, tableNumber: 1 }), (error) => error.code === 'B2B_STAND_BUSY');
+
+  meetingSetup(context, { status: 'pending' });
+  await assert.rejects(b2bMeetingService.schedule({ id: 'u1' }, 'prop-1', { startsAt: `${day}T10:00:00Z`, tableNumber: 1 }), (error) => error.code === 'B2B_PROPOSAL_NOT_ACCEPTED');
+});
+
+test('les créneaux libres d’une journée suivent les réglages et écartent tables prises et stand occupé', async (context) => {
+  const day = futureDay();
+  meetingSetup(context, { existing: [busyMeeting(`${day}T09:00:00Z`, 1, 'stand-b'), busyMeeting(`${day}T09:20:00Z`, 2, 'stand-a')] });
+  const result = await b2bMeetingService.slots({ id: 'u1' }, 'prop-1', day);
+  assert.equal(result.minutes, 20);
+  assert.equal(result.slots.length, 23);
+  assert.deepEqual(result.slots[0], { startsAt: `${day}T09:00:00.000Z`, tables: [2, 3, 4] });
+  assert.equal(result.slots[1].startsAt, `${day}T09:40:00.000Z`);
+  assert.equal(result.slots.at(-1).startsAt, `${day}T16:40:00.000Z`);
+});
+
+test('le compte rendu en un clic ne se fait qu’une fois le rendez-vous commencé ; la note reste libre', async (context) => {
+  meetingSetup(context);
+  const past = { id: 'm1', startsAt: new Date(Date.now() - 60000) };
+  const future = { id: 'm2', startsAt: new Date(Date.now() + 3600000) };
+  const saved = {};
+  context.mock.method(b2bMeetingRepository, 'findById', async (id) => ({ m1: past, m2: future })[id] || null);
+  context.mock.method(b2bMeetingRepository, 'update', async (meeting, values) => { saved[meeting.id] = values; return meeting; });
+
+  await b2bMeetingService.report({ id: 'u1' }, 'prop-1', 'm1', { outcome: 'held_follow_up', note: 'Devis à envoyer' });
+  assert.equal(saved.m1.outcome, 'held_follow_up');
+  assert.equal(saved.m1.reportedByUserId, 'u1');
+  assert.equal(saved.m1.note, 'Devis à envoyer');
+  await assert.rejects(b2bMeetingService.report({ id: 'u1' }, 'prop-1', 'm2', { outcome: 'no_show' }), (error) => error.code === 'B2B_MEETING_NOT_STARTED');
+  await b2bMeetingService.report({ id: 'u1' }, 'prop-1', 'm2', { note: 'Apporter le catalogue' });
+  assert.equal(saved.m2.note, 'Apporter le catalogue');
+  await assert.rejects(b2bMeetingService.report({ id: 'u1' }, 'prop-1', 'absent', { note: 'x' }), (error) => error.status === 404);
+});
+
 const liveQuestionService = require('../src/modules/live-question/live-question.service');
 const liveQuestionRepository = require('../src/modules/live-question/live-question.repository');
 

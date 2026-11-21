@@ -80,6 +80,19 @@ const b2bProposalDecided = (proposal, need) => dispatch(async () => {
   ]);
 });
 
+// Envoie au visiteur le rendez-vous B2B fixé, ou son annulation.
+const b2bMeetingScheduled = (meeting, proposal) => dispatch(async () => {
+  await notificationRepository.enqueue([
+    { channel: 'email', recipient: proposal.email, payload: templates.b2bMeetingScheduled({ meeting, proposal, need: proposal.need, occupant: proposal.need.occupant }) },
+  ]);
+});
+
+const b2bMeetingCancelled = (meeting, proposal) => dispatch(async () => {
+  await notificationRepository.enqueue([
+    { channel: 'email', recipient: proposal.email, payload: templates.b2bMeetingCancelled({ meeting, proposal, need: proposal.need, occupant: proposal.need.occupant }) },
+  ]);
+});
+
 // Prévient l'auteur de l'invitation et l'équipe du stand de la réponse de l'invité.
 const studioInvitationAnswered = (invitation) => dispatch(async () => {
   const creator = invitation.createdByUserId ? await notificationRepository.findActiveUser(invitation.createdByUserId) : null;
@@ -96,5 +109,7 @@ module.exports = {
   investorRequestReceived,
   b2bProposalReceived,
   b2bProposalDecided,
+  b2bMeetingScheduled,
+  b2bMeetingCancelled,
   studioInvitationAnswered,
 };

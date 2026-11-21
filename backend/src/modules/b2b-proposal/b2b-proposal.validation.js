@@ -19,4 +19,18 @@ const update = Joi.object({
   message: Joi.string().trim().min(10).max(4000),
 }).min(1);
 
-module.exports = { needParams, params, createPublic, update };
+const meetingParams = Joi.object({ id: uuid.required(), meetingId: uuid.required() });
+// Jour au format AAAA-MM-JJ.
+const slotsQuery = Joi.object({ date: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).required() });
+// Rendez-vous : créneau (date et heure ISO) et numéro de table.
+const schedule = Joi.object({
+  startsAt: Joi.date().iso().required(),
+  tableNumber: Joi.number().integer().min(1).max(50).required(),
+});
+// Compte rendu en un clic, et note facultative ; une issue vide annule le compte rendu.
+const report = Joi.object({
+  outcome: Joi.string().valid('held_follow_up', 'held_no_follow_up', 'no_show').allow(null, ''),
+  note: Joi.string().trim().max(2000).allow('', null),
+}).min(1);
+
+module.exports = { needParams, params, meetingParams, slotsQuery, createPublic, update, schedule, report };

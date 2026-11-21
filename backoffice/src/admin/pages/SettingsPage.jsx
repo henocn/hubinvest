@@ -16,6 +16,27 @@ const modules = [
 
 // Réglages du site, appliqués aussitôt : ouvrir ou fermer chaque module, nombre de stands requis pour les Défis,
 // cases et lots de la roue, besoins B2B publiés. Un administrateur de stand n'y voit que les besoins B2B de son stand.
+// Un réglage chiffré ou horaire, enregistré avec son bouton ; le champ suit la valeur enregistrée.
+function SettingField({ settingKey, label, hint, type, min, max, value, saving, saved, onSave }) {
+  const [draft, setDraft] = useState(String(value ?? ''));
+  useEffect(() => { setDraft(String(value ?? '')); }, [value]);
+  const next = type === 'number' ? Number.parseInt(draft, 10) : draft;
+  const valid = type === 'number' ? Number.isInteger(next) && next >= Number(min) && next <= Number(max) : /^\d{2}:\d{2}$/.test(draft);
+  return (
+    <form className="settings-row" onSubmit={(event) => { event.preventDefault(); if (valid && next !== value) void onSave(settingKey, next); }}>
+      <span>
+        <strong>{label}</strong>
+        {hint && <small>{hint}</small>}
+      </span>
+      {saved === settingKey && <Check className="settings-saved" size={18} aria-label="Enregistré" />}
+      <span className="settings-number">
+        <input type={type} min={min} max={max} value={draft} onChange={(event) => setDraft(event.target.value)} aria-label={label} />
+        <button className="button button-secondary" type="submit" disabled={saving === settingKey || !valid || next === value}>Enregistrer</button>
+      </span>
+    </form>
+  );
+}
+
 export default function SettingsPage({ session, onLogout }) {
   const isSuperAdmin = session.user.role === 'super-admin';
   const [settings, setSettings] = useState(null);
@@ -118,6 +139,14 @@ export default function SettingsPage({ session, onLogout }) {
                 <button className="button button-secondary" type="submit" disabled={savingKey === 'requiredPassages' || Number(passages) === settings.requiredPassages}>Enregistrer</button>
               </span>
             </form>
+          </section>
+
+          <section className="data-panel settings-panel">
+            <h2>Rendez-vous B2B</h2>
+            <SettingField settingKey="b2bTables" label="Nombre de tables" type="number" min="1" max="50" value={settings.b2bTables} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="b2bMeetingMinutes" label="Durée d’un rendez-vous (minutes)" hint="20 minutes selon le document" type="number" min="5" max="120" value={settings.b2bMeetingMinutes} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="b2bDayStart" label="Premier rendez-vous" hint="Heure de Lomé" type="time" value={settings.b2bDayStart} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="b2bDayEnd" label="Fin des rendez-vous" hint="Le dernier rendez-vous se termine au plus tard à cette heure" type="time" value={settings.b2bDayEnd} saving={savingKey} saved={savedKey} onSave={save} />
           </section>
         </>
       )}

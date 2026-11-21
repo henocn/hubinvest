@@ -20,6 +20,11 @@ const defaults = () => ({
   wheelPlaysPerDay: 1,
   // Tours de roue donnés par un code de jeu (un code n'expire pas).
   wheelSpinsPerCode: 1,
+  // Rencontre B2B : tables, durée d'un rendez-vous et horaires (heure de Lomé). Le document fixe 20 minutes ; le reste est à confirmer.
+  b2bTables: 4,
+  b2bMeetingMinutes: 20,
+  b2bDayStart: '09:00',
+  b2bDayEnd: '17:00',
 });
 
 // Les réglages sont gardés en mémoire : lus à chaque requête sans interroger la base, rechargés à chaque modification.
@@ -38,6 +43,13 @@ const requiredPassages = () => Math.max(1, Number(cache.requiredPassages) || 1);
 const wheelPlaysPerDay = () => Math.max(0, Number(cache.wheelPlaysPerDay) || 0);
 
 const wheelSpinsPerCode = () => Math.max(1, Number(cache.wheelSpinsPerCode) || 1);
+
+const b2bSchedule = () => ({
+  tables: Math.max(1, Number(cache.b2bTables) || 1),
+  minutes: Math.max(5, Number(cache.b2bMeetingMinutes) || 20),
+  dayStart: cache.b2bDayStart || '09:00',
+  dayEnd: cache.b2bDayEnd || '17:00',
+});
 
 // Refuse l'action publique quand son module est fermé.
 const assertOpen = (key) => {
@@ -59,4 +71,4 @@ const update = async (values, user) => {
 // Ce que le site public a besoin de savoir : modules ouverts et nombre de stands des Défis.
 const publicSettings = () => current();
 
-module.exports = { MODULES, load, current, requiredPassages, wheelPlaysPerDay, wheelSpinsPerCode, assertOpen, update, publicSettings, _reset: () => { cache = defaults(); } };
+module.exports = { MODULES, load, current, requiredPassages, wheelPlaysPerDay, wheelSpinsPerCode, b2bSchedule, assertOpen, update, publicSettings, _reset: () => { cache = defaults(); } };

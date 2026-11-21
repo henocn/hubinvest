@@ -75,7 +75,7 @@ const publicCopy = {
     proposalSubject: 'Votre proposition a bien été transmise',
     proposalBody: (need, occupant) => `Votre proposition pour le besoin « ${need} » a bien été transmise à ${occupant}. Vous recevrez un e-mail dès qu’elle aura été examinée.`,
     acceptedSubject: 'Votre proposition a été acceptée',
-    acceptedBody: (need, occupant) => `${occupant} a accepté votre proposition pour le besoin « ${need} ». L’équipe du stand vous contactera pour organiser la rencontre.`,
+    acceptedBody: (need, occupant) => `${occupant} a accepté votre proposition pour le besoin « ${need} ». Vous recevrez un e-mail avec le jour, l’heure et la table de votre rendez-vous.`,
     declinedSubject: 'Suite donnée à votre proposition',
     declinedBody: (need, occupant) => `${occupant} n’a pas retenu votre proposition pour le besoin « ${need} ». Merci de votre intérêt.`,
   },
@@ -87,7 +87,7 @@ const publicCopy = {
     proposalSubject: 'Your proposal has been sent',
     proposalBody: (need, occupant) => `Your proposal for the need “${need}” has been sent to ${occupant}. You will receive an email once it has been reviewed.`,
     acceptedSubject: 'Your proposal has been accepted',
-    acceptedBody: (need, occupant) => `${occupant} has accepted your proposal for the need “${need}”. The stand team will contact you to arrange the meeting.`,
+    acceptedBody: (need, occupant) => `${occupant} has accepted your proposal for the need “${need}”. You will receive an email with the day, time and table of your meeting.`,
     declinedSubject: 'Update on your proposal',
     declinedBody: (need, occupant) => `${occupant} has not taken your proposal forward for the need “${need}”. Thank you for your interest.`,
   },
@@ -122,7 +122,48 @@ const b2bProposalDecision = ({ proposal, need, occupant }) => {
     : publicEmail(copy, proposal.fullName, copy.declinedSubject, copy.declinedBody(need.title, occupant.name));
 };
 
+// Date et heure d'un rendez-vous B2B, à l'heure de Lomé, dans la langue du visiteur.
+const meetingWhen = (meeting, language) => new Intl.DateTimeFormat(language === 'en' ? 'en-GB' : 'fr-FR', {
+  timeZone: 'Africa/Lome',
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+  hour: '2-digit',
+  minute: '2-digit',
+}).format(new Date(meeting.startsAt));
+
+const meetingCopy = {
+  fr: {
+    scheduledSubject: 'Votre rendez-vous B2B est fixé',
+    scheduledBody: (when, minutes, table, need, occupant) => `Votre rendez-vous avec ${occupant} pour le besoin « ${need} » est fixé le ${when} (heure de Lomé), pour ${minutes} minutes, à la table ${table} de l’espace B2B du Hub.`,
+    cancelledSubject: 'Votre rendez-vous B2B est annulé',
+    cancelledBody: (when, need, occupant) => `Le rendez-vous avec ${occupant} pour le besoin « ${need} », prévu le ${when}, est annulé. L’équipe du stand reviendra vers vous si une autre date est proposée.`,
+  },
+  en: {
+    scheduledSubject: 'Your B2B meeting is confirmed',
+    scheduledBody: (when, minutes, table, need, occupant) => `Your meeting with ${occupant} about the need “${need}” is set for ${when} (Lomé time), for ${minutes} minutes, at table ${table} in the Hub’s B2B area.`,
+    cancelledSubject: 'Your B2B meeting is cancelled',
+    cancelledBody: (when, need, occupant) => `The meeting with ${occupant} about the need “${need}”, planned for ${when}, is cancelled. The stand team will get back to you if another date is offered.`,
+  },
+};
+
+// Donne au visiteur le jour, l'heure, la durée et la table de son rendez-vous B2B.
+const b2bMeetingScheduled = ({ meeting, proposal, need, occupant }) => {
+  const copy = copyFor(proposal.language);
+  const text = meetingCopy[proposal.language] || meetingCopy.fr;
+  return publicEmail(copy, proposal.fullName, text.scheduledSubject, text.scheduledBody(meetingWhen(meeting, proposal.language), meeting.durationMinutes, meeting.tableNumber, need.title, occupant.name));
+};
+
+// Prévient le visiteur que son rendez-vous B2B à venir est annulé.
+const b2bMeetingCancelled = ({ meeting, proposal, need, occupant }) => {
+  const copy = copyFor(proposal.language);
+  const text = meetingCopy[proposal.language] || meetingCopy.fr;
+  return publicEmail(copy, proposal.fullName, text.cancelledSubject, text.cancelledBody(meetingWhen(meeting, proposal.language), need.title, occupant.name));
+};
+
 module.exports = {
+  b2bMeetingScheduled,
+  b2bMeetingCancelled,
   contactRequested,
   contactReminder,
   investorRequestReceived,
