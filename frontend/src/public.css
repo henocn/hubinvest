@@ -399,8 +399,8 @@
 .home-hero h1 {
   margin: 0;
   color: #fff;
-  font-size: clamp(2.3rem, 7vw, 4.4rem);
-  line-height: 1;
+  font-size: clamp(1.9rem, 5.4vw, 3.4rem);
+  line-height: 1.08;
   letter-spacing: -0.03em;
 }
 
@@ -779,69 +779,6 @@
 
 .home-empty p {
   margin: 0 0 14px;
-}
-
-.meetings-page {
-  padding-block: clamp(48px, 8vw, 84px) 90px;
-}
-
-.meetings-page > header {
-  max-width: 640px;
-  margin-bottom: 32px;
-}
-
-.meetings-page h1 {
-  margin: 12px 0 10px;
-  font-size: clamp(2.2rem, 6vw, 4rem);
-  letter-spacing: -0.015em;
-}
-
-.meetings-page > header p {
-  margin: 0;
-  color: var(--muted);
-  line-height: 1.6;
-}
-
-.meeting-choices {
-  max-width: 760px;
-  overflow: hidden;
-  border: 1px solid rgba(0, 0, 0, 0.16);
-  border-radius: 10px;
-  background: #fff;
-}
-
-.meeting-choices > a {
-  min-height: 104px;
-  display: grid;
-  grid-template-columns: 36px minmax(0, 1fr);
-  align-items: center;
-  gap: 16px;
-  padding: 22px 24px;
-  color: inherit;
-  text-decoration: none;
-}
-
-.meeting-choices > a + a {
-  border-top: 1px solid rgba(0, 0, 0, 0.13);
-}
-
-.meeting-choices > a > svg {
-  color: var(--green);
-}
-
-.meeting-choices > a > span {
-  display: grid;
-  gap: 5px;
-}
-
-.meeting-choices strong {
-  font-size: 1rem;
-}
-
-.meeting-choices small {
-  color: var(--muted);
-  font-size: 0.84rem;
-  line-height: 1.45;
 }
 
 .public-main {
@@ -1664,6 +1601,33 @@
   color: #4d4d4d;
   border-color: var(--border);
   background: #fff;
+}
+
+.studio-decline-button.is-danger {
+  color: #ba0024;
+  border-color: #ecc5cd;
+}
+
+.studio-eyebrow {
+  color: var(--green);
+  font-size: 0.78rem;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.studio-response-actions {
+  flex-wrap: wrap;
+}
+
+/* Choix du créneau : un jour, puis une heure. */
+.studio-booking {
+  margin-top: 28px;
+}
+
+.studio-booking h2 {
+  margin: 0 0 6px;
+  font-size: 1.15rem;
 }
 
 .challenge-page {
@@ -2614,4 +2578,400 @@
 /* Dans un bloc, le titre ne se tasse pas : le clamp coupe proprement en fin de deuxième ligne. */
 .day-block > * {
   flex-shrink: 0;
+}
+
+/* Accueil v4 : les trois actions sous la signature. */
+.home-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: clamp(18px, 3vw, 26px);
+}
+
+.home-hero-action {
+  color: var(--ink);
+  background: #fff;
+}
+
+.home-hero-action:hover {
+  background: #f2f4f3;
+}
+
+/* « Nos services » : le parcours en 5 étapes, une ligne par étape, ses services à droite du numéro. */
+.home-services,
+.home-procedures {
+  display: grid;
+  gap: 12px;
+}
+
+.home-services > h2,
+.home-procedures > h2 {
+  margin: 0;
+  font-size: clamp(1.3rem, 3vw, 1.6rem);
+  letter-spacing: -0.02em;
+}
+
+.service-stages {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.service-stage {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.service-stage-number {
+  color: var(--green);
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.service-stage-body {
+  display: grid;
+  gap: 10px;
+}
+
+.service-stage-body h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.service-item {
+  display: grid;
+  gap: 3px;
+}
+
+.service-item p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.service-item-place {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: var(--green-dark);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.service-item-place em {
+  color: #8a5a00;
+  font-style: normal;
+}
+
+/* Les démarches en ligne, groupées par domaine ; chaque ligne mène à la plateforme officielle. */
+.procedure-group h3 {
+  margin: 4px 0 6px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.procedure-group ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.procedure-group li {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.procedure-group li > a,
+.procedure-group li > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.procedure-group li > a svg {
+  flex: none;
+  color: var(--green);
+}
+
+.procedure-group li > a:hover {
+  color: var(--green-dark);
+}
+
+/* Guichets : rendez-vous ou rappel, puis la question qui amène la personne. */
+.guichet-modes {
+  max-width: 700px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 0 auto 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.guichet-modes a {
+  min-height: 46px;
+  font-size: clamp(0.86rem, 3.6vw, 1rem);
+  display: grid;
+  place-items: center;
+  padding: 6px 10px;
+  text-align: center;
+  line-height: 1.2;
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.guichet-modes a + a {
+  border-left: 1px solid var(--border);
+}
+
+.guichet-modes a.is-active {
+  color: #fff;
+  background: var(--green);
+}
+
+
+/* Rencontres : des tuiles cliquables, un titre parlant ; deux par ligne sur téléphone, davantage sur grand écran. */
+/* Les tuiles se placent au milieu de l’écran, entre l’en-tête et la barre du bas. */
+.meetings-page {
+  min-height: calc(100dvh - 150px);
+  display: grid;
+  align-content: center;
+  position: relative;
+  padding-block: 24px;
+}
+
+/* Le symbole du Hub en filigrane très léger, en haut à droite et en bas à gauche, pour habiller les espaces vides. */
+.meetings-page::before,
+.meetings-page::after {
+  content: '';
+  position: absolute;
+  width: min(34vw, 210px);
+  aspect-ratio: 348 / 328;
+  background: url('./assets/brand/hub-symbol.png') center / contain no-repeat;
+  opacity: 0.07;
+  pointer-events: none;
+}
+
+.meetings-page::before {
+  top: 16px;
+  right: 0;
+}
+
+.meetings-page::after {
+  bottom: 16px;
+  left: 0;
+  transform: rotate(180deg);
+}
+
+.meetings-page .tile-grid {
+  position: relative;
+  z-index: 1;
+}
+
+.tile-grid {
+  width: 100%;
+  max-width: 760px;
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(150px, calc(50% - 6px)), 1fr));
+  gap: 12px;
+}
+
+.tile {
+  min-height: clamp(140px, 22vw, 210px);
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: clamp(20px, 4vw, 36px) clamp(16px, 3vw, 24px);
+  border: 2px solid var(--green);
+  border-radius: 10px;
+  color: var(--ink);
+  background: #fff;
+  text-decoration: none;
+}
+
+.tile.is-yellow {
+  border-color: var(--yellow);
+}
+
+.tile:hover {
+  background: var(--tint);
+}
+
+.tile.is-yellow:hover {
+  background: #fff6d1;
+}
+
+.tile-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--green);
+  background: var(--tint);
+}
+
+.tile.is-yellow .tile-icon {
+  color: var(--ink);
+  background: #fff6d1;
+}
+
+.tile-text {
+  display: grid;
+  gap: 6px;
+}
+
+.tile small {
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+
+.tile strong {
+  font-family: var(--font-display);
+  font-size: clamp(1.02rem, 2.4vw, 1.25rem);
+  line-height: 1.2;
+}
+
+/* Comportement d’application : la page ne défile jamais en largeur, l’en-tête et la barre du bas restent en place. */
+html,
+body {
+  overflow-x: clip;
+}
+
+/* Guichets : un parcours en étapes, une à la fois. */
+.guichets-title {
+  margin: 0 0 16px;
+  font-size: clamp(1.6rem, 5vw, 2.4rem);
+  line-height: 1.1;
+  text-align: center;
+}
+
+.booking-panel {
+  display: grid;
+  gap: 18px;
+  scroll-margin-top: 84px;
+}
+
+.guichet-choice {
+  display: grid;
+  gap: 10px;
+}
+
+.guichet-choice h2,
+.booking-step-head h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.guichet-choice button {
+  display: grid;
+  gap: 3px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--ink);
+  background: #fff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.guichet-choice button:hover,
+.guichet-choice button:focus-visible {
+  border-color: var(--green);
+  box-shadow: inset 0 0 0 1px var(--green);
+}
+
+.guichet-choice small {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.booking-step {
+  display: grid;
+  gap: 14px;
+  scroll-margin-top: 84px;
+}
+
+.booking-step-head {
+  display: grid;
+  gap: 4px;
+}
+
+.booking-step-head p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.booking-submit {
+  width: 100%;
+}
+
+
+/* Étape faite : une ligne simple, et « Modifier ». */
+.step-summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.step-summary strong {
+  color: var(--ink);
+}
+
+.step-summary button {
+  flex: none;
+  padding: 0;
+  border: 0;
+  color: var(--green-dark);
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Choix d'un créneau : deux listes, le jour puis l'heure. */
+.slot-selects {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 12px;
+}
+
+.slot-selects label {
+  display: grid;
+  gap: 8px;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.slot-selects select {
+  width: 100%;
+  min-height: 48px;
+}
+
+@media (max-width: 520px) {
+  .slot-selects { grid-template-columns: 1fr; }
 }

@@ -12,7 +12,8 @@ const toApiPayload = (contact) => ({
   phone: contact.phone,
   company: contact.company || null,
   need: contact.need || null,
-  qualification: contact.qualification,
+  // Contact saisi hors ligne avant le passage à A · B · C : l'ancienne valeur est convertie à l'envoi.
+  qualification: ({ hot: 'A', warm: 'B', cold: 'C' })[contact.qualification] || contact.qualification,
   nextAction: contact.nextAction || null,
   nextActionAt: contact.nextActionAt || null,
   consentOccupant: contact.consentOccupant,

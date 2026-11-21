@@ -1,43 +1,44 @@
-import { BriefcaseBusiness, Pencil } from 'lucide-react';
-import { investorStatusLabels } from '../../constants/access';
+import { BriefcaseBusiness } from 'lucide-react';
+import { guichetShortLabels, investorClassHints, investorClassShort, investorStatusLabel } from '../../constants/access';
 import EmptyState from '../EmptyState';
-import { ActionsCell, Detail, ExpandableRow, useOpenRow } from '../RowDetails';
 import { SelectAllHeader, SelectCell } from '../RowSelection';
 
 const dateTime = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Africa/Lome', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+const day = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Africa/Lome', day: 'numeric', month: 'short' });
+const fullName = (user) => [user?.firstName, user?.lastName].filter(Boolean).join(' ');
 
-// Demandes de l'Investor Desk ; un clic sur la ligne affiche les coordonnées, le projet et le suivi.
-export default function InvestorRequestsTable({ selection, requests, query, onEdit }) {
-  const openRow = useOpenRow();
+// Prochaine échéance : la relance prévue, ou la réponse promise à une entreprise accompagnée. En rouge une fois dépassée.
+const dueOf = (item) => {
+  if (item.classification === 'support') return item.resolvedAt ? null : item.commitmentDueAt && { at: item.commitmentDueAt, label: day.format(new Date(item.commitmentDueAt)) };
+  return item.nextFollowUpAt && { at: item.nextFollowUpAt, label: dateTime.format(new Date(item.nextFollowUpAt)) };
+};
+
+// Registre unique des guichets ; un clic sur la ligne ouvre la fiche du contact.
+export default function InvestorRequestsTable({ selection, requests, query, onOpen }) {
   if (!requests.length) {
-    return <EmptyState icon={BriefcaseBusiness} title="Aucune demande" copy={query ? 'Aucun résultat ne correspond à la recherche.' : 'Les demandes envoyées à l’Investor Desk apparaîtront ici.'} />;
+    return <EmptyState icon={BriefcaseBusiness} title="Aucun contact" copy={query ? 'Aucun résultat ne correspond à la recherche.' : 'Les rendez-vous, demandes de rappel et passages aux guichets apparaîtront ici.'} />;
   }
 
   return (
     <div className="table-scroll">
       <table>
-        <thead><tr><SelectAllHeader selection={selection} /><th>Reçue le</th><th>Demandeur</th><th>Statut</th><th className="actions-heading">Actions</th></tr></thead>
-        <tbody>{requests.map((item) => (
-          <ExpandableRow
-            key={item.id}
-            id={item.id}
-            openRow={openRow}
-            colSpan={5}
-            details={<>
-              <Detail label="E-mail"><a href={`mailto:${item.email}`}>{item.email}</a></Detail>
-              <Detail label="Téléphone">{item.phone && <a href={`tel:${item.phone}`}>{item.phone}</a>}</Detail>
-              <Detail label="Accord API-ZF">{item.consentApizf ? 'Oui' : 'Non'}</Detail>
-              <Detail label="Prochaine action">{item.nextAction}</Detail>
-              <Detail label="Projet ou besoin" wide>{item.projectSummary}</Detail>
-            </>}
-          >
-            <SelectCell selection={selection} id={item.id} />
-            <td className="stand-nowrap">{dateTime.format(new Date(item.createdAt))}</td>
-            <td><strong>{item.fullName}</strong></td>
-            <td><span className={`status-pill ${item.status === 'in_progress' ? 'is-active' : item.status === 'new' ? 'is-new' : ''}`}>{investorStatusLabels[item.status]}</span></td>
-            <ActionsCell><button className="table-action is-icon" type="button" aria-label={`Suivre la demande de ${item.fullName}`} title="Suivre" onClick={() => onEdit(item)}><Pencil size={16} /></button></ActionsCell>
-          </ExpandableRow>
-        ))}</tbody>
+        <thead><tr><SelectAllHeader selection={selection} /><th>Reçu le</th><th>Contact</th><th>Guichet</th><th>Classe</th><th>Responsable</th><th>Échéance</th><th>Statut</th></tr></thead>
+        <tbody>{requests.map((item) => {
+          const due = dueOf(item);
+          const late = due && new Date(due.at) < new Date() && item.status !== 'closed';
+          return (
+            <tr key={item.id} className="is-link" onClick={() => onOpen(item)}>
+              <SelectCell selection={selection} id={item.id} />
+              <td className="stand-nowrap">{dateTime.format(new Date(item.createdAt))}</td>
+              <td><strong>{item.fullName}</strong>{(item.organization || item.difficulty?.company) && <small>{item.organization || item.difficulty?.company}</small>}</td>
+              <td className="stand-nowrap">{guichetShortLabels[item.guichet]}</td>
+              <td>{item.classification ? <span className={`investor-class is-${item.classification}`} title={investorClassHints[item.classification]}>{investorClassShort[item.classification]}</span> : <span className="stand-empty">À classer</span>}</td>
+              <td className="stand-nowrap">{fullName(item.contactUser) || <span className="stand-empty">—</span>}</td>
+              <td className={`stand-nowrap${late ? ' investor-late' : ''}`}>{due ? due.label : '—'}</td>
+              <td><span className={`status-pill ${item.status === 'in_progress' ? 'is-active' : item.status === 'new' ? 'is-new' : ''}`}>{investorStatusLabel(item)}</span></td>
+            </tr>
+          );
+        })}</tbody>
       </table>
     </div>
   );

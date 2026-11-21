@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 const links = [
   { key: 'home', href: '/', Icon: Home, matches: (path) => path === '/' },
   { key: 'explore', href: '/stands', Icon: Search, matches: (path) => path.startsWith('/stands') },
-  { key: 'meetings', href: '/rencontres', Icon: Handshake, matches: (path) => ['/rencontres', '/b2b', '/investor-desk', '/studio'].some((prefix) => path.startsWith(prefix)) },
+  { key: 'meetings', href: '/rencontres', Icon: Handshake, matches: (path) => ['/rencontres', '/b2b', '/guichets', '/investor-desk', '/studio'].some((prefix) => path.startsWith(prefix)) },
   { key: 'play', href: '/defis', Icon: Star, matches: (path) => path.startsWith('/defis') || path === '/roue' },
 ];
 

@@ -72,4 +72,4 @@ const remove = async (user, id) => {
   realtime.b2bChanged(proposal.need.occupantId);
 };
 
-module.exports = { createPublic, list, listAll, update, remove };
+module.exports = { createPublic, list, listAll, getManaged, update, remove };

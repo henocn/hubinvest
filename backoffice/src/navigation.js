@@ -1,26 +1,29 @@
-import { Building2, CalendarDays, Disc3, Gift, Handshake, LayoutDashboard, MessageCircleQuestion, ScanLine, SlidersHorizontal, Trophy, Users } from 'lucide-react';
+import { BriefcaseBusiness, Building2, ClipboardList, CalendarDays, Clapperboard, Disc3, Gift, Handshake, LayoutDashboard, MessageCircleQuestion, ScanLine, SlidersHorizontal, Trophy, Users } from 'lucide-react';
 
 // Rubriques de l'administration : chaque section a sa propre adresse.
 // « tab » place la rubrique dans la barre du bas sur téléphone (quatre au plus) ; les autres restent dans le menu.
 export const adminSections = [
+  // Les six services de l'API-ZF et les douze démarches en ligne (accueil « Nos services »).
+  { section: 'services', path: '/services', label: 'Services', Icon: ClipboardList, superOnly: true },
   { section: 'occupants', path: '/stands', label: 'Stands', Icon: Building2, superOnly: true, tab: true },
-  { section: 'users', path: '/acces', label: 'Accès', Icon: Users, superOnly: true },
+  { section: 'users', path: '/utilisateurs', label: 'Utilisateurs', Icon: Users, superOnly: true },
   { section: 'program', path: '/programme', label: 'Programme', Icon: CalendarDays, superOnly: true },
-  { section: 'b2b', path: '/b2b', label: 'Rencontre B2B', Icon: Handshake, group: 'meetings' },
-  // Guichet de l'API-ZF : réservé à son équipe (super administrateurs).
-  { section: 'investor-requests', path: '/investor-desk', label: 'Investor Desk', Icon: Handshake, group: 'meetings', superOnly: true },
+  // Studio : invitations personnelles, créneaux réservés par les invités, livraison des capsules.
+  { section: 'studio', path: '/studio', label: 'Studio', Icon: Clapperboard },
+  { section: 'b2b', path: '/b2b', label: 'Rencontre B2B', Icon: Handshake, tab: true },
+  // Guichets du Stand API-ZF et registre unique des contacts : réservés à son équipe (super administrateurs).
+  { section: 'investor-requests', path: '/guichets', label: 'Guichets', Icon: BriefcaseBusiness, superOnly: true },
   { section: 'challenges', path: '/participants', label: 'Défi de passage', Icon: Trophy, group: 'games' },
   { section: 'wheel', path: '/roue', label: 'Roue des opportunités', Icon: Disc3, group: 'games' },
 ];
 
-// Rubriques réunies sous une seule entrée du menu, avec des onglets dans la page :
-// Rencontres (Rencontre B2B, Investor Desk) et Jeux (Défis, Roue des opportunités).
+// Rubriques réunies sous une seule entrée du menu, avec des onglets dans la page : Jeux (Défi de passage, Roue des opportunités).
+// Rencontre B2B et Guichets ont chacune leur entrée.
 export const sectionGroups = {
-  meetings: { label: 'Rencontres', Icon: Handshake },
-  games: { label: 'Jeux', Icon: Trophy },
+  games: { label: 'Jeux et défis', Icon: Trophy },
 };
 
-// Onglets d'un groupe visibles pour un rôle (l'Investor Desk reste réservé au super administrateur).
+// Onglets d'un groupe visibles pour un rôle (les guichets restent réservés au super administrateur).
 export const groupTabs = (group, role) => adminSections.filter((item) => item.group === group && (role === 'super-admin' || !item.superOnly));
 
 // Entrée du menu d'un groupe : mène au premier onglet, additionne leurs pastilles et reste active sur chacun.
@@ -44,7 +47,14 @@ const settingsLink = { path: '/parametres', label: 'Paramètres', Icon: SlidersH
 const questionsLink = { path: '/questions', label: 'Questions', Icon: MessageCircleQuestion, tab: true };
 
 const roleLinks = {
-  'super-admin': [dashboardLink, ...menuSections(adminSections), { ...questionsLink, tab: false }, settingsLink],
+  // Utilisateurs juste avant Paramètres, en bas du menu.
+  'super-admin': [
+    dashboardLink,
+    ...menuSections(adminSections.filter((item) => item.section !== 'users')),
+    { ...questionsLink, tab: false },
+    adminSections.find((item) => item.section === 'users'),
+    settingsLink,
+  ],
   admin: [dashboardLink, ...menuSections(adminSections.filter((item) => !item.superOnly)), settingsLink],
   occupant: [
     { path: '/contacts', label: 'Contacts', Icon: Users, tab: true },

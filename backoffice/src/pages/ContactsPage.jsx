@@ -7,13 +7,22 @@ import { formatPhoneInput, isValidPhone, toInternationalPhone } from '../lib/pho
 import { useRealtimeEvent } from '../lib/realtime';
 import { listStoredContacts, mergeServerContacts, queueContact, syncPendingContacts } from '../lib/contact-store';
 
+// Qualification des contacts du stand, sur le modèle de l'Investor Desk (document : A sous 48 h, B sous 7 jours, C à nourrir).
 const qualificationLabels = {
-  hot: 'Chaud',
-  warm: 'Tiède',
-  cold: 'Froid',
+  A: 'A · Prioritaire',
+  B: 'B · À suivre',
+  C: 'C · À nourrir',
 };
 
-const qualificationLabel = (value) => qualificationLabels[value] || 'À qualifier';
+const qualificationHints = {
+  A: 'Besoin concret : recontacter sous 48 h',
+  B: 'Intérêt réel : recontacter sous 7 jours',
+  C: 'Simple curiosité : garder pour les informations futures',
+};
+
+// Contacts encore stockés hors ligne avec l'ancienne qualification (chaud, tiède, froid).
+const normalizeQualification = (value) => ({ hot: 'A', warm: 'B', cold: 'C' })[value] || value;
+const qualificationLabel = (value) => qualificationLabels[normalizeQualification(value)] || 'À qualifier';
 
 const toLocalDateTime = (value) => {
   if (!value) return '';
@@ -28,7 +37,7 @@ function ContactForm({ onCancel, onCreated }) {
     phone: '',
     company: '',
     need: '',
-    qualification: 'cold',
+    qualification: 'C',
     nextAction: '',
     nextActionAt: '',
     consentOccupant: false,
@@ -110,7 +119,7 @@ function ContactForm({ onCancel, onCreated }) {
                   checked={form.qualification === value}
                   onChange={() => field('qualification', value)}
                 />
-                {label}
+                <span><strong>{label}</strong><small>{qualificationHints[value]}</small></span>
               </label>
             ))}
           </div>
@@ -165,13 +174,13 @@ function ContactDetail({ contact, onBack, onSave, apiOnline }) {
   const [saving, setSaving] = useState(false);
   const [editError, setEditError] = useState('');
   const [form, setForm] = useState(() => ({
-    qualification: contact.qualification || '',
+    qualification: normalizeQualification(contact.qualification) || '',
     nextAction: contact.nextAction || '',
     nextActionAt: toLocalDateTime(contact.nextActionAt),
   }));
   useEffect(() => {
     setForm({
-      qualification: contact.qualification || '',
+      qualification: normalizeQualification(contact.qualification) || '',
       nextAction: contact.nextAction || '',
       nextActionAt: toLocalDateTime(contact.nextActionAt),
     });
@@ -210,7 +219,7 @@ function ContactDetail({ contact, onBack, onSave, apiOnline }) {
       <div className="detail-heading">
         <div>
           <h1>{contact.fullName}</h1>
-          <span className={`qualification-label ${contact.qualification || 'unqualified'}`}>
+          <span className={`qualification-label ${normalizeQualification(contact.qualification) || 'unqualified'}`} title={qualificationHints[normalizeQualification(contact.qualification)]}>
             {contact.qualification && <Check size={14} />}
             {qualificationLabel(contact.qualification)}
           </span>
@@ -250,9 +259,7 @@ function ContactDetail({ contact, onBack, onSave, apiOnline }) {
             <label>Qualification
               <select value={form.qualification} onChange={(event) => setForm({ ...form, qualification: event.target.value })}>
                 <option value="">À qualifier</option>
-                <option value="hot">Chaud</option>
-                <option value="warm">Tiède</option>
-                <option value="cold">Froid</option>
+                {Object.entries(qualificationLabels).map(([value, label]) => <option key={value} value={value}>{label} ({qualificationHints[value].split(' : ')[1]})</option>)}
               </select>
             </label>
             <label>Prochaine action<input value={form.nextAction} onChange={(event) => setForm({ ...form, nextAction: event.target.value })} maxLength={255} /></label>
@@ -412,10 +419,10 @@ export default function ContactsPage({ session, onLogout }) {
 
   const stats = contacts.reduce((result, contact) => {
     result.total += 1;
-    if (contact.qualification) result.byQualification[contact.qualification] += 1;
+    if (contact.qualification) result.byQualification[normalizeQualification(contact.qualification)] += 1;
     else result.unqualified += 1;
     return result;
-  }, { total: 0, unqualified: 0, byQualification: { hot: 0, warm: 0, cold: 0 } });
+  }, { total: 0, unqualified: 0, byQualification: { A: 0, B: 0, C: 0 } });
   const pendingCount = contacts.filter((contact) => contact.syncStatus !== 'synced').length;
 
   // Le carnet du stand en Excel : les contacts affichés (après recherche), même ceux pas encore synchronisés.
@@ -453,7 +460,7 @@ export default function ContactsPage({ session, onLogout }) {
       <section className="metric-strip" aria-label="Contacts par qualification">
         <div><strong>{stats.total}</strong><span>Total</span></div>
         <div><strong>{stats.unqualified}</strong><span>À qualifier</span></div>
-        <div><strong>{stats.byQualification.hot}</strong><span>Chauds</span></div>
+        <div><strong>{stats.byQualification.A}</strong><span>Prioritaires (A)</span></div>
         <div><strong>{pendingCount}</strong><span>À synchroniser</span></div>
       </section>
 
@@ -504,7 +511,7 @@ export default function ContactsPage({ session, onLogout }) {
                   {(contact.syncStatus === 'synced' || !contact.syncStatus) && 'Synchronisé'}
                 </small>
               </div>
-              <span className={`qualification-label ${contact.qualification || 'unqualified'}`}>
+              <span className={`qualification-label ${normalizeQualification(contact.qualification) || 'unqualified'}`} title={qualificationHints[normalizeQualification(contact.qualification)]}>
                 {contact.qualification && <Check size={14} />}
                 {qualificationLabel(contact.qualification)}
               </span>

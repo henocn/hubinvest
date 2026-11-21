@@ -4,10 +4,12 @@ import { api } from '../lib/api';
 import { useRealtimeEvent } from '../../lib/realtime';
 import B2bNeedsSettings from '../components/B2bNeedsSettings';
 import WheelSettings from '../components/WheelSettings';
+import InvestorQualificationSettings from '../components/InvestorQualificationSettings';
+import StudioFormatSettings from '../components/StudioFormatSettings';
 
 const modules = [
   { key: 'contactRequestsOpen', title: 'Demandes de contact aux stands' },
-  { key: 'investorDeskOpen', title: 'Investor Desk' },
+  { key: 'investorDeskOpen', title: 'Guichets : rendez-vous et rappels en ligne' },
   { key: 'b2bOpen', title: 'Propositions B2B' },
   { key: 'challengeOpen', title: 'Défi de passage' },
   { key: 'wheelOpen', title: 'Roue des opportunités' },
@@ -16,6 +18,28 @@ const modules = [
 
 // Réglages du site, appliqués aussitôt : ouvrir ou fermer chaque module, nombre de stands requis pour les Défis,
 // cases et lots de la roue, besoins B2B publiés. Un administrateur de stand n'y voit que les besoins B2B de son stand.
+// Un réglage chiffré ou horaire, enregistré avec son bouton ; le champ suit la valeur enregistrée.
+function SettingField({ settingKey, label, hint, type, min, max, value, saving, saved, onSave }) {
+  const [draft, setDraft] = useState(String(value ?? ''));
+  useEffect(() => { setDraft(String(value ?? '')); }, [value]);
+  const next = type === 'number' ? Number.parseInt(draft, 10) : draft;
+  const pattern = type === 'date' ? /^\d{4}-\d{2}-\d{2}$/ : /^\d{2}:\d{2}$/;
+  const valid = type === 'number' ? Number.isInteger(next) && next >= Number(min) && next <= Number(max) : pattern.test(draft);
+  return (
+    <form className="settings-row" onSubmit={(event) => { event.preventDefault(); if (valid && next !== value) void onSave(settingKey, next); }}>
+      <span>
+        <strong>{label}</strong>
+        {hint && <small>{hint}</small>}
+      </span>
+      {saved === settingKey && <Check className="settings-saved" size={18} aria-label="Enregistré" />}
+      <span className="settings-number">
+        <input type={type} min={min} max={max} value={draft} onChange={(event) => setDraft(event.target.value)} aria-label={label} />
+        <button className="button button-secondary" type="submit" disabled={saving === settingKey || !valid || next === value}>Enregistrer</button>
+      </span>
+    </form>
+  );
+}
+
 export default function SettingsPage({ session, onLogout }) {
   const isSuperAdmin = session.user.role === 'super-admin';
   const [settings, setSettings] = useState(null);
@@ -118,6 +142,36 @@ export default function SettingsPage({ session, onLogout }) {
                 <button className="button button-secondary" type="submit" disabled={savingKey === 'requiredPassages' || Number(passages) === settings.requiredPassages}>Enregistrer</button>
               </span>
             </form>
+          </section>
+
+          <section className="data-panel settings-panel">
+            <h2>Studio</h2>
+            <SettingField settingKey="studioFirstDay" label="Premier jour des créneaux" type="date" value={settings.studioFirstDay} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="studioLastDay" label="Dernier jour des créneaux" type="date" value={settings.studioLastDay} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="studioDayStart" label="Premier créneau de la journée" type="time" value={settings.studioDayStart} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="studioDayEnd" label="Fin des créneaux" hint="Le dernier passage se termine au plus tard à cette heure" type="time" value={settings.studioDayEnd} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="studioSlotMinutes" label="Durée d’un passage (minutes)" type="number" min="5" max="120" value={settings.studioSlotMinutes} saving={savingKey} saved={savedKey} onSave={save} />
+            <StudioFormatSettings formats={settings.studioFormats} saving={savingKey === 'studioFormats'} saved={savedKey === 'studioFormats'} onSave={save} />
+          </section>
+
+          <section className="data-panel settings-panel">
+            <h2>Rendez-vous B2B</h2>
+            <SettingField settingKey="b2bTables" label="Nombre de tables" type="number" min="1" max="50" value={settings.b2bTables} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="b2bMeetingMinutes" label="Durée d’un rendez-vous (minutes)" hint="20 minutes selon le document" type="number" min="5" max="120" value={settings.b2bMeetingMinutes} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="b2bDayStart" label="Premier rendez-vous" hint="Heure de Lomé" type="time" value={settings.b2bDayStart} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="b2bDayEnd" label="Fin des rendez-vous" hint="Le dernier rendez-vous se termine au plus tard à cette heure" type="time" value={settings.b2bDayEnd} saving={savingKey} saved={savedKey} onSave={save} />
+          </section>
+
+          <section className="data-panel settings-panel">
+            <h2>Guichets</h2>
+            <SettingField settingKey="guichetFirstDay" label="Premier jour des rendez-vous" type="date" value={settings.guichetFirstDay} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="guichetLastDay" label="Dernier jour des rendez-vous" type="date" value={settings.guichetLastDay} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="guichetDayStart" label="Premier rendez-vous de la journée" type="time" value={settings.guichetDayStart} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="guichetDayEnd" label="Fin des rendez-vous" hint="Le dernier rendez-vous se termine au plus tard à cette heure" type="time" value={settings.guichetDayEnd} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="guichetSlotMinutes" label="Durée d’un rendez-vous (minutes)" hint="Diagnostic en 15 minutes selon le document" type="number" min="5" max="120" value={settings.guichetSlotMinutes} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="investorDelayAHours" label="Relance d’un contact A (heures)" hint="48 heures selon le document" type="number" min="1" max="720" value={settings.investorDelayAHours} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="investorDelayBDays" label="Relance d’un contact B (jours)" hint="7 jours selon le document" type="number" min="1" max="90" value={settings.investorDelayBDays} saving={savingKey} saved={savedKey} onSave={save} />
+            <InvestorQualificationSettings fields={settings.investorQualificationFields} saving={savingKey === 'investorQualificationFields'} saved={savedKey === 'investorQualificationFields'} onSave={save} />
           </section>
         </>
       )}

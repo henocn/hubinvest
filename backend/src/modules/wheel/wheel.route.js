@@ -39,12 +39,15 @@ router.post('/codes', requireRoles(roles.SUPER_ADMIN, roles.ADMIN, roles.OCCUPAN
 const prizeTeam = requireRoles(roles.SUPER_ADMIN, roles.ADMIN, roles.OCCUPANT, roles.ANIMATOR);
 router.get('/prizes/:code', prizeTeam, validate(wheelValidation.codeParams, 'params'), asyncHandler(wheelController.findPrize));
 router.post('/prizes/:code/claim', prizeTeam, validate(wheelValidation.codeParams, 'params'), asyncHandler(wheelController.claimPrize));
+// Bouton « Remis » de l'historique du back office : un tour précis.
+router.post('/plays/:id/claim', requireRoles(roles.SUPER_ADMIN, roles.ADMIN), validate(wheelValidation.idParams, 'params'), asyncHandler(wheelController.claimPlay));
 
 // L'historique et les codes se consultent aussi par les administrateurs de stand ;
 // les cases et les lots de la roue (pour tout le salon) ne se gèrent que par l'API-ZF.
 router.get('/', requireRoles(roles.SUPER_ADMIN, roles.ADMIN), asyncHandler(wheelController.overview));
 
 router.use(requireRoles(roles.SUPER_ADMIN));
+router.delete('/plays/:id', validate(wheelValidation.idParams, 'params'), asyncHandler(wheelController.removePlay));
 router.post('/segments', validate(wheelValidation.createSegment), asyncHandler(wheelController.createSegment));
 router.patch(
   '/segments/:id',

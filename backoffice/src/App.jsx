@@ -13,6 +13,8 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import OccupantChallengePage from './pages/OccupantChallengePage';
 import OccupantProfilePage from './pages/OccupantProfilePage';
 import LiveQuestionsPage from './pages/LiveQuestionsPage';
+import StudioPage from './admin/pages/StudioPage';
+import ServicesPage from './admin/pages/ServicesPage';
 import { api } from './lib/api';
 import { adminSectionForPath, homeForRole, isAdminRole } from './navigation';
 import { SessionProvider, useSession } from './session';
@@ -77,8 +79,12 @@ function LoginPage() {
 function AdminSection() {
   const { session, logout } = useSession();
   const location = useLocation();
+  // Anciens liens de l'Investor Desk (e-mails déjà envoyés) : même fiche, sous Guichets.
+  if (location.pathname.startsWith('/investor-desk')) return <Navigate to={location.pathname.replace('/investor-desk', '/guichets')} replace />;
   const section = adminSectionForPath(location.pathname, session.user.role);
   if (!section) return <Navigate to={homeForRole(session.user.role)} replace />;
+  if (section === 'studio') return <StudioPage session={session} onLogout={logout} />;
+  if (section === 'services') return <ServicesPage session={session} onLogout={logout} />;
   return <BackofficePage session={session} onLogout={logout} section={section} />;
 }
 

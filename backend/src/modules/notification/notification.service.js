@@ -55,12 +55,62 @@ const contactReminderChanged = (contact) => dispatch(async () => {
 });
 
 // Prévient l'équipe de l'API-ZF (super administrateurs) et confirme à l'investisseur la réception de sa demande.
+// Nouveau contact aux guichets : l'équipe API-ZF est prévenue ; une demande de rappel est confirmée par e-mail
+// (un rendez-vous réservé reçoit sa propre confirmation, avec ses rappels).
 const investorRequestReceived = (request) => dispatch(async () => {
   const team = await notificationRepository.findSuperAdmins();
   await notificationRepository.enqueue([
-    ...forUsers(team, (user) => templates.investorRequestReceived({ user })),
-    { channel: 'email', recipient: request.email, payload: templates.investorRequestConfirmation({ request }) },
+    ...forUsers(team, (user) => templates.investorRequestReceived({ user, request })),
+    ...(request.source === 'callback' ? [{ channel: 'email', recipient: request.email, payload: templates.investorRequestConfirmation({ request }) }] : []),
   ]);
+});
+
+// Alerte de relance Investor Desk : à l'heure limite (A sous 48 h, B sous 7 jours), l'interlocuteur nommé
+// — ou, sans interlocuteur, toute l'équipe API-ZF — est prévenu. Toute relance ou nouvelle date remplace l'alerte prévue.
+const investorFollowUpChanged = (request) => dispatch(async () => {
+  const dedupeKey = `investor-follow-up:${request.id}`;
+  await notificationRepository.cancelPending(dedupeKey);
+  const dueAt = request.nextFollowUpAt ? new Date(request.nextFollowUpAt) : null;
+  if (!dueAt || dueAt <= new Date() || !['A', 'B'].includes(request.classification) || request.status === 'closed') return;
+  const contact = request.contactUserId ? await notificationRepository.findActiveUser(request.contactUserId) : null;
+  const users = contact ? [contact] : await notificationRepository.findSuperAdmins();
+  if (users.length === 0) return;
+  await notificationRepository.enqueue(forUsers(
+    users,
+    (user) => ({ ...templates.investorFollowUpDue({ user, request }), tag: dedupeKey }),
+    { dedupeKey, availableAt: dueAt },
+  ));
+});
+
+// Rendez-vous aux guichets fixé, déplacé ou annulé : la personne reçoit un e-mail, puis un rappel la veille et une heure
+// avant ; un déplacement remplace les rappels, une annulation les retire.
+const investorMeetingChanged = (kind, meeting, request) => dispatch(async () => {
+  const dedupeKey = `investor-meeting-reminder:${meeting.id}`;
+  await notificationRepository.cancelPending(dedupeKey);
+  const email = (payload, extra = {}) => ({ channel: 'email', recipient: request.email, payload, ...extra });
+  const start = new Date(meeting.startsAt).getTime();
+  const reminders = kind === 'cancelled' ? [] : [start - 24 * 60 * 60 * 1000, start - 60 * 60 * 1000]
+    .filter((time) => time > Date.now())
+    .map((time) => email(templates.investorMeeting({ kind: 'reminder', meeting, request }), { dedupeKey, availableAt: new Date(time) }));
+  await notificationRepository.enqueue([email(templates.investorMeeting({ kind, meeting, request })), ...reminders]);
+});
+
+// Rendez-vous retiré sans prévenir la personne (erreur de saisie) : ses rappels disparaissent.
+const investorMeetingRemoved = (meeting) => dispatch(() => notificationRepository.cancelPending(`investor-meeting-reminder:${meeting.id}`));
+
+// Engagement de suivi d'une entreprise en difficulté : l'engagement écrit lui est envoyé ; le responsable (ou l'équipe API-ZF)
+// est alerté à l'échéance si aucune réponse n'est enregistrée. Une réponse enregistrée retire l'alerte.
+const investorCommitmentChanged = (request, { notifyCompany = false, serviceTitle = null } = {}) => dispatch(async () => {
+  const dedupeKey = `investor-commitment:${request.id}`;
+  await notificationRepository.cancelPending(dedupeKey);
+  const jobs = notifyCompany ? [{ channel: 'email', recipient: request.email, payload: templates.investorSupportCommitment({ request, serviceTitle }) }] : [];
+  const dueAt = request.commitmentDueAt ? new Date(request.commitmentDueAt) : null;
+  if (dueAt && dueAt > new Date() && !request.resolvedAt) {
+    const contact = request.contactUserId ? await notificationRepository.findActiveUser(request.contactUserId) : null;
+    const users = contact ? [contact] : await notificationRepository.findSuperAdmins();
+    jobs.push(...forUsers(users, (user) => ({ ...templates.investorCommitmentDue({ user, request }), tag: dedupeKey }), { dedupeKey, availableAt: dueAt }));
+  }
+  if (jobs.length) await notificationRepository.enqueue(jobs);
 });
 
 // Prévient l'équipe du stand et confirme au professionnel l'envoi de sa proposition.
@@ -80,21 +130,86 @@ const b2bProposalDecided = (proposal, need) => dispatch(async () => {
   ]);
 });
 
-// Prévient l'auteur de l'invitation et l'équipe du stand de la réponse de l'invité.
-const studioInvitationAnswered = (invitation) => dispatch(async () => {
+// Envoie au visiteur le rendez-vous B2B fixé, ou son annulation.
+const b2bMeetingScheduled = (meeting, proposal) => dispatch(async () => {
+  await notificationRepository.enqueue([
+    { channel: 'email', recipient: proposal.email, payload: templates.b2bMeetingScheduled({ meeting, proposal, need: proposal.need, occupant: proposal.need.occupant }) },
+  ]);
+});
+
+const b2bMeetingMoved = (meeting, proposal) => dispatch(async () => {
+  await notificationRepository.enqueue([
+    { channel: 'email', recipient: proposal.email, payload: templates.b2bMeetingMoved({ meeting, proposal, need: proposal.need, occupant: proposal.need.occupant }) },
+  ]);
+});
+
+const b2bMeetingCancelled = (meeting, proposal) => dispatch(async () => {
+  await notificationRepository.enqueue([
+    { channel: 'email', recipient: proposal.email, payload: templates.b2bMeetingCancelled({ meeting, proposal, need: proposal.need, occupant: proposal.need.occupant }) },
+  ]);
+});
+
+// Studio : l'auteur de l'invitation et l'équipe du stand (ou l'API-ZF) suivent les réponses de l'invité.
+const studioTeam = async (invitation) => {
   const creator = invitation.createdByUserId ? await notificationRepository.findActiveUser(invitation.createdByUserId) : null;
-  const team = await standTeam(invitation.occupantId);
-  await notificationRepository.enqueue(forUsers(
-    [...(creator ? [creator] : []), ...team],
-    (user) => templates.studioInvitationAnswered({ user, invitation }),
-  ));
+  return [...(creator ? [creator] : []), ...(await standTeam(invitation.occupantId))];
+};
+const studioReminderKey = (invitation) => `studio-reminder:${invitation.id}`;
+const studioEmail = (invitation, payload, extra = {}) => ({ channel: 'email', recipient: invitation.email, payload, ...extra });
+
+// Invitation personnelle : le lien pour choisir son créneau.
+const studioInvited = (invitation) => dispatch(async () => {
+  if (!invitation.email) return;
+  await notificationRepository.enqueue([studioEmail(invitation, templates.studioInvitation({ invitation }))]);
+});
+
+// Créneau réservé ou changé : confirmation à l'invité, rappels la veille et une heure avant, information de l'équipe.
+const studioBooked = (invitation, changed) => dispatch(async () => {
+  const dedupeKey = studioReminderKey(invitation);
+  await notificationRepository.cancelPending(dedupeKey);
+  const start = new Date(invitation.scheduledAt).getTime();
+  const reminders = [start - 24 * 60 * 60 * 1000, start - 60 * 60 * 1000]
+    .filter((time) => time > Date.now())
+    .map((time) => studioEmail(invitation, templates.studioReminder({ invitation }), { dedupeKey, availableAt: new Date(time) }));
+  await notificationRepository.enqueue([
+    ...(invitation.email ? [studioEmail(invitation, templates.studioBookingConfirmation({ invitation, changed })), ...reminders] : []),
+    ...forUsers(await studioTeam(invitation), (user) => templates.studioGuestAnswered({ user, invitation, answer: changed ? 'moved' : 'booked' })),
+  ]);
+});
+
+const studioDeclined = (invitation) => dispatch(async () => {
+  await notificationRepository.cancelPending(studioReminderKey(invitation));
+  await notificationRepository.enqueue(forUsers(await studioTeam(invitation), (user) => templates.studioGuestAnswered({ user, invitation, answer: 'declined' })));
+});
+
+// Passage annulé par l'équipe (ou invitation supprimée) : plus de rappels ; l'invité est prévenu si son créneau était à venir.
+const studioCancelled = (invitation, notifyGuest) => dispatch(async () => {
+  await notificationRepository.cancelPending(studioReminderKey(invitation));
+  if (notifyGuest && invitation.email) await notificationRepository.enqueue([studioEmail(invitation, templates.studioCancellation({ invitation }))]);
+});
+
+// Livraison de la capsule, prête à partager.
+const studioCapsuleDelivered = (invitation) => dispatch(async () => {
+  if (!invitation.email) return;
+  await notificationRepository.enqueue([studioEmail(invitation, templates.studioCapsule({ invitation }))]);
 });
 
 module.exports = {
   contactRequested,
   contactReminderChanged,
   investorRequestReceived,
+  investorFollowUpChanged,
+  investorMeetingChanged,
+  investorMeetingRemoved,
+  investorCommitmentChanged,
   b2bProposalReceived,
   b2bProposalDecided,
-  studioInvitationAnswered,
+  b2bMeetingScheduled,
+  b2bMeetingMoved,
+  b2bMeetingCancelled,
+  studioInvited,
+  studioBooked,
+  studioDeclined,
+  studioCancelled,
+  studioCapsuleDelivered,
 };

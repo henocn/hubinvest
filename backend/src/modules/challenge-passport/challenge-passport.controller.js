@@ -34,4 +34,9 @@ const redeemByCode = async (request, response) => response.json({
 
 const search = async (request, response) => response.json({ data: await challengePassportService.search(request.query.q) });
 
-module.exports = { createPublic, getPublic, list, listRewards, getByCode, redeem, redeemByCode, search };
+const remove = async (request, response) => {
+  await challengePassportService.remove(request.params.id);
+  response.json({ message: 'Participant supprimé.' });
+};
+
+module.exports = { createPublic, getPublic, list, listRewards, getByCode, redeem, redeemByCode, search, remove };

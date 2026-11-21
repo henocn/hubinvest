@@ -1,27 +1,109 @@
 const { Op } = require('sequelize');
-const { InvestorRequest } = require('../../models');
+const { InvestorRequest, InvestorFollowUp, InvestorMeeting, User, Service, sequelize } = require('../../models');
+const roles = require('../../shared/roles');
 
-const findAll = ({ status, search, limit, offset }) => {
+const person = ['id', 'firstName', 'lastName'];
+const contactUserInclude = { model: User, as: 'contactUser', attributes: person, required: false };
+
+const serviceAttributes = ['id', 'title'];
+
+const findAll = ({ status, guichet, search, limit, offset }) => {
   const where = {};
   if (status) where.status = status;
+  if (guichet) where.guichet = guichet;
   if (search) {
     where[Op.or] = [
       { fullName: { [Op.iLike]: `%${search}%` } },
       { email: { [Op.iLike]: `%${search}%` } },
+      { organization: { [Op.iLike]: `%${search}%` } },
       { projectSummary: { [Op.iLike]: `%${search}%` } },
     ];
   }
 
   return InvestorRequest.findAndCountAll({
     where,
+    include: [contactUserInclude],
     order: [['createdAt', 'DESC']],
     limit,
     offset,
   });
 };
 
-const findById = (id) => InvestorRequest.findByPk(id);
+const findById = (id) => InvestorRequest.findByPk(id, { include: [contactUserInclude] });
+
+// La fiche complète : interlocuteur, relances (la plus récente d'abord) et rendez-vous (dans l'ordre).
+const findDetail = (id) => InvestorRequest.findByPk(id, {
+  include: [
+    contactUserInclude,
+    { model: Service, as: 'recommendedService', attributes: serviceAttributes, required: false },
+    { model: Service, as: 'commitmentService', attributes: serviceAttributes, required: false },
+    { model: InvestorFollowUp, as: 'followUps', required: false, include: [{ model: User, as: 'createdBy', attributes: person }] },
+    { model: InvestorMeeting, as: 'meetings', required: false, include: [{ model: User, as: 'createdBy', attributes: person }] },
+  ],
+  order: [
+    [{ model: InvestorFollowUp, as: 'followUps' }, 'doneAt', 'DESC'],
+    [{ model: InvestorMeeting, as: 'meetings' }, 'startsAt', 'ASC'],
+  ],
+});
+
 const create = (values) => InvestorRequest.create(values);
+
+// Rendez-vous réservé en ligne : le contact et son rendez-vous sont créés ensemble, ou pas du tout.
+const createWithMeeting = (values, meetingValues) => sequelize.transaction(async (transaction) => {
+  const investorRequest = await InvestorRequest.create(values, { transaction });
+  const meeting = await InvestorMeeting.create({ ...meetingValues, investorRequestId: investorRequest.id, status: 'scheduled' }, { transaction });
+  return { investorRequest, meeting };
+});
+
+// Rendez-vous prévus à un guichet entre deux instants (créneaux déjà pris).
+const findGuichetMeetingsBetween = (guichet, from, to) => InvestorMeeting.findAll({
+  where: { guichet, status: 'scheduled', startsAt: { [Op.gte]: from, [Op.lt]: to } },
+  attributes: ['id', 'startsAt'],
+});
+
+// Services de l'API-ZF proposés pour l'orientation et l'engagement de suivi.
+const findServices = () => Service.findAll({ attributes: serviceAttributes, order: [['position', 'ASC']] });
+const findService = (id) => Service.findByPk(id, { attributes: serviceAttributes });
 const update = (request, values) => request.update(values);
 
-module.exports = { findAll, findById, create, update };
+// L'interlocuteur nommé est un membre actif de l'équipe API-ZF (super administrateur).
+const findTeamMember = (id) => User.findOne({ where: { id, role: roles.SUPER_ADMIN, isActive: true }, attributes: person });
+const findTeam = () => User.findAll({ where: { role: roles.SUPER_ADMIN, isActive: true }, attributes: person, order: [['firstName', 'ASC']] });
+
+const countFollowUps = (investorRequestId) => InvestorFollowUp.count({ where: { investorRequestId } });
+const createFollowUp = (values) => InvestorFollowUp.create(values);
+const findFollowUp = (id, investorRequestId) => InvestorFollowUp.findOne({ where: { id, investorRequestId } });
+const destroyFollowUp = (followUp) => followUp.destroy();
+
+const createMeeting = (values) => InvestorMeeting.create(values);
+const findMeeting = (id, investorRequestId) => InvestorMeeting.findOne({ where: { id, investorRequestId } });
+const updateMeeting = (meeting, values) => meeting.update(values);
+const destroyMeeting = (meeting) => meeting.destroy();
+
+// Contacts A dont la relance est dépassée, pour l'alerte du tableau de bord.
+const countOverdue = (classification = 'A') => InvestorRequest.count({
+  where: { classification, status: { [Op.ne]: 'closed' }, nextFollowUpAt: { [Op.lt]: new Date() } },
+});
+
+module.exports = {
+  findAll,
+  findById,
+  findDetail,
+  create,
+  createWithMeeting,
+  findGuichetMeetingsBetween,
+  findServices,
+  findService,
+  update,
+  findTeamMember,
+  findTeam,
+  countFollowUps,
+  createFollowUp,
+  findFollowUp,
+  destroyFollowUp,
+  createMeeting,
+  findMeeting,
+  updateMeeting,
+  destroyMeeting,
+  countOverdue,
+};

@@ -22,11 +22,6 @@ module.exports = (sequelize, DataTypes) =>
         allowNull: true,
         field: 'validated_by_user_id',
       },
-      classification: {
-        type: DataTypes.STRING(1),
-        allowNull: true,
-        validate: { isIn: [['A', 'B', 'C']] },
-      },
     },
     {
       tableName: 'challenge_passages',

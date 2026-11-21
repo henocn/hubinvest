@@ -1,6 +1,21 @@
 # TODO — HubInvest
 
-Référence prioritaire : `APIZF - FIL2026 - DK.pdf` (dispositif complet, § 8 « HubInvest »). Le cahier des charges `Volume2_HubInvest_Cahier_des_charges_API-ZF_V1.docx` reste la description détaillée de chaque module ; en cas d’écart, le PDF l’emporte. Les deux restent des documents de travail : leurs objectifs chiffrés ne sont jamais affichés comme des résultats.
+Référence prioritaire : `APIZF-FIL2026-v4.pdf` (proposition d’octobre 2026, § 10 « HubInvest, l’outil au service de l’offre »), qui remplace `APIZF - FIL2026 - DK.pdf`. Le cahier des charges `Volume2_HubInvest_Cahier_des_charges_API-ZF_V1.docx` reste la description détaillée de chaque module ; en cas d’écart, le PDF l’emporte. Leurs objectifs chiffrés ne sont jamais affichés comme des résultats.
+
+## Refonte v4 (branche brief-v4)
+
+Le Hub devient deux espaces : le Stand API-ZF (3 stands, 3 guichets) et l’Espace Industrie (16 stands). On parle d’« entreprises », plus d’« occupants ». Signature : « Investir au Togo, nous facilitons votre réussite. » La roue des opportunités n’est plus citée mais reste (décision du 21/11/2026).
+
+- [x] Services : les 6 services et les 12 démarches en ligne, gérés dans l’administration (rubrique Services, super administrateur) : étape, promesse, lieu, « selon disponibilités », lien officiel, ordre, publier ou masquer (M9).
+- [ ] Liens des 12 démarches vers la plateforme officielle : adresses à obtenir de l’API-ZF.
+- [ ] Brochure « Investir au Togo en 5 étapes » et Investor Pack : fichiers à déposer dans l’administration et à proposer par QR code.
+- [~] Accueil « Nos services » (fait : signature, trois actions vers les guichets et les Défis, 5 étapes et leurs services, démarches en ligne ; reste : brochure, plan) : 6 services, 12 démarches avec lien vers la plateforme officielle, brochure « 5 étapes » ; puis programme, entreprises, plan ; boutons « Prendre rendez-vous », « Être recontacté », « Jouer » (M1).
+- [x] Guichets et registre unique (fait le 21/11/2026 ; reste à confirmer les neuf informations du diagnostic et les heures d’ouverture des guichets) : rendez-vous aux 3 guichets, fiche de diagnostic en 15 minutes, fiche « Mon entreprise, mes difficultés », A·B·C en neuf informations, un responsable par contact, alerte A sous 48 h, classe « Accompagnement » (M3).
+- [ ] Défis : parcours « Trouvez les 5 étapes », chaque étape sur un stand de l’Espace Industrie, la dernière au Stand API-ZF (M6).
+- [ ] Grand écran : service du jour, entreprise à la une, prochaine interview, compteurs, capsules (M7).
+- [ ] Tableau de bord : diagnostics et sollicitations d’accompagnement ; huit indicateurs ; rapport PDF par entreprise avant le 18 décembre (M8).
+- [ ] Vocabulaire : entreprises, Stand API-ZF, Espace Industrie, nouvelle signature.
+- [ ] À confirmer : dates superposées dans le PDF (28 octobre / 26 novembre) pour le pré-lancement et l’ouverture des rendez-vous aux guichets.
 
 Principe directeur commun aux deux documents : **fiabilité avant sophistication**. Un module souhaitable non prêt est remplacé par une solution manuelle. Chaque parcours reste livré de bout en bout (données, API, écran, droits, vérification sur téléphone) avant d’ouvrir le suivant. Les dates des documents ne fixent pas l’ordre du travail.
 
@@ -15,7 +30,7 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 - [ ] Le positionnement passe de « La preuve par le Togo » à « Avec vous, à chaque étape » et à la série « Ils avancent avec l’API-ZF » : la fiche occupant doit-elle porter la success story (parcours avec l’Agence) ?
 - [ ] Formats du Studio : « 21 secondes avec… » (CDC) remplacé par « 2 min avec… », « API-ZF en 60 secondes » et Face-à-face (PDF).
 - [ ] Rencontres B2B : tables de 20 minutes (CDC) et « Rencontres express » de 10 minutes pendant la Journée API-ZF (PDF).
-- [ ] Classement A/B/C : le code l’applique aux passages Défis, alors que les documents le réservent aux investisseurs (M3). Confirmer l’usage voulu sur les Défis.
+- [x] Classement A/B/C retiré des passages Défis (21/11/2026) ; les contacts des stands passent en A/B/C avec leur définition.
 - [ ] Les deux documents disent « six modules indispensables » mais en étiquettent huit (M1 à M6, M8, M9). Faire confirmer la liste réelle.
 
 ## Déjà fait
@@ -95,7 +110,7 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 
 ## M2 — Les contacts des occupants (indispensable)
 
-- [x] Saisie d’un contact par l’équipe du stand, qualification Chaud/Tiède/Froid, prochaine action et date.
+- [x] Saisie d’un contact par l’équipe du stand, qualification A · Prioritaire / B · À suivre / C · À nourrir, prochaine action et date.
 - [x] Saisie hors ligne stockée sur le téléphone puis synchronisée.
 - [x] Demande « Être recontacté » depuis la fiche publique, reçue uniquement par l’occupant concerné.
 - [x] Site installable (manifeste et service worker) avec réception des notifications push.
@@ -114,8 +129,8 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 - [x] Formulaire public « Parlez-nous de votre projet » ; demande attribuée à un membre de l’équipe avec statut et prochaine action.
 - [x] Équipe du stand prévenue d’une nouvelle demande ; l’investisseur reçoit une confirmation par e-mail dans sa langue.
 - [ ] Réservation d’un rendez-vous sur créneaux administrés, sans double réservation.
-- [ ] Qualification en neuf informations : profil, entreprise, pays, secteur, nature du projet, stade, besoin, interlocuteur API-ZF, prochaine action datée.
-- [ ] Classement A (relance sous 48 h), B (sous 7 jours), C (newsletter).
+- [x] Qualification en neuf informations (liste de travail réglable dans Paramètres), interlocuteur API-ZF, prochaine relance datée, journal des relances et rendez-vous (fiche /investor-desk/<id>, 21/11/2026).
+- [x] Classement A (relance sous 48 h), B (sous 7 jours), C (newsletter) ; alerte à l’interlocuteur et au tableau de bord quand une relance est dépassée.
 - [ ] Alerte au référent quand un contact A n’est pas relancé dans les délais.
 - [ ] Investor Pack bilingue téléchargeable par QR code, avec comptage des téléchargements.
 - [ ] Export des dossiers qualifiés vers INVEST TRACK (modèle Excel à recevoir).
@@ -149,7 +164,7 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 - [ ] Parcours « Trouvez les trois étapes » : trois produits de trois occupants différents affichés sur le passeport, plusieurs versions modifiables chaque jour.
 - [ ] Quiz express et vrai ou faux (trois questions), sur téléphone ou tablette.
 - [ ] Badge numérique partageable à la fin du parcours.
-- [x] Roue des opportunités `/roue` : code à usage unique généré dans l’administration, tirage côté serveur, lots des partenaires avec quantités, cases perdantes, stock mis à jour en temps réel.
+- [x] Roue des opportunités `/roue` : code à usage unique généré dans l’administration, tirage côté serveur, lots avec quantités, cases perdantes, stock mis à jour en temps réel.
 - [ ] Récompenses : types, stock suivi en temps réel, alerte à 20 % du stock restant.
 - [ ] Souhaitable : micro-enquête de trois questions au retrait.
 - [ ] Faire valider le règlement du jeu par le service juridique ; aucun consentement commercial implicite.

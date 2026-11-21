@@ -31,6 +31,11 @@ const removeSegment = (segment) => segment.destroy();
 // Compte un lot de plus comme gagné, dans la transaction du tirage.
 const recordAward = (segment, transaction) => segment.increment('awarded', { by: 1, transaction });
 
+// Rend au stock un lot gagné dont la partie est supprimée sans que le lot ait été remis.
+const releaseAward = (segmentId, transaction) => WheelSegment.decrement('awarded', { by: 1, where: { id: segmentId, awarded: { [Op.gt]: 0 } }, transaction });
+
+const removePlay = (play, transaction) => play.destroy({ transaction });
+
 // Retrouve un code de jeu en le verrouillant le temps d'un tirage.
 const findCodeForUpdate = (code, transaction) => WheelCode.findOne({
   where: { code },
@@ -85,6 +90,13 @@ const findCodePrizes = (code, transaction) => WheelPlay.findAll({
   ...(transaction && { lock: { level: transaction.LOCK.UPDATE, of: WheelPlay } }),
 });
 
+// Un tour précis, verrouillé le temps de la remise de son lot.
+const findPlayForClaim = (id, transaction) => WheelPlay.findByPk(id, {
+  include: playIncludes,
+  transaction,
+  lock: { level: transaction.LOCK.UPDATE, of: WheelPlay },
+});
+
 const findCodeByValue = (code) => WheelCode.findOne({ where: { code }, attributes: ['id'] });
 
 const countPlays = (wheelCodeId) => WheelPlay.count({ where: { wheelCodeId } });
@@ -103,6 +115,8 @@ module.exports = {
   updateSegment,
   removeSegment,
   recordAward,
+  releaseAward,
+  removePlay,
   findCodeForUpdate,
   findCodePlays,
   findPlayerByToken,
@@ -113,6 +127,7 @@ module.exports = {
   findPlays,
   countPlayerPlaysSince,
   findCodePrizes,
+  findPlayForClaim,
   findCodeByValue,
   countPlays,
   countPlayed,

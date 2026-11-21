@@ -14,6 +14,13 @@ router.post('/public/:needId', rateLimit.publicForm('b2b'), validate(validation.
 router.use(asyncHandler(authenticate), b2bAdminOnly);
 router.get('/', asyncHandler(controller.listAll));
 router.get('/need/:needId', validate(validation.needParams, 'params'), asyncHandler(controller.list));
+router.get('/:id', validate(validation.params, 'params'), asyncHandler(controller.detail));
+router.get('/:id/slots', validate(validation.params, 'params'), validate(validation.slotsQuery, 'query'), asyncHandler(controller.slots));
+router.post('/:id/meetings', validate(validation.params, 'params'), validate(validation.schedule), asyncHandler(controller.schedule));
+// Déplacer un rendez-vous (jour, heure, table) ; PATCH = compte rendu et note.
+router.put('/:id/meetings/:meetingId', validate(validation.meetingParams, 'params'), validate(validation.schedule), asyncHandler(controller.reschedule));
+router.patch('/:id/meetings/:meetingId', validate(validation.meetingParams, 'params'), validate(validation.report), asyncHandler(controller.report));
+router.delete('/:id/meetings/:meetingId', validate(validation.meetingParams, 'params'), asyncHandler(controller.cancel));
 router.patch('/:id', validate(validation.params, 'params'), validate(validation.update), asyncHandler(controller.update));
 router.delete('/:id', validate(validation.params, 'params'), asyncHandler(controller.remove));
 

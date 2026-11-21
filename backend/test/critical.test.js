@@ -345,7 +345,7 @@ test('une demande publique est rattachée au stand lu par le serveur, sans quali
 
   const result = await contactService.createPublic('stand-a', {
     id: 'request-a', fullName: 'Visiteur Test', phone: '90000000', need: 'Un renseignement',
-    consentOccupant: true, occupantId: 'stand-b', qualification: 'hot', consentApizf: true,
+    consentOccupant: true, occupantId: 'stand-b', qualification: 'A', consentApizf: true,
   });
   assert.equal(result.created, true);
   assert.equal(saved.occupantId, 'stand-a');
@@ -367,14 +367,10 @@ test('une demande Investor Desk exige le consentement API-ZF', () => {
   assert.ok(error);
 });
 
-test('le suivi Investor Desk enregistre seulement le statut et la prochaine action', async (context) => {
-  const investorRequest = { id: 'request-a' };
-  let saved;
-  context.mock.method(investorRequestRepository, 'findById', async () => investorRequest);
-  context.mock.method(investorRequestRepository, 'update', async (_request, values) => { saved = values; return values; });
-
-  await investorRequestService.update(investorRequest.id, { status: 'in_progress', nextAction: 'Rappeler le porteur du projet' });
-  assert.deepEqual(saved, { status: 'in_progress', nextAction: 'Rappeler le porteur du projet' });
+test('le statut des guichets ne se saisit pas : il est calculé à partir de la classe et des relances', () => {
+  const { update } = investorRequestValidation;
+  assert.ok(update.validate({ status: 'closed', nextAction: 'x' }, { stripUnknown: true }).error);
+  assert.deepEqual(update.validate({ classification: 'a', status: 'closed' }, { stripUnknown: true }).value, { classification: 'A' });
 });
 
 test('la liste publique B2B ne contient que les besoins ouverts de stands actifs', async (context) => {
@@ -450,44 +446,70 @@ test('le backoffice B2B peut lire les propositions d’un besoin existant', asyn
   assert.deepEqual(result, [{ id: 'proposal-a', b2bNeedId: 'need-b' }]);
 });
 
-test('une invitation Studio utilise un lien personnel imprévisible', async (context) => {
+test('une invitation Studio utilise un lien personnel imprévisible et l’envoie à l’invité', async (context) => {
   let saved;
-  context.mock.method(studioInvitationRepository, 'create', async (values) => {
-    saved = values;
-    return values;
-  });
+  const sent = [];
+  context.mock.method(studioInvitationRepository, 'create', async (values) => { saved = values; return values; });
   context.mock.method(studioInvitationRepository, 'findOccupantById', async (id) => ({ id }));
+  context.mock.method(notificationService, 'studioInvited', (invitation) => { sent.push(invitation.email); });
 
   await studioInvitationService.create(
     { id: 'campaign-user', role: 'admin', occupantId: 'occupant-a' },
-    { guestName: 'Invité Test', subject: 'Entretien Studio', scheduledAt: new Date().toISOString() },
+    { guestName: 'Invité Test', email: 'Invite@Example.com', format: 'two_minutes' },
   );
 
   assert.match(saved.token, /^[a-f0-9]{64}$/);
   assert.equal(saved.createdByUserId, 'campaign-user');
   assert.equal(saved.occupantId, 'occupant-a');
-  assert.equal(saved.status, 'pending');
+  assert.equal(saved.status, 'invited');
+  assert.equal(saved.scheduledAt, null);
+  assert.deepEqual(sent, ['invite@example.com']);
 });
 
-test('la réponse publique Studio ne révèle pas le lien interne et enregistre sa date', async (context) => {
-  const invitation = {
-    id: 'invitation-a',
-    token: 'a'.repeat(64),
-    guestName: 'Invité Test',
-    subject: 'Entretien Studio',
-    scheduledAt: new Date().toISOString(),
-    status: 'pending',
-    respondedAt: null,
-  };
+test('l’invité du Studio réserve lui-même un créneau libre ; la page publique ne révèle ni le lien ni l’équipe', async (context) => {
+  const day = new Date(Date.now() + 3 * 24 * 3600000).toISOString().slice(0, 10);
+  context.mock.method(settingsService, 'studioSchedule', () => ({ firstDay: day, lastDay: day, dayStart: '14:00', dayEnd: '15:00', minutes: 20 }));
+  const invitation = { id: 'inv-1', token: 'a'.repeat(64), guestName: 'Afi', format: 'two_minutes', status: 'invited', scheduledAt: null, createdByUserId: 'u1', occupantId: null };
   context.mock.method(studioInvitationRepository, 'findByToken', async () => invitation);
-  context.mock.method(studioInvitationRepository, 'update', async (_invitation, values) => ({ ...invitation, ...values }));
+  context.mock.method(studioInvitationRepository, 'findBookedBetween', async () => [{ id: 'other', scheduledAt: new Date(`${day}T14:20:00Z`) }]);
+  context.mock.method(studioInvitationRepository, 'update', async (item, values) => Object.assign(item, values));
+  const booked = [];
+  context.mock.method(notificationService, 'studioBooked', (item, changed) => { booked.push(changed); });
 
-  const result = await studioInvitationService.respond(invitation.token, 'confirmed');
+  const { slots } = await studioInvitationService.publicSlots(invitation.token);
+  assert.deepEqual(slots, [`${day}T14:00:00.000Z`, `${day}T14:40:00.000Z`]);
 
-  assert.equal(result.status, 'confirmed');
-  assert.ok(result.respondedAt instanceof Date);
-  assert.equal(result.token, undefined);
-  assert.equal(result.id, undefined);
+  await assert.rejects(studioInvitationService.book(invitation.token, `${day}T14:10:00Z`), (error) => error.code === 'STUDIO_SLOT_INVALID');
+  const result = await studioInvitationService.book(invitation.token, `${day}T14:40:00Z`);
+  assert.equal(result.status, 'booked');
+  assert.equal(result.scheduledAt.toISOString(), `${day}T14:40:00.000Z`);
+  assert.equal('token' in result, false);
+  assert.equal('createdByUserId' in result, false);
+  assert.deepEqual(booked, [false]);
+
+  // Changer de créneau reste possible ; décliner annule le créneau.
+  await studioInvitationService.book(invitation.token, `${day}T14:00:00Z`);
+  assert.deepEqual(booked, [false, true]);
+  context.mock.method(notificationService, 'studioDeclined', () => {});
+  const declined = await studioInvitationService.decline(invitation.token);
+  assert.equal(declined.status, 'declined');
+  assert.equal(declined.scheduledAt, null);
+  await assert.rejects(studioInvitationService.book(invitation.token, `${day}T14:00:00Z`), (error) => error.code === 'STUDIO_INVITATION_CLOSED');
+});
+
+test('la capsule du Studio se livre après le passage et part à l’invité', async (context) => {
+  const invitation = { id: 'inv-2', status: 'invited', email: 'a@b.tg', occupantId: null };
+  context.mock.method(studioInvitationRepository, 'findById', async () => invitation);
+  context.mock.method(studioInvitationRepository, 'update', async (item, values) => Object.assign(item, values));
+  const delivered = [];
+  context.mock.method(notificationService, 'studioCapsuleDelivered', (item) => { delivered.push(item.capsuleUrl); });
+  const admin = { id: 'u1', role: 'super-admin' };
+
+  await assert.rejects(studioInvitationService.deliver(admin, 'inv-2', { capsuleUrl: 'https://videos.tg/afi' }), (error) => error.code === 'STUDIO_NOT_RECORDED');
+  invitation.status = 'booked';
+  await studioInvitationService.deliver(admin, 'inv-2', { capsuleUrl: 'https://videos.tg/afi' });
+  assert.equal(invitation.status, 'delivered');
+  assert.deepEqual(delivered, ['https://videos.tg/afi']);
 });
 
 test('le planning Studio d’un administrateur est filtré sur son stand', async (context) => {
@@ -597,7 +619,7 @@ test('un stand ne peut valider qu’une fois le même parcours', async (context)
   });
 
   await assert.rejects(
-    challengePassageService.validate({ id: 'user-a', occupantId: 'occupant-a' }, { code: passport.code, classification: 'A' }),
+    challengePassageService.validate({ id: 'user-a', occupantId: 'occupant-a' }, { code: passport.code }),
     (error) => error.status === 409 && error.code === 'PASSAGE_ALREADY_VALIDATED',
   );
 });
@@ -638,12 +660,12 @@ test('le passage requis termine le parcours avant la remise', async (context) =>
 
   const result = await challengePassageService.validate(
     { id: 'user-c', occupantId: 'occupant-c' },
-    { code: passport.code, classification: 'B' },
+    { code: passport.code },
   );
 
   assert.equal(result.status, 'completed');
-  assert.equal(result.classification, 'B');
-  assert.equal(passageValues.classification, 'B');
+  assert.equal('classification' in result, false);
+  assert.equal('classification' in passageValues, false);
   assert.equal(saved.status, 'completed');
   assert.ok(saved.completedAt instanceof Date);
 });
@@ -1004,14 +1026,14 @@ const wheelSetup = (context, { segments, code, plays = [], playsToday = 0 }) => 
 };
 
 test('un code de la roue donne un seul tour par défaut et décompte le lot gagné', async (context) => {
-  const prize = { id: 'p1', kind: 'prize', label: 'T-shirt', sponsor: 'WAFO INDUSTRIE', quantity: 2, awarded: 0, isActive: true };
-  const lose = { id: 'l1', kind: 'lose', label: 'Presque !', sponsor: null, quantity: null, awarded: 0, isActive: true };
+  const prize = { id: 'p1', kind: 'prize', label: 'T-shirt', quantity: 2, awarded: 0, isActive: true };
+  const lose = { id: 'l1', kind: 'lose', label: 'Presque !', quantity: null, awarded: 0, isActive: true };
   const code = { id: 'code-1', code: 'K7P2', spinsAllowed: 1 };
   const plays = wheelSetup(context, { segments: [prize, lose], code });
 
   const outcome = await wheelService.spin({ code: ' k7-p2 ', player: PLAYER }, 'fr', (length) => { assert.equal(length, 2); return 0; });
   assert.equal(outcome.result.id, 'p1');
-  assert.equal(outcome.result.sponsor, 'WAFO INDUSTRIE');
+  assert.deepEqual(Object.keys(outcome.result).sort(), ['id', 'kind', 'label']);
   assert.equal(outcome.spinsLeft, 0);
   assert.equal(prize.awarded, 1);
   assert.equal(plays.length, 1);
@@ -1023,7 +1045,7 @@ test('un code de la roue donne un seul tour par défaut et décompte le lot gagn
 });
 
 test('un code à plusieurs tours reste au premier joueur et s’arrête au dernier tour', async (context) => {
-  const lose = { id: 'l1', kind: 'lose', label: 'Dommage !', sponsor: null, quantity: null, awarded: 0, isActive: true };
+  const lose = { id: 'l1', kind: 'lose', label: 'Dommage !', quantity: null, awarded: 0, isActive: true };
   const code = { id: 'code-2', code: 'M3X9', spinsAllowed: 2 };
   const plays = wheelSetup(context, { segments: [lose], code });
 
@@ -1164,7 +1186,7 @@ test('les réglages refusent un nombre de stands hors limites et une clé inconn
 });
 
 test('un joueur ne tourne la roue qu’une fois par jour et le code reste valable', async (context) => {
-  const prize = { id: 'p1', kind: 'prize', label: 'T-shirt', sponsor: null, quantity: 2, awarded: 0, isActive: true };
+  const prize = { id: 'p1', kind: 'prize', label: 'T-shirt', quantity: 2, awarded: 0, isActive: true };
   const code = { code: 'AB23', usedAt: null, expiresAt: new Date(Date.now() + 60000) };
   wheelSetup(context, { segments: [prize], code, playsToday: 1 });
   await assert.rejects(wheelService.spin({ code: 'AB23', player: PLAYER }, 'fr', () => 0), (error) => error.status === 429 && error.code === 'WHEEL_DAILY_LIMIT');
@@ -1191,6 +1213,290 @@ test('un lot gagné ne se remet qu’une fois, et seulement s’il a été gagn�
   await assert.rejects(wheelService.claimPrize(user, 'LOS3'), (error) => error.code === 'WHEEL_NO_PRIZE');
   await assert.rejects(wheelService.findPrize('NEW4'), (error) => error.code === 'WHEEL_NOT_PLAYED');
   await assert.rejects(wheelService.claimPrize(user, 'NOPE'), (error) => error.code === 'WHEEL_CODE_INVALID');
+});
+
+test('le bouton « Remis » de l’historique remet le lot de ce tour, une fois, et jamais un tour perdu', async (context) => {
+  const plays = {
+    won: { id: 'won', resultKind: 'prize', resultLabel: 'T-shirt', claimedAt: null, wheelCode: { code: 'WIN5' } },
+    lost: { id: 'lost', resultKind: 'lose', resultLabel: 'Presque !', claimedAt: null, wheelCode: { code: 'LOS5' } },
+  };
+  context.mock.method(wheelRepository.sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));
+  context.mock.method(wheelRepository, 'findPlayForClaim', async (id) => plays[id] || null);
+  context.mock.method(wheelRepository, 'updatePlay', async (play, values) => Object.assign(play, values));
+  const user = { id: 'admin-a', firstName: 'Ama', lastName: 'K.' };
+
+  const claimed = await wheelService.claimPlay(user, 'won');
+  assert.equal(claimed.result.label, 'T-shirt');
+  assert.deepEqual(claimed.claimedBy, { firstName: 'Ama', lastName: 'K.' });
+  assert.equal(plays.won.claimedByUserId, 'admin-a');
+  await assert.rejects(wheelService.claimPlay(user, 'won'), (error) => error.code === 'WHEEL_PRIZE_ALREADY_CLAIMED');
+  await assert.rejects(wheelService.claimPlay(user, 'lost'), (error) => error.code === 'WHEEL_NO_PRIZE');
+  await assert.rejects(wheelService.claimPlay(user, 'absent'), (error) => error.status === 404);
+});
+
+test('supprimer une partie rend au stock un lot pas encore remis, jamais un lot déjà remis', async (context) => {
+  const plays = {
+    toHand: { id: 'toHand', resultKind: 'prize', segmentId: 'seg-1', claimedAt: null },
+    handed: { id: 'handed', resultKind: 'prize', segmentId: 'seg-1', claimedAt: new Date() },
+    lost: { id: 'lost', resultKind: 'lose', segmentId: 'seg-2', claimedAt: null },
+  };
+  const released = [];
+  const removed = [];
+  context.mock.method(wheelRepository.sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));
+  context.mock.method(wheelRepository, 'findPlayForClaim', async (id) => plays[id] || null);
+  context.mock.method(wheelRepository, 'releaseAward', async (segmentId) => { released.push(segmentId); });
+  context.mock.method(wheelRepository, 'removePlay', async (play) => { removed.push(play.id); });
+
+  for (const id of ['toHand', 'handed', 'lost']) await wheelService.removePlay(id);
+  assert.deepEqual(removed, ['toHand', 'handed', 'lost']);
+  assert.deepEqual(released, ['seg-1']);
+  await assert.rejects(wheelService.removePlay('absent'), (error) => error.status === 404);
+});
+
+test('supprimer un participant rafraîchit les stands qu’il a traversés', async (context) => {
+  const removed = [];
+  const published = [];
+  context.mock.method(challengePassportRepository, 'findById', async (id) => (id === 'p1' ? { id: 'p1' } : null));
+  context.mock.method(challengePassportRepository, 'findOccupantIds', async () => ['stand-a', 'stand-b']);
+  context.mock.method(challengePassportRepository, 'remove', async (passport) => { removed.push(passport.id); });
+  context.mock.method(realtimeService.events, 'challengeChanged', (payload) => { published.push(payload); });
+
+  await challengePassportService.remove('p1');
+  assert.deepEqual(removed, ['p1']);
+  assert.deepEqual(published, [{ passportId: 'p1', occupantIds: ['stand-a', 'stand-b'] }]);
+  await assert.rejects(challengePassportService.remove('absent'), (error) => error.status === 404);
+});
+
+test('un contact de stand se qualifie A, B ou C ; les anciennes valeurs chaud, tiède, froid sont refusées', () => {
+  const contactValidation = require('../src/modules/contact/contact.validation');
+  assert.equal(contactValidation.update.validate({ qualification: 'b' }).value.qualification, 'B');
+  assert.ok(contactValidation.update.validate({ qualification: 'hot' }).error);
+  assert.ok(contactValidation.query.validate({ qualification: 'D' }).error);
+});
+
+const b2bMeetingService = require('../src/modules/b2b-proposal/b2b-meeting.service');
+const b2bMeetingRepository = require('../src/modules/b2b-proposal/b2b-meeting.repository');
+
+const meetingSetup = (context, { status = 'accepted', occupantId = 'stand-a', existing = [] } = {}) => {
+  const proposal = { id: 'prop-1', status, need: { occupantId, title: 'Emballages', occupant: { id: occupantId, name: 'WAFO' } }, email: 'kossi@example.com', language: 'fr' };
+  const created = [];
+  context.mock.method(b2bProposalService, 'getManaged', async () => proposal);
+  context.mock.method(b2bMeetingRepository.sequelize, 'transaction', async (callback) => callback({}));
+  context.mock.method(b2bMeetingRepository, 'lockSchedule', async () => {});
+  context.mock.method(b2bMeetingRepository, 'findStartingBetween', async () => existing);
+  context.mock.method(b2bMeetingRepository, 'create', async (values) => { created.push(values); return values; });
+  context.mock.method(notificationService, 'b2bMeetingScheduled', () => {});
+  return { proposal, created };
+};
+
+const futureDay = () => new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+const busyMeeting = (startsAt, tableNumber, occupantId) => ({ id: `m-${tableNumber}`, startsAt: new Date(startsAt), durationMinutes: 20, tableNumber, proposal: { need: { occupantId } } });
+
+test('un rendez-vous B2B se fixe sur une demande acceptée, une table libre et un stand libre', async (context) => {
+  const day = futureDay();
+  const { created } = meetingSetup(context, { existing: [busyMeeting(`${day}T10:00:00Z`, 1, 'stand-b')] });
+
+  await assert.rejects(b2bMeetingService.schedule({ id: 'u1' }, 'prop-1', { startsAt: `${day}T10:00:00Z`, tableNumber: 1 }), (error) => error.code === 'B2B_TABLE_TAKEN');
+  await assert.rejects(b2bMeetingService.schedule({ id: 'u1' }, 'prop-1', { startsAt: `${day}T10:00:00Z`, tableNumber: 9 }), (error) => error.code === 'B2B_TABLE_UNKNOWN');
+  await assert.rejects(b2bMeetingService.schedule({ id: 'u1' }, 'prop-1', { startsAt: '2020-01-01T10:00:00Z', tableNumber: 2 }), (error) => error.code === 'B2B_MEETING_IN_PAST');
+
+  const meeting = await b2bMeetingService.schedule({ id: 'u1' }, 'prop-1', { startsAt: `${day}T10:00:00Z`, tableNumber: 2 });
+  assert.equal(meeting.tableNumber, 2);
+  assert.equal(meeting.durationMinutes, 20);
+  assert.equal(created.length, 1);
+});
+
+test('un stand ne peut pas avoir deux rendez-vous B2B en même temps, et une demande non acceptée n’en reçoit pas', async (context) => {
+  const day = futureDay();
+  meetingSetup(context, { existing: [busyMeeting(`${day}T10:10:00Z`, 3, 'stand-a')] });
+  await assert.rejects(b2bMeetingService.schedule({ id: 'u1' }, 'prop-1', { startsAt: `${day}T10:00:00Z`, tableNumber: 1 }), (error) => error.code === 'B2B_STAND_BUSY');
+
+  meetingSetup(context, { status: 'pending' });
+  await assert.rejects(b2bMeetingService.schedule({ id: 'u1' }, 'prop-1', { startsAt: `${day}T10:00:00Z`, tableNumber: 1 }), (error) => error.code === 'B2B_PROPOSAL_NOT_ACCEPTED');
+});
+
+test('les créneaux libres d’une journée suivent les réglages et écartent tables prises et stand occupé', async (context) => {
+  const day = futureDay();
+  meetingSetup(context, { existing: [busyMeeting(`${day}T09:00:00Z`, 1, 'stand-b'), busyMeeting(`${day}T09:20:00Z`, 2, 'stand-a')] });
+  const result = await b2bMeetingService.slots({ id: 'u1' }, 'prop-1', day);
+  assert.equal(result.minutes, 20);
+  assert.equal(result.slots.length, 23);
+  assert.deepEqual(result.slots[0], { startsAt: `${day}T09:00:00.000Z`, tables: [2, 3, 4] });
+  assert.equal(result.slots[1].startsAt, `${day}T09:40:00.000Z`);
+  assert.equal(result.slots.at(-1).startsAt, `${day}T16:40:00.000Z`);
+});
+
+test('un rendez-vous B2B se déplace sur un créneau libre, sans se gêner lui-même, et plus une fois son compte rendu fait', async (context) => {
+  const day = futureDay();
+  const meeting = { id: 'm1', startsAt: new Date(`${day}T10:00:00Z`), durationMinutes: 20, tableNumber: 1, outcome: null };
+  const reported = { id: 'm2', startsAt: new Date(Date.now() - 60000), durationMinutes: 20, tableNumber: 2, outcome: 'no_show' };
+  meetingSetup(context, { existing: [{ ...meeting, proposal: { need: { occupantId: 'stand-a' } } }, busyMeeting(`${day}T11:00:00Z`, 3, 'stand-b')] });
+  context.mock.method(b2bMeetingRepository, 'findById', async (id) => ({ m1: meeting, m2: reported })[id] || null);
+  context.mock.method(b2bMeetingRepository, 'update', async (item, values) => Object.assign(item, values));
+  const moved = [];
+  context.mock.method(notificationService, 'b2bMeetingMoved', (item) => { moved.push(item.id); });
+
+  await b2bMeetingService.reschedule({ id: 'u1' }, 'prop-1', 'm1', { startsAt: `${day}T10:10:00Z`, tableNumber: 1 });
+  assert.equal(meeting.startsAt.toISOString(), `${day}T10:10:00.000Z`);
+  assert.deepEqual(moved, ['m1']);
+  await assert.rejects(b2bMeetingService.reschedule({ id: 'u1' }, 'prop-1', 'm1', { startsAt: `${day}T11:00:00Z`, tableNumber: 3 }), (error) => error.code === 'B2B_TABLE_TAKEN');
+  await assert.rejects(b2bMeetingService.reschedule({ id: 'u1' }, 'prop-1', 'm2', { startsAt: `${day}T12:00:00Z`, tableNumber: 1 }), (error) => error.code === 'B2B_MEETING_REPORTED');
+});
+
+test('le compte rendu en un clic ne se fait qu’une fois le rendez-vous commencé ; la note reste libre', async (context) => {
+  meetingSetup(context);
+  const past = { id: 'm1', startsAt: new Date(Date.now() - 60000) };
+  const future = { id: 'm2', startsAt: new Date(Date.now() + 3600000) };
+  const saved = {};
+  context.mock.method(b2bMeetingRepository, 'findById', async (id) => ({ m1: past, m2: future })[id] || null);
+  context.mock.method(b2bMeetingRepository, 'update', async (meeting, values) => { saved[meeting.id] = values; return meeting; });
+
+  await b2bMeetingService.report({ id: 'u1' }, 'prop-1', 'm1', { outcome: 'held_follow_up', note: 'Devis à envoyer' });
+  assert.equal(saved.m1.outcome, 'held_follow_up');
+  assert.equal(saved.m1.reportedByUserId, 'u1');
+  assert.equal(saved.m1.note, 'Devis à envoyer');
+  await assert.rejects(b2bMeetingService.report({ id: 'u1' }, 'prop-1', 'm2', { outcome: 'no_show' }), (error) => error.code === 'B2B_MEETING_NOT_STARTED');
+  await b2bMeetingService.report({ id: 'u1' }, 'prop-1', 'm2', { note: 'Apporter le catalogue' });
+  assert.equal(saved.m2.note, 'Apporter le catalogue');
+  await assert.rejects(b2bMeetingService.report({ id: 'u1' }, 'prop-1', 'absent', { note: 'x' }), (error) => error.status === 404);
+});
+
+const investorSetup = (context, { request, followUps = 0 }) => {
+  const saved = [];
+  const reminders = [];
+  context.mock.method(investorRequestRepository, 'findById', async () => request);
+  context.mock.method(investorRequestRepository, 'update', async (item, values) => { saved.push(values); return Object.assign(item, values); });
+  context.mock.method(investorRequestRepository, 'countFollowUps', async () => followUps);
+  context.mock.method(investorRequestRepository, 'findTeamMember', async (id) => (id === 'apizf-1' ? { id } : null));
+  context.mock.method(investorRequestRepository, 'createFollowUp', async (values) => values);
+  context.mock.method(notificationService, 'investorFollowUpChanged', (item) => { reminders.push(item.nextFollowUpAt); });
+  return { saved, reminders };
+};
+
+test('Guichets : la classe A fixe une relance sous 48 h, B sous 7 jours, C aucune', async (context) => {
+  const request = { id: 'ir-1', classification: null, status: 'new' };
+  investorSetup(context, { request });
+  const before = Date.now();
+
+  await investorRequestService.update('ir-1', { classification: 'A' });
+  const dueA = request.nextFollowUpAt.getTime() - before;
+  assert.ok(dueA >= 48 * 3600000 && dueA < 48 * 3600000 + 5000);
+  assert.equal(request.status, 'in_progress');
+
+  await investorRequestService.update('ir-1', { classification: 'B' });
+  const dueB = request.nextFollowUpAt.getTime() - before;
+  assert.ok(dueB >= 7 * 24 * 3600000 && dueB < 7 * 24 * 3600000 + 5000);
+
+  await investorRequestService.update('ir-1', { classification: 'C' });
+  assert.equal(request.nextFollowUpAt, null);
+  assert.equal(request.status, 'closed');
+  assert.equal(investorRequestService.progressStatus({ nextFollowUpAt: null, classification: null }, false), 'new');
+});
+
+test('Guichets : le responsable est un membre de l’équipe API-ZF ; le diagnostic ne garde que les informations réglées et exige l’étape suivante', async (context) => {
+  const request = { id: 'ir-2', classification: 'B', status: 'in_progress', diagnosedAt: null };
+  const { saved } = investorSetup(context, { request });
+  await assert.rejects(investorRequestService.update('ir-2', { contactUserId: 'stand-admin' }), (error) => error.code === 'INVESTOR_CONTACT_INVALID');
+  await investorRequestService.update('ir-2', { contactUserId: 'apizf-1' });
+  assert.equal(request.contactUserId, 'apizf-1');
+
+  assert.ok(investorRequestValidation.diagnosis.validate({ qualification: {} }).error);
+  await investorRequestService.saveDiagnosis('ir-2', { qualification: { sector: 'Industrie', jobs: '25', agreement: 'yes', unknown: 'x', origin: '' }, nextAction: 'Rendez-vous au guichet régimes' });
+  assert.deepEqual(saved.at(-1).qualification, { sector: 'Industrie', jobs: 25, agreement: true });
+  const firstDiagnosis = request.diagnosedAt;
+  assert.ok(firstDiagnosis instanceof Date);
+  await investorRequestService.saveDiagnosis('ir-2', { qualification: {}, nextAction: 'Envoyer l’Investor Pack' });
+  assert.equal(request.diagnosedAt, firstDiagnosis);
+});
+
+test('Guichets : une relance d’un contact A exige l’étape suivante et remplace la date de relance', async (context) => {
+  const request = { id: 'ir-3', classification: 'A', status: 'new', nextAction: null, nextFollowUpAt: new Date() };
+  const { reminders } = investorSetup(context, { request, followUps: 1 });
+  await assert.rejects(investorRequestService.addFollowUp({ id: 'u1' }, 'ir-3', { channel: 'call' }), (error) => error.code === 'INVESTOR_NEXT_STEP_REQUIRED');
+
+  const next = new Date(Date.now() + 3 * 24 * 3600000);
+  const followUp = await investorRequestService.addFollowUp({ id: 'u1' }, 'ir-3', { channel: 'call', nextStep: 'Envoyer le dossier d’agrément', nextFollowUpAt: next });
+  assert.equal(followUp.createdByUserId, 'u1');
+  assert.equal(request.nextAction, 'Envoyer le dossier d’agrément');
+  assert.equal(request.nextFollowUpAt, next);
+  assert.equal(request.status, 'in_progress');
+  assert.equal(reminders.length, 1);
+
+  // Relance sans prochaine date : le contact est terminé.
+  await investorRequestService.addFollowUp({ id: 'u1' }, 'ir-3', { channel: 'message', nextStep: 'Dossier envoyé' });
+  assert.equal(request.status, 'closed');
+
+  // Une relance déjà faite garde sa date même si la classe change.
+  await investorRequestService.update('ir-3', { classification: 'B' });
+  assert.equal(request.nextFollowUpAt, null);
+  assert.equal(request.status, 'closed');
+});
+
+test('Guichets : la fiche « Mon entreprise, mes difficultés » passe en Accompagnement, envoie l’engagement écrit et se termine à la réponse', async (context) => {
+  const request = { id: 'ir-4', classification: null, status: 'new', email: 'dg@usine.tg', commitmentNote: null, commitmentDueAt: null, commitmentServiceId: null, resolvedAt: null };
+  investorSetup(context, { request });
+  context.mock.method(investorRequestRepository, 'findService', async (id) => (id === 'svc-1' ? { id, title: 'Accompagnement après implantation' } : null));
+  const commitments = [];
+  context.mock.method(notificationService, 'investorCommitmentChanged', (item, options = {}) => { commitments.push(options); });
+  const difficulty = { company: 'Usine du Golfe', regime: 'free_zone', nature: 'Dédouanement', description: 'Retards à l’import des intrants.' };
+
+  await investorRequestService.saveDifficulty('ir-4', { difficulty });
+  assert.equal(request.classification, 'support');
+  assert.equal(request.status, 'new');
+
+  await assert.rejects(investorRequestService.saveDifficulty('ir-4', { difficulty, commitmentNote: 'Rendez-vous avec la douane' }), (error) => error.code === 'COMMITMENT_INCOMPLETE');
+  const due = new Date(Date.now() + 10 * 24 * 3600000);
+  await investorRequestService.saveDifficulty('ir-4', { difficulty, commitmentServiceId: 'svc-1', commitmentDueAt: due, commitmentNote: 'Rendez-vous avec la douane' });
+  assert.equal(request.status, 'in_progress');
+  assert.deepEqual(commitments.at(-1), { notifyCompany: true, serviceTitle: 'Accompagnement après implantation' });
+
+  // Même engagement réenregistré : pas de nouvel e-mail.
+  await investorRequestService.saveDifficulty('ir-4', { difficulty, commitmentServiceId: 'svc-1', commitmentDueAt: due, commitmentNote: 'Rendez-vous avec la douane' });
+  assert.equal(commitments.at(-1).notifyCompany, false);
+
+  await investorRequestService.resolve('ir-4', { resolved: true });
+  assert.equal(request.status, 'closed');
+});
+
+test('Guichets : un rendez-vous se réserve sur un créneau proposé, une seule fois par guichet', async (context) => {
+  const day = new Date(Date.now() + 3 * 24 * 3600000).toISOString().slice(0, 10);
+  context.mock.method(settingsService, 'guichetSchedule', () => ({ firstDay: day, lastDay: day, dayStart: '09:00', dayEnd: '10:00', minutes: 15 }));
+  context.mock.method(investorRequestRepository, 'findGuichetMeetingsBetween', async () => [{ startsAt: new Date(`${day}T09:15:00Z`) }]);
+  const { slots } = await investorRequestService.publicSlots('regime');
+  assert.deepEqual(slots, [`${day}T09:00:00.000Z`, `${day}T09:30:00.000Z`, `${day}T09:45:00.000Z`]);
+
+  const values = { guichet: 'regime', fullName: 'Kossi Mensah', email: 'K@b.tg', projectSummary: 'Usine de transformation de soja.' };
+  await assert.rejects(investorRequestService.book({ ...values, startsAt: `${day}T09:10:00Z` }), (error) => error.code === 'GUICHET_SLOT_INVALID');
+  context.mock.method(investorRequestRepository, 'createWithMeeting', async () => { throw new UniqueConstraintError({}); });
+  await assert.rejects(investorRequestService.book({ ...values, startsAt: `${day}T09:30:00Z` }), (error) => error.code === 'GUICHET_SLOT_TAKEN');
+
+  const sent = [];
+  context.mock.method(investorRequestRepository, 'createWithMeeting', async (request, meeting) => ({ investorRequest: request, meeting }));
+  context.mock.method(notificationService, 'investorRequestReceived', (item) => { sent.push(item.source); });
+  context.mock.method(notificationService, 'investorMeetingChanged', (kind) => { sent.push(kind); });
+  const result = await investorRequestService.book({ ...values, startsAt: `${day}T09:30:00Z` }, 'fr');
+  assert.equal(result.location, 'Stand API-ZF · guichet « Quel régime pour mon investissement ? »');
+  assert.deepEqual(sent, ['online_booking', 'scheduled']);
+});
+
+
+
+test('Investor Desk : un rendez-vous se valide après son heure, s’annule en prévenant l’investisseur, puis ne bouge plus', async (context) => {
+  const request = { id: 'ir-9', email: 'a@b.tg' };
+  const past = { id: 'm-past', startsAt: new Date(Date.now() - 60000), status: 'scheduled' };
+  const future = { id: 'm-future', startsAt: new Date(Date.now() + 3600000), status: 'scheduled' };
+  const emails = [];
+  context.mock.method(investorRequestRepository, 'findById', async () => request);
+  context.mock.method(investorRequestRepository, 'findMeeting', async (id) => ({ 'm-past': past, 'm-future': future })[id] || null);
+  context.mock.method(investorRequestRepository, 'updateMeeting', async (meeting, values) => Object.assign(meeting, values));
+  context.mock.method(notificationService, 'investorMeetingChanged', (kind) => { emails.push(kind); });
+
+  await assert.rejects(investorRequestService.setMeetingStatus('ir-9', 'm-future', 'held'), (error) => error.code === 'INVESTOR_MEETING_NOT_STARTED');
+  await investorRequestService.setMeetingStatus('ir-9', 'm-past', 'held');
+  assert.equal(past.status, 'held');
+  await investorRequestService.setMeetingStatus('ir-9', 'm-future', 'cancelled');
+  assert.deepEqual(emails, ['cancelled']);
+  await assert.rejects(investorRequestService.updateMeeting('ir-9', 'm-future', { startsAt: new Date(Date.now() + 7200000), location: 'Hub' }), (error) => error.code === 'INVESTOR_MEETING_CLOSED');
 });
 
 const liveQuestionService = require('../src/modules/live-question/live-question.service');
@@ -1245,4 +1551,31 @@ test('une demande Investor Desk saisie dans le back office n’est rattachée à
   assert.equal(created[0].email, 'ama@example.com');
   assert.equal(investorRequestValidation.createManual.validate({ ...values, email: 'pas-un-email' }).error?.details[0].path[0], 'email');
   assert.equal(investorRequestValidation.createPublic.validate({ ...values, occupantId: 'ancien-client', consentApizf: true }, { stripUnknown: true }).value.occupantId, undefined);
+});
+
+test('les formats du Studio se règlent dans Paramètres ; un format inconnu ou encore utilisé est refusé', async (context) => {
+  const { StudioInvitation } = require('../src/models');
+  context.mock.method(studioInvitationRepository, 'create', async (values) => values);
+  context.mock.method(notificationService, 'studioInvited', () => {});
+  const admin = { id: 'u1', role: 'super-admin' };
+
+  await assert.rejects(studioInvitationService.create(admin, { guestName: 'Kossi', email: 'k@b.tg', format: 'podcast' }), (error) => error.code === 'STUDIO_FORMAT_UNKNOWN');
+  assert.equal(settingsService.studioFormatLabel('face_to_face', 'en'), 'Face-to-face interview');
+  assert.equal(settingsService.studioFormatLabel('face_to_face', 'fr'), 'Face-à-face');
+
+  context.mock.method(StudioInvitation, 'count', async () => 2);
+  await assert.rejects(settingsService.update({ studioFormats: [{ key: 'two_minutes', label: '2 min avec…' }] }, admin), (error) => error.code === 'STUDIO_FORMAT_IN_USE');
+});
+
+test('l’accueil « Nos services » ne montre que les services et démarches publiés, sans champ interne', async (context) => {
+  const serviceService = require('../src/modules/service/service.service');
+  const serviceRepository = require('../src/modules/service/service.repository');
+  const asked = [];
+  context.mock.method(serviceRepository, 'findServices', async (publishedOnly) => { asked.push(publishedOnly); return [{ id: 's1', stage: 1, title: 'Accueil et orientation', promise: 'Diagnostic', place: 'Guichet', limited: false, published: true, position: 1 }]; });
+  context.mock.method(serviceRepository, 'findProcedures', async (publishedOnly) => { asked.push(publishedOnly); return [{ id: 'p1', title: 'Demande de Carnet Bleu', domain: 'blue_book', url: null, published: true, position: 1 }]; });
+
+  const result = await serviceService.getPublic('fr');
+  assert.deepEqual(asked, [true, true]);
+  assert.deepEqual(result.services, [{ id: 's1', stage: 1, title: 'Accueil et orientation', promise: 'Diagnostic', place: 'Guichet', limited: false }]);
+  assert.deepEqual(result.procedures, [{ id: 'p1', title: 'Demande de Carnet Bleu', domain: 'blue_book', url: null }]);
 });

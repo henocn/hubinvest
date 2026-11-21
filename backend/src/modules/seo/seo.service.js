@@ -20,10 +20,15 @@ const STATIC_PAGES = {
     description: 'Annuaire des entreprises et institutions présentes au Hub de l’Investissement de l’API-ZF : activités, stands et mises en relation.',
     priority: '0.9',
   },
-  '/investor-desk': {
-    title: `Investor Desk · Investir au Togo · ${SITE_NAME}`,
-    description: 'Présentez votre projet d’investissement au Togo à l’équipe de l’API-ZF et obtenez un interlocuteur dédié pour en préparer la suite.',
+  '/guichets': {
+    title: `Les guichets du Stand API-ZF · ${SITE_NAME}`,
+    description: 'Prenez rendez-vous à l’un des trois guichets du Stand API-ZF : votre projet d’investissement, le régime qui vous convient, les difficultés de votre entreprise.',
     priority: '0.9',
+  },
+  '/guichets/rappel': {
+    title: `Être recontacté par l’API-ZF · ${SITE_NAME}`,
+    description: 'Laissez vos coordonnées et votre question : un membre de l’équipe de l’API-ZF vous recontacte.',
+    priority: '0.7',
   },
   '/rencontres': {
     title: `Rencontres professionnelles · ${SITE_NAME}`,

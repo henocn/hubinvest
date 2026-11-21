@@ -32,20 +32,23 @@ const overview = async (user) => {
   const today = startOfToday();
 
   const [
-    investorNew, investorInProgress, investorTotal,
+    investorNew, investorInProgress, investorTotal, investorOverdue,
     b2bPending, b2bOpenNeeds,
     studioPending, studioConfirmed,
     players, rewardsToHand, rewardsHanded,
     wheelPlayed, wheelPlayedToday, wheelToHand,
   ] = await Promise.all([
-    // L'Investor Desk est le guichet de l'API-ZF : ses chiffres ne concernent que le super administrateur.
+    // Les guichets et le registre unique sont réservés à l'API-ZF : leurs chiffres ne concernent que le super administrateur.
     isSuperAdmin ? InvestorRequest.count({ where: { status: 'new' } }) : 0,
     isSuperAdmin ? InvestorRequest.count({ where: { status: 'in_progress' } }) : 0,
     isSuperAdmin ? InvestorRequest.count() : 0,
+    // Alerte du document : contacts A dont la relance a dépassé son délai.
+    isSuperAdmin ? InvestorRequest.count({ where: { classification: 'A', status: { [Op.ne]: 'closed' }, nextFollowUpAt: { [Op.lt]: new Date() } } }) : 0,
     B2bProposal.count({ where: { status: 'pending' }, include: [{ model: B2bNeed, as: 'need', attributes: [], where: byStand, required: true }] }),
     B2bNeed.count({ where: { ...byStand, status: 'open' } }),
-    StudioInvitation.count({ where: { ...byStand, status: 'pending' } }),
-    StudioInvitation.count({ where: { ...byStand, status: 'confirmed' } }),
+    // Studio : invités qui n'ont pas encore choisi leur créneau, passages réservés à venir.
+    StudioInvitation.count({ where: { ...byStand, status: 'invited' } }),
+    StudioInvitation.count({ where: { ...byStand, status: 'booked', scheduledAt: { [Op.gte]: new Date() } } }),
     countPassports(occupantId),
     countPassports(occupantId, { status: 'completed' }),
     countPassports(occupantId, { status: 'redeemed' }),
@@ -62,7 +65,14 @@ const overview = async (user) => {
   };
 
   if (isSuperAdmin) {
-    result.investor = { new: investorNew, inProgress: investorInProgress, total: investorTotal };
+    // Indicateurs du document v4 : diagnostics réalisés, sollicitations d'accompagnement prises en charge (avec un engagement
+    // de suivi), et engagements dont la réponse promise n'est pas donnée à temps.
+    const [diagnosed, supportTaken, commitmentsOverdue] = await Promise.all([
+      InvestorRequest.count({ where: { diagnosedAt: { [Op.ne]: null } } }),
+      InvestorRequest.count({ where: { classification: 'support', commitmentDueAt: { [Op.ne]: null } } }),
+      InvestorRequest.count({ where: { classification: 'support', resolvedAt: null, commitmentDueAt: { [Op.lt]: new Date() } } }),
+    ]);
+    result.investor = { new: investorNew, inProgress: investorInProgress, total: investorTotal, overdue: investorOverdue, diagnosed, supportTaken, commitmentsOverdue };
     const [activeStands, contacts, contactsToday, siteRequests] = await Promise.all([
       Occupant.count({ where: { status: 'active' } }),
       Contact.count(),
@@ -75,7 +85,7 @@ const overview = async (user) => {
 
   // Ce qui attend une action : affiché en pastille dans le menu, au nombre exact.
   result.todo = {
-    ...(isSuperAdmin && { 'investor-requests': investorNew }),
+    ...(isSuperAdmin && { 'investor-requests': investorNew + investorOverdue + result.investor.commitmentsOverdue }),
     b2b: b2bPending,
     challenges: rewardsToHand,
     wheel: wheelToHand,

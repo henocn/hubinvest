@@ -26,7 +26,7 @@ const menuLinks = [
   { key: 'home', href: '/', Icon: Home, matches: (path) => path === '/' },
   { key: 'stands', href: '/stands', Icon: Search, matches: (path) => path.startsWith('/stands') },
   { key: 'meetings', href: '/rencontres', Icon: Handshake, matches: (path) => path === '/rencontres' || path.startsWith('/b2b') },
-  { key: 'investorDesk', href: '/investor-desk', Icon: Briefcase, matches: (path) => path === '/investor-desk' },
+  { key: 'guichets', href: '/guichets', Icon: Briefcase, matches: (path) => path.startsWith('/guichets') || path === '/investor-desk' },
   { key: 'challenges', href: '/defis', Icon: Star, matches: (path) => path.startsWith('/defis') || path === '/roue' },
 ];
 

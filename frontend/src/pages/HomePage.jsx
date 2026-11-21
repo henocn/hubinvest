@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { ArrowRight, MessageCircleQuestion } from 'lucide-react';
+import { ArrowRight, CalendarCheck, MessageCircleQuestion, PhoneCall, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { api, resolveAssetUrl } from '../lib/api';
 import { publicErrorMessage } from '../lib/public-error';
 import { useSiteSettings } from '../lib/settings';
 import LiveQuestionDialog from '../components/LiveQuestionDialog';
 import DayTimeline from '../components/DayTimeline';
+import HomeServices from '../components/HomeServices';
 
 const HUB_TIME_ZONE = 'Africa/Lome';
 
@@ -77,8 +78,13 @@ function HomeHero({ data, formats, now }) {
       <div className="public-container">
         <div className="home-hero-heading">
           <p className="home-hero-date">{formats.day.format(data ? new Date(data.date) : new Date(now))}</p>
-          <h1>{t('home.title')}</h1>
+          <h1>{t('home.signature')}</h1>
         </div>
+        <nav className="home-hero-actions" aria-label={t('home.actions')}>
+          <Link className="button button-primary" to="/guichets"><CalendarCheck size={18} aria-hidden="true" />{t('home.book')}</Link>
+          <Link className="button home-hero-action" to="/guichets/rappel"><PhoneCall size={18} aria-hidden="true" />{t('home.callBack')}</Link>
+          <Link className="button home-hero-action" to="/defis"><Star size={18} aria-hidden="true" />{t('home.play')}</Link>
+        </nav>
         {featured && (
           <div className={`home-hero-now${live ? ' is-live' : ''}`}>
             <span className="home-hero-label">
@@ -180,12 +186,14 @@ function UpcomingSchedule({ events, formats }) {
   );
 }
 
-// Page d'accueil : ce qui se passe maintenant, le stand à l'affiche, le programme du jour et les prochains rendez-vous.
+// Page d'accueil (document v4, M1) : la signature et les trois actions, « Nos services » et les démarches en ligne,
+// puis ce qui se passe maintenant, l'entreprise à l'affiche, le programme du jour et les prochains rendez-vous.
 export default function HomePage() {
   const { t, i18n } = useTranslation();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [offer, setOffer] = useState(null);
   const now = useNow();
   const formats = useHubFormats(i18n.resolvedLanguage);
 
@@ -217,12 +225,20 @@ export default function HomePage() {
     };
   }, [t]);
 
+  // Les services changent rarement : chargés une fois, dans la langue du visiteur ; un échec n'empêche pas le programme.
+  useEffect(() => {
+    let active = true;
+    api.publicServices().then((result) => { if (active) setOffer(result); }).catch(() => {});
+    return () => { active = false; };
+  }, [i18n.resolvedLanguage]);
+
   const isEmpty = data && !data.spotlight && data.today.length === 0 && data.upcoming.length === 0;
 
   return (
     <>
       <HomeHero data={data} formats={formats} now={now} />
       <main className="public-container home-main">
+        {offer && <HomeServices services={offer.services} procedures={offer.procedures} />}
         {loading && <p className="public-message">{t('home.loading')}</p>}
         {error && <div className="public-message is-error"><p>{error}</p></div>}
         {!loading && !error && isEmpty && (

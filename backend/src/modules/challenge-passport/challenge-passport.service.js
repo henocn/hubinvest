@@ -146,4 +146,14 @@ const search = async (query) => (await challengePassportRepository.search(query.
   return { code: values.code, displayName: values.displayName, email: values.email, phone: values.phone, status: values.status };
 });
 
-module.exports = { createPublic, getPublic, list, listRewards, getByCode, redeem, redeemByCode, publicPayload, search };
+// Supprime un participant (super administrateur) : ses passages partent avec lui ; ses parties de roue restent, sans joueur.
+// Les stands traversés sont relevés avant la suppression pour rafraîchir leurs écrans.
+const remove = async (id) => {
+  const passport = await challengePassportRepository.findById(id);
+  if (!passport) throw new AppError(404, 'CHALLENGE_PASSPORT_NOT_FOUND', 'Participant introuvable.');
+  const occupantIds = await challengePassportRepository.findOccupantIds(id).catch(() => []);
+  await challengePassportRepository.remove(passport);
+  realtime.challengeChanged({ passportId: id, occupantIds });
+};
+
+module.exports = { createPublic, getPublic, list, listRewards, getByCode, redeem, redeemByCode, publicPayload, search, remove };

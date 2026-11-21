@@ -22,5 +22,7 @@ router.get('/rewards', rewardTeamOnly, asyncHandler(challengePassportController.
 router.get('/code/:code', rewardTeamOnly, validate(challengePassportValidation.rewardCodeParams, 'params'), asyncHandler(challengePassportController.getByCode));
 router.post('/redeem-by-code', rewardTeamOnly, validate(challengePassportValidation.rewardCode), asyncHandler(challengePassportController.redeemByCode));
 router.patch('/:id/redeem', rewardTeamOnly, validate(challengePassportValidation.idParams, 'params'), asyncHandler(challengePassportController.redeem));
+// Suppression d'un participant : super administrateur seulement.
+router.delete('/:id', requireRoles(roles.SUPER_ADMIN), validate(challengePassportValidation.idParams, 'params'), asyncHandler(challengePassportController.remove));
 
 module.exports = router;

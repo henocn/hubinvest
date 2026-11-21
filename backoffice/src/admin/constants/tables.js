@@ -1,12 +1,12 @@
 import { formatDate } from '../../lib/excel';
-import { b2bProposalLabels, challengeStatusLabels, investorStatusLabels, programTypeLabels, roleLabels, wheelPlayStatus } from './access';
+import { b2bProposalLabels, challengeStatusLabels, companyRegimeLabels, contactSourceLabels, guichetLabels, investorClassLabels, investorStatusLabel, programTypeLabels, roleLabels, wheelPlayStatus } from './access';
 
 const isToClaim = (item) => item.result?.kind === 'prize' && !item.claimedAt;
 const fullName = (person) => (person ? [person.firstName, person.lastName].filter(Boolean).join(' ') : '');
 const byText = (value) => (a, b) => String(value(a) || '').localeCompare(String(value(b) || ''), 'fr', { sensitivity: 'base' });
 const byDate = (value, direction) => (a, b) => direction * ((new Date(value(a) || 0)).getTime() - (new Date(value(b) || 0)).getTime());
 const passageList = (passport) => (passport.passages || [])
-  .map((passage) => `${passage.occupant?.name || ''}${passage.classification ? ` (${passage.classification})` : ''}`)
+  .map((passage) => passage.occupant?.name || '')
   .join(', ');
 
 // Tris proposés partout : le plus récent d'abord par défaut, puis plus ancien et A-Z.
@@ -66,16 +66,35 @@ export const tableSettings = {
     ],
   },
   'investor-requests': {
-    sorts: sorts((item) => item.createdAt, (item) => item.fullName),
-    exportName: 'investor-desk',
+    // Les relances les plus urgentes peuvent passer en tête (sans date de relance : en fin de liste).
+    sorts: [
+      ...sorts((item) => item.createdAt, (item) => item.fullName),
+      { value: 'follow-up', label: 'Relance la plus proche', compare: (a, b) => {
+        if (!a.nextFollowUpAt || !b.nextFollowUpAt) return Number(!a.nextFollowUpAt) - Number(!b.nextFollowUpAt);
+        return new Date(a.nextFollowUpAt) - new Date(b.nextFollowUpAt);
+      } },
+    ],
+    exportName: 'registre-guichets',
     columns: () => [
-      { header: 'Reçue le', value: (item) => formatDate(item.createdAt), width: 18 },
+      { header: 'Reçu le', value: (item) => formatDate(item.createdAt), width: 18 },
+      { header: 'Guichet', value: (item) => guichetLabels[item.guichet] || item.guichet, width: 32 },
+      { header: 'Origine', value: (item) => contactSourceLabels[item.source] || item.source, width: 20 },
       { header: 'Nom', value: (item) => item.fullName, width: 26 },
+      { header: 'Structure', value: (item) => item.organization || item.difficulty?.company, width: 28 },
       { header: 'E-mail', value: (item) => item.email, width: 30 },
       { header: 'Téléphone', value: (item) => item.phone, width: 18 },
-      { header: 'Projet', value: (item) => item.projectSummary, width: 60 },
-      { header: 'Statut', value: (item) => investorStatusLabels[item.status] || item.status, width: 14 },
-      { header: 'Prochaine action', value: (item) => item.nextAction, width: 36 },
+      { header: 'Projet ou besoin', value: (item) => item.projectSummary, width: 60 },
+      { header: 'Classe', value: (item) => investorClassLabels[item.classification] || '', width: 22 },
+      { header: 'Responsable', value: (item) => [item.contactUser?.firstName, item.contactUser?.lastName].filter(Boolean).join(' '), width: 22 },
+      { header: 'Diagnostic le', value: (item) => formatDate(item.diagnosedAt), width: 18 },
+      { header: 'Régime', value: (item) => companyRegimeLabels[item.difficulty?.regime] || '', width: 22 },
+      { header: 'Difficulté', value: (item) => item.difficulty?.nature, width: 30 },
+      { header: 'Engagement', value: (item) => item.commitmentNote, width: 40 },
+      { header: 'Réponse due le', value: (item) => formatDate(item.commitmentDueAt), width: 18 },
+      { header: 'Réponse donnée le', value: (item) => formatDate(item.resolvedAt), width: 18 },
+      { header: 'Prochaine relance', value: (item) => formatDate(item.nextFollowUpAt), width: 18 },
+      { header: 'Statut', value: (item) => investorStatusLabel(item) || item.status, width: 16 },
+      { header: 'Étape suivante', value: (item) => item.nextAction, width: 36 },
       { header: 'Accord API-ZF', value: (item) => Boolean(item.consentApizf), width: 14 },
     ],
   },
@@ -92,6 +111,7 @@ export const tableSettings = {
       { header: 'Message', value: (item) => item.message, width: 60 },
       { header: 'Statut', value: (item) => b2bProposalLabels[item.status] || item.status, width: 14 },
       { header: 'Traitée par', value: (item) => fullName(item.handledBy), width: 24 },
+      { header: 'Rendez-vous fixés', value: (item) => item.meetingCount || 0, width: 16 },
     ],
   },
   challenges: {
@@ -104,7 +124,7 @@ export const tableSettings = {
       { header: 'Téléphone', value: (item) => item.phone || item.contact, width: 18 },
       { header: 'Code', value: (item) => item.code, width: 10 },
       { header: 'Stands validés', value: (item) => item.passageCount || 0, width: 15 },
-      { header: 'Stands (classement)', value: passageList, width: 60 },
+      { header: 'Stands visités', value: passageList, width: 60 },
       { header: 'Parcours', value: (item) => challengeStatusLabels[item.status] || item.status, width: 16 },
       { header: 'Récompense remise le', value: (item) => formatDate(item.redeemedAt), width: 20 },
     ],
@@ -125,7 +145,6 @@ export const tableSettings = {
       { header: 'Téléphone', value: (item) => item.player?.phone, width: 18 },
       { header: 'Résultat', value: (item) => item.result?.label, width: 30 },
       { header: 'Gagné', value: (item) => item.result?.kind === 'prize', width: 10 },
-      { header: 'Partenaire', value: (item) => item.result?.sponsor, width: 24 },
       { header: 'Lot remis le', value: (item) => formatDate(item.claimedAt), width: 18 },
       { header: 'Remis par', value: (item) => fullName(item.claimedBy), width: 24 },
     ],

@@ -3,6 +3,8 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Download, Plus, QrCode, Search, Ticket } from 'lucide-react';
 import ConfirmDelete from '../components/ConfirmDelete';
 import OccupantDetail from '../components/OccupantDetail';
+import B2bProposalDetail from '../components/B2bProposalDetail';
+import InvestorRequestDetail from '../components/InvestorRequestDetail';
 import { useRowSelection } from '../components/RowSelection';
 import ConfirmReward from '../components/ConfirmReward';
 import ConfirmDecision from '../components/ConfirmDecision';
@@ -23,6 +25,7 @@ import WheelCodeDialog from '../components/WheelCodeDialog';
 import { publicBaseUrl } from '../constants/access';
 import { tableSettings } from '../constants/tables';
 import { exportToExcel } from '../../lib/excel';
+import { guichetShortLabels } from '../constants/access';
 import { api } from '../lib/api';
 import { useRealtimeEvent } from '../../lib/realtime';
 import { adminSections, groupTabs, sectionGroups } from '../../navigation';
@@ -30,9 +33,9 @@ import { useDashboard } from '../dashboard';
 
 const sectionMeta = {
   occupants: { title: 'Stands' },
-  users: { title: 'Accès' },
+  users: { title: 'Utilisateurs' },
   program: { title: 'Programme' },
-  'investor-requests': { title: 'Investor Desk' },
+  'investor-requests': { title: 'Guichets' },
   b2b: { title: 'Rencontre B2B' },
   challenges: { title: 'Défi de passage' },
   wheel: { title: 'Roue des opportunités' },
@@ -42,13 +45,17 @@ const sectionMeta = {
 export default function BackofficePage({ session, onLogout, section }) {
   const isSuperAdmin = session.user.role === 'super-admin';
   const todo = useDashboard()?.data?.todo || {};
-  // Onglets de la rubrique quand elle fait partie d'un groupe (Rencontres, Jeux).
+  // Onglets de la rubrique quand elle fait partie d'un groupe (Jeux).
   const group = adminSections.find((item) => item.section === section)?.group;
   const tabs = group ? groupTabs(group, session.user.role) : [];
   const location = useLocation();
   const navigate = useNavigate();
   // Fiche d'un stand : /stands/<id>.
   const detailId = section === 'occupants' ? location.pathname.split('/')[2] || null : null;
+  // Fiche d'une demande B2B : /b2b/<id> (rendez-vous et comptes rendus).
+  const b2bDetailId = section === 'b2b' ? location.pathname.split('/')[2] || null : null;
+  // Fiche d'un contact des guichets : /guichets/<id> (diagnostic ou difficulté, classe, rendez-vous, relances).
+  const investorDetailId = section === 'investor-requests' ? location.pathname.split('/')[2] || null : null;
   const [occupants, setOccupants] = useState([]);
   const [users, setUsers] = useState([]);
   const [investorRequests, setInvestorRequests] = useState([]);
@@ -77,6 +84,7 @@ export default function BackofficePage({ session, onLogout, section }) {
   const [pendingReward, setPendingReward] = useState(null);
   const [rewardError, setRewardError] = useState('');
   const [rewarding, setRewarding] = useState(false);
+  const [pendingClaim, setPendingClaim] = useState(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -177,12 +185,13 @@ export default function BackofficePage({ session, onLogout, section }) {
   const query = search.trim().toLowerCase();
   const visibleOccupants = useMemo(() => occupants.filter((occupant) => !query || [occupant.name, occupant.activity, occupant.standLabel].some((value) => String(value || '').toLowerCase().includes(query))), [occupants, query]);
   const visibleUsers = useMemo(() => users.filter((user) => !query || [user.firstName, user.lastName, user.email, user.role, user.occupant?.name].some((value) => String(value || '').toLowerCase().includes(query))), [users, query]);
-  const visibleInvestorRequests = useMemo(() => investorRequests.filter((item) => !query || [item.fullName, item.email, item.projectSummary, item.nextAction].some((value) => String(value || '').toLowerCase().includes(query))), [investorRequests, query]);
+  const [guichetFilter, setGuichetFilter] = useState('');
+  const visibleInvestorRequests = useMemo(() => investorRequests.filter((item) => (!guichetFilter || item.guichet === guichetFilter) && (!query || [item.fullName, item.email, item.organization, item.projectSummary, item.nextAction].some((value) => String(value || '').toLowerCase().includes(query)))), [investorRequests, query, guichetFilter]);
   const visibleB2bProposals = useMemo(() => b2bProposals.filter((item) => !query || [item.fullName, item.email, item.phone, item.message, item.need?.title, item.need?.occupant?.name].some((value) => String(value || '').toLowerCase().includes(query))), [b2bProposals, query]);
   const visibleProgramEvents = useMemo(() => programEvents.filter((item) => !query || [item.title, item.location, item.description, item.occupant?.name].some((value) => String(value || '').toLowerCase().includes(query))), [programEvents, query]);
   const visibleChallengePassports = useMemo(() => challengePassports.filter((item) => !query || [item.displayName, item.email, item.phone, item.contact, item.code, ...(item.passages || []).flatMap((passage) => [passage.occupant?.name, passage.validatedBy?.firstName, passage.validatedBy?.lastName])].some((value) => String(value || '').toLowerCase().includes(query))), [challengePassports, query]);
 
-  const visibleWheelPlays = useMemo(() => wheel.plays.filter((item) => !query || [item.code, item.player?.displayName, item.player?.email, item.player?.phone, item.result.label, item.result.sponsor].some((value) => String(value || '').toLowerCase().includes(query))), [wheel.plays, query]);
+  const visibleWheelPlays = useMemo(() => wheel.plays.filter((item) => !query || [item.code, item.player?.displayName, item.player?.email, item.player?.phone, item.result.label].some((value) => String(value || '').toLowerCase().includes(query))), [wheel.plays, query]);
 
   // Chaque rubrique s'ouvre avec une recherche vide.
   useEffect(() => {
@@ -275,6 +284,21 @@ export default function BackofficePage({ session, onLogout, section }) {
     }
   };
 
+  // Lot de la roue remis depuis l'historique : ce tour précis, après confirmation.
+  const confirmWheelClaim = async () => {
+    setRewarding(true);
+    setRewardError('');
+    try {
+      await api.claimWheelPlay(session.token, pendingClaim.id);
+      setPendingClaim(null);
+      await reloadTopic('wheel');
+    } catch (requestError) {
+      setRewardError(requestError.message);
+    } finally {
+      setRewarding(false);
+    }
+  };
+
   const requestOccupantDelete = (occupant) => {
     setDeleteError('');
     setPendingDelete({ type: 'occupant', item: occupant, label: `l'occupant ${occupant.name}` });
@@ -289,6 +313,16 @@ export default function BackofficePage({ session, onLogout, section }) {
   const requestProgramDelete = (programEvent) => {
     setDeleteError('');
     setPendingDelete({ type: 'program', item: programEvent, label: programEvent.type === 'spotlight' ? `la mise à l’affiche de ${programEvent.occupant?.name || 'ce stand'}` : `« ${programEvent.title} » du programme` });
+  };
+
+  const requestPassportDelete = (passport) => {
+    setDeleteError('');
+    setPendingDelete({ type: 'challenge-passport', item: passport, label: `le participant ${passport.displayName} (code ${passport.code})` });
+  };
+
+  const requestWheelPlayDelete = (play) => {
+    setDeleteError('');
+    setPendingDelete({ type: 'wheel-play', item: play, label: `la partie ${play.code}${play.player ? ` de ${play.player.displayName}` : ''} (${play.result.label})` });
   };
 
   const requestB2bProposalDelete = (proposal) => {
@@ -315,6 +349,8 @@ export default function BackofficePage({ session, onLogout, section }) {
       if (pendingDelete.type === 'occupant') await api.deleteOccupant(session.token, pendingDelete.item.id);
       else if (pendingDelete.type === 'program') await api.deleteProgramEvent(session.token, pendingDelete.item.id);
       else if (pendingDelete.type === 'b2b-proposal') await api.deleteB2bProposal(session.token, pendingDelete.item.id);
+      else if (pendingDelete.type === 'wheel-play') await api.deleteWheelPlay(session.token, pendingDelete.item.id);
+      else if (pendingDelete.type === 'challenge-passport') await api.deleteChallengePassport(session.token, pendingDelete.item.id);
       else await api.deleteUser(session.token, pendingDelete.item.id);
       setPendingDelete(null);
       if (pendingDelete.type === 'occupant' && detailId) navigate('/stands', { replace: true });
@@ -328,7 +364,7 @@ export default function BackofficePage({ session, onLogout, section }) {
 
   return (
     <>
-      {detailId ? (
+      {investorDetailId ? <InvestorRequestDetail key={investorDetailId} id={investorDetailId} session={session} onLogout={onLogout} /> : b2bDetailId ? <B2bProposalDetail key={b2bDetailId} id={b2bDetailId} session={session} onLogout={onLogout} /> : detailId ? (
         loading ? <main className="admin-workspace"><p className="panel-message">Chargement…</p></main>
           : occupants.find((item) => item.id === detailId) ? (
             <OccupantDetail
@@ -348,7 +384,6 @@ export default function BackofficePage({ session, onLogout, section }) {
         <header className="workspace-header">
           {tabs.length > 1 ? (
             // Groupe de rubriques : un titre et ses onglets, avec ce qui attend une action.
-            // Un administrateur de stand n'a que la Rencontre B2B dans Rencontres : un simple titre.
             <div className="section-heading">
               <h1>{sectionGroups[group].label}</h1>
               <nav className="section-tabs" aria-label={sectionGroups[group].label}>
@@ -364,7 +399,7 @@ export default function BackofficePage({ session, onLogout, section }) {
             {section === 'challenges' && <button className="button button-secondary" type="button" onClick={() => setQrCode({ title: 'QR des Défis', url: `${publicBaseUrl}/defis`, fileName: 'hubinvest-defis' })}><QrCode size={16} /> QR des Défis</button>}
             {section === 'program' && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: 'program', item: null })}><Plus size={16} /> Ajouter au programme</button>}
             {section === 'wheel' && <button className="button button-primary" type="button" onClick={() => setWheelCode({ data: null, loading: false, error: '' })}><Ticket size={16} /> Code de jeu</button>}
-            {(section === 'occupants' || section === 'users' || section === 'investor-requests') && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: section === 'occupants' ? 'occupant' : section === 'users' ? 'user' : 'investor-request', item: null })}><Plus size={16} /> {section === 'occupants' ? 'Stand' : section === 'users' ? 'Nouvel utilisateur' : 'Demande'}</button>}
+            {(section === 'occupants' || section === 'users' || section === 'investor-requests') && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: section === 'occupants' ? 'occupant' : section === 'users' ? 'user' : 'investor-request', item: null })}><Plus size={16} /> {section === 'occupants' ? 'Stand' : section === 'users' ? 'Nouvel utilisateur' : 'Contact'}</button>}
           </div>}
         </header>
 
@@ -373,6 +408,12 @@ export default function BackofficePage({ session, onLogout, section }) {
             <div className="data-toolbar-controls">
               <label className="admin-search-field"><Search size={15} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Rechercher" aria-label={section === 'occupants' ? 'Rechercher un occupant' : section === 'users' ? 'Rechercher un utilisateur' : section === 'program' ? 'Rechercher dans le programme' : section === 'b2b' ? 'Rechercher une demande B2B' : section === 'challenges' ? 'Rechercher un participant' : section === 'wheel' ? 'Rechercher une partie' : 'Rechercher une demande'} /></label>
               {toolbarNote && <span className="data-note">{toolbarNote}</span>}
+              {section === 'investor-requests' && (
+                <select value={guichetFilter} onChange={(event) => setGuichetFilter(event.target.value)} aria-label="Guichet">
+                  <option value="">Tous les guichets</option>
+                  {Object.entries(guichetShortLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              )}
               <select value={sortValue || settings.sorts[0].value} onChange={(event) => setSortValue(event.target.value)} aria-label="Trier">
                 {settings.sorts.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
               </select>
@@ -387,10 +428,10 @@ export default function BackofficePage({ session, onLogout, section }) {
           {!loading && !error && section === 'occupants' && <OccupantsTable selection={selection} occupants={rows} contactStats={contactStats} query={query} onEdit={(item) => setDrawer({ type: 'occupant', item })} onDelete={requestOccupantDelete} />}
           {!loading && !error && section === 'users' && <UsersTable selection={selection} users={rows} query={query} currentUserId={session.user.id} onEdit={(item) => setDrawer({ type: 'user', item })} onDelete={requestUserDelete} />}
           {!loading && !error && section === 'program' && <ProgramEventsTable selection={selection} events={rows} query={query} onEdit={(item) => setDrawer({ type: 'program', item })} onDelete={requestProgramDelete} />}
-          {!loading && !error && section === 'investor-requests' && <InvestorRequestsTable selection={selection} requests={rows} query={query} onEdit={(item) => setDrawer({ type: 'investor-request', item })} />}
-          {!loading && !error && section === 'b2b' && <B2bProposalsTable selection={selection} proposals={rows} query={query} showStand={isSuperAdmin} onDecide={requestDecision} onEdit={(item) => setDrawer({ type: 'b2b-proposal', item })} onDelete={requestB2bProposalDelete} />}
-          {!loading && !error && section === 'challenges' && <ChallengePassportsTable selection={selection} passports={rows} query={query} allowReward={isSuperAdmin} onRedeem={(passport) => { setRewardError(''); setPendingReward(passport); }} />}
-          {!loading && !error && section === 'wheel' && <WheelPlaysTable selection={selection} plays={rows} query={query} />}
+          {!loading && !error && section === 'investor-requests' && <InvestorRequestsTable selection={selection} requests={rows} query={query} onOpen={(item) => navigate(`/guichets/${item.id}`)} />}
+          {!loading && !error && section === 'b2b' && <B2bProposalsTable selection={selection} proposals={rows} query={query} showStand={isSuperAdmin} onOpen={(item) => navigate(`/b2b/${item.id}`)} onDecide={requestDecision} onEdit={(item) => setDrawer({ type: 'b2b-proposal', item })} onDelete={requestB2bProposalDelete} />}
+          {!loading && !error && section === 'challenges' && <ChallengePassportsTable selection={selection} passports={rows} query={query} allowReward={isSuperAdmin} onRedeem={(passport) => { setRewardError(''); setPendingReward(passport); }} onDelete={isSuperAdmin ? requestPassportDelete : undefined} />}
+          {!loading && !error && section === 'wheel' && <WheelPlaysTable selection={selection} plays={rows} query={query} onClaim={(play) => { setRewardError(''); setPendingClaim(play); }} onDelete={isSuperAdmin ? requestWheelPlayDelete : undefined} />}
         </section>
       </main>
       )}
@@ -398,11 +439,12 @@ export default function BackofficePage({ session, onLogout, section }) {
       {drawer?.type === 'occupant' && <OccupantDrawer occupant={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'user' && <UserDrawer user={drawer.item} occupants={occupants} token={session.token} currentRole={session.user.role} currentUserId={session.user.id} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'program' && <ProgramEventDrawer programEvent={drawer.item} occupants={occupants} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
-      {drawer?.type === 'investor-request' && <InvestorRequestDrawer investorRequest={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
+      {drawer?.type === 'investor-request' && <InvestorRequestDrawer token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'b2b-proposal' && <B2bProposalDrawer proposal={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {wheelCode && <WheelCodeDialog codes={wheel.codes} created={wheelCode.data} loading={wheelCode.loading} error={wheelCode.error} onNew={generateWheelCode} onClose={() => setWheelCode(null)} />}
       {pendingDelete && <ConfirmDelete subject={pendingDelete} loading={deleting} error={deleteError} onCancel={() => setPendingDelete(null)} onConfirm={confirmDelete} />}
       {pendingDecision && <ConfirmDecision {...pendingDecision} loading={deciding} error={decisionError} onCancel={() => setPendingDecision(null)} onConfirm={confirmDecision} />}
+      {pendingClaim && <ConfirmReward passport={{ displayName: pendingClaim.player?.displayName || 'ce joueur', code: pendingClaim.code }} prize={pendingClaim.result.label} loading={rewarding} error={rewardError} onCancel={() => setPendingClaim(null)} onConfirm={confirmWheelClaim} />}
       {pendingReward && <ConfirmReward passport={pendingReward} loading={rewarding} error={rewardError} onCancel={() => setPendingReward(null)} onConfirm={confirmReward} />}
       {qrCode && <QrCodeDialog {...qrCode} onClose={() => setQrCode(null)} />}
     </>

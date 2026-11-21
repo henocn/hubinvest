@@ -18,10 +18,6 @@ module.exports = (sequelize, DataTypes) =>
         type: DataTypes.STRING(60),
         allowNull: false,
       },
-      sponsor: {
-        type: DataTypes.STRING(120),
-        allowNull: true,
-      },
       quantity: {
         type: DataTypes.INTEGER,
         allowNull: true,

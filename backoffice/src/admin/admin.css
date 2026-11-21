@@ -65,7 +65,7 @@
 .admin-app .button-large { padding: 12px 16px; margin-top: 3px; }
 .admin-app .admin-icon-button { width: 32px; height: 32px; padding: 0; display: inline-grid; place-items: center; flex: 0 0 auto; border: 1px solid #c9cccf; border-radius: 4px; color: #606469; background: #fff; }
 .admin-app .admin-icon-button:hover { color: var(--ink); background: #f3f3f2; }
-.admin-app .admin-icon-button:disabled, .admin-app .table-action:disabled { cursor: not-allowed; opacity: .42; }
+.admin-app .admin-icon-button:disabled { cursor: not-allowed; opacity: .42; }
 
 .admin-app .admin-icon-button.is-active { color: var(--green); border-color: #bcdccf; background: #edf3f1; }
 
@@ -115,6 +115,8 @@
 .admin-app .table-action.is-accept:hover { color: #fff; background: #0f5541; }
 .admin-app .table-action.is-decline { color: #a62039; border-color: #e3b3bd; background: #fff; }
 .admin-app .table-action.is-decline:hover { color: #8c1a30; border-color: #d48f9d; background: #fff3f5; }
+/* Bouton indisponible : grisé plein, bien visible, sans réagir au survol. */
+.admin-app .table-action:disabled, .admin-app .table-action:disabled:hover { cursor: not-allowed; color: #7c8084; border-color: #c4c7ca; background: #e4e6e8; }
 .admin-app .row-actions-divider { width: 1px; align-self: stretch; margin: 2px 2px; background: var(--grid); }
 .admin-app .table-action.is-copied { color: var(--green); border-color: rgba(21, 108, 83, .35); background: #edf3f1; }
 .admin-app .studio-date { min-width: 145px; }
@@ -147,6 +149,9 @@
 .admin-app .status-pill { width: fit-content; display: inline-flex; align-items: center; gap: 5px; padding: 2px 7px; border-radius: 3px; color: #686c70; background: #efefed; font-size: 11px; font-weight: 700; }
 .admin-app .status-pill.is-active { color: var(--green); background: #e7f3ee; }
 .admin-app .status-pill.is-new { color: #6f5700; background: #fff4c2; }
+/* Étape terminée (lot remis) : fond vert plein, impossible à confondre avec un statut neutre comme « Perdu ». */
+.admin-app .status-pill.is-done { color: #fff; background: var(--green); }
+.admin-app .status-pill.is-lost { color: #fff; background: var(--red); }
 .admin-app .panel-message { margin: 0; padding: 14px 12px; color: var(--muted); font-size: 13px; }
 .admin-app .panel-message.is-error { color: #ba0024; }
 .admin-app .admin-empty-state { margin: 0; padding: 14px 12px; color: var(--muted); font-size: 13px; }
@@ -214,6 +219,64 @@
 .admin-app .wheel-code-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 10px 0 0; color: var(--muted); font-size: 12px; }
 .admin-app .wheel-code-legend span { width: 12px; height: 12px; margin-left: 6px; border: 1px solid var(--frame); border-radius: 2px; }
 .admin-app .wheel-code-legend span:first-child { margin-left: 0; }
+/* Rencontre B2B : choix du créneau, compte rendu en un clic, note du rendez-vous. */
+.admin-app .meeting-slots { margin: 0; padding: 0; border: 0; }
+.admin-app .meeting-slots legend { margin-bottom: 8px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.admin-app .meeting-slots > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.admin-app .meeting-slot { min-width: 64px; min-height: 32px; border: 1px solid #c9cccf; border-radius: 4px; color: var(--ink); background: #fff; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.admin-app .meeting-slot:hover { background: #f4f5f5; }
+.admin-app .meeting-slot.is-selected { border-color: var(--green); color: #fff; background: var(--green); }
+.admin-app .meeting-report { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.admin-app .meeting-report small { display: inline; margin: 0; }
+.admin-app .meeting-outcome.is-held_follow_up { border-color: rgba(21, 108, 83, .4); color: var(--green); }
+.admin-app .meeting-outcome.is-no_show { border-color: #e3b3bd; color: #a62039; }
+/* Paramètres de l'Investor Desk : liste des informations de qualification. */
+.admin-app .qualification-settings { display: grid; gap: 8px; padding: 12px; }
+.admin-app .qualification-setting { display: grid; grid-template-columns: 24px minmax(0, 1.4fr) 140px minmax(0, 1.6fr) 28px; align-items: center; gap: 8px; }
+.admin-app .qualification-setting.studio-format-setting { grid-template-columns: 24px minmax(0, 1fr) minmax(0, 1fr) 28px; }
+.admin-app .qualification-setting-number { color: var(--muted); font-size: 12px; font-weight: 700; text-align: right; }
+.admin-app .qualification-settings-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 6px; }
+.admin-app .qualification-settings-actions .button-secondary { margin-right: auto; }
+@media (max-width: 720px) { .admin-app .qualification-setting { grid-template-columns: 24px minmax(0, 1fr) 28px; } .admin-app .qualification-setting select, .admin-app .qualification-setting > input:nth-of-type(2), .admin-app .qualification-setting > span:not(.qualification-setting-number) { grid-column: 2; } }
+/* Menu contextuel d'une ligne (trois points verticaux). */
+.admin-app .row-menu { position: relative; display: inline-flex; }
+.admin-app .row-menu-list { position: fixed; z-index: 40; min-width: 170px; margin: 0; padding: 4px 0; border: 1px solid var(--frame); border-radius: 4px; background: #fff; box-shadow: 0 8px 24px rgba(15, 24, 34, .14); list-style: none; }
+.admin-app .row-menu-list button { width: 100%; padding: 8px 14px; border: 0; color: var(--ink); background: none; font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.admin-app .row-menu-list button:hover:not(:disabled) { background: #f4f5f5; }
+.admin-app .row-menu-list button:disabled { color: #a3a7ab; cursor: not-allowed; }
+.admin-app .row-menu-list button.is-danger { color: #a62039; }
+/* Guichets : classe A·B·C ou Accompagnement, échéance en retard, responsable, diagnostic et fiche « difficultés ». */
+.admin-app .investor-class { width: 24px; height: 24px; display: inline-grid; place-items: center; border-radius: 4px; color: #fff; font-size: 12px; font-weight: 800; }
+.admin-app .investor-class.is-A { background: var(--red); }
+.admin-app .investor-class.is-B { background: #b58400; }
+.admin-app .investor-class.is-C { color: #4d4d4d; background: #e4e6e8; }
+.admin-app .investor-late { color: #b70f2c; font-weight: 700; }
+.admin-app .investor-overdue { margin: 0 0 14px; border: 1px solid #efc6ce; background: #fff3f5; }
+.admin-app .investor-saved { color: var(--green); font-size: 12px; font-weight: 700; }
+.admin-app .investor-follow, .admin-app .investor-qualification { display: grid; gap: 16px; padding: 14px; }
+.admin-app .investor-follow label, .admin-app .investor-qualification label { display: grid; gap: 6px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.admin-app .investor-classes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; border: 0; }
+.admin-app .investor-classes legend { margin-bottom: 8px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.admin-app .investor-class-option { position: relative; display: flex !important; align-items: flex-start; gap: 8px !important; padding: 10px; border: 1px solid var(--frame); border-radius: 4px; cursor: pointer; }
+.admin-app .investor-class-option input { position: absolute; opacity: 0; pointer-events: none; }
+.admin-app .investor-class-option:focus-within { outline: 2px solid var(--red); outline-offset: 1px; }
+.admin-app .investor-class-option.is-selected { border-color: var(--red); background: var(--red); }
+.admin-app .investor-class-option.is-selected strong, .admin-app .investor-class-option.is-selected small { color: #fff; }
+.admin-app .investor-class-option span { display: grid; gap: 2px; }
+.admin-app .investor-class-option strong { color: var(--ink); font-size: 13px; }
+.admin-app .investor-class-option small { color: var(--muted); font-size: 11.5px; font-weight: 500; }
+.admin-app .investor-follow-facts { border: 1px solid var(--grid); }
+.admin-app .investor-qualification-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px 16px; }
+.admin-app .investor-form-actions { display: flex; justify-content: flex-end; }
+.admin-app .meeting-note-cell { max-width: 320px; white-space: pre-wrap; }
+@media (max-width: 720px) { .admin-app .investor-classes { grid-template-columns: 1fr; } }
+.admin-app .investor-class.is-support { width: auto; padding: 0 6px; background: var(--green); }
+.admin-app .investor-owner { max-width: 320px; }
+.admin-app .investor-qualification-grid .is-wide { grid-column: 1 / -1; }
+.admin-app .investor-subtitle { margin: 4px 0 0; color: var(--ink); font-size: 13px; }
+.admin-app .investor-commitment { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 14px 14px 0; padding: 10px 12px; border: 1px solid #f0d58a; border-radius: 4px; background: #fff8e1; font-size: 13px; font-weight: 700; }
+.admin-app .investor-commitment.is-done { border-color: #b9dfcd; background: #eef8f3; }
+.admin-app .meeting-note { margin: 6px 0 0; color: var(--muted); font-size: 12px; line-height: 1.4; white-space: pre-wrap; }
 
 /* Barre des tableaux : recherche, filtre, tri, nombre de lignes et export. */
 .admin-app .data-toolbar { flex-wrap: wrap; }
@@ -328,6 +391,15 @@
 .admin-app .section-tabs a.is-active { color: #fff; background: var(--green); }
 .admin-app .section-tabs a.is-active:hover { background: var(--green-dark); }
 .admin-app .section-tabs a.is-active b { color: var(--red); background: #fff; }
+/* Onglets d'une fiche (boutons) : même apparence que les onglets de rubrique. */
+.admin-app .detail-tabs { justify-content: flex-start; margin: 22px 0 16px; }
+.admin-app .detail-tabs button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 18px; border: 1px solid var(--frame); color: var(--ink); background: #fff; font: inherit; font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+.admin-app .detail-tabs button:hover { background: #eceeee; }
+.admin-app .detail-tabs button + button { border-left: 0; }
+.admin-app .detail-tabs button.is-active { color: #fff; background: var(--green); }
+.admin-app .detail-tabs button.is-active:hover { background: var(--green-dark); }
+.admin-app .detail-tabs b { color: var(--ink); background: #e4e6e8; }
+.admin-app .detail-tabs button.is-active b { color: var(--green); background: #fff; }
 .admin-app .section-tabs b { min-width: 18px; padding: 0 5px; border-radius: 9px; color: #fff; background: var(--red); font-size: 11px; line-height: 18px; text-align: center; }
 
 /* Case à cocher dans un formulaire : sur la même ligne que son libellé. */
@@ -349,3 +421,4 @@
 .admin-app .cell-ellipsis { display: block; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .admin-app a.cell-link { color: var(--green); text-decoration: none; }
 .admin-app a.cell-link:hover { text-decoration: underline; }
+.admin-app tr.is-muted td { color: #8a8e92; }
