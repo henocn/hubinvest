@@ -32,7 +32,7 @@ import { useDashboard } from '../dashboard';
 
 const sectionMeta = {
   occupants: { title: 'Stands' },
-  users: { title: 'Accès' },
+  users: { title: 'Utilisateurs' },
   program: { title: 'Programme' },
   'investor-requests': { title: 'Investor Desk' },
   b2b: { title: 'Rencontre B2B' },
@@ -44,7 +44,7 @@ const sectionMeta = {
 export default function BackofficePage({ session, onLogout, section }) {
   const isSuperAdmin = session.user.role === 'super-admin';
   const todo = useDashboard()?.data?.todo || {};
-  // Onglets de la rubrique quand elle fait partie d'un groupe (Rencontres, Jeux).
+  // Onglets de la rubrique quand elle fait partie d'un groupe (Jeux).
   const group = adminSections.find((item) => item.section === section)?.group;
   const tabs = group ? groupTabs(group, session.user.role) : [];
   const location = useLocation();
@@ -382,7 +382,6 @@ export default function BackofficePage({ session, onLogout, section }) {
         <header className="workspace-header">
           {tabs.length > 1 ? (
             // Groupe de rubriques : un titre et ses onglets, avec ce qui attend une action.
-            // Un administrateur de stand n'a que la Rencontre B2B dans Rencontres : un simple titre.
             <div className="section-heading">
               <h1>{sectionGroups[group].label}</h1>
               <nav className="section-tabs" aria-label={sectionGroups[group].label}>

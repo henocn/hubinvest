@@ -18,7 +18,7 @@ const teamTopics = ['contacts', 'challenge', 'occupants', 'live-questions', 'acc
 // Liens de navigation : NavLink marque la rubrique ouverte, y compris ses sous-pages (/contacts/nouveau…).
 // La pastille donne le nombre exact d'éléments qui attendent une action dans la rubrique.
 // Dans la barre du bas, un libellé court remplace le nom complet quand il y en a un.
-// Une entrée qui regroupe plusieurs rubriques (Rencontres) additionne leurs pastilles et reste active sur chacune.
+// Une entrée qui regroupe plusieurs rubriques (Jeux) additionne leurs pastilles et reste active sur chacune.
 function NavItems({ links, className = '', short = false }) {
   const todo = useDashboard()?.data?.todo || {};
   const { pathname } = useLocation();

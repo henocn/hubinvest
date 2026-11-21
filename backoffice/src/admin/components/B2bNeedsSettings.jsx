@@ -6,7 +6,7 @@ import B2bNeedDrawer from './drawers/B2bNeedDrawer';
 import { useRowSelection } from './RowSelection';
 import B2bNeedsTable from './tables/B2bNeedsTable';
 
-// Besoins B2B publiés sur le site : créés et modifiés ici ; les demandes reçues se traitent dans Rencontres.
+// Besoins B2B publiés sur le site : créés et modifiés ici ; les demandes reçues se traitent dans Rencontre B2B.
 // Un administrateur de stand ne voit et ne crée que les besoins de son stand.
 export default function B2bNeedsSettings({ session, onLogout }) {
   const isSuperAdmin = session.user.role === 'super-admin';
