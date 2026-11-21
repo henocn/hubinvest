@@ -3370,3 +3370,11 @@ main h1:not(.sr-only)::before {
 .screen h1:not(.sr-only)::before {
   content: none;
 }
+
+/* Texte de la page servi aux moteurs de recherche, affiché un instant avant le chargement de l'application. */
+.seo-content {
+  width: min(100% - 40px, 1080px);
+  margin: 24px auto;
+  color: var(--ink);
+  line-height: 1.5;
+}

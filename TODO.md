@@ -67,7 +67,8 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 - [ ] Google Search Console et Bing Webmaster Tools : valider le domaine hub.investir.tg et soumettre le sitemap (compte API-ZF).
 - [ ] Lien vers hub.investir.tg depuis investir.tg et les réseaux de l'API-ZF : c'est le premier levier de visibilité.
 - [ ] Inciter chaque occupant à remplir son activité : c'est la description de sa fiche dans Google.
-- [ ] Données structurées « Event » quand les dates et le lieu de la Foire sont confirmés.
+- [x] Données structurées « Event » FIL 2026 (27 novembre – 13 décembre, pavillon Oti) et catalogue des six services de l’API-ZF sur l’accueil (21/11/2026).
+- [x] Titres et descriptions au vocabulaire v4 et aux recherches visées (investir au Togo, API-ZF, Zone Franche, Code des investissements, Carnet Bleu, FIL 2026) ; texte de la page servi dans le HTML pour l’accueil, les guichets, les entreprises, les besoins B2B et chaque fiche ; grand écran en `noindex`.
 
 ## Notifications asynchrones (e-mail et push)
 

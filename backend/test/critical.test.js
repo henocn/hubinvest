@@ -1153,7 +1153,7 @@ test('la roue renvoie vers la page Défis et une page inconnue répond 404', asy
 test('la fiche d’un stand reprend son nom, son activité et son image', async (context) => {
   context.mock.method(seoRepository, 'findStand', async () => ({ name: 'PIA', slug: 'pia', standLabel: 'Pavillon 2', activity: 'Aménagement <industriel>', coverImageUrl: '/uploads/covers/pia.jpg' }));
   const meta = await seoService.pageMeta('/stands/pia');
-  assert.equal(meta.title, 'PIA · Stands · Hub de l’Investissement');
+  assert.equal(meta.title, 'PIA · Entreprises · Hub de l’Investissement');
   assert.match(meta.description, /^PIA au Hub de l’Investissement \(Pavillon 2\) : Aménagement/);
   assert.match(meta.image, /\/uploads\/covers\/pia\.jpg$/);
   const tags = seoService.renderTags(meta);
@@ -1603,4 +1603,16 @@ test('grand écran : le service du jour tourne chaque jour, peut être imposé, 
   settings.screenMode = 'video';
   settings.screenVideoUrl = 'https://videos.tg/boucle.mp4';
   assert.deepEqual(await screenService.getPublic(), { mode: 'video', videoUrl: 'https://videos.tg/boucle.mp4' });
+});
+
+test('l’accueil servi aux moteurs contient son texte, l’événement FIL 2026 et les services ; le grand écran n’est pas indexé', async () => {
+  const seoService = require('../src/modules/seo/seo.service');
+  const home = await seoService.pageMeta('/');
+  assert.match(home.body, /Investir au Togo, nous facilitons votre réussite/);
+  assert.match(home.body, /Demande de Carnet Bleu/);
+  const graph = home.jsonLd['@graph'];
+  assert.equal(graph.find((item) => item['@type'] === 'Event').startDate, '2026-11-27');
+  assert.equal(graph.find((item) => item.hasOfferCatalog).hasOfferCatalog.itemListElement.length, 6);
+  assert.equal((await seoService.pageMeta('/ecran')).robots, 'noindex, nofollow');
+  assert.equal((await seoService.pageMeta('/investor-desk')).canonical, '/guichets/rappel');
 });
