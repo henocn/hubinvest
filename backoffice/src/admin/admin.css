@@ -65,7 +65,7 @@
 .admin-app .button-large { padding: 12px 16px; margin-top: 3px; }
 .admin-app .admin-icon-button { width: 32px; height: 32px; padding: 0; display: inline-grid; place-items: center; flex: 0 0 auto; border: 1px solid #c9cccf; border-radius: 4px; color: #606469; background: #fff; }
 .admin-app .admin-icon-button:hover { color: var(--ink); background: #f3f3f2; }
-.admin-app .admin-icon-button:disabled, .admin-app .table-action:disabled { cursor: not-allowed; opacity: .42; }
+.admin-app .admin-icon-button:disabled { cursor: not-allowed; opacity: .42; }
 
 .admin-app .admin-icon-button.is-active { color: var(--green); border-color: #bcdccf; background: #edf3f1; }
 
@@ -115,6 +115,8 @@
 .admin-app .table-action.is-accept:hover { color: #fff; background: #0f5541; }
 .admin-app .table-action.is-decline { color: #a62039; border-color: #e3b3bd; background: #fff; }
 .admin-app .table-action.is-decline:hover { color: #8c1a30; border-color: #d48f9d; background: #fff3f5; }
+/* Bouton indisponible : grisé plein, bien visible, sans réagir au survol. */
+.admin-app .table-action:disabled, .admin-app .table-action:disabled:hover { cursor: not-allowed; color: #7c8084; border-color: #c4c7ca; background: #e4e6e8; }
 .admin-app .row-actions-divider { width: 1px; align-self: stretch; margin: 2px 2px; background: var(--grid); }
 .admin-app .table-action.is-copied { color: var(--green); border-color: rgba(21, 108, 83, .35); background: #edf3f1; }
 .admin-app .studio-date { min-width: 145px; }
@@ -147,6 +149,9 @@
 .admin-app .status-pill { width: fit-content; display: inline-flex; align-items: center; gap: 5px; padding: 2px 7px; border-radius: 3px; color: #686c70; background: #efefed; font-size: 11px; font-weight: 700; }
 .admin-app .status-pill.is-active { color: var(--green); background: #e7f3ee; }
 .admin-app .status-pill.is-new { color: #6f5700; background: #fff4c2; }
+/* Étape terminée (lot remis) : fond vert plein, impossible à confondre avec un statut neutre comme « Perdu ». */
+.admin-app .status-pill.is-done { color: #fff; background: var(--green); }
+.admin-app .status-pill.is-lost { color: #fff; background: var(--red); }
 .admin-app .panel-message { margin: 0; padding: 14px 12px; color: var(--muted); font-size: 13px; }
 .admin-app .panel-message.is-error { color: #ba0024; }
 .admin-app .admin-empty-state { margin: 0; padding: 14px 12px; color: var(--muted); font-size: 13px; }

@@ -77,6 +77,7 @@ export default function BackofficePage({ session, onLogout, section }) {
   const [pendingReward, setPendingReward] = useState(null);
   const [rewardError, setRewardError] = useState('');
   const [rewarding, setRewarding] = useState(false);
+  const [pendingClaim, setPendingClaim] = useState(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -182,7 +183,7 @@ export default function BackofficePage({ session, onLogout, section }) {
   const visibleProgramEvents = useMemo(() => programEvents.filter((item) => !query || [item.title, item.location, item.description, item.occupant?.name].some((value) => String(value || '').toLowerCase().includes(query))), [programEvents, query]);
   const visibleChallengePassports = useMemo(() => challengePassports.filter((item) => !query || [item.displayName, item.email, item.phone, item.contact, item.code, ...(item.passages || []).flatMap((passage) => [passage.occupant?.name, passage.validatedBy?.firstName, passage.validatedBy?.lastName])].some((value) => String(value || '').toLowerCase().includes(query))), [challengePassports, query]);
 
-  const visibleWheelPlays = useMemo(() => wheel.plays.filter((item) => !query || [item.code, item.player?.displayName, item.player?.email, item.player?.phone, item.result.label, item.result.sponsor].some((value) => String(value || '').toLowerCase().includes(query))), [wheel.plays, query]);
+  const visibleWheelPlays = useMemo(() => wheel.plays.filter((item) => !query || [item.code, item.player?.displayName, item.player?.email, item.player?.phone, item.result.label].some((value) => String(value || '').toLowerCase().includes(query))), [wheel.plays, query]);
 
   // Chaque rubrique s'ouvre avec une recherche vide.
   useEffect(() => {
@@ -275,6 +276,21 @@ export default function BackofficePage({ session, onLogout, section }) {
     }
   };
 
+  // Lot de la roue remis depuis l'historique : ce tour précis, après confirmation.
+  const confirmWheelClaim = async () => {
+    setRewarding(true);
+    setRewardError('');
+    try {
+      await api.claimWheelPlay(session.token, pendingClaim.id);
+      setPendingClaim(null);
+      await reloadTopic('wheel');
+    } catch (requestError) {
+      setRewardError(requestError.message);
+    } finally {
+      setRewarding(false);
+    }
+  };
+
   const requestOccupantDelete = (occupant) => {
     setDeleteError('');
     setPendingDelete({ type: 'occupant', item: occupant, label: `l'occupant ${occupant.name}` });
@@ -289,6 +305,16 @@ export default function BackofficePage({ session, onLogout, section }) {
   const requestProgramDelete = (programEvent) => {
     setDeleteError('');
     setPendingDelete({ type: 'program', item: programEvent, label: programEvent.type === 'spotlight' ? `la mise à l’affiche de ${programEvent.occupant?.name || 'ce stand'}` : `« ${programEvent.title} » du programme` });
+  };
+
+  const requestPassportDelete = (passport) => {
+    setDeleteError('');
+    setPendingDelete({ type: 'challenge-passport', item: passport, label: `le participant ${passport.displayName} (code ${passport.code})` });
+  };
+
+  const requestWheelPlayDelete = (play) => {
+    setDeleteError('');
+    setPendingDelete({ type: 'wheel-play', item: play, label: `la partie ${play.code}${play.player ? ` de ${play.player.displayName}` : ''} (${play.result.label})` });
   };
 
   const requestB2bProposalDelete = (proposal) => {
@@ -315,6 +341,8 @@ export default function BackofficePage({ session, onLogout, section }) {
       if (pendingDelete.type === 'occupant') await api.deleteOccupant(session.token, pendingDelete.item.id);
       else if (pendingDelete.type === 'program') await api.deleteProgramEvent(session.token, pendingDelete.item.id);
       else if (pendingDelete.type === 'b2b-proposal') await api.deleteB2bProposal(session.token, pendingDelete.item.id);
+      else if (pendingDelete.type === 'wheel-play') await api.deleteWheelPlay(session.token, pendingDelete.item.id);
+      else if (pendingDelete.type === 'challenge-passport') await api.deleteChallengePassport(session.token, pendingDelete.item.id);
       else await api.deleteUser(session.token, pendingDelete.item.id);
       setPendingDelete(null);
       if (pendingDelete.type === 'occupant' && detailId) navigate('/stands', { replace: true });
@@ -389,8 +417,8 @@ export default function BackofficePage({ session, onLogout, section }) {
           {!loading && !error && section === 'program' && <ProgramEventsTable selection={selection} events={rows} query={query} onEdit={(item) => setDrawer({ type: 'program', item })} onDelete={requestProgramDelete} />}
           {!loading && !error && section === 'investor-requests' && <InvestorRequestsTable selection={selection} requests={rows} query={query} onEdit={(item) => setDrawer({ type: 'investor-request', item })} />}
           {!loading && !error && section === 'b2b' && <B2bProposalsTable selection={selection} proposals={rows} query={query} showStand={isSuperAdmin} onDecide={requestDecision} onEdit={(item) => setDrawer({ type: 'b2b-proposal', item })} onDelete={requestB2bProposalDelete} />}
-          {!loading && !error && section === 'challenges' && <ChallengePassportsTable selection={selection} passports={rows} query={query} allowReward={isSuperAdmin} onRedeem={(passport) => { setRewardError(''); setPendingReward(passport); }} />}
-          {!loading && !error && section === 'wheel' && <WheelPlaysTable selection={selection} plays={rows} query={query} />}
+          {!loading && !error && section === 'challenges' && <ChallengePassportsTable selection={selection} passports={rows} query={query} allowReward={isSuperAdmin} onRedeem={(passport) => { setRewardError(''); setPendingReward(passport); }} onDelete={isSuperAdmin ? requestPassportDelete : undefined} />}
+          {!loading && !error && section === 'wheel' && <WheelPlaysTable selection={selection} plays={rows} query={query} onClaim={(play) => { setRewardError(''); setPendingClaim(play); }} onDelete={isSuperAdmin ? requestWheelPlayDelete : undefined} />}
         </section>
       </main>
       )}
@@ -403,6 +431,7 @@ export default function BackofficePage({ session, onLogout, section }) {
       {wheelCode && <WheelCodeDialog codes={wheel.codes} created={wheelCode.data} loading={wheelCode.loading} error={wheelCode.error} onNew={generateWheelCode} onClose={() => setWheelCode(null)} />}
       {pendingDelete && <ConfirmDelete subject={pendingDelete} loading={deleting} error={deleteError} onCancel={() => setPendingDelete(null)} onConfirm={confirmDelete} />}
       {pendingDecision && <ConfirmDecision {...pendingDecision} loading={deciding} error={decisionError} onCancel={() => setPendingDecision(null)} onConfirm={confirmDecision} />}
+      {pendingClaim && <ConfirmReward passport={{ displayName: pendingClaim.player?.displayName || 'ce joueur', code: pendingClaim.code }} prize={pendingClaim.result.label} loading={rewarding} error={rewardError} onCancel={() => setPendingClaim(null)} onConfirm={confirmWheelClaim} />}
       {pendingReward && <ConfirmReward passport={pendingReward} loading={rewarding} error={rewardError} onCancel={() => setPendingReward(null)} onConfirm={confirmReward} />}
       {qrCode && <QrCodeDialog {...qrCode} onClose={() => setQrCode(null)} />}
     </>

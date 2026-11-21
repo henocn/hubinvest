@@ -33,11 +33,6 @@ module.exports = (sequelize, DataTypes) =>
         allowNull: false,
         field: 'result_label',
       },
-      resultSponsor: {
-        type: DataTypes.STRING(120),
-        allowNull: true,
-        field: 'result_sponsor',
-      },
       playedAt: {
         type: DataTypes.DATE,
         allowNull: false,

@@ -11,7 +11,7 @@ export default function WheelSegmentsTable({ selection, segments, query, onEdit,
   return (
     <div className="table-scroll">
       <table>
-        <thead><tr><SelectAllHeader selection={selection} /><th>Case</th><th>Partenaire</th><th>Restant</th><th>Gagnés</th><th className="actions-heading">Actions</th></tr></thead>
+        <thead><tr><SelectAllHeader selection={selection} /><th>Case</th><th>Restant</th><th>Gagnés</th><th className="actions-heading">Actions</th></tr></thead>
         <tbody>{segments.map((segment) => {
           const isPrize = segment.kind === 'prize';
           const notStocked = isPrize && !segment.quantity;
@@ -20,7 +20,6 @@ export default function WheelSegmentsTable({ selection, segments, query, onEdit,
           return (
             <tr key={segment.id} className={`wheel-row${!segment.isActive || notStocked ? ' is-hidden' : ''}${soldOut ? ' is-sold-out' : ''}`}><SelectCell selection={selection} id={segment.id} />
               <td className="activity-cell"><strong>{segment.label}</strong><small>{isPrize ? 'Lot' : 'Case perdante'}{note}</small></td>
-              <td>{segment.sponsor || '—'}</td>
               <td>{isPrize ? <strong>{segment.remaining}<span className="wheel-stock-total"> / {segment.quantity}</span></strong> : '—'}</td>
               <td>{isPrize ? segment.awarded : '—'}</td>
               <td><div className="row-actions">

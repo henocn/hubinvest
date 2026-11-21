@@ -97,6 +97,9 @@ export const api = {
   dashboard: (token) => request('/dashboard', authorized(token)),
   settings: (token) => request('/settings', authorized(token)),
   updateSettings: (token, values) => request('/settings', authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
+  deleteWheelPlay: (token, id) => request(`/wheel/plays/${id}`, authorized(token, { method: 'DELETE' })),
+  deleteChallengePassport: (token, id) => request(`/challenge-passports/${id}`, authorized(token, { method: 'DELETE' })),
+  claimWheelPlay: (token, id) => request(`/wheel/plays/${id}/claim`, authorized(token, { method: 'POST' })),
   createWheelCode: (token) => request('/wheel/codes', authorized(token, { method: 'POST' })),
   createWheelSegment: (token, values) =>
     request('/wheel/segments', authorized(token, { method: 'POST', body: JSON.stringify(values) })),

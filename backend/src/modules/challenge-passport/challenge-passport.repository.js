@@ -92,6 +92,12 @@ const findOccupantIds = async (passportId, transaction) => (await ChallengePassa
 const create = (values) => ChallengePassport.create(values);
 const update = (passport, values, transaction) => passport.update(values, { transaction });
 
+const findById = (id) => ChallengePassport.findByPk(id, { attributes: ['id'] });
+
+const remove = (passport) => passport.destroy();
+
 module.exports = {
   search,
+  findById,
+  remove,
   findPublicByToken, findRedeemed, findIdByToken, findOccupantIds, findAll, findByCode, findByCodeForUpdate, findByIdForUpdate, create, update };

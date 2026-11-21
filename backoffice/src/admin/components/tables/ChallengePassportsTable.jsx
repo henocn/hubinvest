@@ -1,4 +1,4 @@
-import { CheckCircle2, Gift, Trophy, XCircle } from 'lucide-react';
+import { CheckCircle2, Gift, Trash2, Trophy, XCircle } from 'lucide-react';
 import EmptyState from '../EmptyState';
 import PlayerContact from '../../../components/PlayerContact';
 import { ActionsCell, Detail, ExpandableRow, useOpenRow } from '../RowDetails';
@@ -8,7 +8,8 @@ const dateTime = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Africa/Lome', day
 const fullName = (user) => [user?.firstName, user?.lastName].filter(Boolean).join(' ');
 
 // Joueurs des Défis ; un clic sur la ligne affiche les coordonnées, les stands visités et qui les a validés.
-export default function ChallengePassportsTable({ selection, passports, query, onRedeem, allowReward = true }) {
+// Réservé au super administrateur : remise de la récompense et suppression du participant.
+export default function ChallengePassportsTable({ selection, passports, query, onRedeem, onDelete, allowReward = true }) {
   const openRow = useOpenRow();
   if (!passports.length) {
     return <EmptyState icon={Trophy} title="Aucun participant" copy={query ? 'Aucun résultat ne correspond à la recherche.' : 'Les parcours commencés apparaîtront ici.'} />;
@@ -17,7 +18,7 @@ export default function ChallengePassportsTable({ selection, passports, query, o
   return (
     <div className="table-scroll">
       <table>
-        <thead><tr><SelectAllHeader selection={selection} /><th>Participant</th><th>Code</th><th>Scans</th><th className="reward-heading">Récompense</th>{allowReward && <th className="actions-heading">Action</th>}</tr></thead>
+        <thead><tr><SelectAllHeader selection={selection} /><th>Participant</th><th>Code</th><th>Scans</th><th className="reward-heading">Récompense</th>{allowReward && <th className="actions-heading">Actions</th>}</tr></thead>
         <tbody>{passports.map((passport) => {
           const passages = passport.passages || [];
           const rewardReceived = passport.status === 'redeemed';
@@ -51,7 +52,7 @@ export default function ChallengePassportsTable({ selection, passports, query, o
               <td><code className="challenge-table-code">{passport.code}</code></td>
               <td className="challenge-table-scans">{passport.passageCount}</td>
               <td className="challenge-table-reward"><span className={`challenge-reward-status ${rewardReceived ? 'is-received' : 'is-not-received'}`} aria-label={rewardReceived ? 'Oui' : 'Non'} title={rewardReceived ? 'Oui' : 'Non'}>{rewardReceived ? <CheckCircle2 size={19} strokeWidth={2.8} /> : <XCircle size={19} strokeWidth={2.8} />}</span></td>
-              {allowReward && <ActionsCell><button className={`table-action is-icon challenge-reward-action ${canRedeem ? 'is-ready' : rewardReceived ? 'is-redeemed' : 'is-pending'}`} type="button" onClick={() => onRedeem(passport)} disabled={!canRedeem} aria-label={actionLabel} title={actionLabel}><Gift size={15} /></button></ActionsCell>}
+              {allowReward && <ActionsCell><button className={`table-action is-icon challenge-reward-action ${canRedeem ? 'is-ready' : rewardReceived ? 'is-redeemed' : 'is-pending'}`} type="button" onClick={() => onRedeem(passport)} disabled={!canRedeem} aria-label={actionLabel} title={actionLabel}><Gift size={15} /></button>{onDelete && <button className="table-action is-icon is-danger" type="button" onClick={() => onDelete(passport)} title="Supprimer" aria-label={`Supprimer ${passport.displayName}`}><Trash2 size={16} /></button>}</ActionsCell>}
             </ExpandableRow>
           );
         })}</tbody>

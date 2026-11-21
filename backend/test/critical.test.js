@@ -1004,14 +1004,14 @@ const wheelSetup = (context, { segments, code, plays = [], playsToday = 0 }) => 
 };
 
 test('un code de la roue donne un seul tour par défaut et décompte le lot gagné', async (context) => {
-  const prize = { id: 'p1', kind: 'prize', label: 'T-shirt', sponsor: 'WAFO INDUSTRIE', quantity: 2, awarded: 0, isActive: true };
-  const lose = { id: 'l1', kind: 'lose', label: 'Presque !', sponsor: null, quantity: null, awarded: 0, isActive: true };
+  const prize = { id: 'p1', kind: 'prize', label: 'T-shirt', quantity: 2, awarded: 0, isActive: true };
+  const lose = { id: 'l1', kind: 'lose', label: 'Presque !', quantity: null, awarded: 0, isActive: true };
   const code = { id: 'code-1', code: 'K7P2', spinsAllowed: 1 };
   const plays = wheelSetup(context, { segments: [prize, lose], code });
 
   const outcome = await wheelService.spin({ code: ' k7-p2 ', player: PLAYER }, 'fr', (length) => { assert.equal(length, 2); return 0; });
   assert.equal(outcome.result.id, 'p1');
-  assert.equal(outcome.result.sponsor, 'WAFO INDUSTRIE');
+  assert.deepEqual(Object.keys(outcome.result).sort(), ['id', 'kind', 'label']);
   assert.equal(outcome.spinsLeft, 0);
   assert.equal(prize.awarded, 1);
   assert.equal(plays.length, 1);
@@ -1023,7 +1023,7 @@ test('un code de la roue donne un seul tour par défaut et décompte le lot gagn
 });
 
 test('un code à plusieurs tours reste au premier joueur et s’arrête au dernier tour', async (context) => {
-  const lose = { id: 'l1', kind: 'lose', label: 'Dommage !', sponsor: null, quantity: null, awarded: 0, isActive: true };
+  const lose = { id: 'l1', kind: 'lose', label: 'Dommage !', quantity: null, awarded: 0, isActive: true };
   const code = { id: 'code-2', code: 'M3X9', spinsAllowed: 2 };
   const plays = wheelSetup(context, { segments: [lose], code });
 
@@ -1164,7 +1164,7 @@ test('les réglages refusent un nombre de stands hors limites et une clé inconn
 });
 
 test('un joueur ne tourne la roue qu’une fois par jour et le code reste valable', async (context) => {
-  const prize = { id: 'p1', kind: 'prize', label: 'T-shirt', sponsor: null, quantity: 2, awarded: 0, isActive: true };
+  const prize = { id: 'p1', kind: 'prize', label: 'T-shirt', quantity: 2, awarded: 0, isActive: true };
   const code = { code: 'AB23', usedAt: null, expiresAt: new Date(Date.now() + 60000) };
   wheelSetup(context, { segments: [prize], code, playsToday: 1 });
   await assert.rejects(wheelService.spin({ code: 'AB23', player: PLAYER }, 'fr', () => 0), (error) => error.status === 429 && error.code === 'WHEEL_DAILY_LIMIT');
@@ -1191,6 +1191,58 @@ test('un lot gagné ne se remet qu’une fois, et seulement s’il a été gagn�
   await assert.rejects(wheelService.claimPrize(user, 'LOS3'), (error) => error.code === 'WHEEL_NO_PRIZE');
   await assert.rejects(wheelService.findPrize('NEW4'), (error) => error.code === 'WHEEL_NOT_PLAYED');
   await assert.rejects(wheelService.claimPrize(user, 'NOPE'), (error) => error.code === 'WHEEL_CODE_INVALID');
+});
+
+test('le bouton « Remis » de l’historique remet le lot de ce tour, une fois, et jamais un tour perdu', async (context) => {
+  const plays = {
+    won: { id: 'won', resultKind: 'prize', resultLabel: 'T-shirt', claimedAt: null, wheelCode: { code: 'WIN5' } },
+    lost: { id: 'lost', resultKind: 'lose', resultLabel: 'Presque !', claimedAt: null, wheelCode: { code: 'LOS5' } },
+  };
+  context.mock.method(wheelRepository.sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));
+  context.mock.method(wheelRepository, 'findPlayForClaim', async (id) => plays[id] || null);
+  context.mock.method(wheelRepository, 'updatePlay', async (play, values) => Object.assign(play, values));
+  const user = { id: 'admin-a', firstName: 'Ama', lastName: 'K.' };
+
+  const claimed = await wheelService.claimPlay(user, 'won');
+  assert.equal(claimed.result.label, 'T-shirt');
+  assert.deepEqual(claimed.claimedBy, { firstName: 'Ama', lastName: 'K.' });
+  assert.equal(plays.won.claimedByUserId, 'admin-a');
+  await assert.rejects(wheelService.claimPlay(user, 'won'), (error) => error.code === 'WHEEL_PRIZE_ALREADY_CLAIMED');
+  await assert.rejects(wheelService.claimPlay(user, 'lost'), (error) => error.code === 'WHEEL_NO_PRIZE');
+  await assert.rejects(wheelService.claimPlay(user, 'absent'), (error) => error.status === 404);
+});
+
+test('supprimer une partie rend au stock un lot pas encore remis, jamais un lot déjà remis', async (context) => {
+  const plays = {
+    toHand: { id: 'toHand', resultKind: 'prize', segmentId: 'seg-1', claimedAt: null },
+    handed: { id: 'handed', resultKind: 'prize', segmentId: 'seg-1', claimedAt: new Date() },
+    lost: { id: 'lost', resultKind: 'lose', segmentId: 'seg-2', claimedAt: null },
+  };
+  const released = [];
+  const removed = [];
+  context.mock.method(wheelRepository.sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));
+  context.mock.method(wheelRepository, 'findPlayForClaim', async (id) => plays[id] || null);
+  context.mock.method(wheelRepository, 'releaseAward', async (segmentId) => { released.push(segmentId); });
+  context.mock.method(wheelRepository, 'removePlay', async (play) => { removed.push(play.id); });
+
+  for (const id of ['toHand', 'handed', 'lost']) await wheelService.removePlay(id);
+  assert.deepEqual(removed, ['toHand', 'handed', 'lost']);
+  assert.deepEqual(released, ['seg-1']);
+  await assert.rejects(wheelService.removePlay('absent'), (error) => error.status === 404);
+});
+
+test('supprimer un participant rafraîchit les stands qu’il a traversés', async (context) => {
+  const removed = [];
+  const published = [];
+  context.mock.method(challengePassportRepository, 'findById', async (id) => (id === 'p1' ? { id: 'p1' } : null));
+  context.mock.method(challengePassportRepository, 'findOccupantIds', async () => ['stand-a', 'stand-b']);
+  context.mock.method(challengePassportRepository, 'remove', async (passport) => { removed.push(passport.id); });
+  context.mock.method(realtimeService.events, 'challengeChanged', (payload) => { published.push(payload); });
+
+  await challengePassportService.remove('p1');
+  assert.deepEqual(removed, ['p1']);
+  assert.deepEqual(published, [{ passportId: 'p1', occupantIds: ['stand-a', 'stand-b'] }]);
+  await assert.rejects(challengePassportService.remove('absent'), (error) => error.status === 404);
 });
 
 const liveQuestionService = require('../src/modules/live-question/live-question.service');

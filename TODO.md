@@ -149,7 +149,7 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 - [ ] Parcours « Trouvez les trois étapes » : trois produits de trois occupants différents affichés sur le passeport, plusieurs versions modifiables chaque jour.
 - [ ] Quiz express et vrai ou faux (trois questions), sur téléphone ou tablette.
 - [ ] Badge numérique partageable à la fin du parcours.
-- [x] Roue des opportunités `/roue` : code à usage unique généré dans l’administration, tirage côté serveur, lots des partenaires avec quantités, cases perdantes, stock mis à jour en temps réel.
+- [x] Roue des opportunités `/roue` : code à usage unique généré dans l’administration, tirage côté serveur, lots avec quantités, cases perdantes, stock mis à jour en temps réel.
 - [ ] Récompenses : types, stock suivi en temps réel, alerte à 20 % du stock restant.
 - [ ] Souhaitable : micro-enquête de trois questions au retrait.
 - [ ] Faire valider le règlement du jeu par le service juridique ; aucun consentement commercial implicite.

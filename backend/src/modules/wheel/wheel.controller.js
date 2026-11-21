@@ -20,6 +20,15 @@ const findPrize = async (request, response) => response.json({
   data: await wheelService.findPrize(request.params.code),
 });
 
+const claimPlay = async (request, response) => response.json({
+  data: await wheelService.claimPlay(request.user, request.params.id),
+});
+
+const removePlay = async (request, response) => {
+  await wheelService.removePlay(request.params.id);
+  response.json({ message: 'Partie supprimée.' });
+};
+
 const claimPrize = async (request, response) => response.json({
   data: await wheelService.claimPrize(request.user, request.params.code),
 });
@@ -44,4 +53,4 @@ const removeSegment = async (request, response) => {
   response.json({ message: 'Case retirée de la roue.' });
 };
 
-module.exports = { getPublic, spin, overview, findPrize, claimPrize, generateCode, createSegment, updateSegment, removeSegment };
+module.exports = { getPublic, spin, overview, findPrize, claimPrize, claimPlay, removePlay, generateCode, createSegment, updateSegment, removeSegment };

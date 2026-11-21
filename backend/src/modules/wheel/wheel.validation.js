@@ -13,7 +13,6 @@ const spin = Joi.object({
 const fields = {
   kind: Joi.string().valid(...WHEEL_SEGMENT_KINDS),
   label: Joi.string().trim().min(1).max(60),
-  sponsor: Joi.string().trim().max(120).allow('', null).empty('').default(null),
   quantity: Joi.number().integer().min(0).max(100000).allow(null),
   isActive: Joi.boolean(),
 };
@@ -24,7 +23,7 @@ const createSegment = Joi.object({
   label: fields.label.required(),
 });
 
-const updateSegment = Joi.object({ ...fields, sponsor: Joi.string().trim().max(120).allow('', null).empty('') }).min(1);
+const updateSegment = Joi.object(fields).min(1);
 
 const codeParams = Joi.object({ code: Joi.string().trim().pattern(/^[A-Za-z0-9-]{3,16}$/).required() });
 

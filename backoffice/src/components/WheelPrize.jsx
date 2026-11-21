@@ -67,7 +67,6 @@ export function WheelPrizeCard({ prize, loading, onClaim }) {
     <section className={`animator-participant wheel-prize-card${done ? ' is-redeemed' : ' is-completed'}`}>
       <span className="wheel-prize-kicker"><Gift size={16} /> Lot de la roue · {prize.code}</span>
       <strong>{prize.result.label}</strong>
-      {prize.result.sponsor && <span>Offert par {prize.result.sponsor}</span>}
       <span>Gagné par {prize.player?.displayName || 'un joueur'}</span>
       {done
         ? <p>Déjà remis à {timeFormatter.format(new Date(prize.claimedAt))}{prize.claimedBy ? ` par ${fullName(prize.claimedBy)}` : ''}.</p>

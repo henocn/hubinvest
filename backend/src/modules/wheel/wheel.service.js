@@ -28,7 +28,7 @@ const arrange = (segments) => {
   return Array.from({ length: total }, (_value, slot) => (losingSlots.has(slot) ? losing[losingIndex++] : prizes[prizeIndex++]));
 };
 
-const publicSegment = (segment) => ({ id: segment.id, kind: segment.kind, label: segment.label, sponsor: segment.sponsor || null });
+const publicSegment = (segment) => ({ id: segment.id, kind: segment.kind, label: segment.label });
 
 const adminSegment = (segment) => {
   const values = plain(segment);
@@ -82,7 +82,6 @@ const spin = async ({ code: rawCode, player }, language, randomIndex = crypto.ra
       segmentId: chosen.id,
       resultKind: chosen.kind,
       resultLabel: chosen.label,
-      resultSponsor: chosen.sponsor || null,
       playedAt: new Date(),
     }, transaction);
 
@@ -129,7 +128,7 @@ const adminPlay = (item) => {
     id: values.id,
     code: values.wheelCode?.code || null,
     playedAt: values.playedAt,
-    result: { kind: values.resultKind, label: values.resultLabel, sponsor: values.resultSponsor },
+    result: { kind: values.resultKind, label: values.resultLabel },
     player: values.player ? { displayName: values.player.displayName, email: values.player.email, phone: values.player.phone } : null,
     claimedAt: values.claimedAt || null,
     claimedBy: personName(values.claimedBy),
@@ -181,7 +180,6 @@ const normalizeSegment = (values) => {
   const next = { ...values };
   if (next.kind === 'lose') {
     next.quantity = null;
-    next.sponsor = null;
   } else if (next.kind === 'prize' && (next.quantity === null || next.quantity === undefined)) {
     next.quantity = 0;
   }
@@ -196,7 +194,7 @@ const createSegment = async (values) => {
 
 const updateSegment = async (id, values) => {
   const segment = await getSegment(id);
-  const next = normalizeSegment({ kind: segment.kind, quantity: segment.quantity, sponsor: segment.sponsor, ...values });
+  const next = normalizeSegment({ kind: segment.kind, quantity: segment.quantity, ...values });
   if (next.kind === 'prize' && next.quantity !== undefined && next.quantity < segment.awarded) {
     throw new AppError(422, 'WHEEL_QUANTITY_TOO_LOW', `${segment.awarded} lot(s) déjà gagné(s) : la quantité ne peut pas être inférieure.`);
   }
@@ -226,6 +224,11 @@ const findPrize = async (rawCode) => {
   return adminPlay(prizes.find((play) => !play.claimedAt) || prizes[prizes.length - 1]);
 };
 
+const markClaimed = async (user, play, transaction) => {
+  await wheelRepository.updatePlay(play, { claimedAt: new Date(), claimedByUserId: user.id }, transaction);
+  return { ...adminPlay(play), claimedBy: personName(user) };
+};
+
 // Marque le lot comme remis, une seule fois : une capture d'écran ne permet pas de le réclamer deux fois.
 // Un code qui a gagné plusieurs lots les remet un par un.
 const claimPrize = async (user, rawCode) => {
@@ -239,11 +242,39 @@ const claimPrize = async (user, rawCode) => {
       error.details = adminPlay(prizes[prizes.length - 1]);
       throw error;
     }
-    await wheelRepository.updatePlay(next, { claimedAt: new Date(), claimedByUserId: user.id }, transaction);
-    return { ...adminPlay(next), claimedBy: personName(user) };
+    return markClaimed(user, next, transaction);
   });
   realtime.wheelChanged();
   return prize;
+};
+
+// Remise depuis l'historique du back office : ce tour précis, s'il a gagné un lot pas encore remis.
+const claimPlay = async (user, id) => {
+  const prize = await wheelRepository.sequelize.transaction(async (transaction) => {
+    const play = await wheelRepository.findPlayForClaim(id, transaction);
+    if (!play) throw new AppError(404, 'WHEEL_PLAY_NOT_FOUND', 'Partie introuvable.');
+    if (play.resultKind !== 'prize') throw new AppError(409, 'WHEEL_NO_PRIZE', 'Cette partie n’a pas gagné de lot.');
+    if (play.claimedAt) {
+      const error = new AppError(409, 'WHEEL_PRIZE_ALREADY_CLAIMED', 'Ce lot a déjà été remis.');
+      error.details = adminPlay(play);
+      throw error;
+    }
+    return markClaimed(user, play, transaction);
+  });
+  realtime.wheelChanged();
+  return prize;
+};
+
+// Supprime une partie (essai, erreur de saisie…). Un lot gagné et pas encore remis retourne au stock ;
+// un lot déjà remis reste décompté, puisqu'il est parti. Le tour du code est rendu : le code peut resservir.
+const removePlay = async (id) => {
+  await wheelRepository.sequelize.transaction(async (transaction) => {
+    const play = await wheelRepository.findPlayForClaim(id, transaction);
+    if (!play) throw new AppError(404, 'WHEEL_PLAY_NOT_FOUND', 'Partie introuvable.');
+    if (play.resultKind === 'prize' && !play.claimedAt && play.segmentId) await wheelRepository.releaseAward(play.segmentId, transaction);
+    await wheelRepository.removePlay(play, transaction);
+  });
+  realtime.wheelChanged();
 };
 
 module.exports = {
@@ -259,4 +290,6 @@ module.exports = {
   normalizeCode,
   findPrize,
   claimPrize,
+  claimPlay,
+  removePlay,
 };
