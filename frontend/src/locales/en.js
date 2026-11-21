@@ -152,7 +152,6 @@ export default {
     slot: "Time slot",
     confirm: "Confirm the meeting",
     noSlot: "No free slot at the moment. Ask to be called back instead.",
-    organization: "Company or organisation",
     bookedTitle: "Meeting booked",
     bookedText: "We look forward to seeing you on {{when}}, {{place}}. The confirmation has been sent by email.",
     errors: { taken: "This slot has just been booked. Please choose another one.", invalid: "This slot is no longer available. Please choose another one." },

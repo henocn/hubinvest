@@ -13,7 +13,6 @@ export default function InvestorRequestForm({ guichet = 'project' }) {
     fullName: '',
     email: '',
     phone: '',
-    organization: '',
     projectSummary: '',
   });
   const [step, setStep] = useState(1);
@@ -76,7 +75,6 @@ export default function InvestorRequestForm({ guichet = 'project' }) {
             <label>{t('fields.email')}<input type="email" value={form.email} onChange={(event) => field('email', event.target.value)} maxLength={180} autoComplete="email" required /></label>
             <PhoneField value={form.phone} onChange={(phone) => field('phone', phone)} showError={phoneChecked} />
           </div>
-          <label>{t('guichets.organization')} <small>({t('common.optional')})</small><input value={form.organization} onChange={(event) => field('organization', event.target.value)} maxLength={160} autoComplete="organization" /></label>
           {error && <p className="request-error" role="alert">{error}</p>}
           <div className="investor-form-actions">
             <button className="button button-secondary" type="button" onClick={() => setStep(1)} disabled={loading}>{t('common.back')}</button>

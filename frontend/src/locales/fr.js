@@ -152,7 +152,6 @@ export default {
     slot: "Créneau",
     confirm: "Confirmer le rendez-vous",
     noSlot: "Aucun créneau libre pour le moment. Demandez plutôt à être recontacté.",
-    organization: "Entreprise ou structure",
     bookedTitle: "Rendez-vous réservé",
     bookedText: "Nous vous attendons le {{when}}, {{place}}. La confirmation vous a été envoyée par e-mail.",
     errors: { taken: "Ce créneau vient d’être réservé. Choisissez-en un autre.", invalid: "Ce créneau n’est plus proposé. Choisissez-en un autre." },
