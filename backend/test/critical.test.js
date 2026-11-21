@@ -345,7 +345,7 @@ test('une demande publique est rattachée au stand lu par le serveur, sans quali
 
   const result = await contactService.createPublic('stand-a', {
     id: 'request-a', fullName: 'Visiteur Test', phone: '90000000', need: 'Un renseignement',
-    consentOccupant: true, occupantId: 'stand-b', qualification: 'hot', consentApizf: true,
+    consentOccupant: true, occupantId: 'stand-b', qualification: 'A', consentApizf: true,
   });
   assert.equal(result.created, true);
   assert.equal(saved.occupantId, 'stand-a');
@@ -597,7 +597,7 @@ test('un stand ne peut valider qu’une fois le même parcours', async (context)
   });
 
   await assert.rejects(
-    challengePassageService.validate({ id: 'user-a', occupantId: 'occupant-a' }, { code: passport.code, classification: 'A' }),
+    challengePassageService.validate({ id: 'user-a', occupantId: 'occupant-a' }, { code: passport.code }),
     (error) => error.status === 409 && error.code === 'PASSAGE_ALREADY_VALIDATED',
   );
 });
@@ -638,12 +638,12 @@ test('le passage requis termine le parcours avant la remise', async (context) =>
 
   const result = await challengePassageService.validate(
     { id: 'user-c', occupantId: 'occupant-c' },
-    { code: passport.code, classification: 'B' },
+    { code: passport.code },
   );
 
   assert.equal(result.status, 'completed');
-  assert.equal(result.classification, 'B');
-  assert.equal(passageValues.classification, 'B');
+  assert.equal('classification' in result, false);
+  assert.equal('classification' in passageValues, false);
   assert.equal(saved.status, 'completed');
   assert.ok(saved.completedAt instanceof Date);
 });
@@ -1243,6 +1243,13 @@ test('supprimer un participant rafraîchit les stands qu’il a traversés', asy
   assert.deepEqual(removed, ['p1']);
   assert.deepEqual(published, [{ passportId: 'p1', occupantIds: ['stand-a', 'stand-b'] }]);
   await assert.rejects(challengePassportService.remove('absent'), (error) => error.status === 404);
+});
+
+test('un contact de stand se qualifie A, B ou C ; les anciennes valeurs chaud, tiède, froid sont refusées', () => {
+  const contactValidation = require('../src/modules/contact/contact.validation');
+  assert.equal(contactValidation.update.validate({ qualification: 'b' }).value.qualification, 'B');
+  assert.ok(contactValidation.update.validate({ qualification: 'hot' }).error);
+  assert.ok(contactValidation.query.validate({ qualification: 'D' }).error);
 });
 
 const liveQuestionService = require('../src/modules/live-question/live-question.service');

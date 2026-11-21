@@ -50,7 +50,7 @@ export const api = {
     request('/contacts', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   updateContact: (token, id, values) =>
     request(`/contacts/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
-  validateChallengePassage: (token, code, classification) => request('/challenge-passages', authorized(token, { method: 'POST', body: JSON.stringify({ code, classification }) })),
+  validateChallengePassage: (token, code) => request('/challenge-passages', authorized(token, { method: 'POST', body: JSON.stringify({ code }) })),
   challengePassageStats: (token) => request('/challenge-passages/stats', authorized(token)),
   searchPlayers: (token, query) => request(`/challenge-passports/search?q=${encodeURIComponent(query)}`, authorized(token)),
   challengeRewards: (token) => request('/challenge-passports/rewards', authorized(token)),

@@ -13,7 +13,6 @@ export default function OccupantChallengePage({ session, onLogout }) {
   const [scannedPlayers, setScannedPlayers] = useState(null);
   const [statsError, setStatsError] = useState('');
   const [code, setCode] = useState('');
-  const [pendingCode, setPendingCode] = useState('');
   const [open, setOpen] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
@@ -48,32 +47,8 @@ export default function OccupantChallengePage({ session, onLogout }) {
     return () => window.clearInterval(interval);
   }, [realtimeConnected, refreshStats]);
 
-  const prepareClassification = useCallback((value) => {
-    const normalized = value.trim().toUpperCase().replace(/[\s-]/g, '');
-    // Un code de 4 caractères est un code de jeu de la roue : on retrouve le lot gagné pour le remettre.
-    if (wheelCodePattern.test(normalized)) {
-      setError('');
-      setPendingCode('');
-      setResult(null);
-      setCode('');
-      void wheel.findPrize(normalized);
-      return false;
-    }
-    wheel.resetPrize();
-    if (!participantCode.test(normalized)) {
-      setError('Saisissez le code participant (6 caractères) ou le code de jeu de la roue (4 caractères).');
-      setPendingCode('');
-      setResult(null);
-      return false;
-    }
-
-    setError('');
-    setResult(null);
-    setPendingCode(normalized);
-    return true;
-  }, [wheel]);
-
-  const validateCode = useCallback(async (classification) => {
+  // Un code participant valide aussitôt le passage du joueur sur ce stand, sans autre étape.
+  const validateCode = useCallback(async (participant) => {
     if (validatingRef.current) return;
 
     validatingRef.current = true;
@@ -81,10 +56,9 @@ export default function OccupantChallengePage({ session, onLogout }) {
     setError('');
     setResult(null);
     try {
-      const passage = await api.validateChallengePassage(session.token, pendingCode, classification);
+      const passage = await api.validateChallengePassage(session.token, participant);
       setResult(passage);
       setCode('');
-      setPendingCode('');
       setScannedPlayers((current) => current === null ? current : current + 1);
       void refreshStats();
     } catch (requestError) {
@@ -94,16 +68,36 @@ export default function OccupantChallengePage({ session, onLogout }) {
       validatingRef.current = false;
       setLoading(false);
     }
-  }, [onLogout, pendingCode, refreshStats, session.token]);
+  }, [onLogout, refreshStats, session.token]);
+
+  // Code de 4 caractères : code de jeu de la roue, on retrouve le lot gagné pour le remettre.
+  // Code de 6 (ou 8) caractères : code participant, le passage est validé.
+  const handleCode = useCallback((value) => {
+    const normalized = value.trim().toUpperCase().replace(/[\s-]/g, '');
+    if (wheelCodePattern.test(normalized)) {
+      setError('');
+      setResult(null);
+      setCode('');
+      void wheel.findPrize(normalized);
+      return;
+    }
+    wheel.resetPrize();
+    if (!participantCode.test(normalized)) {
+      setError('Saisissez le code participant (6 caractères) ou le code de jeu de la roue (4 caractères).');
+      setResult(null);
+      return;
+    }
+    void validateCode(normalized);
+  }, [validateCode, wheel]);
 
   const scanned = useCallback((value) => {
     setOpen(false);
-    prepareClassification(value);
-  }, [prepareClassification]);
+    handleCode(value);
+  }, [handleCode]);
 
   const submit = (event) => {
     event.preventDefault();
-    prepareClassification(code);
+    handleCode(code);
   };
 
   return (
@@ -119,10 +113,9 @@ export default function OccupantChallengePage({ session, onLogout }) {
             <button className="button button-secondary" type="submit" disabled={loading}>OK</button>
           </div>
         </form>
-        <PlayerSearch session={session} onLogout={onLogout} onPick={prepareClassification} />
+        <PlayerSearch session={session} onLogout={onLogout} onPick={handleCode} />
         {error && <p className="panel-error" role="alert">{error}</p>}
-        {pendingCode && <div className="challenge-classification" role="group" aria-label="Classer le participant"><strong>Classer le participant</strong><div>{['A', 'B', 'C'].map((classification) => <button className="challenge-classification-button" type="button" key={classification} onClick={() => { void validateCode(classification); }} disabled={loading} aria-label={`Classer le participant en ${classification}`}>{classification}</button>)}</div></div>}
-        {result && <p className="challenge-validation-success" role="status"><CheckCircle2 size={20} /> Passage validé pour {result.displayName} · Classement {result.classification}</p>}
+        {result && <p className="challenge-validation-success" role="status"><CheckCircle2 size={20} /> Passage validé pour {result.displayName}</p>}
         <WheelPrizeCard prize={wheel.prize} loading={wheel.prizeLoading} onClaim={wheel.claimPrize} />
         {wheel.prizeError && <p className="panel-error" role="alert">{wheel.prizeError}</p>}
         <WheelPrizeResult text={wheel.claimed} />

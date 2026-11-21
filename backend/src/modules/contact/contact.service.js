@@ -136,7 +136,7 @@ const stats = async (user) => {
     contactRepository.countByQualification(occupantId),
   ]);
 
-  const byQualification = { hot: 0, warm: 0, cold: 0 };
+  const byQualification = { A: 0, B: 0, C: 0 };
   let unqualified = 0;
   groups.forEach((group) => {
     if (group.qualification === null) unqualified = Number(group.count);

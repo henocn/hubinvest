@@ -6,7 +6,7 @@ const fullName = (person) => (person ? [person.firstName, person.lastName].filte
 const byText = (value) => (a, b) => String(value(a) || '').localeCompare(String(value(b) || ''), 'fr', { sensitivity: 'base' });
 const byDate = (value, direction) => (a, b) => direction * ((new Date(value(a) || 0)).getTime() - (new Date(value(b) || 0)).getTime());
 const passageList = (passport) => (passport.passages || [])
-  .map((passage) => `${passage.occupant?.name || ''}${passage.classification ? ` (${passage.classification})` : ''}`)
+  .map((passage) => passage.occupant?.name || '')
   .join(', ');
 
 // Tris proposés partout : le plus récent d'abord par défaut, puis plus ancien et A-Z.
@@ -104,7 +104,7 @@ export const tableSettings = {
       { header: 'Téléphone', value: (item) => item.phone || item.contact, width: 18 },
       { header: 'Code', value: (item) => item.code, width: 10 },
       { header: 'Stands validés', value: (item) => item.passageCount || 0, width: 15 },
-      { header: 'Stands (classement)', value: passageList, width: 60 },
+      { header: 'Stands visités', value: passageList, width: 60 },
       { header: 'Parcours', value: (item) => challengeStatusLabels[item.status] || item.status, width: 16 },
       { header: 'Récompense remise le', value: (item) => formatDate(item.redeemedAt), width: 20 },
     ],

@@ -39,7 +39,6 @@ export default function ChallengePassportsTable({ selection, passports, query, o
                   <ul className="row-detail-list">{passages.map((passage) => (
                     <li key={passage.id}>
                       <strong>{passage.occupant?.name || 'Stand'}</strong>
-                      {passage.classification && ` · ${passage.classification}`}
                       {passage.createdAt && ` · ${dateTime.format(new Date(passage.createdAt))}`}
                       {passage.validatedBy && ` · validé par ${fullName(passage.validatedBy)}`}
                     </li>

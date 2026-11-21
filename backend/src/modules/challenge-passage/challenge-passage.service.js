@@ -14,7 +14,7 @@ const stats = async (user) => {
 const validate = async (user, values) => {
   settingsService.assertOpen('challengeOpen');
   if (!user.occupantId) throw new AppError(403, 'OCCUPANT_REQUIRED', 'Ce compte ne dépend pas d’un occupant.');
-  const { code, classification } = values;
+  const { code } = values;
   let passportId = null;
 
   try {
@@ -32,7 +32,6 @@ const validate = async (user, values) => {
         passportId: passport.id,
         occupantId: user.occupantId,
         validatedByUserId: user.id,
-        classification,
       }, transaction);
 
       const passageCount = await challengePassageRepository.countByPassport(passport.id, transaction);
@@ -47,7 +46,6 @@ const validate = async (user, values) => {
       return {
         displayName: passport.displayName,
         code: passport.code,
-        classification,
         passageCount,
         requiredPassages: settingsService.requiredPassages(),
         status: completed ? 'completed' : 'active',

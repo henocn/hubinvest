@@ -15,7 +15,7 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 - [ ] Le positionnement passe de « La preuve par le Togo » à « Avec vous, à chaque étape » et à la série « Ils avancent avec l’API-ZF » : la fiche occupant doit-elle porter la success story (parcours avec l’Agence) ?
 - [ ] Formats du Studio : « 21 secondes avec… » (CDC) remplacé par « 2 min avec… », « API-ZF en 60 secondes » et Face-à-face (PDF).
 - [ ] Rencontres B2B : tables de 20 minutes (CDC) et « Rencontres express » de 10 minutes pendant la Journée API-ZF (PDF).
-- [ ] Classement A/B/C : le code l’applique aux passages Défis, alors que les documents le réservent aux investisseurs (M3). Confirmer l’usage voulu sur les Défis.
+- [x] Classement A/B/C retiré des passages Défis (21/11/2026) ; les contacts des stands passent en A/B/C avec leur définition.
 - [ ] Les deux documents disent « six modules indispensables » mais en étiquettent huit (M1 à M6, M8, M9). Faire confirmer la liste réelle.
 
 ## Déjà fait
@@ -95,7 +95,7 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 
 ## M2 — Les contacts des occupants (indispensable)
 
-- [x] Saisie d’un contact par l’équipe du stand, qualification Chaud/Tiède/Froid, prochaine action et date.
+- [x] Saisie d’un contact par l’équipe du stand, qualification A · Prioritaire / B · À suivre / C · À nourrir, prochaine action et date.
 - [x] Saisie hors ligne stockée sur le téléphone puis synchronisée.
 - [x] Demande « Être recontacté » depuis la fiche publique, reçue uniquement par l’occupant concerné.
 - [x] Site installable (manifeste et service worker) avec réception des notifications push.

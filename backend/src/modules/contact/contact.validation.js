@@ -8,7 +8,7 @@ const create = Joi.object({
   phone: Joi.string().trim().min(6).max(32).required(),
   company: Joi.string().trim().max(160).allow('', null),
   need: Joi.string().trim().max(4000).allow('', null),
-  qualification: Joi.string().valid('hot', 'warm', 'cold').default('cold'),
+  qualification: Joi.string().trim().uppercase().valid('A', 'B', 'C').default('C'),
   nextAction: Joi.string().trim().max(255).allow('', null),
   nextActionAt: Joi.date().iso().allow(null),
   consentOccupant: Joi.boolean().valid(true).required(),
@@ -32,7 +32,7 @@ const update = Joi.object({
   phone: Joi.string().trim().min(6).max(32),
   company: Joi.string().trim().max(160).allow('', null),
   need: Joi.string().trim().max(4000).allow('', null),
-  qualification: Joi.string().valid('hot', 'warm', 'cold'),
+  qualification: Joi.string().trim().uppercase().valid('A', 'B', 'C'),
   nextAction: Joi.string().trim().max(255).allow('', null),
   nextActionAt: Joi.date().iso().allow(null),
   consentOccupant: Joi.boolean(),
@@ -42,7 +42,7 @@ const update = Joi.object({
 const params = Joi.object({ id: uuid.required() });
 
 const query = Joi.object({
-  qualification: Joi.string().valid('hot', 'warm', 'cold'),
+  qualification: Joi.string().trim().uppercase().valid('A', 'B', 'C'),
   search: Joi.string().trim().max(100).allow(''),
   // Sans limite, toutes les lignes : le back office et les exports Excel doivent tout voir.
   limit: Joi.number().integer().min(1).max(5000),

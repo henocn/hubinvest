@@ -37,8 +37,9 @@ module.exports = (sequelize, DataTypes) =>
       qualification: {
         type: DataTypes.STRING(20),
         allowNull: true,
-        defaultValue: 'cold',
-        validate: { isIn: [['hot', 'warm', 'cold']] },
+        defaultValue: 'C',
+        // A = prioritaire (recontacter sous 48 h), B = à suivre (sous 7 jours), C = à nourrir.
+        validate: { isIn: [['A', 'B', 'C']] },
       },
       nextAction: {
         type: DataTypes.STRING(255),
