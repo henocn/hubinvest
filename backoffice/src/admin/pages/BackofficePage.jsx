@@ -4,6 +4,7 @@ import { Download, Plus, QrCode, Search, Ticket } from 'lucide-react';
 import ConfirmDelete from '../components/ConfirmDelete';
 import OccupantDetail from '../components/OccupantDetail';
 import B2bProposalDetail from '../components/B2bProposalDetail';
+import InvestorRequestDetail from '../components/InvestorRequestDetail';
 import { useRowSelection } from '../components/RowSelection';
 import ConfirmReward from '../components/ConfirmReward';
 import ConfirmDecision from '../components/ConfirmDecision';
@@ -52,6 +53,8 @@ export default function BackofficePage({ session, onLogout, section }) {
   const detailId = section === 'occupants' ? location.pathname.split('/')[2] || null : null;
   // Fiche d'une demande B2B : /b2b/<id> (rendez-vous et comptes rendus).
   const b2bDetailId = section === 'b2b' ? location.pathname.split('/')[2] || null : null;
+  // Fiche Investor Desk : /investor-desk/<id> (qualification, classe, relances, rendez-vous).
+  const investorDetailId = section === 'investor-requests' ? location.pathname.split('/')[2] || null : null;
   const [occupants, setOccupants] = useState([]);
   const [users, setUsers] = useState([]);
   const [investorRequests, setInvestorRequests] = useState([]);
@@ -359,7 +362,7 @@ export default function BackofficePage({ session, onLogout, section }) {
 
   return (
     <>
-      {b2bDetailId ? <B2bProposalDetail key={b2bDetailId} id={b2bDetailId} session={session} onLogout={onLogout} /> : detailId ? (
+      {investorDetailId ? <InvestorRequestDetail key={investorDetailId} id={investorDetailId} session={session} onLogout={onLogout} /> : b2bDetailId ? <B2bProposalDetail key={b2bDetailId} id={b2bDetailId} session={session} onLogout={onLogout} /> : detailId ? (
         loading ? <main className="admin-workspace"><p className="panel-message">Chargement…</p></main>
           : occupants.find((item) => item.id === detailId) ? (
             <OccupantDetail
@@ -418,7 +421,7 @@ export default function BackofficePage({ session, onLogout, section }) {
           {!loading && !error && section === 'occupants' && <OccupantsTable selection={selection} occupants={rows} contactStats={contactStats} query={query} onEdit={(item) => setDrawer({ type: 'occupant', item })} onDelete={requestOccupantDelete} />}
           {!loading && !error && section === 'users' && <UsersTable selection={selection} users={rows} query={query} currentUserId={session.user.id} onEdit={(item) => setDrawer({ type: 'user', item })} onDelete={requestUserDelete} />}
           {!loading && !error && section === 'program' && <ProgramEventsTable selection={selection} events={rows} query={query} onEdit={(item) => setDrawer({ type: 'program', item })} onDelete={requestProgramDelete} />}
-          {!loading && !error && section === 'investor-requests' && <InvestorRequestsTable selection={selection} requests={rows} query={query} onEdit={(item) => setDrawer({ type: 'investor-request', item })} />}
+          {!loading && !error && section === 'investor-requests' && <InvestorRequestsTable selection={selection} requests={rows} query={query} onOpen={(item) => navigate(`/investor-desk/${item.id}`)} />}
           {!loading && !error && section === 'b2b' && <B2bProposalsTable selection={selection} proposals={rows} query={query} showStand={isSuperAdmin} onOpen={(item) => navigate(`/b2b/${item.id}`)} onDecide={requestDecision} onEdit={(item) => setDrawer({ type: 'b2b-proposal', item })} onDelete={requestB2bProposalDelete} />}
           {!loading && !error && section === 'challenges' && <ChallengePassportsTable selection={selection} passports={rows} query={query} allowReward={isSuperAdmin} onRedeem={(passport) => { setRewardError(''); setPendingReward(passport); }} onDelete={isSuperAdmin ? requestPassportDelete : undefined} />}
           {!loading && !error && section === 'wheel' && <WheelPlaysTable selection={selection} plays={rows} query={query} onClaim={(play) => { setRewardError(''); setPendingClaim(play); }} onDelete={isSuperAdmin ? requestWheelPlayDelete : undefined} />}

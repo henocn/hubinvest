@@ -169,6 +169,7 @@ export default function B2bProposalDetail({ id, session, onLogout }) {
                     {meeting.note && <p className="meeting-note">{meeting.note}</p>}
                   </td>
                   <td><div className="row-actions">
+                    <button className="table-action is-icon" type="button" onClick={() => open('meeting', meeting)} disabled={Boolean(meeting.outcome)} title={meeting.outcome ? 'Compte rendu fait : le rendez-vous ne peut plus être déplacé' : 'Modifier le rendez-vous'} aria-label="Modifier le rendez-vous"><Pencil size={16} /></button>
                     <button className="table-action is-icon" type="button" onClick={() => open('note', meeting)} title="Note" aria-label="Écrire une note"><MessageSquareText size={16} /></button>
                     <button className="table-action is-icon is-danger" type="button" onClick={() => open('cancel', meeting)} title="Annuler le rendez-vous" aria-label="Annuler le rendez-vous"><Trash2 size={16} /></button>
                   </div></td>
@@ -179,7 +180,7 @@ export default function B2bProposalDetail({ id, session, onLogout }) {
         )}
       </section>
 
-      {dialog?.type === 'meeting' && <B2bMeetingDialog proposal={proposal} token={session.token} onClose={close} onSaved={async () => { close(); await load(); }} />}
+      {dialog?.type === 'meeting' && <B2bMeetingDialog proposal={proposal} meeting={dialog.item} token={session.token} onClose={close} onSaved={async () => { close(); await load(); }} />}
       {dialog?.type === 'note' && <NoteDialog meeting={dialog.item} loading={busy} error={actionError} onCancel={close} onSave={(note) => run(() => api.updateB2bMeeting(session.token, proposal.id, dialog.item.id, { note }))} />}
       {dialog?.type === 'cancel' && <ConfirmDelete subject={{ label: `le rendez-vous du ${dateTime.format(new Date(dialog.item.startsAt))} (le visiteur est prévenu par e-mail s’il n’a pas encore eu lieu)` }} loading={busy} error={actionError} onCancel={close} onConfirm={() => run(() => api.deleteB2bMeeting(session.token, proposal.id, dialog.item.id))} />}
       {dialog?.type === 'decide' && <ConfirmDecision proposal={proposal} status={dialog.item} loading={busy} error={actionError} onCancel={close} onConfirm={() => run(() => api.updateB2bProposal(session.token, proposal.id, { status: dialog.item }))} />}

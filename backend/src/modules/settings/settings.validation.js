@@ -17,6 +17,15 @@ const update = Joi.object({
   b2bMeetingMinutes: Joi.number().integer().min(5).max(120),
   b2bDayStart: Joi.string().pattern(timeOfDay),
   b2bDayEnd: Joi.string().pattern(timeOfDay),
+  investorDelayAHours: Joi.number().integer().min(1).max(720),
+  investorDelayBDays: Joi.number().integer().min(1).max(90),
+  // Informations de qualification de l'Investor Desk : la clé reste fixe pour garder les réponses déjà saisies.
+  investorQualificationFields: Joi.array().max(30).items(Joi.object({
+    key: Joi.string().pattern(/^[A-Za-z][A-Za-z0-9_-]{0,39}$/).required(),
+    label: Joi.string().trim().min(1).max(120).required(),
+    type: Joi.string().valid('text', 'number', 'select', 'yesno').required(),
+    options: Joi.array().max(30).items(Joi.string().trim().min(1).max(80)).when('type', { is: 'select', then: Joi.array().min(1).required(), otherwise: Joi.any().strip() }),
+  })).unique('key'),
 }).min(1);
 
 module.exports = { update };

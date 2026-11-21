@@ -45,6 +45,18 @@ const investorRequestReceived = ({ user }) => ({
   text: teamText(user, ['Un projet vient d’être présenté à l’API-ZF depuis l’Investor Desk.', 'Consultez-le dans l’administration :'], teamUrl('/investor-desk')),
 });
 
+// Alerte à l'interlocuteur : la relance d'un contact A ou B arrive à échéance sans avoir été faite.
+const investorFollowUpDue = ({ user, request }) => {
+  const url = teamUrl(`/investor-desk/${request.id}`);
+  return {
+    title: `Relance Investor Desk : contact ${request.classification}`,
+    body: `${request.fullName} attend sa relance (classe ${request.classification}).`,
+    url,
+    subject: `Relance à faire : ${request.fullName} (classe ${request.classification})`,
+    text: teamText(user, [`Le délai de relance de ${request.fullName}, classé ${request.classification}, est atteint.`, 'Notez la relance sur sa fiche :'], url),
+  };
+};
+
 // Prévient l'équipe qu'une proposition de rencontre répond à un besoin B2B.
 const b2bProposalReceived = ({ user, need }) => ({
   title: 'Nouvelle proposition B2B',
@@ -136,12 +148,14 @@ const meetingCopy = {
   fr: {
     scheduledSubject: 'Votre rendez-vous B2B est fixé',
     scheduledBody: (when, minutes, table, need, occupant) => `Votre rendez-vous avec ${occupant} pour le besoin « ${need} » est fixé le ${when} (heure de Lomé), pour ${minutes} minutes, à la table ${table} de l’espace B2B du Hub.`,
+    movedSubject: 'Votre rendez-vous B2B est déplacé',
     cancelledSubject: 'Votre rendez-vous B2B est annulé',
     cancelledBody: (when, need, occupant) => `Le rendez-vous avec ${occupant} pour le besoin « ${need} », prévu le ${when}, est annulé. L’équipe du stand reviendra vers vous si une autre date est proposée.`,
   },
   en: {
     scheduledSubject: 'Your B2B meeting is confirmed',
     scheduledBody: (when, minutes, table, need, occupant) => `Your meeting with ${occupant} about the need “${need}” is set for ${when} (Lomé time), for ${minutes} minutes, at table ${table} in the Hub’s B2B area.`,
+    movedSubject: 'Your B2B meeting has been moved',
     cancelledSubject: 'Your B2B meeting is cancelled',
     cancelledBody: (when, need, occupant) => `The meeting with ${occupant} about the need “${need}”, planned for ${when}, is cancelled. The stand team will get back to you if another date is offered.`,
   },
@@ -154,6 +168,13 @@ const b2bMeetingScheduled = ({ meeting, proposal, need, occupant }) => {
   return publicEmail(copy, proposal.fullName, text.scheduledSubject, text.scheduledBody(meetingWhen(meeting, proposal.language), meeting.durationMinutes, meeting.tableNumber, need.title, occupant.name));
 };
 
+// Donne au visiteur la nouvelle date de son rendez-vous B2B déplacé (même texte que la confirmation).
+const b2bMeetingMoved = ({ meeting, proposal, need, occupant }) => {
+  const copy = copyFor(proposal.language);
+  const text = meetingCopy[proposal.language] || meetingCopy.fr;
+  return publicEmail(copy, proposal.fullName, text.movedSubject, text.scheduledBody(meetingWhen(meeting, proposal.language), meeting.durationMinutes, meeting.tableNumber, need.title, occupant.name));
+};
+
 // Prévient le visiteur que son rendez-vous B2B à venir est annulé.
 const b2bMeetingCancelled = ({ meeting, proposal, need, occupant }) => {
   const copy = copyFor(proposal.language);
@@ -161,8 +182,31 @@ const b2bMeetingCancelled = ({ meeting, proposal, need, occupant }) => {
   return publicEmail(copy, proposal.fullName, text.cancelledSubject, text.cancelledBody(meetingWhen(meeting, proposal.language), need.title, occupant.name));
 };
 
+const investorMeetingCopy = {
+  fr: {
+    scheduled: ['Votre rendez-vous avec l’API-ZF', (when, place) => `Votre rendez-vous avec l’équipe de l’API-ZF (Investor Desk) est fixé le ${when} (heure de Lomé), lieu : ${place}.`],
+    moved: ['Votre rendez-vous avec l’API-ZF est déplacé', (when, place) => `Votre rendez-vous avec l’équipe de l’API-ZF (Investor Desk) est déplacé au ${when} (heure de Lomé), lieu : ${place}.`],
+    cancelled: ['Votre rendez-vous avec l’API-ZF est annulé', (when) => `Le rendez-vous avec l’équipe de l’API-ZF prévu le ${when} est annulé. Votre interlocuteur reviendra vers vous.`],
+  },
+  en: {
+    scheduled: ['Your meeting with API-ZF', (when, place) => `Your meeting with the API-ZF team (Investor Desk) is set for ${when} (Lomé time), at: ${place}.`],
+    moved: ['Your meeting with API-ZF has been moved', (when, place) => `Your meeting with the API-ZF team (Investor Desk) has been moved to ${when} (Lomé time), at: ${place}.`],
+    cancelled: ['Your meeting with API-ZF is cancelled', (when) => `The meeting with the API-ZF team planned for ${when} is cancelled. Your contact will get back to you.`],
+  },
+};
+
+// Rendez-vous Investor Desk fixé, déplacé ou annulé, dans la langue de l'investisseur.
+const investorMeeting = ({ kind, meeting, request }) => {
+  const copy = copyFor(request.language);
+  const [subject, body] = (investorMeetingCopy[request.language] || investorMeetingCopy.fr)[kind];
+  return publicEmail(copy, request.fullName, subject, body(meetingWhen(meeting, request.language), meeting.location));
+};
+
 module.exports = {
+  investorFollowUpDue,
+  investorMeeting,
   b2bMeetingScheduled,
+  b2bMeetingMoved,
   b2bMeetingCancelled,
   contactRequested,
   contactReminder,

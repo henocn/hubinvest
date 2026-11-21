@@ -32,7 +32,7 @@ const overview = async (user) => {
   const today = startOfToday();
 
   const [
-    investorNew, investorInProgress, investorTotal,
+    investorNew, investorInProgress, investorTotal, investorOverdue,
     b2bPending, b2bOpenNeeds,
     studioPending, studioConfirmed,
     players, rewardsToHand, rewardsHanded,
@@ -42,6 +42,8 @@ const overview = async (user) => {
     isSuperAdmin ? InvestorRequest.count({ where: { status: 'new' } }) : 0,
     isSuperAdmin ? InvestorRequest.count({ where: { status: 'in_progress' } }) : 0,
     isSuperAdmin ? InvestorRequest.count() : 0,
+    // Alerte du document : contacts A dont la relance a dépassé son délai.
+    isSuperAdmin ? InvestorRequest.count({ where: { classification: 'A', status: { [Op.ne]: 'closed' }, nextFollowUpAt: { [Op.lt]: new Date() } } }) : 0,
     B2bProposal.count({ where: { status: 'pending' }, include: [{ model: B2bNeed, as: 'need', attributes: [], where: byStand, required: true }] }),
     B2bNeed.count({ where: { ...byStand, status: 'open' } }),
     StudioInvitation.count({ where: { ...byStand, status: 'pending' } }),
@@ -62,7 +64,7 @@ const overview = async (user) => {
   };
 
   if (isSuperAdmin) {
-    result.investor = { new: investorNew, inProgress: investorInProgress, total: investorTotal };
+    result.investor = { new: investorNew, inProgress: investorInProgress, total: investorTotal, overdue: investorOverdue };
     const [activeStands, contacts, contactsToday, siteRequests] = await Promise.all([
       Occupant.count({ where: { status: 'active' } }),
       Contact.count(),
@@ -75,7 +77,7 @@ const overview = async (user) => {
 
   // Ce qui attend une action : affiché en pastille dans le menu, au nombre exact.
   result.todo = {
-    ...(isSuperAdmin && { 'investor-requests': investorNew }),
+    ...(isSuperAdmin && { 'investor-requests': investorNew + investorOverdue }),
     b2b: b2bPending,
     challenges: rewardsToHand,
     wheel: wheelToHand,

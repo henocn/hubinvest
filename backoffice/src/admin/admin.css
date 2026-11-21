@@ -230,6 +230,35 @@
 .admin-app .meeting-report small { display: inline; margin: 0; }
 .admin-app .meeting-outcome.is-held_follow_up { border-color: rgba(21, 108, 83, .4); color: var(--green); }
 .admin-app .meeting-outcome.is-no_show { border-color: #e3b3bd; color: #a62039; }
+/* Paramètres de l'Investor Desk : liste des informations de qualification. */
+.admin-app .qualification-settings { display: grid; gap: 8px; padding: 12px; }
+.admin-app .qualification-setting { display: grid; grid-template-columns: 24px minmax(0, 1.4fr) 140px minmax(0, 1.6fr) 28px; align-items: center; gap: 8px; }
+.admin-app .qualification-setting-number { color: var(--muted); font-size: 12px; font-weight: 700; text-align: right; }
+.admin-app .qualification-settings-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 6px; }
+.admin-app .qualification-settings-actions .button-secondary { margin-right: auto; }
+@media (max-width: 720px) { .admin-app .qualification-setting { grid-template-columns: 24px minmax(0, 1fr) 28px; } .admin-app .qualification-setting select, .admin-app .qualification-setting > input:nth-of-type(2), .admin-app .qualification-setting > span:not(.qualification-setting-number) { grid-column: 2; } }
+/* Investor Desk : classe A·B·C, relance en retard, formulaires de suivi et de qualification. */
+.admin-app .investor-class { width: 24px; height: 24px; display: inline-grid; place-items: center; border-radius: 4px; color: #fff; font-size: 12px; font-weight: 800; }
+.admin-app .investor-class.is-A { background: var(--red); }
+.admin-app .investor-class.is-B { background: #b58400; }
+.admin-app .investor-class.is-C { color: #4d4d4d; background: #e4e6e8; }
+.admin-app .investor-late { color: #b70f2c; font-weight: 700; }
+.admin-app .investor-overdue { margin: 0 0 14px; border: 1px solid #efc6ce; background: #fff3f5; }
+.admin-app .investor-saved { color: var(--green); font-size: 12px; font-weight: 700; }
+.admin-app .investor-follow, .admin-app .investor-qualification { display: grid; gap: 16px; padding: 14px; }
+.admin-app .investor-follow label, .admin-app .investor-qualification label { display: grid; gap: 6px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.admin-app .investor-classes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; border: 0; }
+.admin-app .investor-classes legend { margin-bottom: 8px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.admin-app .investor-class-option { display: flex !important; align-items: flex-start; gap: 8px !important; padding: 10px; border: 1px solid var(--frame); border-radius: 4px; cursor: pointer; }
+.admin-app .investor-class-option.is-selected { border-color: var(--green); background: #f1f8f5; }
+.admin-app .investor-class-option span { display: grid; gap: 2px; }
+.admin-app .investor-class-option strong { color: var(--ink); font-size: 13px; }
+.admin-app .investor-class-option small { color: var(--muted); font-size: 11.5px; font-weight: 500; }
+.admin-app .investor-follow-facts { border: 1px solid var(--grid); }
+.admin-app .investor-qualification-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px 16px; }
+.admin-app .investor-form-actions { display: flex; justify-content: flex-end; }
+.admin-app .meeting-note-cell { max-width: 320px; white-space: pre-wrap; }
+@media (max-width: 720px) { .admin-app .investor-classes { grid-template-columns: 1fr; } }
 .admin-app .meeting-note { margin: 6px 0 0; color: var(--muted); font-size: 12px; line-height: 1.4; white-space: pre-wrap; }
 
 /* Barre des tableaux : recherche, filtre, tri, nombre de lignes et export. */

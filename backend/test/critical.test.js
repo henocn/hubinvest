@@ -1304,6 +1304,23 @@ test('les créneaux libres d’une journée suivent les réglages et écartent t
   assert.equal(result.slots.at(-1).startsAt, `${day}T16:40:00.000Z`);
 });
 
+test('un rendez-vous B2B se déplace sur un créneau libre, sans se gêner lui-même, et plus une fois son compte rendu fait', async (context) => {
+  const day = futureDay();
+  const meeting = { id: 'm1', startsAt: new Date(`${day}T10:00:00Z`), durationMinutes: 20, tableNumber: 1, outcome: null };
+  const reported = { id: 'm2', startsAt: new Date(Date.now() - 60000), durationMinutes: 20, tableNumber: 2, outcome: 'no_show' };
+  meetingSetup(context, { existing: [{ ...meeting, proposal: { need: { occupantId: 'stand-a' } } }, busyMeeting(`${day}T11:00:00Z`, 3, 'stand-b')] });
+  context.mock.method(b2bMeetingRepository, 'findById', async (id) => ({ m1: meeting, m2: reported })[id] || null);
+  context.mock.method(b2bMeetingRepository, 'update', async (item, values) => Object.assign(item, values));
+  const moved = [];
+  context.mock.method(notificationService, 'b2bMeetingMoved', (item) => { moved.push(item.id); });
+
+  await b2bMeetingService.reschedule({ id: 'u1' }, 'prop-1', 'm1', { startsAt: `${day}T10:10:00Z`, tableNumber: 1 });
+  assert.equal(meeting.startsAt.toISOString(), `${day}T10:10:00.000Z`);
+  assert.deepEqual(moved, ['m1']);
+  await assert.rejects(b2bMeetingService.reschedule({ id: 'u1' }, 'prop-1', 'm1', { startsAt: `${day}T11:00:00Z`, tableNumber: 3 }), (error) => error.code === 'B2B_TABLE_TAKEN');
+  await assert.rejects(b2bMeetingService.reschedule({ id: 'u1' }, 'prop-1', 'm2', { startsAt: `${day}T12:00:00Z`, tableNumber: 1 }), (error) => error.code === 'B2B_MEETING_REPORTED');
+});
+
 test('le compte rendu en un clic ne se fait qu’une fois le rendez-vous commencé ; la note reste libre', async (context) => {
   meetingSetup(context);
   const past = { id: 'm1', startsAt: new Date(Date.now() - 60000) };
@@ -1320,6 +1337,61 @@ test('le compte rendu en un clic ne se fait qu’une fois le rendez-vous commenc
   await b2bMeetingService.report({ id: 'u1' }, 'prop-1', 'm2', { note: 'Apporter le catalogue' });
   assert.equal(saved.m2.note, 'Apporter le catalogue');
   await assert.rejects(b2bMeetingService.report({ id: 'u1' }, 'prop-1', 'absent', { note: 'x' }), (error) => error.status === 404);
+});
+
+const investorSetup = (context, { request, followUps = 0 }) => {
+  const saved = [];
+  const reminders = [];
+  context.mock.method(investorRequestRepository, 'findById', async () => request);
+  context.mock.method(investorRequestRepository, 'update', async (item, values) => { saved.push(values); return Object.assign(item, values); });
+  context.mock.method(investorRequestRepository, 'countFollowUps', async () => followUps);
+  context.mock.method(investorRequestRepository, 'findTeamMember', async (id) => (id === 'apizf-1' ? { id } : null));
+  context.mock.method(investorRequestRepository, 'createFollowUp', async (values) => values);
+  context.mock.method(notificationService, 'investorFollowUpChanged', (item) => { reminders.push(item.nextFollowUpAt); });
+  return { saved, reminders };
+};
+
+test('Investor Desk : la classe A fixe une relance sous 48 h, B sous 7 jours, C aucune', async (context) => {
+  const request = { id: 'ir-1', classification: null, status: 'new' };
+  const { saved } = investorSetup(context, { request });
+  const before = Date.now();
+
+  await investorRequestService.update('ir-1', { classification: 'A' });
+  const dueA = saved.at(-1).nextFollowUpAt.getTime() - before;
+  assert.ok(dueA >= 48 * 3600000 && dueA < 48 * 3600000 + 5000);
+
+  await investorRequestService.update('ir-1', { classification: 'B' });
+  const dueB = saved.at(-1).nextFollowUpAt.getTime() - before;
+  assert.ok(dueB >= 7 * 24 * 3600000 && dueB < 7 * 24 * 3600000 + 5000);
+
+  await investorRequestService.update('ir-1', { classification: 'C' });
+  assert.equal(saved.at(-1).nextFollowUpAt, null);
+});
+
+test('Investor Desk : l’interlocuteur est un membre de l’équipe API-ZF et la qualification ne garde que les champs réglés', async (context) => {
+  const request = { id: 'ir-2', classification: 'B', status: 'in_progress' };
+  const { saved } = investorSetup(context, { request });
+  await assert.rejects(investorRequestService.update('ir-2', { contactUserId: 'stand-admin' }), (error) => error.code === 'INVESTOR_CONTACT_INVALID');
+
+  await investorRequestService.update('ir-2', { contactUserId: 'apizf-1', qualification: { sector: 'Industrie', jobs: '25', agreement: 'yes', unknown: 'x', origin: '' } });
+  assert.equal(saved.at(-1).contactUserId, 'apizf-1');
+  assert.deepEqual(saved.at(-1).qualification, { sector: 'Industrie', jobs: 25, agreement: true });
+});
+
+test('Investor Desk : une relance d’un contact A exige l’étape suivante et remplace la date de relance', async (context) => {
+  const request = { id: 'ir-3', classification: 'A', status: 'new', nextAction: null, nextFollowUpAt: new Date() };
+  const { saved, reminders } = investorSetup(context, { request, followUps: 1 });
+  await assert.rejects(investorRequestService.addFollowUp({ id: 'u1' }, 'ir-3', { channel: 'call' }), (error) => error.code === 'INVESTOR_NEXT_STEP_REQUIRED');
+
+  const next = new Date(Date.now() + 3 * 24 * 3600000);
+  const followUp = await investorRequestService.addFollowUp({ id: 'u1' }, 'ir-3', { channel: 'call', nextStep: 'Envoyer le dossier d’agrément', nextFollowUpAt: next });
+  assert.equal(followUp.createdByUserId, 'u1');
+  assert.deepEqual(saved.at(-1), { nextAction: 'Envoyer le dossier d’agrément', nextFollowUpAt: next, status: 'in_progress' });
+  assert.equal(reminders.length, 1);
+
+  // Une relance déjà faite garde sa date même si la classe change.
+  await investorRequestService.update('ir-3', { classification: 'B' });
+  assert.equal('nextFollowUpAt' in saved.at(-1), false);
 });
 
 const liveQuestionService = require('../src/modules/live-question/live-question.service');

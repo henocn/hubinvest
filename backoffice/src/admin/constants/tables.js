@@ -66,7 +66,14 @@ export const tableSettings = {
     ],
   },
   'investor-requests': {
-    sorts: sorts((item) => item.createdAt, (item) => item.fullName),
+    // Les relances les plus urgentes peuvent passer en tête (sans date de relance : en fin de liste).
+    sorts: [
+      ...sorts((item) => item.createdAt, (item) => item.fullName),
+      { value: 'follow-up', label: 'Relance la plus proche', compare: (a, b) => {
+        if (!a.nextFollowUpAt || !b.nextFollowUpAt) return Number(!a.nextFollowUpAt) - Number(!b.nextFollowUpAt);
+        return new Date(a.nextFollowUpAt) - new Date(b.nextFollowUpAt);
+      } },
+    ],
     exportName: 'investor-desk',
     columns: () => [
       { header: 'Reçue le', value: (item) => formatDate(item.createdAt), width: 18 },
@@ -74,8 +81,11 @@ export const tableSettings = {
       { header: 'E-mail', value: (item) => item.email, width: 30 },
       { header: 'Téléphone', value: (item) => item.phone, width: 18 },
       { header: 'Projet', value: (item) => item.projectSummary, width: 60 },
+      { header: 'Classe', value: (item) => item.classification, width: 8 },
+      { header: 'Interlocuteur', value: (item) => fullName(item.contactUser), width: 24 },
+      { header: 'Prochaine relance', value: (item) => formatDate(item.nextFollowUpAt), width: 18 },
       { header: 'Statut', value: (item) => investorStatusLabels[item.status] || item.status, width: 14 },
-      { header: 'Prochaine action', value: (item) => item.nextAction, width: 36 },
+      { header: 'Étape suivante', value: (item) => item.nextAction, width: 36 },
       { header: 'Accord API-ZF', value: (item) => Boolean(item.consentApizf), width: 14 },
     ],
   },

@@ -70,6 +70,13 @@ export const api = {
   investorRequests: (token) => request('/investor-requests', authorized(token)),
   createInvestorRequest: (token, values) =>
     request('/investor-requests', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
+  // Fiche Investor Desk : qualification, relances et rendez-vous.
+  investorRequest: (token, id) => request(`/investor-requests/${id}`, authorized(token)),
+  addInvestorFollowUp: (token, id, values) => request(`/investor-requests/${id}/follow-ups`, authorized(token, { method: 'POST', body: JSON.stringify(values) })),
+  deleteInvestorFollowUp: (token, id, followUpId) => request(`/investor-requests/${id}/follow-ups/${followUpId}`, authorized(token, { method: 'DELETE' })),
+  addInvestorMeeting: (token, id, values) => request(`/investor-requests/${id}/meetings`, authorized(token, { method: 'POST', body: JSON.stringify(values) })),
+  updateInvestorMeeting: (token, id, meetingId, values) => request(`/investor-requests/${id}/meetings/${meetingId}`, authorized(token, { method: 'PUT', body: JSON.stringify(values) })),
+  deleteInvestorMeeting: (token, id, meetingId) => request(`/investor-requests/${id}/meetings/${meetingId}`, authorized(token, { method: 'DELETE' })),
   updateInvestorRequest: (token, id, values) =>
     request(`/investor-requests/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
   b2bNeeds: (token) => request('/b2b-needs', authorized(token)),
@@ -80,7 +87,8 @@ export const api = {
   b2bAllProposals: (token) => request('/b2b-proposals', authorized(token)),
   // Fiche d'une demande B2B : rendez-vous, créneaux libres, compte rendu.
   b2bProposal: (token, id) => request(`/b2b-proposals/${id}`, authorized(token)),
-  b2bSlots: (token, id, date) => request(`/b2b-proposals/${id}/slots?date=${encodeURIComponent(date)}`, authorized(token)),
+  b2bSlots: (token, id, date, exclude = null) => request(`/b2b-proposals/${id}/slots?date=${encodeURIComponent(date)}${exclude ? `&exclude=${exclude}` : ''}`, authorized(token)),
+  rescheduleB2bMeeting: (token, id, meetingId, values) => request(`/b2b-proposals/${id}/meetings/${meetingId}`, authorized(token, { method: 'PUT', body: JSON.stringify(values) })),
   createB2bMeeting: (token, id, values) => request(`/b2b-proposals/${id}/meetings`, authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   updateB2bMeeting: (token, id, meetingId, values) => request(`/b2b-proposals/${id}/meetings/${meetingId}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
   deleteB2bMeeting: (token, id, meetingId) => request(`/b2b-proposals/${id}/meetings/${meetingId}`, authorized(token, { method: 'DELETE' })),

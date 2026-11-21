@@ -25,6 +25,21 @@ const defaults = () => ({
   b2bMeetingMinutes: 20,
   b2bDayStart: '09:00',
   b2bDayEnd: '17:00',
+  // Investor Desk : délais de relance du document (A sous 48 h, B sous 7 jours).
+  investorDelayAHours: 48,
+  investorDelayBDays: 7,
+  // Les neuf informations de qualification : le document ne les nomme pas, cette liste de travail se corrige dans Paramètres.
+  investorQualificationFields: [
+    { key: 'sector', label: 'Secteur d’activité', type: 'select', options: ['Agro-industrie', 'Industrie', 'Services', 'Logistique', 'Énergie', 'Numérique', 'Autre'] },
+    { key: 'projectType', label: 'Nature du projet', type: 'select', options: ['Création', 'Extension', 'Implantation', 'Partenariat'] },
+    { key: 'origin', label: 'Pays ou origine de l’investisseur', type: 'text' },
+    { key: 'amount', label: 'Montant envisagé', type: 'select', options: ['Moins de 100 millions FCFA', '100 à 500 millions FCFA', '500 millions à 2 milliards FCFA', 'Plus de 2 milliards FCFA'] },
+    { key: 'jobs', label: 'Emplois envisagés', type: 'number' },
+    { key: 'stage', label: 'Stade du projet', type: 'select', options: ['Idée', 'Étude', 'Financement trouvé', 'Prêt à démarrer'] },
+    { key: 'horizon', label: 'Horizon de décision', type: 'select', options: ['Moins de 6 mois', '6 à 12 mois', 'Plus de 12 mois'] },
+    { key: 'need', label: 'Besoin principal auprès de l’API-ZF', type: 'select', options: ['Agrément', 'Foncier', 'Partenaire', 'Information'] },
+    { key: 'agreement', label: 'Agrément déjà engagé auprès de l’API-ZF', type: 'yesno' },
+  ],
 });
 
 // Les réglages sont gardés en mémoire : lus à chaque requête sans interroger la base, rechargés à chaque modification.
@@ -51,6 +66,15 @@ const b2bSchedule = () => ({
   dayEnd: cache.b2bDayEnd || '17:00',
 });
 
+// Délai avant la relance d'une classe (en millisecondes) ; C n'a pas de relance individuelle (newsletter).
+const investorFollowUpDelay = (classification) => {
+  if (classification === 'A') return Math.max(1, Number(cache.investorDelayAHours) || 48) * 60 * 60 * 1000;
+  if (classification === 'B') return Math.max(1, Number(cache.investorDelayBDays) || 7) * 24 * 60 * 60 * 1000;
+  return null;
+};
+
+const investorQualificationFields = () => (Array.isArray(cache.investorQualificationFields) ? cache.investorQualificationFields : []);
+
 // Refuse l'action publique quand son module est fermé.
 const assertOpen = (key) => {
   if (cache[key] === false) throw new AppError(403, 'MODULE_CLOSED', MODULES[key]);
@@ -69,6 +93,9 @@ const update = async (values, user) => {
 };
 
 // Ce que le site public a besoin de savoir : modules ouverts et nombre de stands des Défis.
-const publicSettings = () => current();
+const publicSettings = () => {
+  const { investorQualificationFields: _fields, ...rest } = current();
+  return rest;
+};
 
-module.exports = { MODULES, load, current, requiredPassages, wheelPlaysPerDay, wheelSpinsPerCode, b2bSchedule, assertOpen, update, publicSettings, _reset: () => { cache = defaults(); } };
+module.exports = { MODULES, load, current, requiredPassages, wheelPlaysPerDay, wheelSpinsPerCode, b2bSchedule, investorFollowUpDelay, investorQualificationFields, assertOpen, update, publicSettings, _reset: () => { cache = defaults(); } };

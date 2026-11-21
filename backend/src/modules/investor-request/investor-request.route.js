@@ -21,6 +21,14 @@ router.post(
 router.use(asyncHandler(authenticate), investorDeskOnly);
 router.get('/', validate(investorRequestValidation.query, 'query'), asyncHandler(investorRequestController.list));
 router.post('/', validate(investorRequestValidation.createManual), asyncHandler(investorRequestController.createManual));
+const v = investorRequestValidation;
+const c = investorRequestController;
+router.get('/:id', validate(v.params, 'params'), asyncHandler(c.detail));
+router.post('/:id/follow-ups', validate(v.params, 'params'), validate(v.followUp), asyncHandler(c.addFollowUp));
+router.delete('/:id/follow-ups/:followUpId', validate(v.followUpParams, 'params'), asyncHandler(c.removeFollowUp));
+router.post('/:id/meetings', validate(v.params, 'params'), validate(v.meeting), asyncHandler(c.addMeeting));
+router.put('/:id/meetings/:meetingId', validate(v.meetingParams, 'params'), validate(v.meeting), asyncHandler(c.updateMeeting));
+router.delete('/:id/meetings/:meetingId', validate(v.meetingParams, 'params'), asyncHandler(c.removeMeeting));
 router.patch(
   '/:id',
   validate(investorRequestValidation.params, 'params'),

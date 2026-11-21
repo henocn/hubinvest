@@ -63,6 +63,30 @@ const investorRequestReceived = (request) => dispatch(async () => {
   ]);
 });
 
+// Alerte de relance Investor Desk : à l'heure limite (A sous 48 h, B sous 7 jours), l'interlocuteur nommé
+// — ou, sans interlocuteur, toute l'équipe API-ZF — est prévenu. Toute relance ou nouvelle date remplace l'alerte prévue.
+const investorFollowUpChanged = (request) => dispatch(async () => {
+  const dedupeKey = `investor-follow-up:${request.id}`;
+  await notificationRepository.cancelPending(dedupeKey);
+  const dueAt = request.nextFollowUpAt ? new Date(request.nextFollowUpAt) : null;
+  if (!dueAt || dueAt <= new Date() || !['A', 'B'].includes(request.classification) || request.status === 'closed') return;
+  const contact = request.contactUserId ? await notificationRepository.findActiveUser(request.contactUserId) : null;
+  const users = contact ? [contact] : await notificationRepository.findSuperAdmins();
+  if (users.length === 0) return;
+  await notificationRepository.enqueue(forUsers(
+    users,
+    (user) => ({ ...templates.investorFollowUpDue({ user, request }), tag: dedupeKey }),
+    { dedupeKey, availableAt: dueAt },
+  ));
+});
+
+// Rendez-vous Investor Desk fixé, déplacé ou annulé : l'investisseur reçoit un e-mail.
+const investorMeetingChanged = (kind, meeting, request) => dispatch(async () => {
+  await notificationRepository.enqueue([
+    { channel: 'email', recipient: request.email, payload: templates.investorMeeting({ kind, meeting, request }) },
+  ]);
+});
+
 // Prévient l'équipe du stand et confirme au professionnel l'envoi de sa proposition.
 const b2bProposalReceived = (proposal, need) => dispatch(async () => {
   const { occupant } = need;
@@ -87,6 +111,12 @@ const b2bMeetingScheduled = (meeting, proposal) => dispatch(async () => {
   ]);
 });
 
+const b2bMeetingMoved = (meeting, proposal) => dispatch(async () => {
+  await notificationRepository.enqueue([
+    { channel: 'email', recipient: proposal.email, payload: templates.b2bMeetingMoved({ meeting, proposal, need: proposal.need, occupant: proposal.need.occupant }) },
+  ]);
+});
+
 const b2bMeetingCancelled = (meeting, proposal) => dispatch(async () => {
   await notificationRepository.enqueue([
     { channel: 'email', recipient: proposal.email, payload: templates.b2bMeetingCancelled({ meeting, proposal, need: proposal.need, occupant: proposal.need.occupant }) },
@@ -107,9 +137,12 @@ module.exports = {
   contactRequested,
   contactReminderChanged,
   investorRequestReceived,
+  investorFollowUpChanged,
+  investorMeetingChanged,
   b2bProposalReceived,
   b2bProposalDecided,
   b2bMeetingScheduled,
+  b2bMeetingMoved,
   b2bMeetingCancelled,
   studioInvitationAnswered,
 };

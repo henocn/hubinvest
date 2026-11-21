@@ -21,12 +21,33 @@ const createManual = Joi.object({
   consentApizf: Joi.boolean().default(false),
 });
 
+// Suivi : statut, prochaine action, classe A·B·C, interlocuteur nommé, réponses de qualification (clé → valeur).
 const update = Joi.object({
   status: Joi.string().valid('new', 'in_progress', 'closed'),
   nextAction: Joi.string().trim().max(255).allow('', null),
+  classification: Joi.string().trim().uppercase().valid('A', 'B', 'C').allow(null),
+  contactUserId: uuid.allow(null),
+  qualification: Joi.object().pattern(Joi.string().max(40), Joi.alternatives(Joi.string().trim().max(500).allow(''), Joi.number(), Joi.boolean()).allow(null)),
 }).min(1);
 
+// Relance faite : moyen, note, étape suivante (obligatoire pour A et B, contrôlée par le service), date de la prochaine relance.
+const followUp = Joi.object({
+  channel: Joi.string().valid('call', 'email', 'meeting').required(),
+  note: Joi.string().trim().max(2000).allow('', null),
+  nextStep: Joi.string().trim().max(255).allow('', null),
+  nextFollowUpAt: Joi.date().iso().allow(null),
+  doneAt: Joi.date().iso().max('now'),
+});
+
+// Rendez-vous : date et heure, lieu.
+const meeting = Joi.object({
+  startsAt: Joi.date().iso().required(),
+  location: Joi.string().trim().min(2).max(160).required(),
+});
+
 const params = Joi.object({ id: uuid.required() });
+const followUpParams = Joi.object({ id: uuid.required(), followUpId: uuid.required() });
+const meetingParams = Joi.object({ id: uuid.required(), meetingId: uuid.required() });
 
 const query = Joi.object({
   status: Joi.string().valid('new', 'in_progress', 'closed'),
@@ -36,4 +57,4 @@ const query = Joi.object({
   offset: Joi.number().integer().min(0).default(0),
 });
 
-module.exports = { createPublic, createManual, update, params, query };
+module.exports = { createPublic, createManual, update, followUp, meeting, params, followUpParams, meetingParams, query };

@@ -114,8 +114,8 @@ Avant toute modification, relire `PREFERENCES.md`. Toute nouvelle préférence d
 - [x] Formulaire public « Parlez-nous de votre projet » ; demande attribuée à un membre de l’équipe avec statut et prochaine action.
 - [x] Équipe du stand prévenue d’une nouvelle demande ; l’investisseur reçoit une confirmation par e-mail dans sa langue.
 - [ ] Réservation d’un rendez-vous sur créneaux administrés, sans double réservation.
-- [ ] Qualification en neuf informations : profil, entreprise, pays, secteur, nature du projet, stade, besoin, interlocuteur API-ZF, prochaine action datée.
-- [ ] Classement A (relance sous 48 h), B (sous 7 jours), C (newsletter).
+- [x] Qualification en neuf informations (liste de travail réglable dans Paramètres), interlocuteur API-ZF, prochaine relance datée, journal des relances et rendez-vous (fiche /investor-desk/<id>, 21/11/2026).
+- [x] Classement A (relance sous 48 h), B (sous 7 jours), C (newsletter) ; alerte à l’interlocuteur et au tableau de bord quand une relance est dépassée.
 - [ ] Alerte au référent quand un contact A n’est pas relancé dans les délais.
 - [ ] Investor Pack bilingue téléchargeable par QR code, avec comptage des téléchargements.
 - [ ] Export des dossiers qualifiés vers INVEST TRACK (modèle Excel à recevoir).

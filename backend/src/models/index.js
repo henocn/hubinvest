@@ -4,6 +4,8 @@ const defineOccupant = require('./occupant.model');
 const defineUser = require('./user.model');
 const defineContact = require('./contact.model');
 const defineInvestorRequest = require('./investor-request.model');
+const defineInvestorFollowUp = require('./investor-follow-up.model');
+const defineInvestorMeeting = require('./investor-meeting.model');
 const defineB2bNeed = require('./b2b-need.model');
 const defineB2bProposal = require('./b2b-proposal.model');
 const defineB2bMeeting = require('./b2b-meeting.model');
@@ -23,6 +25,8 @@ const Occupant = defineOccupant(sequelize, DataTypes);
 const User = defineUser(sequelize, DataTypes);
 const Contact = defineContact(sequelize, DataTypes);
 const InvestorRequest = defineInvestorRequest(sequelize, DataTypes);
+const InvestorFollowUp = defineInvestorFollowUp(sequelize, DataTypes);
+const InvestorMeeting = defineInvestorMeeting(sequelize, DataTypes);
 const B2bNeed = defineB2bNeed(sequelize, DataTypes);
 const B2bProposal = defineB2bProposal(sequelize, DataTypes);
 const B2bMeeting = defineB2bMeeting(sequelize, DataTypes);
@@ -59,6 +63,11 @@ B2bProposal.belongsTo(B2bNeed, { foreignKey: 'b2bNeedId', as: 'need' });
 
 User.hasMany(B2bProposal, { foreignKey: 'handledByUserId', as: 'handledB2bProposals' });
 B2bProposal.belongsTo(User, { foreignKey: 'handledByUserId', as: 'handledBy' });
+InvestorRequest.belongsTo(User, { foreignKey: 'contactUserId', as: 'contactUser' });
+InvestorRequest.hasMany(InvestorFollowUp, { foreignKey: 'investorRequestId', as: 'followUps' });
+InvestorFollowUp.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
+InvestorRequest.hasMany(InvestorMeeting, { foreignKey: 'investorRequestId', as: 'meetings' });
+InvestorMeeting.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
 B2bProposal.hasMany(B2bMeeting, { foreignKey: 'b2bProposalId', as: 'meetings' });
 B2bMeeting.belongsTo(B2bProposal, { foreignKey: 'b2bProposalId', as: 'proposal' });
 B2bMeeting.belongsTo(User, { foreignKey: 'reportedByUserId', as: 'reportedBy' });
@@ -106,6 +115,8 @@ module.exports = {
   User,
   Contact,
   InvestorRequest,
+  InvestorFollowUp,
+  InvestorMeeting,
   B2bNeed,
   B2bProposal,
   B2bMeeting,

@@ -21,7 +21,7 @@ const update = Joi.object({
 
 const meetingParams = Joi.object({ id: uuid.required(), meetingId: uuid.required() });
 // Jour au format AAAA-MM-JJ.
-const slotsQuery = Joi.object({ date: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).required() });
+const slotsQuery = Joi.object({ exclude: uuid, date: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).required() });
 // Rendez-vous : créneau (date et heure ISO) et numéro de table.
 const schedule = Joi.object({
   startsAt: Joi.date().iso().required(),

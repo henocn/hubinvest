@@ -36,6 +36,28 @@ module.exports = (sequelize, DataTypes) =>
         allowNull: true,
         field: 'next_action',
       },
+      // Classe du document : A = projet prioritaire (relance sous 48 h), B = à suivre (sous 7 jours), C = à nourrir (newsletter).
+      classification: {
+        type: DataTypes.STRING(1),
+        allowNull: true,
+        validate: { isIn: [['A', 'B', 'C']] },
+      },
+      // Réponses aux informations de qualification réglées dans Paramètres, par clé de champ.
+      qualification: {
+        type: DataTypes.JSONB,
+        allowNull: true,
+      },
+      // Interlocuteur nommé de l'API-ZF qui relance l'investisseur.
+      contactUserId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        field: 'contact_user_id',
+      },
+      nextFollowUpAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        field: 'next_follow_up_at',
+      },
       language: {
         type: DataTypes.STRING(2),
         allowNull: false,

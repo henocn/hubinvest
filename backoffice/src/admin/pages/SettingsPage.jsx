@@ -4,6 +4,7 @@ import { api } from '../lib/api';
 import { useRealtimeEvent } from '../../lib/realtime';
 import B2bNeedsSettings from '../components/B2bNeedsSettings';
 import WheelSettings from '../components/WheelSettings';
+import InvestorQualificationSettings from '../components/InvestorQualificationSettings';
 
 const modules = [
   { key: 'contactRequestsOpen', title: 'Demandes de contact aux stands' },
@@ -147,6 +148,13 @@ export default function SettingsPage({ session, onLogout }) {
             <SettingField settingKey="b2bMeetingMinutes" label="Durée d’un rendez-vous (minutes)" hint="20 minutes selon le document" type="number" min="5" max="120" value={settings.b2bMeetingMinutes} saving={savingKey} saved={savedKey} onSave={save} />
             <SettingField settingKey="b2bDayStart" label="Premier rendez-vous" hint="Heure de Lomé" type="time" value={settings.b2bDayStart} saving={savingKey} saved={savedKey} onSave={save} />
             <SettingField settingKey="b2bDayEnd" label="Fin des rendez-vous" hint="Le dernier rendez-vous se termine au plus tard à cette heure" type="time" value={settings.b2bDayEnd} saving={savingKey} saved={savedKey} onSave={save} />
+          </section>
+
+          <section className="data-panel settings-panel">
+            <h2>Investor Desk</h2>
+            <SettingField settingKey="investorDelayAHours" label="Relance d’un contact A (heures)" hint="48 heures selon le document" type="number" min="1" max="720" value={settings.investorDelayAHours} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="investorDelayBDays" label="Relance d’un contact B (jours)" hint="7 jours selon le document" type="number" min="1" max="90" value={settings.investorDelayBDays} saving={savingKey} saved={savedKey} onSave={save} />
+            <InvestorQualificationSettings fields={settings.investorQualificationFields} saving={savingKey === 'investorQualificationFields'} saved={savedKey === 'investorQualificationFields'} onSave={save} />
           </section>
         </>
       )}

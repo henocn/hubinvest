@@ -31,7 +31,7 @@ const findStartingBetween = (from, to, transaction) => B2bMeeting.findAll({
 const lockSchedule = (transaction) => sequelize.query('SELECT pg_advisory_xact_lock(hashtext(:key))', { replacements: { key: 'b2b-meetings' }, transaction });
 
 const create = (values, transaction) => B2bMeeting.create(values, { transaction });
-const update = (meeting, values) => meeting.update(values);
+const update = (meeting, values, transaction) => meeting.update(values, { transaction });
 const destroy = (meeting) => meeting.destroy();
 
 module.exports = { sequelize, findByProposal, findById, findStartingBetween, lockSchedule, create, update, destroy };

@@ -1,14 +1,15 @@
-import { BriefcaseBusiness, Pencil } from 'lucide-react';
-import { investorStatusLabels } from '../../constants/access';
+import { BriefcaseBusiness } from 'lucide-react';
+import { investorClassHints, investorStatusLabels } from '../../constants/access';
 import EmptyState from '../EmptyState';
-import { ActionsCell, Detail, ExpandableRow, useOpenRow } from '../RowDetails';
 import { SelectAllHeader, SelectCell } from '../RowSelection';
 
 const dateTime = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Africa/Lome', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+const fullName = (user) => [user?.firstName, user?.lastName].filter(Boolean).join(' ');
+const isLate = (item) => item.nextFollowUpAt && new Date(item.nextFollowUpAt) < new Date() && item.status !== 'closed';
 
-// Demandes de l'Investor Desk ; un clic sur la ligne affiche les coordonnées, le projet et le suivi.
-export default function InvestorRequestsTable({ selection, requests, query, onEdit }) {
-  const openRow = useOpenRow();
+// Demandes de l'Investor Desk ; un clic sur la ligne ouvre la fiche (qualification, classe, relances, rendez-vous).
+// Une relance dépassée apparaît en rouge.
+export default function InvestorRequestsTable({ selection, requests, query, onOpen }) {
   if (!requests.length) {
     return <EmptyState icon={BriefcaseBusiness} title="Aucune demande" copy={query ? 'Aucun résultat ne correspond à la recherche.' : 'Les demandes envoyées à l’Investor Desk apparaîtront ici.'} />;
   }
@@ -16,27 +17,17 @@ export default function InvestorRequestsTable({ selection, requests, query, onEd
   return (
     <div className="table-scroll">
       <table>
-        <thead><tr><SelectAllHeader selection={selection} /><th>Reçue le</th><th>Demandeur</th><th>Statut</th><th className="actions-heading">Actions</th></tr></thead>
+        <thead><tr><SelectAllHeader selection={selection} /><th>Reçue le</th><th>Demandeur</th><th>Classe</th><th>Interlocuteur</th><th>Prochaine relance</th><th>Statut</th></tr></thead>
         <tbody>{requests.map((item) => (
-          <ExpandableRow
-            key={item.id}
-            id={item.id}
-            openRow={openRow}
-            colSpan={5}
-            details={<>
-              <Detail label="E-mail"><a href={`mailto:${item.email}`}>{item.email}</a></Detail>
-              <Detail label="Téléphone">{item.phone && <a href={`tel:${item.phone}`}>{item.phone}</a>}</Detail>
-              <Detail label="Accord API-ZF">{item.consentApizf ? 'Oui' : 'Non'}</Detail>
-              <Detail label="Prochaine action">{item.nextAction}</Detail>
-              <Detail label="Projet ou besoin" wide>{item.projectSummary}</Detail>
-            </>}
-          >
+          <tr key={item.id} className="is-link" onClick={() => onOpen(item)}>
             <SelectCell selection={selection} id={item.id} />
             <td className="stand-nowrap">{dateTime.format(new Date(item.createdAt))}</td>
             <td><strong>{item.fullName}</strong></td>
+            <td>{item.classification ? <span className={`investor-class is-${item.classification}`} title={investorClassHints[item.classification]}>{item.classification}</span> : <span className="stand-empty">À classer</span>}</td>
+            <td>{fullName(item.contactUser) || <span className="stand-empty">À désigner</span>}</td>
+            <td className={`stand-nowrap${isLate(item) ? ' investor-late' : ''}`}>{item.nextFollowUpAt ? dateTime.format(new Date(item.nextFollowUpAt)) : '—'}</td>
             <td><span className={`status-pill ${item.status === 'in_progress' ? 'is-active' : item.status === 'new' ? 'is-new' : ''}`}>{investorStatusLabels[item.status]}</span></td>
-            <ActionsCell><button className="table-action is-icon" type="button" aria-label={`Suivre la demande de ${item.fullName}`} title="Suivre" onClick={() => onEdit(item)}><Pencil size={16} /></button></ActionsCell>
-          </ExpandableRow>
+          </tr>
         ))}</tbody>
       </table>
     </div>
