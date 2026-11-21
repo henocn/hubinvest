@@ -151,7 +151,7 @@ export default function ChallengePage({ token, openWheel = false }) {
             icon={Route}
             tone="route"
             title={t('play.routeTitle')}
-            text={hasPassport ? t('play.routeTextCount', { count: passport.requiredPassages }) : t('play.routeText')}
+            text={t('play.routeText')}
             steps={[t('play.routeStep1'), t('play.routeStep2'), t('play.routeStep3')]}
             doneSteps={hasPassport ? 1 : 0}
             badge={hasPassport && <span className="play-game-badge" aria-label={t('challenge.progress', { count: passport.passageCount, total: passport.requiredPassages })}><strong>{passport.passageCount} / {passport.requiredPassages}</strong><small>{t('challenge.validated')}</small></span>}

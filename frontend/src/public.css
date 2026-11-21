@@ -3062,3 +3062,64 @@ main h1:not(.sr-only)::before {
 .play-intro h1::after {
   content: none;
 }
+
+/* « Trouvez les 5 étapes » : une pastille ronde par étape, verte une fois trouvée. */
+.challenge-steps {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.play-game .challenge-steps li,
+.challenge-steps li {
+  counter-increment: none;
+  font-size: inherit;
+  font-weight: inherit;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.challenge-step-badge {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--filet);
+  border-radius: 50%;
+  color: var(--muted);
+  font-family: var(--font-display);
+  font-weight: 800;
+}
+
+.challenge-steps li.is-found .challenge-step-badge {
+  border-color: var(--green);
+  color: #fff;
+  background: var(--green);
+}
+
+.challenge-step-text {
+  min-width: 0;
+  display: grid;
+}
+
+.challenge-step-text strong {
+  font-size: 0.95rem;
+}
+
+.challenge-step-text small {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.challenge-steps li:not(.is-found) .challenge-step-text strong {
+  color: var(--muted);
+}
+
+/* Les pastilles d'étapes n'héritent pas de la numérotation des cartes de jeu. */
+.play-game .challenge-steps li::before {
+  content: none;
+}

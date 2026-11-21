@@ -33,7 +33,8 @@ export default function DashboardPage({ session }) {
               {isSuperAdmin && <Stat value={data.investor.commitmentsOverdue ?? 0} label="Engagements en retard" detail="réponse promise non donnée" to="/guichets" urgent />}
               <Stat value={data.b2b.pendingProposals} label="Demandes B2B" detail="à traiter" to="/b2b" urgent />
               <Stat value={data.studio.pending} label="Studio" detail="invités sans créneau" to="/studio" />
-              <Stat value={data.challenges.rewardsToHand} label="Récompenses des Défis" detail="parcours terminés, à remettre" to="/participants" urgent />
+              <Stat value={data.challenges.rewardsToHand} label="Récompenses à remettre" detail="les 5 étapes trouvées" to="/participants" urgent />
+              {data.challenges.rewardsLeft !== null && data.challenges.rewardsLeft !== undefined && <Stat value={data.challenges.rewardsLeft} label="Récompenses en stock" detail={`sur ${data.challenges.rewardStock}`} to="/parametres" urgent={data.challenges.rewardsLeft <= 5} />}
               <Stat value={data.wheel.prizesToHand} label="Lots de la roue" detail="gagnés, pas encore remis" to="/roue" urgent />
             </div>
           </section>

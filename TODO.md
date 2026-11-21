@@ -11,7 +11,7 @@ Le Hub devient deux espaces : le Stand API-ZF (3 stands, 3 guichets) et l’Espa
 - [ ] Brochure « Investir au Togo en 5 étapes » et Investor Pack : fichiers à déposer dans l’administration et à proposer par QR code.
 - [~] Accueil « Nos services » (fait : signature, trois actions vers les guichets et les Défis, 5 étapes et leurs services, démarches en ligne ; reste : brochure, plan) : 6 services, 12 démarches avec lien vers la plateforme officielle, brochure « 5 étapes » ; puis programme, entreprises, plan ; boutons « Prendre rendez-vous », « Être recontacté », « Jouer » (M1).
 - [x] Guichets et registre unique (fait le 21/11/2026 ; reste à confirmer les neuf informations du diagnostic et les heures d’ouverture des guichets) : rendez-vous aux 3 guichets, fiche de diagnostic en 15 minutes, fiche « Mon entreprise, mes difficultés », A·B·C en neuf informations, un responsable par contact, alerte A sous 48 h, classe « Accompagnement » (M3).
-- [ ] Défis : parcours « Trouvez les 5 étapes », chaque étape sur un stand de l’Espace Industrie, la dernière au Stand API-ZF (M6).
+- [x] Défis : parcours « Trouvez les 5 étapes » (fait le 21/11/2026 ; reste à marquer le stand de l’API-ZF « Stand API-ZF » dans sa fiche et à saisir le stock de récompenses), chaque étape sur un stand de l’Espace Industrie, la dernière au Stand API-ZF (M6).
 - [ ] Grand écran : service du jour, entreprise à la une, prochaine interview, compteurs, capsules (M7).
 - [ ] Tableau de bord : diagnostics et sollicitations d’accompagnement ; huit indicateurs ; rapport PDF par entreprise avant le 18 décembre (M8).
 - [ ] Vocabulaire : entreprises, Stand API-ZF, Espace Industrie, nouvelle signature.

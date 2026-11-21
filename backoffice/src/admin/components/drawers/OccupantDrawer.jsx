@@ -10,6 +10,7 @@ export default function OccupantDrawer({ occupant, onClose, onSaved, token }) {
   const [form, setForm] = useState(() => ({
     name: occupant?.name || '',
     standLabel: occupant?.standLabel || '',
+    space: occupant?.space || 'industry',
     website: occupant?.website || '',
     activity: occupant?.activity || '',
     products: occupant?.products || '',
@@ -52,6 +53,7 @@ export default function OccupantDrawer({ occupant, onClose, onSaved, token }) {
       const values = {
         name: form.name,
         standLabel: form.standLabel || null,
+        space: form.space,
         website: form.website.trim() || null,
         activity: form.activity || null,
         products: form.products || null,
@@ -116,6 +118,7 @@ export default function OccupantDrawer({ occupant, onClose, onSaved, token }) {
         </header>
         <form onSubmit={submit} className="drawer-form">
           <label>Nom de la structure<input value={form.name} onChange={field('name')} minLength={2} required autoFocus /></label>
+          <label>Espace<select value={form.space} onChange={field('space')}><option value="industry">Espace Industrie</option><option value="apizf">Stand API-ZF</option></select></label>
           <div className="field-row">
             <label>Emplacement du stand<input value={form.standLabel} onChange={field('standLabel')} /></label>
             <label>Site web<input type="url" inputMode="url" value={form.website} onChange={field('website')} placeholder="https://" /></label>
