@@ -22,7 +22,8 @@ function SettingField({ settingKey, label, hint, type, min, max, value, saving, 
   const [draft, setDraft] = useState(String(value ?? ''));
   useEffect(() => { setDraft(String(value ?? '')); }, [value]);
   const next = type === 'number' ? Number.parseInt(draft, 10) : draft;
-  const valid = type === 'number' ? Number.isInteger(next) && next >= Number(min) && next <= Number(max) : /^\d{2}:\d{2}$/.test(draft);
+  const pattern = type === 'date' ? /^\d{4}-\d{2}-\d{2}$/ : /^\d{2}:\d{2}$/;
+  const valid = type === 'number' ? Number.isInteger(next) && next >= Number(min) && next <= Number(max) : pattern.test(draft);
   return (
     <form className="settings-row" onSubmit={(event) => { event.preventDefault(); if (valid && next !== value) void onSave(settingKey, next); }}>
       <span>
@@ -140,6 +141,15 @@ export default function SettingsPage({ session, onLogout }) {
                 <button className="button button-secondary" type="submit" disabled={savingKey === 'requiredPassages' || Number(passages) === settings.requiredPassages}>Enregistrer</button>
               </span>
             </form>
+          </section>
+
+          <section className="data-panel settings-panel">
+            <h2>Studio</h2>
+            <SettingField settingKey="studioFirstDay" label="Premier jour des créneaux" type="date" value={settings.studioFirstDay} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="studioLastDay" label="Dernier jour des créneaux" type="date" value={settings.studioLastDay} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="studioDayStart" label="Premier créneau de la journée" hint="Heure de Lomé ; le document place le Studio l’après-midi" type="time" value={settings.studioDayStart} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="studioDayEnd" label="Fin des créneaux" hint="Le dernier passage se termine au plus tard à cette heure" type="time" value={settings.studioDayEnd} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="studioSlotMinutes" label="Durée d’un passage (minutes)" type="number" min="5" max="120" value={settings.studioSlotMinutes} saving={savingKey} saved={savedKey} onSave={save} />
           </section>
 
           <section className="data-panel settings-panel">

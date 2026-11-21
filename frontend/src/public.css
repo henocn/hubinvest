@@ -1666,6 +1666,61 @@
   background: #fff;
 }
 
+.studio-decline-button.is-danger {
+  color: #ba0024;
+  border-color: #ecc5cd;
+}
+
+.studio-eyebrow {
+  color: var(--green);
+  font-size: 0.78rem;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.studio-response-actions {
+  flex-wrap: wrap;
+}
+
+/* Choix du créneau : un jour, puis une heure. */
+.studio-booking {
+  margin-top: 28px;
+}
+
+.studio-booking h2 {
+  margin: 0 0 6px;
+  font-size: 1.15rem;
+}
+
+.studio-days,
+.studio-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.studio-days button,
+.studio-slots button {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--ink);
+  background: #fff;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.studio-days button.is-selected,
+.studio-slots button.is-selected {
+  border-color: var(--green);
+  color: #fff;
+  background: var(--green);
+}
+
 .challenge-page {
   min-height: calc(100vh - 82px);
   display: grid;

@@ -123,14 +123,49 @@ const b2bMeetingCancelled = (meeting, proposal) => dispatch(async () => {
   ]);
 });
 
-// Prévient l'auteur de l'invitation et l'équipe du stand de la réponse de l'invité.
-const studioInvitationAnswered = (invitation) => dispatch(async () => {
+// Studio : l'auteur de l'invitation et l'équipe du stand (ou l'API-ZF) suivent les réponses de l'invité.
+const studioTeam = async (invitation) => {
   const creator = invitation.createdByUserId ? await notificationRepository.findActiveUser(invitation.createdByUserId) : null;
-  const team = await standTeam(invitation.occupantId);
-  await notificationRepository.enqueue(forUsers(
-    [...(creator ? [creator] : []), ...team],
-    (user) => templates.studioInvitationAnswered({ user, invitation }),
-  ));
+  return [...(creator ? [creator] : []), ...(await standTeam(invitation.occupantId))];
+};
+const studioReminderKey = (invitation) => `studio-reminder:${invitation.id}`;
+const studioEmail = (invitation, payload, extra = {}) => ({ channel: 'email', recipient: invitation.email, payload, ...extra });
+
+// Invitation personnelle : le lien pour choisir son créneau.
+const studioInvited = (invitation) => dispatch(async () => {
+  if (!invitation.email) return;
+  await notificationRepository.enqueue([studioEmail(invitation, templates.studioInvitation({ invitation }))]);
+});
+
+// Créneau réservé ou changé : confirmation à l'invité, rappels la veille et une heure avant, information de l'équipe.
+const studioBooked = (invitation, changed) => dispatch(async () => {
+  const dedupeKey = studioReminderKey(invitation);
+  await notificationRepository.cancelPending(dedupeKey);
+  const start = new Date(invitation.scheduledAt).getTime();
+  const reminders = [start - 24 * 60 * 60 * 1000, start - 60 * 60 * 1000]
+    .filter((time) => time > Date.now())
+    .map((time) => studioEmail(invitation, templates.studioReminder({ invitation }), { dedupeKey, availableAt: new Date(time) }));
+  await notificationRepository.enqueue([
+    ...(invitation.email ? [studioEmail(invitation, templates.studioBookingConfirmation({ invitation, changed })), ...reminders] : []),
+    ...forUsers(await studioTeam(invitation), (user) => templates.studioGuestAnswered({ user, invitation, answer: changed ? 'moved' : 'booked' })),
+  ]);
+});
+
+const studioDeclined = (invitation) => dispatch(async () => {
+  await notificationRepository.cancelPending(studioReminderKey(invitation));
+  await notificationRepository.enqueue(forUsers(await studioTeam(invitation), (user) => templates.studioGuestAnswered({ user, invitation, answer: 'declined' })));
+});
+
+// Passage annulé par l'équipe (ou invitation supprimée) : plus de rappels ; l'invité est prévenu si son créneau était à venir.
+const studioCancelled = (invitation, notifyGuest) => dispatch(async () => {
+  await notificationRepository.cancelPending(studioReminderKey(invitation));
+  if (notifyGuest && invitation.email) await notificationRepository.enqueue([studioEmail(invitation, templates.studioCancellation({ invitation }))]);
+});
+
+// Livraison de la capsule, prête à partager.
+const studioCapsuleDelivered = (invitation) => dispatch(async () => {
+  if (!invitation.email) return;
+  await notificationRepository.enqueue([studioEmail(invitation, templates.studioCapsule({ invitation }))]);
 });
 
 module.exports = {
@@ -144,5 +179,9 @@ module.exports = {
   b2bMeetingScheduled,
   b2bMeetingMoved,
   b2bMeetingCancelled,
-  studioInvitationAnswered,
+  studioInvited,
+  studioBooked,
+  studioDeclined,
+  studioCancelled,
+  studioCapsuleDelivered,
 };

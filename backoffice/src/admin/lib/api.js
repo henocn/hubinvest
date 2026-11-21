@@ -85,6 +85,14 @@ export const api = {
     request('/b2b-needs', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   updateB2bNeed: (token, id, values) =>
     request(`/b2b-needs/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
+  // Studio : invitations, renvoi, annulation, livraison de la capsule.
+  studioInvitations: (token) => request('/studio-invitations', authorized(token)),
+  createStudioInvitation: (token, values) => request('/studio-invitations', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
+  updateStudioInvitation: (token, id, values) => request(`/studio-invitations/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
+  resendStudioInvitation: (token, id) => request(`/studio-invitations/${id}/resend`, authorized(token, { method: 'POST' })),
+  cancelStudioInvitation: (token, id) => request(`/studio-invitations/${id}/cancel`, authorized(token, { method: 'POST' })),
+  deliverStudioCapsule: (token, id, capsuleUrl) => request(`/studio-invitations/${id}/deliver`, authorized(token, { method: 'POST', body: JSON.stringify({ capsuleUrl }) })),
+  deleteStudioInvitation: (token, id) => request(`/studio-invitations/${id}`, authorized(token, { method: 'DELETE' })),
   b2bAllProposals: (token) => request('/b2b-proposals', authorized(token)),
   // Fiche d'une demande B2B : rendez-vous, créneaux libres, compte rendu.
   b2bProposal: (token, id) => request(`/b2b-proposals/${id}`, authorized(token)),

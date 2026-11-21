@@ -31,6 +31,7 @@ export default function DashboardPage({ session }) {
               {isSuperAdmin && <Stat value={data.investor.new} label="Investor Desk" detail="demandes à traiter" to="/investor-desk" urgent />}
               {isSuperAdmin && <Stat value={data.investor.overdue ?? 0} label="Relances A en retard" detail="Investor Desk, délai dépassé" to="/investor-desk" urgent />}
               <Stat value={data.b2b.pendingProposals} label="Demandes B2B" detail="à traiter" to="/b2b" urgent />
+              <Stat value={data.studio.pending} label="Studio" detail="invités sans créneau" to="/studio" />
               <Stat value={data.challenges.rewardsToHand} label="Récompenses des Défis" detail="parcours terminés, à remettre" to="/participants" urgent />
               <Stat value={data.wheel.prizesToHand} label="Lots de la roue" detail="gagnés, pas encore remis" to="/roue" urgent />
             </div>
@@ -45,6 +46,7 @@ export default function DashboardPage({ session }) {
               <Stat value={data.wheel.played} label="Parties de roue" detail={`dont ${data.wheel.playedToday} aujourd’hui`} to="/roue" />
               {isSuperAdmin && <Stat value={data.investor.total} label="Projets Investor Desk" detail={`${data.investor.inProgress} à relancer`} to="/investor-desk" />}
               <Stat value={data.b2b.openNeeds} label="Besoins B2B ouverts" to="/parametres" />
+              <Stat value={data.studio.confirmed} label="Passages au Studio" detail="réservés, à venir" to="/studio" />
             </div>
           </section>
         </>

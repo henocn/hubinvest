@@ -446,44 +446,70 @@ test('le backoffice B2B peut lire les propositions d’un besoin existant', asyn
   assert.deepEqual(result, [{ id: 'proposal-a', b2bNeedId: 'need-b' }]);
 });
 
-test('une invitation Studio utilise un lien personnel imprévisible', async (context) => {
+test('une invitation Studio utilise un lien personnel imprévisible et l’envoie à l’invité', async (context) => {
   let saved;
-  context.mock.method(studioInvitationRepository, 'create', async (values) => {
-    saved = values;
-    return values;
-  });
+  const sent = [];
+  context.mock.method(studioInvitationRepository, 'create', async (values) => { saved = values; return values; });
   context.mock.method(studioInvitationRepository, 'findOccupantById', async (id) => ({ id }));
+  context.mock.method(notificationService, 'studioInvited', (invitation) => { sent.push(invitation.email); });
 
   await studioInvitationService.create(
     { id: 'campaign-user', role: 'admin', occupantId: 'occupant-a' },
-    { guestName: 'Invité Test', subject: 'Entretien Studio', scheduledAt: new Date().toISOString() },
+    { guestName: 'Invité Test', email: 'Invite@Example.com', format: 'two_minutes' },
   );
 
   assert.match(saved.token, /^[a-f0-9]{64}$/);
   assert.equal(saved.createdByUserId, 'campaign-user');
   assert.equal(saved.occupantId, 'occupant-a');
-  assert.equal(saved.status, 'pending');
+  assert.equal(saved.status, 'invited');
+  assert.equal(saved.scheduledAt, null);
+  assert.deepEqual(sent, ['invite@example.com']);
 });
 
-test('la réponse publique Studio ne révèle pas le lien interne et enregistre sa date', async (context) => {
-  const invitation = {
-    id: 'invitation-a',
-    token: 'a'.repeat(64),
-    guestName: 'Invité Test',
-    subject: 'Entretien Studio',
-    scheduledAt: new Date().toISOString(),
-    status: 'pending',
-    respondedAt: null,
-  };
+test('l’invité du Studio réserve lui-même un créneau libre ; la page publique ne révèle ni le lien ni l’équipe', async (context) => {
+  const day = new Date(Date.now() + 3 * 24 * 3600000).toISOString().slice(0, 10);
+  context.mock.method(settingsService, 'studioSchedule', () => ({ firstDay: day, lastDay: day, dayStart: '14:00', dayEnd: '15:00', minutes: 20 }));
+  const invitation = { id: 'inv-1', token: 'a'.repeat(64), guestName: 'Afi', format: 'two_minutes', status: 'invited', scheduledAt: null, createdByUserId: 'u1', occupantId: null };
   context.mock.method(studioInvitationRepository, 'findByToken', async () => invitation);
-  context.mock.method(studioInvitationRepository, 'update', async (_invitation, values) => ({ ...invitation, ...values }));
+  context.mock.method(studioInvitationRepository, 'findBookedBetween', async () => [{ id: 'other', scheduledAt: new Date(`${day}T14:20:00Z`) }]);
+  context.mock.method(studioInvitationRepository, 'update', async (item, values) => Object.assign(item, values));
+  const booked = [];
+  context.mock.method(notificationService, 'studioBooked', (item, changed) => { booked.push(changed); });
 
-  const result = await studioInvitationService.respond(invitation.token, 'confirmed');
+  const { slots } = await studioInvitationService.publicSlots(invitation.token);
+  assert.deepEqual(slots, [`${day}T14:00:00.000Z`, `${day}T14:40:00.000Z`]);
 
-  assert.equal(result.status, 'confirmed');
-  assert.ok(result.respondedAt instanceof Date);
-  assert.equal(result.token, undefined);
-  assert.equal(result.id, undefined);
+  await assert.rejects(studioInvitationService.book(invitation.token, `${day}T14:10:00Z`), (error) => error.code === 'STUDIO_SLOT_INVALID');
+  const result = await studioInvitationService.book(invitation.token, `${day}T14:40:00Z`);
+  assert.equal(result.status, 'booked');
+  assert.equal(result.scheduledAt.toISOString(), `${day}T14:40:00.000Z`);
+  assert.equal('token' in result, false);
+  assert.equal('createdByUserId' in result, false);
+  assert.deepEqual(booked, [false]);
+
+  // Changer de créneau reste possible ; décliner annule le créneau.
+  await studioInvitationService.book(invitation.token, `${day}T14:00:00Z`);
+  assert.deepEqual(booked, [false, true]);
+  context.mock.method(notificationService, 'studioDeclined', () => {});
+  const declined = await studioInvitationService.decline(invitation.token);
+  assert.equal(declined.status, 'declined');
+  assert.equal(declined.scheduledAt, null);
+  await assert.rejects(studioInvitationService.book(invitation.token, `${day}T14:00:00Z`), (error) => error.code === 'STUDIO_INVITATION_CLOSED');
+});
+
+test('la capsule du Studio se livre après le passage et part à l’invité', async (context) => {
+  const invitation = { id: 'inv-2', status: 'invited', email: 'a@b.tg', occupantId: null };
+  context.mock.method(studioInvitationRepository, 'findById', async () => invitation);
+  context.mock.method(studioInvitationRepository, 'update', async (item, values) => Object.assign(item, values));
+  const delivered = [];
+  context.mock.method(notificationService, 'studioCapsuleDelivered', (item) => { delivered.push(item.capsuleUrl); });
+  const admin = { id: 'u1', role: 'super-admin' };
+
+  await assert.rejects(studioInvitationService.deliver(admin, 'inv-2', { capsuleUrl: 'https://videos.tg/afi' }), (error) => error.code === 'STUDIO_NOT_RECORDED');
+  invitation.status = 'booked';
+  await studioInvitationService.deliver(admin, 'inv-2', { capsuleUrl: 'https://videos.tg/afi' });
+  assert.equal(invitation.status, 'delivered');
+  assert.deepEqual(delivered, ['https://videos.tg/afi']);
 });
 
 test('le planning Studio d’un administrateur est filtré sur son stand', async (context) => {

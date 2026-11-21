@@ -1,4 +1,4 @@
-import { BriefcaseBusiness, Building2, CalendarDays, Disc3, Gift, Handshake, LayoutDashboard, MessageCircleQuestion, ScanLine, SlidersHorizontal, Trophy, Users } from 'lucide-react';
+import { BriefcaseBusiness, Building2, CalendarDays, Clapperboard, Disc3, Gift, Handshake, LayoutDashboard, MessageCircleQuestion, ScanLine, SlidersHorizontal, Trophy, Users } from 'lucide-react';
 
 // Rubriques de l'administration : chaque section a sa propre adresse.
 // « tab » place la rubrique dans la barre du bas sur téléphone (quatre au plus) ; les autres restent dans le menu.
@@ -6,6 +6,8 @@ export const adminSections = [
   { section: 'occupants', path: '/stands', label: 'Stands', Icon: Building2, superOnly: true, tab: true },
   { section: 'users', path: '/utilisateurs', label: 'Utilisateurs', Icon: Users, superOnly: true },
   { section: 'program', path: '/programme', label: 'Programme', Icon: CalendarDays, superOnly: true },
+  // Studio : invitations personnelles, créneaux réservés par les invités, livraison des capsules.
+  { section: 'studio', path: '/studio', label: 'Studio', Icon: Clapperboard },
   { section: 'b2b', path: '/b2b', label: 'Rencontre B2B', Icon: Handshake, tab: true },
   // Guichet de l'API-ZF : réservé à son équipe (super administrateurs).
   { section: 'investor-requests', path: '/investor-desk', label: 'Investor Desk', Icon: BriefcaseBusiness, superOnly: true },

@@ -1,4 +1,5 @@
 const env = require('../../config/env');
+const settingsService = require('../settings/settings.service');
 
 // Liens vers la bonne rubrique de l'espace équipe.
 const teamUrl = (path) => `${env.appUrls.backoffice}${path}`;
@@ -67,14 +68,16 @@ const b2bProposalReceived = ({ user, need }) => ({
 });
 
 // Prévient l'équipe qu'un invité a répondu à son invitation au Studio.
-const studioInvitationAnswered = ({ user, invitation }) => {
-  const answer = invitation.status === 'confirmed' ? 'a confirmé' : 'a décliné';
+// Prévient l'équipe de la réponse d'un invité du Studio (créneau réservé, changé ou invitation déclinée).
+const studioGuestAnswered = ({ user, invitation, answer }) => {
+  const when = invitation.scheduledAt ? meetingWhen({ startsAt: invitation.scheduledAt }, 'fr') : '';
+  const sentence = { booked: `a réservé son passage au Studio le ${when}`, moved: `a changé son passage au Studio pour le ${when}`, declined: 'a décliné l’invitation au Studio' }[answer];
   return {
-    title: 'Réponse à une invitation Studio',
-    body: `${invitation.guestName} ${answer} l’invitation.`,
+    title: 'Studio : réponse d’un invité',
+    body: `${invitation.guestName} ${sentence}.`,
     url: teamUrl('/studio'),
-    subject: `Studio : ${invitation.guestName} ${answer} l’invitation`,
-    text: teamText(user, [`${invitation.guestName} ${answer} l’invitation « ${invitation.subject} ».`, 'Consultez le planning du Studio :'], teamUrl('/studio')),
+    subject: `Studio : ${invitation.guestName} ${sentence}`,
+    text: teamText(user, [`${invitation.guestName} ${sentence}.`, 'Consultez le planning du Studio :'], teamUrl('/studio')),
   };
 };
 
@@ -202,7 +205,77 @@ const investorMeeting = ({ kind, meeting, request }) => {
   return publicEmail(copy, request.fullName, subject, body(meetingWhen(meeting, request.language), meeting.location));
 };
 
+// Studio : le lien personnel de l'invité, ses formats et ses e-mails dans sa langue.
+const studioLink = (invitation) => `${env.appUrls.public}/studio/${invitation.token}`;
+const studioFormatNames = {
+  fr: { two_minutes: '« 2 min avec… »', sixty_seconds: '« API-ZF en 60 secondes »', face_to_face: 'le Face-à-face' },
+  en: { two_minutes: '“2 min with…”', sixty_seconds: '“API-ZF in 60 seconds”', face_to_face: 'the Face-to-face interview' },
+};
+const studioCopy = {
+  fr: {
+    inviteSubject: 'Votre invitation au Studio du Hub de l’Investissement',
+    invite: (format, link) => `Vous êtes invité(e) à enregistrer ${format} au Studio du Hub de l’Investissement (FIL 2026). Choisissez vous-même votre créneau sur votre page personnelle : ${link}`,
+    bookedSubject: 'Votre passage au Studio est réservé',
+    movedSubject: 'Votre passage au Studio est déplacé',
+    booked: (when, minutes, link) => `Votre passage au Studio est réservé le ${when} (heure de Lomé), pour ${minutes} minutes. Vous pouvez changer de créneau jusqu’à une heure avant : ${link}`,
+    reminderSubject: 'Rappel : votre passage au Studio',
+    reminder: (when, link) => `Nous vous attendons au Studio du Hub de l’Investissement le ${when} (heure de Lomé). Votre page : ${link}`,
+    cancelledSubject: 'Votre passage au Studio est annulé',
+    cancelled: (when) => `Votre passage au Studio prévu le ${when} est annulé. L’équipe du Studio reviendra vers vous.`,
+    capsuleSubject: 'Votre capsule est prête à partager',
+    capsule: (url) => `Merci pour votre passage au Studio du Hub de l’Investissement. Votre capsule est prête : partagez-la sur vos réseaux. ${url}`,
+  },
+  en: {
+    inviteSubject: 'Your invitation to the Investment Hub Studio',
+    invite: (format, link) => `You are invited to record ${format} at the Investment Hub Studio (FIL 2026). Choose your own time slot on your personal page: ${link}`,
+    bookedSubject: 'Your Studio session is booked',
+    movedSubject: 'Your Studio session has been moved',
+    booked: (when, minutes, link) => `Your Studio session is booked for ${when} (Lomé time), for ${minutes} minutes. You can change your slot up to one hour before: ${link}`,
+    reminderSubject: 'Reminder: your Studio session',
+    reminder: (when, link) => `We look forward to seeing you at the Investment Hub Studio on ${when} (Lomé time). Your page: ${link}`,
+    cancelledSubject: 'Your Studio session is cancelled',
+    cancelled: (when) => `Your Studio session planned for ${when} is cancelled. The Studio team will get back to you.`,
+    capsuleSubject: 'Your video is ready to share',
+    capsule: (url) => `Thank you for your Studio session at the Investment Hub. Your video is ready: share it on your networks. ${url}`,
+  },
+};
+const studioText = (invitation) => studioCopy[invitation.language] || studioCopy.fr;
+const studioWhen = (invitation) => meetingWhen({ startsAt: invitation.scheduledAt }, invitation.language);
+
+const studioInvitation = ({ invitation }) => {
+  const text = studioText(invitation);
+  const format = (studioFormatNames[invitation.language] || studioFormatNames.fr)[invitation.format];
+  return publicEmail(copyFor(invitation.language), invitation.guestName, text.inviteSubject, text.invite(format, studioLink(invitation)));
+};
+
+const studioBookingConfirmation = ({ invitation, changed }) => {
+  const text = studioText(invitation);
+  const { minutes } = settingsService.studioSchedule();
+  return publicEmail(copyFor(invitation.language), invitation.guestName, changed ? text.movedSubject : text.bookedSubject, text.booked(studioWhen(invitation), minutes, studioLink(invitation)));
+};
+
+const studioReminder = ({ invitation }) => {
+  const text = studioText(invitation);
+  return publicEmail(copyFor(invitation.language), invitation.guestName, text.reminderSubject, text.reminder(studioWhen(invitation), studioLink(invitation)));
+};
+
+const studioCancellation = ({ invitation }) => {
+  const text = studioText(invitation);
+  return publicEmail(copyFor(invitation.language), invitation.guestName, text.cancelledSubject, text.cancelled(studioWhen(invitation)));
+};
+
+const studioCapsule = ({ invitation }) => {
+  const text = studioText(invitation);
+  return publicEmail(copyFor(invitation.language), invitation.guestName, text.capsuleSubject, text.capsule(invitation.capsuleUrl));
+};
+
 module.exports = {
+  studioGuestAnswered,
+  studioInvitation,
+  studioBookingConfirmation,
+  studioReminder,
+  studioCancellation,
+  studioCapsule,
   investorFollowUpDue,
   investorMeeting,
   b2bMeetingScheduled,
@@ -212,7 +285,6 @@ module.exports = {
   contactReminder,
   investorRequestReceived,
   b2bProposalReceived,
-  studioInvitationAnswered,
   investorRequestConfirmation,
   b2bProposalConfirmation,
   b2bProposalDecision,

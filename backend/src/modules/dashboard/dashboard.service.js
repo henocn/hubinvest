@@ -46,8 +46,9 @@ const overview = async (user) => {
     isSuperAdmin ? InvestorRequest.count({ where: { classification: 'A', status: { [Op.ne]: 'closed' }, nextFollowUpAt: { [Op.lt]: new Date() } } }) : 0,
     B2bProposal.count({ where: { status: 'pending' }, include: [{ model: B2bNeed, as: 'need', attributes: [], where: byStand, required: true }] }),
     B2bNeed.count({ where: { ...byStand, status: 'open' } }),
-    StudioInvitation.count({ where: { ...byStand, status: 'pending' } }),
-    StudioInvitation.count({ where: { ...byStand, status: 'confirmed' } }),
+    // Studio : invités qui n'ont pas encore choisi leur créneau, passages réservés à venir.
+    StudioInvitation.count({ where: { ...byStand, status: 'invited' } }),
+    StudioInvitation.count({ where: { ...byStand, status: 'booked', scheduledAt: { [Op.gte]: new Date() } } }),
     countPassports(occupantId),
     countPassports(occupantId, { status: 'completed' }),
     countPassports(occupantId, { status: 'redeemed' }),

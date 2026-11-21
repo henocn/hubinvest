@@ -15,6 +15,9 @@ export const investorClassLabels = { A: 'A · Projet prioritaire', B: 'B · Pote
 export const investorClassHints = { A: 'Relance sous 48 h par l’interlocuteur', B: 'Relance sous 7 jours', C: 'Intégré à la newsletter, sans relance individuelle' };
 export const investorChannelLabels = { call: 'Appel', message: 'Message' };
 // Statut calculé par le serveur : rien de fait, relance prévue, ou classée et relancée sans nouvelle relance.
+// Studio : formats du document et suivi de chaque invité.
+export const studioFormatLabels = { two_minutes: '« 2 min avec… »', sixty_seconds: '« API-ZF en 60 secondes »', face_to_face: 'Face-à-face' };
+export const studioStatusLabels = { invited: 'Créneau à choisir', booked: 'Créneau réservé', delivered: 'Capsule livrée', declined: 'Décliné', cancelled: 'Annulé' };
 export const investorStatusLabels = { new: 'À traiter', in_progress: 'À relancer', closed: 'Terminé' };
 export const programTypeLabels = { spotlight: 'À l’affiche', highlight: 'Temps fort', animation: 'Animation', studio: 'Studio', talk: 'Prise de parole' };
 export const challengeStatusLabels = { active: 'En cours', completed: 'Terminé', redeemed: 'Récompensé(e)' };

@@ -25,6 +25,12 @@ const defaults = () => ({
   b2bMeetingMinutes: 20,
   b2bDayStart: '09:00',
   b2bDayEnd: '17:00',
+  // Studio : créneaux réservables par les invités (le document place le Studio l'après-midi, pendant les 17 jours de la Foire).
+  studioFirstDay: '2026-11-27',
+  studioLastDay: '2026-12-13',
+  studioDayStart: '14:00',
+  studioDayEnd: '18:00',
+  studioSlotMinutes: 20,
   // Investor Desk : délais de relance du document (A sous 48 h, B sous 7 jours).
   investorDelayAHours: 48,
   investorDelayBDays: 7,
@@ -66,6 +72,14 @@ const b2bSchedule = () => ({
   dayEnd: cache.b2bDayEnd || '17:00',
 });
 
+const studioSchedule = () => ({
+  firstDay: cache.studioFirstDay || '2026-11-27',
+  lastDay: cache.studioLastDay || '2026-12-13',
+  dayStart: cache.studioDayStart || '14:00',
+  dayEnd: cache.studioDayEnd || '18:00',
+  minutes: Math.max(5, Number(cache.studioSlotMinutes) || 20),
+});
+
 // Délai avant la relance d'une classe (en millisecondes) ; C n'a pas de relance individuelle (newsletter).
 const investorFollowUpDelay = (classification) => {
   if (classification === 'A') return Math.max(1, Number(cache.investorDelayAHours) || 48) * 60 * 60 * 1000;
@@ -98,4 +112,4 @@ const publicSettings = () => {
   return rest;
 };
 
-module.exports = { MODULES, load, current, requiredPassages, wheelPlaysPerDay, wheelSpinsPerCode, b2bSchedule, investorFollowUpDelay, investorQualificationFields, assertOpen, update, publicSettings, _reset: () => { cache = defaults(); } };
+module.exports = { MODULES, load, current, requiredPassages, wheelPlaysPerDay, wheelSpinsPerCode, b2bSchedule, studioSchedule, investorFollowUpDelay, investorQualificationFields, assertOpen, update, publicSettings, _reset: () => { cache = defaults(); } };
