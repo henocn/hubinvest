@@ -85,6 +85,7 @@ export const api = {
   resolveInvestorCommitment: (token, id, resolved) => request(`/investor-requests/${id}/resolution`, authorized(token, { method: 'PATCH', body: JSON.stringify({ resolved }) })),
   investorRequest: (token, id) => request(`/investor-requests/${id}`, authorized(token)),
   addInvestorFollowUp: (token, id, values) => request(`/investor-requests/${id}/follow-ups`, authorized(token, { method: 'POST', body: JSON.stringify(values) })),
+  completeInvestorFollowUp: (token, id, followUpId, values) => request(`/investor-requests/${id}/follow-ups/${followUpId}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
   deleteInvestorFollowUp: (token, id, followUpId) => request(`/investor-requests/${id}/follow-ups/${followUpId}`, authorized(token, { method: 'DELETE' })),
   addInvestorMeeting: (token, id, values) => request(`/investor-requests/${id}/meetings`, authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   updateInvestorMeeting: (token, id, meetingId, values) => request(`/investor-requests/${id}/meetings/${meetingId}`, authorized(token, { method: 'PUT', body: JSON.stringify(values) })),

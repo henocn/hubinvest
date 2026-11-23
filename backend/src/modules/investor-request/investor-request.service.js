@@ -14,8 +14,8 @@ const plain = (value) => (value?.toJSON ? value.toJSON() : value);
 
 // Statut calculé, jamais saisi :
 // - Accompagnement : « À traiter » sans engagement, « À suivre » tant que l'engagement court, « Terminé » une fois la réponse donnée ;
-// - autres contacts : « À traiter » tant que rien n'est fait, « À relancer » dès qu'une prochaine relance est prévue,
-//   « Terminé » quand le contact est classé ou relancé sans nouvelle relance prévue.
+// - autres contacts : « À traiter » tant que rien n'est fait, « À relancer » tant qu'une relance reste à faire,
+//   « Terminé » quand le contact est classé ou relancé sans relance restant à faire.
 const progressStatus = ({ nextFollowUpAt, classification, commitmentDueAt, resolvedAt }, hasFollowUps) => {
   if (classification === 'support') {
     if (resolvedAt) return 'closed';
@@ -25,12 +25,43 @@ const progressStatus = ({ nextFollowUpAt, classification, commitmentDueAt, resol
   return classification || hasFollowUps ? 'closed' : 'new';
 };
 
-// Recalcule le statut après une modification.
+// Recalcule le statut et la prochaine relance (la plus proche des relances à faire, reprise dans la liste et le tableau
+// de bord) après une modification.
 const refreshStatus = async (investorRequest) => {
-  const hasFollowUps = (await investorRequestRepository.countFollowUps(investorRequest.id)) > 0;
-  const status = progressStatus(investorRequest, hasFollowUps);
-  if (status !== investorRequest.status) await investorRequestRepository.update(investorRequest, { status });
+  const pending = await investorRequestRepository.findPendingFollowUps(investorRequest.id);
+  const hasFollowUps = pending.length > 0 || (await investorRequestRepository.countFollowUps(investorRequest.id)) > 0;
+  const nextFollowUpAt = pending[0]?.dueAt || null;
+  const { classification, commitmentDueAt, resolvedAt } = investorRequest;
+  const status = progressStatus({ nextFollowUpAt, classification, commitmentDueAt, resolvedAt }, hasFollowUps);
+  const changes = {};
+  if (status !== investorRequest.status) changes.status = status;
+  if (new Date(nextFollowUpAt || 0).getTime() !== new Date(investorRequest.nextFollowUpAt || 0).getTime()) changes.nextFollowUpAt = nextFollowUpAt;
+  if (Object.keys(changes).length) await investorRequestRepository.update(investorRequest, changes);
   return investorRequest;
+};
+
+// Relances : à l'heure prévue, le responsable du contact (ou, sans responsable, l'équipe API-ZF) est notifié.
+const scheduleFollowUps = (investorRequest, followUps) => followUps.forEach((item) => notificationService.investorFollowUpChanged(item, investorRequest));
+const autoReason = (classification) => `Relance du contact classé ${classification}`;
+
+// Classe A ou B : sa relance automatique (48 h ou 7 jours, réglables). Un changement de classe retire la relance
+// automatique encore à faire et crée celle de la nouvelle classe ; C et Accompagnement n'en ont pas. Une relance déjà
+// faite, ou ajoutée à la main, reste.
+const applyClassFollowUp = async (investorRequest, classification, userId = null) => {
+  const previous = await investorRequestRepository.findPendingFollowUps(investorRequest.id, { auto: true });
+  await Promise.all(previous.map(async (item) => {
+    await investorRequestRepository.destroyFollowUp(item);
+    notificationService.investorFollowUpRemoved(item);
+  }));
+  const delay = settingsService.investorFollowUpDelay(classification);
+  if (!delay) return null;
+  return investorRequestRepository.createFollowUp({
+    investorRequestId: investorRequest.id,
+    dueAt: new Date(Date.now() + delay),
+    reason: autoReason(classification),
+    autoClass: classification,
+    createdByUserId: userId,
+  });
 };
 
 const list = async (query) => {
@@ -165,8 +196,8 @@ const assertService = (key) => {
   if (key && !SERVICE_KEYS.includes(key)) throw new AppError(422, 'SERVICE_NOT_FOUND', 'Service introuvable.');
 };
 
-// Fiche : coordonnées, guichet, classe et responsable ; le statut suit. Une première classe A ou B fixe la date de relance
-// (48 h ou 7 jours, réglables) ; C et Accompagnement n'ont pas de relance individuelle. Une relance déjà faite garde sa date.
+// Fiche : coordonnées, guichet, classe et responsable ; le statut suit. La classe A ou B crée sa relance automatique,
+// remplacée si la classe change. Un nouveau responsable reçoit les alertes des relances encore à faire.
 const update = async (id, values) => {
   const investorRequest = await getRequest(id);
   const next = { ...values };
@@ -174,15 +205,13 @@ const update = async (id, values) => {
   if (next.phone === '') next.phone = null;
   if (next.email) next.email = next.email.toLowerCase();
   if ('contactUserId' in next) await assertTeamMember(next.contactUserId);
-  if ('classification' in next && next.classification !== investorRequest.classification) {
-    const delay = settingsService.investorFollowUpDelay(next.classification);
-    if (!delay) next.nextFollowUpAt = null;
-    else if (!(await investorRequestRepository.countFollowUps(investorRequest.id))) next.nextFollowUpAt = new Date(Date.now() + delay);
-  }
+  const classChanged = 'classification' in next && next.classification !== investorRequest.classification;
   await investorRequestRepository.update(investorRequest, next);
+  const created = classChanged ? await applyClassFollowUp(investorRequest, next.classification) : null;
   await refreshStatus(investorRequest);
   const updated = await getRequest(id);
-  notificationService.investorFollowUpChanged(updated);
+  if ('contactUserId' in next) scheduleFollowUps(updated, await investorRequestRepository.findPendingFollowUps(updated.id));
+  else if (created) scheduleFollowUps(updated, [created]);
   if ('contactUserId' in next && updated.classification === 'support') notificationService.investorCommitmentChanged(updated);
   realtime.investorRequestsChanged();
   return updated;
@@ -226,18 +255,18 @@ const saveDifficulty = async (id, { difficulty, commitmentService = null, commit
   const commitmentChanged = Boolean(commitmentNote) && (commitmentNote !== investorRequest.commitmentNote
     || new Date(commitmentDueAt).getTime() !== new Date(investorRequest.commitmentDueAt || 0).getTime()
     || commitmentService !== investorRequest.commitmentService);
+  const classChanged = investorRequest.classification !== 'support';
   await investorRequestRepository.update(investorRequest, {
     difficulty,
     classification: 'support',
-    nextFollowUpAt: null,
     commitmentService,
     commitmentDueAt,
     commitmentNote,
     ...(commitmentChanged && { resolvedAt: null }),
   });
+  if (classChanged) await applyClassFollowUp(investorRequest, 'support');
   await refreshStatus(investorRequest);
   const updated = await getRequest(id);
-  notificationService.investorFollowUpChanged(updated);
   notificationService.investorCommitmentChanged(updated, { notifyCompany: commitmentChanged, serviceTitle: serviceTitle(commitmentService, updated.language) });
   realtime.investorRequestsChanged();
   return updated;
@@ -257,36 +286,49 @@ const resolve = async (id, { resolved }) => {
   return updated;
 };
 
-// Relance faite (appel ou message). Pour un contact A ou B, l'étape suivante est obligatoire.
-// La prochaine relance prend la date donnée, ou aucune.
-const addFollowUp = async (user, id, values) => {
+// Ajouter une relance : quand (date et heure à venir) et pourquoi. Elle reste à faire jusqu'à ce qu'on la marque faite.
+const assertFollowUpFuture = (dueAt) => {
+  if (new Date(dueAt).getTime() <= Date.now()) throw new AppError(422, 'INVESTOR_FOLLOW_UP_IN_PAST', 'Choisissez une date et une heure à venir.');
+};
+
+const addFollowUp = async (user, id, { dueAt, reason }) => {
   const investorRequest = await getRequest(id);
-  if (['A', 'B'].includes(investorRequest.classification) && !values.nextStep) {
-    throw new AppError(422, 'INVESTOR_NEXT_STEP_REQUIRED', 'Contact A ou B : indiquez l’étape suivante.');
-  }
-  const followUp = await investorRequestRepository.createFollowUp({
-    investorRequestId: investorRequest.id,
-    doneAt: values.doneAt || new Date(),
-    channel: values.channel,
-    note: values.note || null,
-    nextStep: values.nextStep || null,
-    createdByUserId: user.id,
-  });
-  await investorRequestRepository.update(investorRequest, {
-    nextAction: values.nextStep || investorRequest.nextAction,
-    nextFollowUpAt: values.nextFollowUpAt || null,
-  });
+  assertFollowUpFuture(dueAt);
+  const followUp = await investorRequestRepository.createFollowUp({ investorRequestId: investorRequest.id, dueAt, reason, createdByUserId: user.id });
   await refreshStatus(investorRequest);
-  notificationService.investorFollowUpChanged(await getRequest(id));
+  scheduleFollowUps(investorRequest, [followUp]);
   realtime.investorRequestsChanged();
   return followUp;
 };
 
-const removeFollowUp = async (id, followUpId) => {
+const getFollowUp = async (id, followUpId) => {
   const investorRequest = await getRequest(id);
   const followUp = await investorRequestRepository.findFollowUp(followUpId, investorRequest.id);
   if (!followUp) throw new AppError(404, 'INVESTOR_FOLLOW_UP_NOT_FOUND', 'Relance introuvable.');
+  return { investorRequest, followUp };
+};
+
+// Marquer une relance faite, avec la prochaine étape : terminée, relancer (la relance suivante est créée) ou autre (texte).
+const completeFollowUp = async (user, id, followUpId, { outcome, note = null, next = null }) => {
+  const { investorRequest, followUp } = await getFollowUp(id, followUpId);
+  if (followUp.doneAt) throw new AppError(409, 'INVESTOR_FOLLOW_UP_DONE', 'Cette relance est déjà faite.');
+  if (outcome === 'again') assertFollowUpFuture(next.dueAt);
+  await investorRequestRepository.updateFollowUp(followUp, { doneAt: new Date(), outcome, outcomeNote: outcome === 'other' ? note : null });
+  notificationService.investorFollowUpRemoved(followUp);
+  const created = outcome === 'again'
+    ? await investorRequestRepository.createFollowUp({ investorRequestId: investorRequest.id, dueAt: next.dueAt, reason: next.reason, createdByUserId: user.id })
+    : null;
+  await refreshStatus(investorRequest);
+  if (created) scheduleFollowUps(investorRequest, [created]);
+  realtime.investorRequestsChanged();
+  return followUp;
+};
+
+// Supprimer une relance (faite ou non) : son alerte disparaît.
+const removeFollowUp = async (id, followUpId) => {
+  const { investorRequest, followUp } = await getFollowUp(id, followUpId);
   await investorRequestRepository.destroyFollowUp(followUp);
+  notificationService.investorFollowUpRemoved(followUp);
   await refreshStatus(investorRequest);
   realtime.investorRequestsChanged();
 };
@@ -380,6 +422,7 @@ module.exports = {
   saveDifficulty,
   resolve,
   addFollowUp,
+  completeFollowUp,
   removeFollowUp,
   addMeeting,
   updateMeeting,

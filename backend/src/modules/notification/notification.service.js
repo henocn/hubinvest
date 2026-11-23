@@ -61,22 +61,26 @@ const investorRequestReceived = (request) => dispatch(async () => {
   if (team.length) await notificationRepository.enqueue(forUsers(team, (user) => templates.investorRequestReceived({ user, request })));
 });
 
-// Alerte de relance Investor Desk : à l'heure limite (A sous 48 h, B sous 7 jours), l'interlocuteur nommé
-// — ou, sans interlocuteur, toute l'équipe API-ZF — est prévenu. Toute relance ou nouvelle date remplace l'alerte prévue.
-const investorFollowUpChanged = (request) => dispatch(async () => {
-  const dedupeKey = `investor-follow-up:${request.id}`;
+// Relance des guichets : à son heure, le responsable du contact — ou, sans responsable, toute l'équipe API-ZF — est
+// rappelé de relancer la personne, avec le motif. Chaque relance a son alerte ; la changer remplace l'alerte prévue.
+const followUpKey = (followUp) => `investor-follow-up:${followUp.id}`;
+const investorFollowUpChanged = (followUp, request) => dispatch(async () => {
+  const dedupeKey = followUpKey(followUp);
   await notificationRepository.cancelPending(dedupeKey);
-  const dueAt = request.nextFollowUpAt ? new Date(request.nextFollowUpAt) : null;
-  if (!dueAt || dueAt <= new Date() || !['A', 'B'].includes(request.classification) || request.status === 'closed') return;
+  const dueAt = new Date(followUp.dueAt);
+  if (followUp.doneAt || Number.isNaN(dueAt.getTime()) || dueAt <= new Date()) return;
   const contact = request.contactUserId ? await notificationRepository.findActiveUser(request.contactUserId) : null;
   const users = contact ? [contact] : await notificationRepository.findSuperAdmins();
   if (users.length === 0) return;
   await notificationRepository.enqueue(forUsers(
     users,
-    (user) => ({ ...templates.investorFollowUpDue({ user, request }), tag: dedupeKey }),
+    (user) => ({ ...templates.investorFollowUpDue({ user, request, followUp }), tag: dedupeKey }),
     { dedupeKey, availableAt: dueAt },
   ));
 });
+
+// Relance faite ou supprimée : son alerte disparaît.
+const investorFollowUpRemoved = (followUp) => dispatch(() => notificationRepository.cancelPending(followUpKey(followUp)));
 
 // Rendez-vous aux guichets fixé, déplacé ou annulé : la personne reçoit un e-mail, puis un rappel la veille et une heure
 // avant ; un déplacement remplace les rappels, une annulation les retire.
@@ -195,6 +199,7 @@ module.exports = {
   contactReminderChanged,
   investorRequestReceived,
   investorFollowUpChanged,
+  investorFollowUpRemoved,
   investorMeetingChanged,
   investorMeetingRemoved,
   investorCommitmentChanged,

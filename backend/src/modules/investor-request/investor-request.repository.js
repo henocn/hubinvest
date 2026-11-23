@@ -37,7 +37,7 @@ const findDetail = (id) => InvestorRequest.findByPk(id, {
     { model: InvestorMeeting, as: 'meetings', required: false, include: [{ model: User, as: 'createdBy', attributes: person }] },
   ],
   order: [
-    [{ model: InvestorFollowUp, as: 'followUps' }, 'doneAt', 'DESC'],
+    [{ model: InvestorFollowUp, as: 'followUps' }, 'dueAt', 'DESC'],
     [{ model: InvestorMeeting, as: 'meetings' }, 'startsAt', 'ASC'],
   ],
 });
@@ -66,7 +66,13 @@ const findTeam = () => User.findAll({ where: { role: roles.SUPER_ADMIN, isActive
 const countFollowUps = (investorRequestId) => InvestorFollowUp.count({ where: { investorRequestId } });
 const createFollowUp = (values) => InvestorFollowUp.create(values);
 const findFollowUp = (id, investorRequestId) => InvestorFollowUp.findOne({ where: { id, investorRequestId } });
+const updateFollowUp = (followUp, values) => followUp.update(values);
 const destroyFollowUp = (followUp) => followUp.destroy();
+// Relances encore à faire d'un contact ; « auto » : seulement celles créées par sa classe A ou B.
+const findPendingFollowUps = (investorRequestId, { auto = false } = {}) => InvestorFollowUp.findAll({
+  where: { investorRequestId, doneAt: null, ...(auto && { autoClass: { [Op.ne]: null } }) },
+  order: [['dueAt', 'ASC']],
+});
 
 const createMeeting = (values) => InvestorMeeting.create(values);
 const findMeeting = (id, investorRequestId) => InvestorMeeting.findOne({ where: { id, investorRequestId } });
@@ -91,7 +97,9 @@ module.exports = {
   countFollowUps,
   createFollowUp,
   findFollowUp,
+  updateFollowUp,
   destroyFollowUp,
+  findPendingFollowUps,
   createMeeting,
   findMeeting,
   updateMeeting,

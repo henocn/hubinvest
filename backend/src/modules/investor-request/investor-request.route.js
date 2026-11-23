@@ -37,6 +37,7 @@ router.put('/:id/diagnosis', validate(v.params, 'params'), validate(v.diagnosis)
 router.put('/:id/difficulty', validate(v.params, 'params'), validate(v.difficulty), asyncHandler(c.saveDifficulty));
 router.patch('/:id/resolution', validate(v.params, 'params'), validate(v.resolve), asyncHandler(c.resolve));
 router.post('/:id/follow-ups', validate(v.params, 'params'), validate(v.followUp), asyncHandler(c.addFollowUp));
+router.patch('/:id/follow-ups/:followUpId', validate(v.followUpParams, 'params'), validate(v.followUpDone), asyncHandler(c.completeFollowUp));
 router.delete('/:id/follow-ups/:followUpId', validate(v.followUpParams, 'params'), asyncHandler(c.removeFollowUp));
 router.post('/:id/meetings', validate(v.params, 'params'), validate(v.meeting), asyncHandler(c.addMeeting));
 router.put('/:id/meetings/:meetingId', validate(v.meetingParams, 'params'), validate(v.meeting), asyncHandler(c.updateMeeting));

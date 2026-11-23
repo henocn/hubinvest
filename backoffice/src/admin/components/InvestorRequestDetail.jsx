@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, CalendarPlus, FileDown, PhoneCall, X } from 'lucide-react';
 import { api } from '../lib/api';
 import { useRealtimeEvent } from '../../lib/realtime';
-import { companyRegimeLabels, contactSourceLabels, guichetLabels, investorChannelLabels, investorClassHints, investorClassLabels, investorClassShort, investorStatusLabel } from '../constants/access';
+import { companyRegimeLabels, contactSourceLabels, guichetLabels, investorClassHints, investorClassLabels, investorClassShort, investorStatusLabel } from '../constants/access';
 import ConfirmDelete from './ConfirmDelete';
 import RowMenu from './RowMenu';
 
@@ -46,18 +46,46 @@ function Modal({ eyebrow, title, error, loading, submitLabel, onClose, onSubmit,
   );
 }
 
-// Relancer : appel ou message, ce qui s'est dit, étape suivante (obligatoire pour A et B) et date de la prochaine relance.
+// Une relance : quand (date et heure) et pourquoi. À l'heure dite, le responsable est rappelé de relancer la personne.
+function FollowUpFields({ form, set }) {
+  return (
+    <>
+      <label>Date et heure<input type="datetime-local" value={form.dueAt} onChange={set('dueAt')} required /></label>
+      <label>Motif<input value={form.reason} onChange={set('reason')} minLength={2} maxLength={255} placeholder="Ex. Envoyer l’Investor Pack" required /></label>
+    </>
+  );
+}
+
 function FollowUpForm({ request, loading, error, onClose, onSave }) {
-  const required = ['A', 'B'].includes(request.classification);
-  const [form, setForm] = useState({ channel: 'call', note: '', nextStep: '', nextFollowUpAt: '' });
+  const [form, setForm] = useState({ dueAt: '', reason: '' });
   const set = (key) => (event) => setForm({ ...form, [key]: event.target.value });
   return (
-    <Modal eyebrow={request.fullName} title="Relancer" error={error} loading={loading} submitLabel="Enregistrer la relance" onClose={onClose}
-      onSubmit={() => onSave({ channel: form.channel, note: form.note || null, nextStep: form.nextStep || null, nextFollowUpAt: fromInput(form.nextFollowUpAt) })}>
-      <label>Moyen<select value={form.channel} onChange={set('channel')}>{Object.entries(investorChannelLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-      <label>Ce qui s’est dit<textarea rows="4" value={form.note} onChange={set('note')} maxLength={2000} /></label>
-      <label>Étape suivante{required && ' (obligatoire pour un contact A ou B)'}<input value={form.nextStep} onChange={set('nextStep')} maxLength={255} required={required} /></label>
-      <label>Prochaine relance<input type="datetime-local" value={form.nextFollowUpAt} onChange={set('nextFollowUpAt')} /><span className="field-hint">Sans date, la demande passe à « Terminé ».</span></label>
+    <Modal eyebrow={request.fullName} title="Ajouter une relance" error={error} loading={loading} submitLabel="Ajouter" onClose={onClose}
+      onSubmit={() => onSave({ dueAt: fromInput(form.dueAt), reason: form.reason })}>
+      <FollowUpFields form={form} set={set} />
+      <span className="field-hint">À cette heure, le responsable du contact (ou l’équipe API-ZF) reçoit un rappel.</span>
+    </Modal>
+  );
+}
+
+// Relance faite : la prochaine étape. « Relancer » programme la relance suivante ; « Autre » se décrit en quelques mots.
+const outcomeLabels = { closed: 'Terminée', again: 'Relancer', other: 'Autre' };
+function CompleteFollowUpForm({ request, followUp, loading, error, onClose, onSave }) {
+  const [outcome, setOutcome] = useState('closed');
+  const [note, setNote] = useState('');
+  const [next, setNext] = useState({ dueAt: '', reason: followUp.reason });
+  const setNextField = (key) => (event) => setNext({ ...next, [key]: event.target.value });
+  return (
+    <Modal eyebrow={request.fullName} title="Relance faite" error={error} loading={loading} submitLabel="Marquer faite" onClose={onClose}
+      onSubmit={() => onSave({ outcome, ...(outcome === 'other' && { note }), ...(outcome === 'again' && { next: { dueAt: fromInput(next.dueAt), reason: next.reason } }) })}>
+      <p className="field-hint">{followUp.reason} · prévue le {dateTime.format(new Date(followUp.dueAt))}</p>
+      <label>Prochaine étape
+        <select value={outcome} onChange={(event) => setOutcome(event.target.value)}>
+          {Object.entries(outcomeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select>
+      </label>
+      {outcome === 'again' && <FollowUpFields form={next} set={setNextField} />}
+      {outcome === 'other' && <label>Précisez<input value={note} onChange={(event) => setNote(event.target.value)} minLength={2} maxLength={500} required /></label>}
     </Modal>
   );
 }
@@ -98,12 +126,13 @@ function ConfirmMeeting({ meeting, cancel, loading, error, onCancel, onConfirm }
 // Confirmation du classement ; un changement de classe est signalé, avec son effet sur la relance prévue.
 function ConfirmClass({ request, classification, loading, error, onCancel, onConfirm }) {
   const change = Boolean(request.classification);
-  const relanced = (request.followUps || []).length > 0;
+  const replaced = (request.followUps || []).some((item) => item.autoClass && !item.doneAt);
   const effect = classification === 'support'
     ? 'Le suivi passe par la fiche « Mon entreprise, mes difficultés » et son engagement de suivi écrit.'
     : classification === 'C'
-    ? 'Intégré à la lettre d’information, sans relance individuelle : le contact passe à « Terminé ».'
-    : relanced ? 'Une relance a déjà été faite : la date de la prochaine relance ne change pas.' : `La relance est prévue ${classification === 'A' ? 'sous 48 h' : 'sous 7 jours'}.`;
+    ? 'Intégré à la lettre d’information, sans relance automatique.'
+    : `Une relance est ajoutée ${classification === 'A' ? 'dans 48 h' : 'dans 7 jours'}.`;
+  const note = replaced ? ' La relance automatique de l’ancienne classe, pas encore faite, est retirée.' : '';
   return (
     <div className="dialog-backdrop" role="presentation" onMouseDown={onCancel}>
       <section className="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="class-title" onMouseDown={(event) => event.stopPropagation()}>
@@ -112,7 +141,7 @@ function ConfirmClass({ request, classification, loading, error, onCancel, onCon
           <p>{change
             ? <>Vous changez la classe de {request.fullName} : <strong>{investorClassLabels[request.classification]}</strong> devient <strong>{investorClassLabels[classification]}</strong>.</>
             : <>Vous classez {request.fullName} en <strong>{investorClassLabels[classification]}</strong>.</>}</p>
-          <p>{effect}</p>
+          <p>{effect}{note}</p>
         </div>
         {error && <p className="admin-form-error dialog-error">{error}</p>}
         <footer>
@@ -425,21 +454,29 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
       <section className="data-panel stand-panel">
         <header className="settings-panel-head">
           <h2>Relances <span>{followUps.length}</span></h2>
-          <button className="button button-primary" type="button" onClick={() => open('follow-up')}><PhoneCall size={16} /> Relancer</button>
+          <button className="button button-primary" type="button" onClick={() => open('follow-up')}><PhoneCall size={16} /> Ajouter</button>
         </header>
-        {!followUps.length ? <p className="panel-message">Aucune relance enregistrée.</p> : (
+        {!followUps.length ? <p className="panel-message">Aucune relance.</p> : (
           <div className="table-scroll">
             <table>
-              <thead><tr><th>Date</th><th>Moyen</th><th>Ce qui s’est dit</th><th>Étape suivante</th><th className="actions-heading">Actions</th></tr></thead>
-              <tbody>{followUps.map((item) => (
-                <tr key={item.id}>
-                  <td className="stand-nowrap"><strong>{dateTime.format(new Date(item.doneAt))}</strong><small>{fullName(item.createdBy)}</small></td>
-                  <td>{investorChannelLabels[item.channel]}</td>
-                  <td className="meeting-note-cell">{item.note || '—'}</td>
-                  <td>{item.nextStep || '—'}</td>
-                  <td><RowMenu label="Actions de la relance" items={[{ label: 'Supprimer', onClick: () => open('delete-follow-up', item), danger: true }]} /></td>
-                </tr>
-              ))}</tbody>
+              <thead><tr><th>Date et heure</th><th>Motif</th><th>Statut</th><th>Prochaine étape</th><th className="actions-heading">Actions</th></tr></thead>
+              <tbody>{followUps.map((item) => {
+                const late = !item.doneAt && new Date(item.dueAt) < new Date();
+                return (
+                  <tr key={item.id}>
+                    <td className="stand-nowrap"><strong>{dateTime.format(new Date(item.dueAt))}</strong><small>{item.autoClass ? `Automatique (classe ${item.autoClass})` : fullName(item.createdBy)}</small></td>
+                    <td className="meeting-note-cell">{item.reason}</td>
+                    <td className="stand-nowrap">{item.doneAt
+                      ? <span className="status-pill is-done" title={`Faite le ${dateTime.format(new Date(item.doneAt))}`}>Faite</span>
+                      : <span className={`status-pill${late ? ' is-lost' : ' is-new'}`}>{late ? 'En retard' : 'À faire'}</span>}</td>
+                    <td>{item.doneAt ? (item.outcome === 'other' ? item.outcomeNote : outcomeLabels[item.outcome]) : '—'}</td>
+                    <td><RowMenu label="Actions de la relance" items={[
+                      { label: 'Marquer faite', onClick: () => open('complete-follow-up', item), disabled: Boolean(item.doneAt), hint: 'Relance déjà faite' },
+                      { label: 'Supprimer', onClick: () => open('delete-follow-up', item), danger: true },
+                    ]} /></td>
+                  </tr>
+                );
+              })}</tbody>
             </table>
           </div>
         )}
@@ -452,7 +489,9 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
       {dialog?.type === 'follow-up' && <FollowUpForm request={request} loading={busy} error={actionError} onClose={close} onSave={(values) => run(() => api.addInvestorFollowUp(session.token, request.id, values))} />}
       {dialog?.type === 'meeting' && <MeetingForm request={request} meeting={dialog.item} loading={busy} error={actionError} onClose={close}
         onSave={(values) => run(() => (dialog.item ? api.updateInvestorMeeting(session.token, request.id, dialog.item.id, values) : api.addInvestorMeeting(session.token, request.id, values)))} />}
-      {dialog?.type === 'delete-follow-up' && <ConfirmDelete subject={{ label: `la relance du ${dateTime.format(new Date(dialog.item.doneAt))}` }} loading={busy} error={actionError} onCancel={close} onConfirm={() => run(() => api.deleteInvestorFollowUp(session.token, request.id, dialog.item.id))} />}
+      {dialog?.type === 'complete-follow-up' && <CompleteFollowUpForm request={request} followUp={dialog.item} loading={busy} error={actionError} onClose={close}
+        onSave={(values) => run(() => api.completeInvestorFollowUp(session.token, request.id, dialog.item.id, values))} />}
+      {dialog?.type === 'delete-follow-up' && <ConfirmDelete subject={{ label: `la relance du ${dateTime.format(new Date(dialog.item.dueAt))} (${dialog.item.reason})` }} loading={busy} error={actionError} onCancel={close} onConfirm={() => run(() => api.deleteInvestorFollowUp(session.token, request.id, dialog.item.id))} />}
       {(dialog?.type === 'hold-meeting' || dialog?.type === 'cancel-meeting') && <ConfirmMeeting meeting={dialog.item} cancel={dialog.type === 'cancel-meeting'} loading={busy} error={actionError} onCancel={close}
         onConfirm={() => run(() => api.setInvestorMeetingStatus(session.token, request.id, dialog.item.id, dialog.type === 'cancel-meeting' ? 'cancelled' : 'held'))} />}
       {dialog?.type === 'delete-meeting' && <ConfirmDelete subject={{ label: `le rendez-vous du ${dateTime.format(new Date(dialog.item.startsAt))} (sans prévenir la personne : pour le décommander, annulez-le)` }} loading={busy} error={actionError} onCancel={close} onConfirm={() => run(() => api.deleteInvestorMeeting(session.token, request.id, dialog.item.id))} />}

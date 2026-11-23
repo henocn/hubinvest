@@ -1374,33 +1374,51 @@ test('le compte rendu en un clic ne se fait qu’une fois le rendez-vous commenc
   await assert.rejects(b2bMeetingService.report({ id: 'u1' }, 'prop-1', 'absent', { note: 'x' }), (error) => error.status === 404);
 });
 
-const investorSetup = (context, { request, followUps = 0 }) => {
+// Relances en mémoire : création, recherche, mise à jour, suppression.
+const investorSetup = (context, { request, followUps = [] }) => {
   const saved = [];
   const reminders = [];
+  const removed = [];
+  const store = followUps;
+  let sequence = 0;
   context.mock.method(investorRequestRepository, 'findById', async () => request);
   context.mock.method(investorRequestRepository, 'update', async (item, values) => { saved.push(values); return Object.assign(item, values); });
-  context.mock.method(investorRequestRepository, 'countFollowUps', async () => followUps);
+  context.mock.method(investorRequestRepository, 'countFollowUps', async () => store.length);
   context.mock.method(investorRequestRepository, 'findTeamMember', async (id) => (id === 'apizf-1' ? { id } : null));
-  context.mock.method(investorRequestRepository, 'createFollowUp', async (values) => values);
-  context.mock.method(notificationService, 'investorFollowUpChanged', (item) => { reminders.push(item.nextFollowUpAt); });
-  return { saved, reminders };
+  context.mock.method(investorRequestRepository, 'createFollowUp', async (values) => { const item = { id: `fu-${++sequence}`, doneAt: null, autoClass: null, ...values }; store.push(item); return item; });
+  context.mock.method(investorRequestRepository, 'findFollowUp', async (id) => store.find((item) => item.id === id) || null);
+  context.mock.method(investorRequestRepository, 'updateFollowUp', async (item, values) => Object.assign(item, values));
+  context.mock.method(investorRequestRepository, 'destroyFollowUp', async (item) => { store.splice(store.indexOf(item), 1); });
+  context.mock.method(investorRequestRepository, 'findPendingFollowUps', async (_id, { auto = false } = {}) => store
+    .filter((item) => !item.doneAt && (!auto || item.autoClass))
+    .sort((a, b) => new Date(a.dueAt) - new Date(b.dueAt)));
+  context.mock.method(notificationService, 'investorFollowUpChanged', (item) => { reminders.push(item); });
+  context.mock.method(notificationService, 'investorFollowUpRemoved', (item) => { removed.push(item); });
+  return { saved, reminders, removed, store };
 };
 
-test('Guichets : la classe A fixe une relance sous 48 h, B sous 7 jours, C aucune', async (context) => {
+test('Guichets : la classe A crée une relance sous 48 h, B la remplace sous 7 jours, C la retire', async (context) => {
   const request = { id: 'ir-1', classification: null, status: 'new' };
-  investorSetup(context, { request });
+  const { store, reminders } = investorSetup(context, { request });
   const before = Date.now();
 
   await investorRequestService.update('ir-1', { classification: 'A' });
-  const dueA = request.nextFollowUpAt.getTime() - before;
+  assert.equal(store.length, 1);
+  assert.equal(store[0].autoClass, 'A');
+  const dueA = new Date(store[0].dueAt).getTime() - before;
   assert.ok(dueA >= 48 * 3600000 && dueA < 48 * 3600000 + 5000);
   assert.equal(request.status, 'in_progress');
+  assert.equal(request.nextFollowUpAt, store[0].dueAt);
+  assert.equal(reminders.length, 1);
 
   await investorRequestService.update('ir-1', { classification: 'B' });
-  const dueB = request.nextFollowUpAt.getTime() - before;
+  assert.equal(store.length, 1);
+  assert.equal(store[0].autoClass, 'B');
+  const dueB = new Date(store[0].dueAt).getTime() - before;
   assert.ok(dueB >= 7 * 24 * 3600000 && dueB < 7 * 24 * 3600000 + 5000);
 
   await investorRequestService.update('ir-1', { classification: 'C' });
+  assert.equal(store.length, 0);
   assert.equal(request.nextFollowUpAt, null);
   assert.equal(request.status, 'closed');
   assert.equal(investorRequestService.progressStatus({ nextFollowUpAt: null, classification: null }, false), 'new');
@@ -1422,27 +1440,45 @@ test('Guichets : le responsable est un membre de l’équipe API-ZF ; le diagnos
   assert.equal(request.diagnosedAt, firstDiagnosis);
 });
 
-test('Guichets : une relance d’un contact A exige l’étape suivante et remplace la date de relance', async (context) => {
-  const request = { id: 'ir-3', classification: 'A', status: 'new', nextAction: null, nextFollowUpAt: new Date() };
-  const { reminders } = investorSetup(context, { request, followUps: 1 });
-  await assert.rejects(investorRequestService.addFollowUp({ id: 'u1' }, 'ir-3', { channel: 'call' }), (error) => error.code === 'INVESTOR_NEXT_STEP_REQUIRED');
+test('Guichets : une relance s’ajoute (date et motif), se marque faite avec sa prochaine étape, et reste à faire sinon', async (context) => {
+  const request = { id: 'ir-3', classification: null, status: 'new' };
+  const { store, reminders, removed } = investorSetup(context, { request });
+  await assert.rejects(investorRequestService.addFollowUp({ id: 'u1' }, 'ir-3', { dueAt: new Date(Date.now() - 60000), reason: 'Rappeler' }), (error) => error.code === 'INVESTOR_FOLLOW_UP_IN_PAST');
 
-  const next = new Date(Date.now() + 3 * 24 * 3600000);
-  const followUp = await investorRequestService.addFollowUp({ id: 'u1' }, 'ir-3', { channel: 'call', nextStep: 'Envoyer le dossier d’agrément', nextFollowUpAt: next });
+  const due = new Date(Date.now() + 3 * 24 * 3600000);
+  const followUp = await investorRequestService.addFollowUp({ id: 'u1' }, 'ir-3', { dueAt: due, reason: 'Envoyer l’Investor Pack' });
   assert.equal(followUp.createdByUserId, 'u1');
-  assert.equal(request.nextAction, 'Envoyer le dossier d’agrément');
-  assert.equal(request.nextFollowUpAt, next);
   assert.equal(request.status, 'in_progress');
+  assert.equal(request.nextFollowUpAt, due);
   assert.equal(reminders.length, 1);
 
-  // Relance sans prochaine date : le contact est terminé.
-  await investorRequestService.addFollowUp({ id: 'u1' }, 'ir-3', { channel: 'message', nextStep: 'Dossier envoyé' });
-  assert.equal(request.status, 'closed');
+  // « Relancer » : la relance est faite et la suivante est créée.
+  const later = new Date(Date.now() + 5 * 24 * 3600000);
+  await investorRequestService.completeFollowUp({ id: 'u1' }, 'ir-3', followUp.id, { outcome: 'again', next: { dueAt: later, reason: 'Récupérer le business plan' } });
+  assert.ok(followUp.doneAt instanceof Date);
+  assert.equal(followUp.outcome, 'again');
+  assert.equal(removed.length, 1);
+  assert.equal(store.length, 2);
+  assert.equal(request.nextFollowUpAt, later);
+  await assert.rejects(investorRequestService.completeFollowUp({ id: 'u1' }, 'ir-3', followUp.id, { outcome: 'closed' }), (error) => error.code === 'INVESTOR_FOLLOW_UP_DONE');
 
-  // Une relance déjà faite garde sa date même si la classe change.
-  await investorRequestService.update('ir-3', { classification: 'B' });
+  // « Autre » : un texte ; plus rien à faire, le contact est terminé.
+  await investorRequestService.completeFollowUp({ id: 'u1' }, 'ir-3', store[1].id, { outcome: 'other', note: 'Attend le retour de son associé' });
+  assert.equal(store[1].outcomeNote, 'Attend le retour de son associé');
   assert.equal(request.nextFollowUpAt, null);
   assert.equal(request.status, 'closed');
+
+  // Une relance faite reste si la classe change ; la classe B ajoute sa relance automatique.
+  await investorRequestService.update('ir-3', { classification: 'B' });
+  assert.equal(store.length, 3);
+  assert.equal(request.status, 'in_progress');
+
+  // Supprimer retire la relance et son alerte.
+  await investorRequestService.removeFollowUp('ir-3', store[2].id);
+  assert.equal(store.length, 2);
+  assert.equal(request.status, 'closed');
+  assert.ok(investorRequestValidation.followUpDone.validate({ outcome: 'other' }).error);
+  assert.ok(investorRequestValidation.followUpDone.validate({ outcome: 'again' }).error);
 });
 
 test('Guichets : la fiche « Mon entreprise, mes difficultés » passe en Accompagnement, envoie l’engagement écrit et se termine à la réponse', async (context) => {

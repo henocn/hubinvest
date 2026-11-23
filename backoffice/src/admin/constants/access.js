@@ -20,7 +20,6 @@ export const guichetLabels = { project: 'Mon projet d’investissement', regime:
 export const guichetShortLabels = { project: 'Mon projet', regime: 'Quel régime', company: 'Mon entreprise' };
 export const contactSourceLabels = { online_booking: 'Rendez-vous en ligne', callback: 'Demande de rappel', desk: 'Passage au guichet' };
 export const companyRegimeLabels = { free_zone: 'Zone Franche', investment_code: 'Code des investissements', none: 'Aucun régime' };
-export const investorChannelLabels = { call: 'Appel', message: 'Message' };
 // Statut calculé par le serveur : rien de fait, relance prévue, ou classée et relancée sans nouvelle relance.
 // Studio : formats du document et suivi de chaque invité.
 export const studioStatusLabels = { invited: 'Créneau à choisir', booked: 'Créneau réservé', delivered: 'Capsule livrée', declined: 'Décliné', cancelled: 'Annulé' };

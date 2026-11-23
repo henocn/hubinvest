@@ -53,15 +53,15 @@ const investorRequestReceived = ({ user, request }) => {
   };
 };
 
-// Alerte à l'interlocuteur : la relance d'un contact A ou B arrive à échéance sans avoir été faite.
-const investorFollowUpDue = ({ user, request }) => {
+// Rappel au responsable : c'est l'heure d'une relance, avec son motif.
+const investorFollowUpDue = ({ user, request, followUp }) => {
   const url = teamUrl(`/guichets/${request.id}`);
   return {
-    title: `Relance à faire : contact ${request.classification}`,
-    body: `${request.fullName} attend sa relance (classe ${request.classification}).`,
+    title: `Relance à faire : ${request.fullName}`,
+    body: `Relancer ${request.fullName} : ${followUp.reason}`,
     url,
-    subject: `Relance à faire : ${request.fullName} (classe ${request.classification})`,
-    text: teamText(user, [`Le délai de relance de ${request.fullName}, classé ${request.classification}, est atteint.`, 'Notez la relance sur sa fiche :'], url),
+    subject: `Relance à faire : ${request.fullName}`,
+    text: teamText(user, [`C’est l’heure de relancer ${request.fullName} : ${followUp.reason}.`, 'Une fois la relance faite, marquez-la faite sur sa fiche :'], url),
   };
 };
 
