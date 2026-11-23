@@ -369,6 +369,7 @@ export default function BackofficePage({ session, onLogout, section }) {
           : occupants.find((item) => item.id === detailId) ? (
             <OccupantDetail
               occupant={occupants.find((item) => item.id === detailId)}
+              token={session.token}
               users={users}
               contactCount={contactStats.byOccupant[detailId] || 0}
               programEvents={programEvents}

@@ -24,6 +24,14 @@ router.get(
   asyncHandler(contactController.adminStats),
 );
 
+router.get(
+  '/admin/stands/:occupantId',
+  asyncHandler(authenticate),
+  requireRoles(roles.SUPER_ADMIN),
+  validate(contactValidation.standParams, 'params'),
+  asyncHandler(contactController.standContacts),
+);
+
 router.use(
   asyncHandler(authenticate),
   requireRoles(roles.OCCUPANT),

@@ -40,6 +40,8 @@ const update = Joi.object({
 }).min(1);
 
 const params = Joi.object({ id: uuid.required() });
+// Carnet d'un stand consulté par l'API-ZF.
+const standParams = Joi.object({ occupantId: uuid.required() });
 
 const query = Joi.object({
   qualification: Joi.string().trim().uppercase().valid('A', 'B', 'C'),
@@ -49,4 +51,4 @@ const query = Joi.object({
   offset: Joi.number().integer().min(0).default(0),
 });
 
-module.exports = { create, createPublic, publicParams, update, params, query };
+module.exports = { create, createPublic, publicParams, update, params, standParams, query };

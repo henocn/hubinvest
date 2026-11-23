@@ -166,4 +166,7 @@ const adminStats = async (user) => {
   return { total, byOccupant };
 };
 
-module.exports = { list, get, create, createPublic, update, stats, adminStats };
+// Carnet d'un stand, en lecture, pour l'API-ZF (super administrateurs) : tous ses contacts, du plus récent au plus ancien.
+const standContacts = async (occupantId) => (await contactRepository.findAll({ occupantId })).rows;
+
+module.exports = { list, get, create, createPublic, update, stats, adminStats, standContacts };

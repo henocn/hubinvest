@@ -148,6 +148,7 @@ export const api = {
     request(`/wheel/segments/${id}`, authorized(token, { method: 'DELETE' })),
   users: (token) => request('/users', authorized(token)),
   contactStats: (token) => request('/contacts/admin/stats', authorized(token)),
+  standContacts: (token, occupantId) => request(`/contacts/admin/stands/${occupantId}`, authorized(token)),
   createUser: (token, values) =>
     request('/users', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   updateUser: (token, id, values) =>
