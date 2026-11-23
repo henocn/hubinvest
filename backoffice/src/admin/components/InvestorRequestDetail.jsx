@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, CalendarPlus, PhoneCall, X } from 'lucide-react';
+import { ArrowLeft, CalendarPlus, FileDown, PhoneCall, X } from 'lucide-react';
 import { api } from '../lib/api';
 import { useRealtimeEvent } from '../../lib/realtime';
 import { companyRegimeLabels, contactSourceLabels, guichetLabels, investorChannelLabels, investorClassHints, investorClassLabels, investorClassShort, investorStatusLabel } from '../constants/access';
@@ -136,7 +136,22 @@ function QualificationInput({ field, value, onChange }) {
 }
 
 // Fiche de diagnostic (15 minutes) : les neuf informations, le service vers lequel la personne est orientée et l'étape suivante.
-function DiagnosisForm({ request, busy, saved, onSave }) {
+// Télécharge un fichier reçu de l'API sous le nom donné.
+const saveFile = (blob, fileName) => {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+const fileSlug = (value) => String(value || 'contact').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase();
+
+// Fiche de diagnostic : les informations de qualification, l'orientation et l'étape suivante. Une fois enregistrée,
+// elle se télécharge en PDF (formulaire à cases cochées, à imprimer et faire signer).
+function DiagnosisForm({ request, busy, saved, onSave, onDownload }) {
   const fields = request.qualificationFields || [];
   const [answers, setAnswers] = useState(request.qualification || {});
   const [serviceId, setServiceId] = useState(request.recommendedService || '');
@@ -159,7 +174,10 @@ function DiagnosisForm({ request, busy, saved, onSave }) {
           </label>
           <label>Étape suivante<input value={nextAction} onChange={(event) => setNextAction(event.target.value)} minLength={2} maxLength={255} required /></label>
         </div>
-        <div className="investor-form-actions"><button className="button button-primary" type="submit" disabled={busy}>Enregistrer le diagnostic</button></div>
+        <div className="investor-form-actions">
+          {request.diagnosedAt && <button className="button button-secondary" type="button" onClick={onDownload} disabled={busy}><FileDown size={16} /> Fiche PDF</button>}
+          <button className="button button-primary" type="submit" disabled={busy}>Enregistrer le diagnostic</button>
+        </div>
       </form>
     </section>
   );
@@ -258,6 +276,19 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
   const close = () => setDialog(null);
 
   // Enregistre une action ; l'erreur reste dans la fenêtre ouverte, sinon au-dessus de la section.
+  // Téléchargement de la fiche PDF : sans recharger la fiche, pour ne pas perdre une saisie en cours.
+  const downloadDiagnosis = async () => {
+    setBusy(true);
+    setActionError('');
+    try {
+      saveFile(await api.investorDiagnosisPdf(session.token, request.id), `fiche-diagnostic-${fileSlug(request.fullName)}.pdf`);
+    } catch (requestError) {
+      setActionError(requestError.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const run = async (work, savedLabel = '') => {
     setBusy(true);
     setActionError('');
@@ -351,7 +382,8 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
 
       {tab === 'sheet' && (companyCase
         ? <DifficultyForm key={formKey} request={request} busy={busy} saved={saved === 'sheet'} onSave={(values) => run(() => api.saveInvestorDifficulty(session.token, request.id, values), 'sheet')} onResolve={(resolved) => run(() => api.resolveInvestorCommitment(session.token, request.id, resolved), 'sheet')} />
-        : <DiagnosisForm key={formKey} request={request} busy={busy} saved={saved === 'sheet'} onSave={(values) => run(() => api.saveInvestorDiagnosis(session.token, request.id, values), 'sheet')} />)}
+        : <DiagnosisForm key={formKey} request={request} busy={busy} saved={saved === 'sheet'} onSave={(values) => run(() => api.saveInvestorDiagnosis(session.token, request.id, values), 'sheet')}
+          onDownload={downloadDiagnosis} />)}
 
       {tab === 'meetings' && (
       <section className="data-panel stand-panel">

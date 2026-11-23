@@ -7,6 +7,7 @@ const settingsService = require('../settings/settings.service');
 const { slotGrid } = require('../../shared/slot-grid');
 const { guichetLocation } = require('../../shared/guichets');
 const { SERVICES, SERVICE_KEYS, serviceTitle } = require('../../shared/services');
+const { renderDiagnosisPdf, reference } = require('./diagnosis-pdf');
 
 // Les guichets et le registre unique (document v4, M3). Les données restent réservées à l'API-ZF (super administrateurs).
 const plain = (value) => (value?.toJSON ? value.toJSON() : value);
@@ -202,6 +203,20 @@ const saveDiagnosis = async (id, { qualification, recommendedService = null, nex
   return getRequest(id);
 };
 
+// Fiche de diagnostic imprimable (PDF), disponible une fois le diagnostic enregistré.
+const diagnosisPdf = async (id) => {
+  const investorRequest = await investorRequestRepository.findById(id);
+  if (!investorRequest) throw new AppError(404, 'INVESTOR_REQUEST_NOT_FOUND', 'Contact introuvable.');
+  if (!investorRequest.diagnosedAt) throw new AppError(409, 'DIAGNOSIS_MISSING', 'Enregistrez d’abord le diagnostic.');
+  const request = plain(investorRequest);
+  const delays = {
+    aHours: Math.round(settingsService.investorFollowUpDelay('A') / 3600000),
+    bDays: Math.round(settingsService.investorFollowUpDelay('B') / 86400000),
+  };
+  const buffer = await renderDiagnosisPdf({ request, fields: settingsService.investorQualificationFields(), delays });
+  return { buffer, fileName: `fiche-diagnostic-${reference(request)}.pdf` };
+};
+
 // Fiche « Mon entreprise, mes difficultés » et engagement de suivi écrit (service concerné, réponse promise, délai).
 // Le contact passe en Accompagnement ; l'engagement est envoyé à l'entreprise s'il est nouveau ou modifié.
 const saveDifficulty = async (id, { difficulty, commitmentService = null, commitmentDueAt = null, commitmentNote = null }) => {
@@ -362,6 +377,7 @@ module.exports = {
   detail,
   update,
   saveDiagnosis,
+  diagnosisPdf,
   saveDifficulty,
   resolve,
   addFollowUp,

@@ -32,6 +32,7 @@ router.post('/', validate(investorRequestValidation.createManual), asyncHandler(
 const v = investorRequestValidation;
 const c = investorRequestController;
 router.get('/:id', validate(v.params, 'params'), asyncHandler(c.detail));
+router.get('/:id/diagnosis.pdf', validate(v.params, 'params'), asyncHandler(c.diagnosisPdf));
 router.put('/:id/diagnosis', validate(v.params, 'params'), validate(v.diagnosis), asyncHandler(c.saveDiagnosis));
 router.put('/:id/difficulty', validate(v.params, 'params'), validate(v.difficulty), asyncHandler(c.saveDifficulty));
 router.patch('/:id/resolution', validate(v.params, 'params'), validate(v.resolve), asyncHandler(c.resolve));

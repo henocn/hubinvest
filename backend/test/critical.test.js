@@ -1616,3 +1616,13 @@ test('l’accueil servi aux moteurs contient son texte, l’événement FIL 2026
   assert.equal((await seoService.pageMeta('/ecran')).robots, 'noindex, nofollow');
   assert.equal((await seoService.pageMeta('/investor-desk')).canonical, '/guichets/rappel');
 });
+
+test('la fiche de diagnostic se télécharge en PDF une fois le diagnostic enregistré', async (context) => {
+  const request = { id: 'ir-6', fullName: 'Ama Ségbé', email: 'ama@example.tg', guichet: 'project', source: 'desk', classification: 'B', status: 'new', diagnosedAt: null, qualification: { sector: 'Industrie', jobs: 12, agreement: true, origin: 'Bénin 🇧🇯' }, createdAt: new Date() };
+  investorSetup(context, { request });
+  await assert.rejects(investorRequestService.diagnosisPdf('ir-6'), (error) => error.code === 'DIAGNOSIS_MISSING');
+  request.diagnosedAt = new Date();
+  const { buffer, fileName } = await investorRequestService.diagnosisPdf('ir-6');
+  assert.equal(buffer.subarray(0, 5).toString(), '%PDF-');
+  assert.match(fileName, /^fiche-diagnostic-DG-\d{2}-[A-Z0-9-]+\.pdf$/);
+});

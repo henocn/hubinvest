@@ -72,6 +72,15 @@ export const api = {
     request('/investor-requests', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   // Fiche d'un contact des guichets : diagnostic, difficulté, relances et rendez-vous.
   saveInvestorDiagnosis: (token, id, values) => request(`/investor-requests/${id}/diagnosis`, authorized(token, { method: 'PUT', body: JSON.stringify(values) })),
+  // Fiche de diagnostic imprimable, renvoyée en PDF.
+  investorDiagnosisPdf: async (token, id) => {
+    const response = await fetch(`${API_URL}/investor-requests/${id}/diagnosis.pdf`, authorized(token));
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw new Error(payload.message || 'Téléchargement de la fiche impossible.');
+    }
+    return response.blob();
+  },
   saveInvestorDifficulty: (token, id, values) => request(`/investor-requests/${id}/difficulty`, authorized(token, { method: 'PUT', body: JSON.stringify(values) })),
   resolveInvestorCommitment: (token, id, resolved) => request(`/investor-requests/${id}/resolution`, authorized(token, { method: 'PATCH', body: JSON.stringify({ resolved }) })),
   investorRequest: (token, id) => request(`/investor-requests/${id}`, authorized(token)),
