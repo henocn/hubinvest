@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { Check } from 'lucide-react';
 import { api } from '../lib/api';
 import { useRealtimeEvent } from '../../lib/realtime';
-import B2bNeedsSettings from '../components/B2bNeedsSettings';
 import WheelSettings from '../components/WheelSettings';
 import InvestorQualificationSettings from '../components/InvestorQualificationSettings';
 import StudioFormatSettings from '../components/StudioFormatSettings';
@@ -188,7 +187,6 @@ export default function SettingsPage({ session, onLogout }) {
           </form>
         )}
       </WheelSettings>}
-      <B2bNeedsSettings session={session} onLogout={onLogout} />
     </main>
   );
 }

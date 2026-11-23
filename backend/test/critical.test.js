@@ -69,21 +69,26 @@ test('les comptes utilisent seulement les quatre rôles retenus', () => {
   assert.deepEqual(Object.values(roles).sort(), ['admin', 'animateur', 'occupant', 'super-admin']);
 });
 
-test('un administrateur doit être rattaché à un stand', async (context) => {
+test('un occupant doit être rattaché à un stand ; l’administrateur (API-ZF) ne l’est jamais', async (context) => {
   context.mock.method(userRepository, 'findOccupantById', async (id) => (id === 'occupant-a' ? { id } : null));
   context.mock.method(userRepository, 'create', async (values) => ({ toJSON: () => values }));
 
   await assert.rejects(
     userService.create({ role: 'super-admin' }, {
-      firstName: 'Koffi', lastName: 'Mensah', email: 'admin@example.com', password: 'secret-test', role: 'admin',
+      firstName: 'Koffi', lastName: 'Mensah', email: 'stand@example.com', password: 'secret-test', role: 'occupant',
     }),
     (error) => error.status === 422 && error.code === 'OCCUPANT_REQUIRED',
   );
 
   const created = await userService.create({ role: 'super-admin' }, {
-    firstName: 'Koffi', lastName: 'Mensah', email: 'admin@example.com', password: 'secret-test', role: 'admin', occupantId: 'occupant-a',
+    firstName: 'Koffi', lastName: 'Mensah', email: 'stand@example.com', password: 'secret-test', role: 'occupant', occupantId: 'occupant-a',
   });
   assert.equal(created.occupantId, 'occupant-a');
+
+  const apizf = await userService.create({ role: 'super-admin' }, {
+    firstName: 'Ama', lastName: 'Kossi', email: 'apizf@example.com', password: 'secret-test', role: 'admin', occupantId: 'occupant-a',
+  });
+  assert.equal(apizf.occupantId, null);
 });
 
 test('la récupération envoie cinq chiffres et ne stocke jamais le code en clair', async (context) => {
@@ -383,13 +388,13 @@ test('la liste publique B2B ne contient que les besoins ouverts de stands actifs
   assert.equal(result.include[0].required, true);
 });
 
-test('un administrateur publie un besoin B2B uniquement pour son stand', async (context) => {
+test('un occupant publie un besoin B2B uniquement pour son stand', async (context) => {
   let saved;
   context.mock.method(b2bNeedRepository, 'findOccupantById', async (id) => ({ id }));
   context.mock.method(b2bNeedRepository, 'create', async (values) => { saved = values; return values; });
 
   await b2bNeedService.create(
-    { id: 'admin-a', role: 'admin', occupantId: 'occupant-a' },
+    { id: 'admin-a', role: 'occupant', occupantId: 'occupant-a' },
     { occupantId: 'occupant-b', title: 'Besoin test', description: 'Description du besoin test.' },
   );
   assert.equal(saved.occupantId, 'occupant-a');
@@ -406,14 +411,14 @@ test('une proposition B2B sans consentement est refusée avant toute écriture',
   );
 });
 
-test('la liste des demandes B2B se limite au stand d’un administrateur de stand', async (context) => {
+test('la liste des demandes B2B se limite au stand d’un occupant', async (context) => {
   const scopes = [];
   context.mock.method(b2bProposalRepository, 'findAllVisible', async (occupantId = null) => { scopes.push(occupantId); return []; });
 
-  await b2bProposalService.listAll({ role: 'admin', occupantId: 'occupant-b' });
+  await b2bProposalService.listAll({ role: 'occupant', occupantId: 'occupant-b' });
   await b2bProposalService.listAll({ role: 'super-admin' });
   assert.deepEqual(scopes, ['occupant-b', null]);
-  await assert.rejects(b2bProposalService.listAll({ role: 'admin', occupantId: null }), (error) => error.code === 'STAND_REQUIRED');
+  await assert.rejects(b2bProposalService.listAll({ role: 'occupant', occupantId: null }), (error) => error.code === 'STAND_REQUIRED');
 });
 
 test('corriger une demande B2B ne prévient pas la personne ; la supprimer reste limité au stand', async (context) => {
@@ -425,16 +430,16 @@ test('corriger une demande B2B ne prévient pas la personne ; la supprimer reste
   context.mock.method(b2bProposalRepository, 'destroy', async () => { destroyed = true; });
   const decided = context.mock.method(notificationService, 'b2bProposalDecided', () => {});
 
-  await b2bProposalService.update({ id: 'user-b', role: 'admin', occupantId: 'occupant-b' }, 'proposal-a', { email: 'Awa@Exemple.tg', phone: '' });
+  await b2bProposalService.update({ id: 'user-b', role: 'occupant', occupantId: 'occupant-b' }, 'proposal-a', { email: 'Awa@Exemple.tg', phone: '' });
   assert.deepEqual(saved, { email: 'awa@exemple.tg', phone: null });
   assert.equal(decided.mock.callCount(), 0);
 
   await assert.rejects(
-    b2bProposalService.remove({ role: 'admin', occupantId: 'occupant-a' }, 'proposal-a'),
+    b2bProposalService.remove({ role: 'occupant', occupantId: 'occupant-a' }, 'proposal-a'),
     (error) => error.code === 'B2B_PROPOSAL_NOT_FOUND',
   );
   assert.equal(destroyed, false);
-  await b2bProposalService.remove({ role: 'admin', occupantId: 'occupant-b' }, 'proposal-a');
+  await b2bProposalService.remove({ role: 'occupant', occupantId: 'occupant-b' }, 'proposal-a');
   assert.equal(destroyed, true);
 });
 
@@ -442,7 +447,7 @@ test('le backoffice B2B peut lire les propositions d’un besoin existant', asyn
   context.mock.method(b2bNeedRepository, 'findById', async () => ({ id: 'need-b', occupantId: 'occupant-b' }));
   context.mock.method(b2bProposalRepository, 'findAllByNeed', async (needId) => [{ id: 'proposal-a', b2bNeedId: needId }]);
 
-  const result = await b2bProposalService.list({ role: 'admin', occupantId: 'occupant-b' }, 'need-b');
+  const result = await b2bProposalService.list({ role: 'occupant', occupantId: 'occupant-b' }, 'need-b');
   assert.deepEqual(result, [{ id: 'proposal-a', b2bNeedId: 'need-b' }]);
 });
 
@@ -454,7 +459,7 @@ test('une invitation Studio utilise un lien personnel imprévisible et l’envoi
   context.mock.method(notificationService, 'studioInvited', (invitation) => { sent.push(invitation.email); });
 
   await studioInvitationService.create(
-    { id: 'campaign-user', role: 'admin', occupantId: 'occupant-a' },
+    { id: 'campaign-user', role: 'occupant', occupantId: 'occupant-a' },
     { guestName: 'Invité Test', email: 'Invite@Example.com', format: 'two_minutes' },
   );
 
@@ -520,7 +525,7 @@ test('la capsule du Studio se livre après le passage et part à l’invité', a
   assert.deepEqual(delivered, ['https://videos.tg/afi']);
 });
 
-test('le planning Studio d’un administrateur est filtré sur son stand', async (context) => {
+test('le planning Studio d’un occupant est filtré sur son stand', async (context) => {
   const originalSecret = env.auth.secret;
   env.auth.secret = 'hubinvest-studio-test-secret';
   context.after(() => { env.auth.secret = originalSecret; });
@@ -530,7 +535,7 @@ test('le planning Studio d’un administrateur est filtré sur son stand', async
     toJSON: () => ({
       id: where.id,
       occupantId: `occupant-${where.id}`,
-      role: 'admin',
+      role: 'occupant',
     }),
   }));
   const requestedStands = [];
@@ -588,14 +593,14 @@ test('la liste des joueurs conserve le validateur et son stand pour chaque scan'
   assert.deepEqual(result.passages[0].occupant, passage.occupant);
 });
 
-test('la liste des joueurs d’un administrateur est limitée aux scans de son stand', async (context) => {
+test('la liste des joueurs d’un occupant est limitée aux scans de son stand', async (context) => {
   let requestedStand;
   context.mock.method(challengePassportRepository, 'findAll', async (occupantId) => {
     requestedStand = occupantId;
     return [];
   });
 
-  await challengePassportService.list({ role: 'admin', occupantId: 'occupant-a' });
+  await challengePassportService.list({ role: 'occupant', occupantId: 'occupant-a' });
   assert.equal(requestedStand, 'occupant-a');
 });
 
@@ -923,10 +928,10 @@ const readSseEvents = async (response, count, timeout = 2000) => {
 
 test('chaque rôle n’écoute que les canaux de son stand ou de son rôle', () => {
   assert.deepEqual(realtimeService.channelsFor({ id: 'u1', role: 'super-admin', occupantId: null }), ['user:u1', 'super-admin']);
-  assert.deepEqual(realtimeService.channelsFor({ id: 'u2', role: 'admin', occupantId: 'stand-a' }), ['user:u2', 'admins', 'admin:stand-a']);
-  assert.deepEqual(realtimeService.channelsFor({ id: 'u3', role: 'occupant', occupantId: 'stand-a' }), ['user:u3', 'occupant:stand-a']);
+  assert.deepEqual(realtimeService.channelsFor({ id: 'u2', role: 'admin', occupantId: 'stand-a' }), ['user:u2', 'super-admin']);
+  assert.deepEqual(realtimeService.channelsFor({ id: 'u3', role: 'occupant', occupantId: 'stand-a' }), ['user:u3', 'admins', 'occupant:stand-a', 'admin:stand-a']);
   assert.deepEqual(realtimeService.channelsFor({ id: 'u4', role: 'animateur', occupantId: null }), ['user:u4', 'animateur']);
-  assert.deepEqual(realtimeService.channelsFor({ id: 'u5', role: 'admin', occupantId: null }), ['user:u5', 'admins']);
+  assert.deepEqual(realtimeService.channelsFor({ id: 'u5', role: 'admin', occupantId: null }), ['user:u5', 'super-admin']);
 });
 
 test('un jeton de flux ne sert qu’une fois et expire', (context) => {

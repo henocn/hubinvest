@@ -1,5 +1,5 @@
 const AppError = require('../../shared/app-error');
-const roles = require('../../shared/roles');
+const { isGlobal } = require('../../shared/access');
 const b2bNeedService = require('../b2b-need/b2b-need.service');
 const b2bProposalRepository = require('./b2b-proposal.repository');
 const notificationService = require('../notification/notification.service');
@@ -33,18 +33,18 @@ const list = async (user, needId) => {
   return b2bProposalRepository.findAllByNeed(needId);
 };
 
-// Toutes les demandes que l’utilisateur peut traiter : toutes pour le super-admin, celles de son stand sinon.
+// Toutes les demandes que l’utilisateur peut traiter : toutes pour l'équipe API-ZF, celles de son stand pour un occupant.
 const listAll = async (user) => {
-  if (user.role === roles.SUPER_ADMIN) return b2bProposalRepository.findAllVisible();
-  if (!user.occupantId) throw new AppError(403, 'STAND_REQUIRED', 'Cet administrateur n’est rattaché à aucun stand.');
+  if (isGlobal(user)) return b2bProposalRepository.findAllVisible();
+  if (!user.occupantId) throw new AppError(403, 'STAND_REQUIRED', 'Ce compte n’est rattaché à aucun stand.');
   return b2bProposalRepository.findAllVisible(user.occupantId);
 };
 
-// Une demande que l'utilisateur peut traiter : toutes pour le super-admin, celles de son stand pour un administrateur de stand.
+// Une demande que l'utilisateur peut traiter : toutes pour l'équipe API-ZF, celles de son stand pour un occupant.
 const getManaged = async (user, id) => {
   const proposal = await b2bProposalRepository.findById(id);
   if (!proposal) throw new AppError(404, 'B2B_PROPOSAL_NOT_FOUND', 'Proposition B2B introuvable.');
-  if (user.role === 'admin' && proposal.need.occupantId !== user.occupantId) {
+  if (!isGlobal(user) && proposal.need.occupantId !== user.occupantId) {
     throw new AppError(404, 'B2B_PROPOSAL_NOT_FOUND', 'Proposition B2B introuvable.');
   }
   return proposal;

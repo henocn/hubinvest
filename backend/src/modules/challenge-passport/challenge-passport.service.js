@@ -75,9 +75,9 @@ const getPublic = async (token, language) => {
 };
 
 const list = async (user) => {
-  const occupantId = user.role === roles.ADMIN ? user.occupantId : null;
-  if (user.role === roles.ADMIN && !occupantId) {
-    throw new AppError(403, 'STAND_REQUIRED', 'Cet administrateur n’est rattaché à aucun stand.');
+  const occupantId = user.role === roles.OCCUPANT ? user.occupantId : null;
+  if (user.role === roles.OCCUPANT && !occupantId) {
+    throw new AppError(403, 'STAND_REQUIRED', 'Ce compte n’est rattaché à aucun stand.');
   }
   return (await challengePassportRepository.findAll(occupantId)).map(managerPayload);
 };

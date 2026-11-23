@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useDashboard } from '../dashboard';
+import { isGlobalRole } from '../../navigation';
 
 // Une ligne : le libellé et son détail à gauche, le chiffre à droite ; cliquable vers la rubrique où agir.
 function Stat({ value, label, detail, to, urgent = false }) {
@@ -16,7 +17,7 @@ function Stat({ value, label, detail, to, urgent = false }) {
 // Accueil de l'administration : d'abord ce qui attend une action, puis les chiffres du Hub.
 export default function DashboardPage({ session }) {
   const { data, error } = useDashboard();
-  const isSuperAdmin = session.user.role === 'super-admin';
+  const isSuperAdmin = isGlobalRole(session.user.role);
 
   return (
     <main className="admin-workspace">

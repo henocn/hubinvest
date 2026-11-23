@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CalendarPlus, Check, MessageSquareText, Pencil, Trash2, X } from 'lucide-react';
 import { api } from '../lib/api';
+import { isGlobalRole } from '../../navigation';
 import { upcomingFirst } from '../lib/order';
 import { useRealtimeEvent } from '../../lib/realtime';
 import { b2bMeetingOutcomeLabels, b2bProposalLabels } from '../constants/access';
@@ -83,7 +84,7 @@ function MeetingReport({ meeting, rescheduled, onReschedule }) {
 // Fiche d'une demande B2B : la demande, ses rendez-vous (jour, heure, table) et le compte rendu de chacun.
 export default function B2bProposalDetail({ id, session, onLogout }) {
   const navigate = useNavigate();
-  const isSuperAdmin = session.user.role === 'super-admin';
+  const isSuperAdmin = isGlobalRole(session.user.role);
   const [proposal, setProposal] = useState(null);
   const [error, setError] = useState('');
   const [notFound, setNotFound] = useState(false);

@@ -2,6 +2,7 @@ const crypto = require('node:crypto');
 const env = require('../../config/env');
 const AppError = require('../../shared/app-error');
 const roles = require('../../shared/roles');
+const { isGlobal } = require('../../shared/access');
 const { findSessionUser } = require('../../middlewares/auth.middleware');
 const hub = require('./realtime.hub');
 const { User } = require('../../models');
@@ -22,10 +23,8 @@ const channels = Object.freeze({
 // Liste les canaux qu'un compte a le droit d'écouter, avec le même cloisonnement que l'API.
 const channelsFor = (user) => {
   const list = [channels.user(user.id)];
-  if (user.role === roles.SUPER_ADMIN) list.push(channels.superAdmins);
-  if (user.role === roles.ADMIN) list.push(channels.admins);
-  if (user.role === roles.ADMIN && user.occupantId) list.push(channels.admin(user.occupantId));
-  if (user.role === roles.OCCUPANT && user.occupantId) list.push(channels.occupant(user.occupantId));
+  if (isGlobal(user)) list.push(channels.superAdmins);
+  if (user.role === roles.OCCUPANT && user.occupantId) list.push(channels.admins, channels.occupant(user.occupantId), channels.admin(user.occupantId));
   if (user.role === roles.ANIMATOR) list.push(channels.animators);
   return list;
 };

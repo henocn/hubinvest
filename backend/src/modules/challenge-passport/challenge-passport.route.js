@@ -8,8 +8,8 @@ const challengePassportController = require('./challenge-passport.controller');
 const rateLimit = require('../../middlewares/rate-limit.middleware');
 
 const router = express.Router();
-const challengeManagers = requireRoles(roles.SUPER_ADMIN, roles.ADMIN);
-const rewardTeamOnly = requireRoles(roles.SUPER_ADMIN, roles.ANIMATOR);
+const challengeManagers = requireRoles(roles.SUPER_ADMIN, roles.ADMIN, roles.OCCUPANT);
+const rewardTeamOnly = requireRoles(roles.SUPER_ADMIN, roles.ADMIN, roles.ANIMATOR);
 
 router.post('/public', rateLimit.publicForm('challenge'), validate(challengePassportValidation.createPublic), asyncHandler(challengePassportController.createPublic));
 router.get('/public/:token', validate(challengePassportValidation.tokenParams, 'params'), asyncHandler(challengePassportController.getPublic));
@@ -23,6 +23,6 @@ router.get('/code/:code', rewardTeamOnly, validate(challengePassportValidation.r
 router.post('/redeem-by-code', rewardTeamOnly, validate(challengePassportValidation.rewardCode), asyncHandler(challengePassportController.redeemByCode));
 router.patch('/:id/redeem', rewardTeamOnly, validate(challengePassportValidation.idParams, 'params'), asyncHandler(challengePassportController.redeem));
 // Suppression d'un participant : super administrateur seulement.
-router.delete('/:id', requireRoles(roles.SUPER_ADMIN), validate(challengePassportValidation.idParams, 'params'), asyncHandler(challengePassportController.remove));
+router.delete('/:id', requireRoles(roles.SUPER_ADMIN, roles.ADMIN), validate(challengePassportValidation.idParams, 'params'), asyncHandler(challengePassportController.remove));
 
 module.exports = router;

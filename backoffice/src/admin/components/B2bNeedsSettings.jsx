@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { api } from '../lib/api';
+import { isGlobalRole } from '../../navigation';
 import { useRealtimeEvent } from '../../lib/realtime';
 import B2bNeedDrawer from './drawers/B2bNeedDrawer';
 import { useRowSelection } from './RowSelection';
 import B2bNeedsTable from './tables/B2bNeedsTable';
 
-// Besoins B2B publiés sur le site : créés et modifiés ici ; les demandes reçues se traitent dans Rencontre B2B.
-// Un administrateur de stand ne voit et ne crée que les besoins de son stand.
+// Besoins B2B publiés sur le site (Rencontres B2B › Besoins) : créés et modifiés ici ; les demandes reçues se traitent
+// dans l'onglet Demandes. Un occupant ne voit et ne crée que les besoins de son stand.
 export default function B2bNeedsSettings({ session, onLogout }) {
-  const isSuperAdmin = session.user.role === 'super-admin';
+  const isSuperAdmin = isGlobalRole(session.user.role);
   const [needs, setNeeds] = useState(null);
   const [occupants, setOccupants] = useState([]);
   const [error, setError] = useState('');

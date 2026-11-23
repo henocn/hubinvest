@@ -58,7 +58,7 @@ export default function UsersTable({ selection, users, query, currentUserId, onE
               <SelectCell selection={selection} id={user.id} />
               <td><strong>{user.firstName} {user.lastName}</strong></td>
               <td>{roleLabels[user.role] || user.role}</td>
-              <td>{['admin', 'occupant'].includes(user.role) ? user.occupant?.name || '—' : '—'}</td>
+              <td>{user.role === 'occupant' ? user.occupant?.name || '—' : '—'}</td>
               <td><span className={`presence is-${presence.tone}`}>{presence.label}</span></td>
               <td><span className={`status-pill ${user.isActive ? 'is-active' : ''}`}>{user.isActive && <Check size={13} />}{user.isActive ? 'Actif' : 'Inactif'}</span></td>
               <ActionsCell>

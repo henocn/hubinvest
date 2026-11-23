@@ -8,8 +8,8 @@ const investorRequestController = require('./investor-request.controller');
 const rateLimit = require('../../middlewares/rate-limit.middleware');
 
 const router = express.Router();
-// Guichets et registre unique de l'API-ZF : réservés à son équipe (super administrateurs), pas aux administrateurs de stand.
-const investorDeskOnly = requireRoles(roles.SUPER_ADMIN);
+// Guichets et registre unique de l'API-ZF : réservés à son équipe (super administrateurs et administrateurs).
+const investorDeskOnly = requireRoles(roles.SUPER_ADMIN, roles.ADMIN);
 
 router.post(
   '/public',

@@ -6,7 +6,7 @@ const dashboardService = require('./dashboard.service');
 
 const router = express.Router();
 
-router.get('/', asyncHandler(authenticate), requireRoles(roles.SUPER_ADMIN, roles.ADMIN), asyncHandler(async (request, response) => {
+router.get('/', asyncHandler(authenticate), requireRoles(roles.SUPER_ADMIN, roles.ADMIN, roles.OCCUPANT), asyncHandler(async (request, response) => {
   response.json({ data: await dashboardService.overview(request.user) });
 }));
 

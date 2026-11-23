@@ -10,7 +10,7 @@ const uploadLogo = require('./occupant-logo.middleware');
 const uploadGalleryImage = require('./occupant-gallery.middleware');
 
 const router = express.Router();
-const adminOnly = requireRoles(roles.SUPER_ADMIN);
+const adminOnly = requireRoles(roles.SUPER_ADMIN, roles.ADMIN);
 
 router.get('/public', asyncHandler(occupantController.listPublic));
 router.get(

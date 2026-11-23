@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Clapperboard, Plus, Search, X } from 'lucide-react';
 import { api } from '../lib/api';
+import { isGlobalRole } from '../../navigation';
 import { useRealtimeEvent } from '../../lib/realtime';
 import { publicBaseUrl, studioStatusLabels } from '../constants/access';
 import ConfirmDelete from '../components/ConfirmDelete';
@@ -153,7 +154,7 @@ function ConfirmCancel({ invitation, loading, error, onCancel, onConfirm }) {
 // Studio (document, module M5) : invitations personnelles, créneaux choisis par les invités, rappels automatiques,
 // livraison des capsules. Un administrateur de stand ne voit et n'invite que pour son stand.
 export default function StudioPage({ session, onLogout }) {
-  const isSuperAdmin = session.user.role === 'super-admin';
+  const isSuperAdmin = isGlobalRole(session.user.role);
   const [invitations, setInvitations] = useState(null);
   const [formats, setFormats] = useState([]);
   const [occupants, setOccupants] = useState([]);

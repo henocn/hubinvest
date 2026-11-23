@@ -5,7 +5,6 @@ export const roleLabels = {
   animateur: 'Animateur',
 };
 
-export const backofficeRoles = new Set(['super-admin', 'admin']);
 export const availableRoles = new Set(['super-admin', 'admin', 'occupant', 'animateur']);
 // Compte rendu en un clic d'un rendez-vous B2B.
 export const b2bMeetingOutcomeLabels = { present: 'Présent', absent: 'Absent' };

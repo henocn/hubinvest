@@ -10,7 +10,7 @@ const router = express.Router();
 
 router.get('/public/today', asyncHandler(programEventController.getToday));
 
-router.use(asyncHandler(authenticate), requireRoles(roles.SUPER_ADMIN));
+router.use(asyncHandler(authenticate), requireRoles(roles.SUPER_ADMIN, roles.ADMIN));
 router.get('/', asyncHandler(programEventController.list));
 router.post('/', validate(programEventValidation.create), asyncHandler(programEventController.create));
 router.patch(

@@ -2,6 +2,7 @@ const crypto = require('node:crypto');
 const { UniqueConstraintError } = require('sequelize');
 const AppError = require('../../shared/app-error');
 const roles = require('../../shared/roles');
+const { isGlobal } = require('../../shared/access');
 const { translatePublicContent } = require('../../shared/translation.service');
 const studioInvitationRepository = require('./studio-invitation.repository');
 const notificationService = require('../notification/notification.service');
@@ -15,9 +16,10 @@ const { slotGrid } = require('../../shared/slot-grid');
 
 const plain = (value) => (value?.toJSON ? value.toJSON() : value);
 
+// Équipe API-ZF : tous les stands ; occupant : le sien.
 const standFor = (user) => {
-  if (user.role === roles.SUPER_ADMIN) return null;
-  if (!user.occupantId) throw new AppError(403, 'STAND_REQUIRED', 'Cet administrateur n’est rattaché à aucun stand.');
+  if (isGlobal(user)) return null;
+  if (!user.occupantId) throw new AppError(403, 'STAND_REQUIRED', 'Ce compte n’est rattaché à aucun stand.');
   return user.occupantId;
 };
 
@@ -156,7 +158,7 @@ const update = async (user, id, values) => {
   if (['declined', 'cancelled'].includes(invitation.status)) throw new AppError(409, 'STUDIO_INVITATION_CLOSED', 'Invitation déclinée ou annulée : elle ne se modifie plus.');
   const previousOccupantId = invitation.occupantId;
   const next = { ...values };
-  if (user.role === roles.ADMIN) delete next.occupantId;
+  if (user.role === roles.OCCUPANT) delete next.occupantId;
   if ('occupantId' in next) await assertOccupant(next.occupantId);
   if (next.format && next.format !== invitation.format) assertFormat(next.format);
   if (next.email) next.email = next.email.toLowerCase();

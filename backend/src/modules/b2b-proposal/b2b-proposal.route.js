@@ -8,7 +8,7 @@ const controller = require('./b2b-proposal.controller');
 const rateLimit = require('../../middlewares/rate-limit.middleware');
 
 const router = express.Router();
-const b2bAdminOnly = requireRoles(roles.SUPER_ADMIN, roles.ADMIN);
+const b2bAdminOnly = requireRoles(roles.SUPER_ADMIN, roles.ADMIN, roles.OCCUPANT);
 
 router.post('/public/:needId', rateLimit.publicForm('b2b'), validate(validation.needParams, 'params'), validate(validation.createPublic), asyncHandler(controller.createPublic));
 router.use(asyncHandler(authenticate), b2bAdminOnly);

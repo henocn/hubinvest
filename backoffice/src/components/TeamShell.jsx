@@ -9,7 +9,7 @@ import { DashboardProvider, useDashboard } from '../admin/dashboard';
 import { api, resolveAssetUrl } from '../lib/api';
 import { disablePush } from '../lib/push';
 import { useRealtimeConnection, useRealtimeEvent } from '../lib/realtime';
-import { isAdminRole, linksForRole, roleLabels, tabsForRole } from '../navigation';
+import { isManagerRole, linksForRole, roleLabels, tabsForRole } from '../navigation';
 import { useSession } from '../session';
 
 const adminTopics = ['occupants', 'users', 'program', 'contacts', 'investor-requests', 'b2b', 'studio', 'challenge', 'wheel', 'settings', 'live-questions', 'account'];
@@ -43,7 +43,7 @@ function NavItems({ links, className = '', short = false }) {
 export default function TeamShell() {
   const { session, logout } = useSession();
   const shell = <TeamShellLayout />;
-  return isAdminRole(session.user.role) ? <DashboardProvider session={session} onLogout={logout}>{shell}</DashboardProvider> : shell;
+  return isManagerRole(session.user.role) ? <DashboardProvider session={session} onLogout={logout}>{shell}</DashboardProvider> : shell;
 }
 
 function TeamShellLayout() {
@@ -52,7 +52,9 @@ function TeamShellLayout() {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const panelRef = useRef(null);
-  const isAdmin = isAdminRole(user.role);
+  const isAdmin = isManagerRole(user.role);
+  // Pages propres à l'occupant (carnet, scan des Défis, profil) : elles gardent leur présentation d'espace de stand.
+  const standPage = user.role === 'occupant' && ['/contacts', '/defis', '/profil'].some((path) => location.pathname === path || location.pathname.startsWith(`${path}/`));
   const links = linksForRole(user.role);
   const tabs = tabsForRole(user.role);
   const occupant = user.occupant;
@@ -138,7 +140,7 @@ function TeamShellLayout() {
       </aside>
 
       <div className="team-content">
-        {isAdmin ? <div className="admin-app"><Outlet /></div> : <Outlet />}
+        {isAdmin && !standPage ? <div className="admin-app"><Outlet /></div> : <Outlet />}
       </div>
 
       <NotificationPrompt token={token} />

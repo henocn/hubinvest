@@ -26,7 +26,7 @@ const forUsers = (users, render, extra = {}) => {
 
 // Retrouve les administrateurs d'un stand, ou les super administrateurs si le stand n'en a pas.
 const standTeam = async (occupantId) => {
-  const admins = occupantId ? await notificationRepository.findStandUsers(occupantId, [roles.ADMIN]) : [];
+  const admins = occupantId ? await notificationRepository.findStandUsers(occupantId, [roles.OCCUPANT]) : [];
   return admins.length > 0 ? admins : notificationRepository.findSuperAdmins();
 };
 

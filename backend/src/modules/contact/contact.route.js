@@ -20,14 +20,14 @@ router.post(
 router.get(
   '/admin/stats',
   asyncHandler(authenticate),
-  requireRoles(roles.SUPER_ADMIN),
+  requireRoles(roles.SUPER_ADMIN, roles.ADMIN),
   asyncHandler(contactController.adminStats),
 );
 
 router.get(
   '/admin/stands/:occupantId',
   asyncHandler(authenticate),
-  requireRoles(roles.SUPER_ADMIN),
+  requireRoles(roles.SUPER_ADMIN, roles.ADMIN),
   validate(contactValidation.standParams, 'params'),
   asyncHandler(contactController.standContacts),
 );

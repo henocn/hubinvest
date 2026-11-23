@@ -1,6 +1,6 @@
 const { Op } = require('sequelize');
 const AppError = require('../../shared/app-error');
-const roles = require('../../shared/roles');
+const { isGlobal } = require('../../shared/access');
 const settingsService = require('../settings/settings.service');
 const {
   B2bNeed, B2bProposal, ChallengePassage, ChallengePassport, Contact, InvestorRequest, Occupant, StudioInvitation, WheelPlay,
@@ -33,8 +33,8 @@ const rewardStock = async () => {
  * L'administrateur ne voit que son stand ; la roue est commune à tout le Hub.
  */
 const overview = async (user) => {
-  const isSuperAdmin = user.role === roles.SUPER_ADMIN;
-  if (!isSuperAdmin && !user.occupantId) throw new AppError(403, 'STAND_REQUIRED', 'Cet administrateur n’est rattaché à aucun stand.');
+  const isSuperAdmin = isGlobal(user);
+  if (!isSuperAdmin && !user.occupantId) throw new AppError(403, 'STAND_REQUIRED', 'Ce compte n’est rattaché à aucun stand.');
   const occupantId = isSuperAdmin ? null : user.occupantId;
   const byStand = occupantId ? { occupantId } : {};
   const today = startOfToday();
