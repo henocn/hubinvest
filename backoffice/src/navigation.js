@@ -1,4 +1,4 @@
-import { BriefcaseBusiness, Building2, CalendarDays, Clapperboard, Disc3, Gift, Handshake, LayoutDashboard, MessageCircleQuestion, ScanLine, SlidersHorizontal, Trophy, Users } from 'lucide-react';
+import { BriefcaseBusiness, Building2, CalendarDays, Clapperboard, Disc3, Gift, Handshake, LayoutDashboard, MessageCircleQuestion, ScanLine, ScrollText, SlidersHorizontal, Trophy, Users } from 'lucide-react';
 
 // Rôles : le super administrateur voit tout ; l'administrateur (l'API-ZF) tout sauf Utilisateurs et Paramètres ;
 // l'occupant administre son stand (B2B, Studio, Défis, son carnet de contacts) ; l'animateur scanne et remet.
@@ -11,6 +11,8 @@ export const isManagerRole = (role) => isGlobalRole(role) || role === 'occupant'
 export const adminSections = [
   { section: 'occupants', path: '/stands', label: 'Stands', Icon: Building2, global: true, tab: true },
   { section: 'users', path: '/utilisateurs', label: 'Utilisateurs', Icon: Users, global: true, superOnly: true },
+  // Journal des actions : qui a fait quoi et quand.
+  { section: 'audit', path: '/journal', label: 'Journal', Icon: ScrollText, global: true, superOnly: true },
   { section: 'program', path: '/programme', label: 'Programme', Icon: CalendarDays, global: true },
   // Studio : invitations personnelles, créneaux, livraison des capsules.
   { section: 'studio', path: '/studio', label: 'Studio', Icon: Clapperboard },
@@ -42,7 +44,7 @@ const groupLink = (group, sections) => {
 
 // Entrées du menu : les rubriques permises au rôle, chaque groupe à la place de ses onglets.
 const menuSections = (role) => {
-  const sections = adminSections.filter((item) => item.section !== 'users' && allowed(role)(item));
+  const sections = adminSections.filter((item) => !['users', 'audit'].includes(item.section) && allowed(role)(item));
   return sections.flatMap((item) => {
     if (!item.group) return [item];
     return item === sections.find((other) => other.group === item.group) ? [groupLink(item.group, sections)] : [];
@@ -56,10 +58,11 @@ const settingsLink = { path: '/parametres', label: 'Paramètres', Icon: SlidersH
 // Questions du public pendant les directs.
 const questionsLink = { path: '/questions', label: 'Questions', Icon: MessageCircleQuestion, tab: true };
 const usersLink = adminSections.find((item) => item.section === 'users');
+const auditLink = adminSections.find((item) => item.section === 'audit');
 
 const roleLinks = {
-  // Utilisateurs juste avant Paramètres, en bas du menu.
-  'super-admin': [dashboardLink, ...menuSections('super-admin'), { ...questionsLink, tab: false }, usersLink, settingsLink],
+  // Utilisateurs, Journal puis Paramètres, en bas du menu.
+  'super-admin': [dashboardLink, ...menuSections('super-admin'), { ...questionsLink, tab: false }, usersLink, auditLink, settingsLink],
   admin: [dashboardLink, ...menuSections('admin'), { ...questionsLink, tab: false }],
   // L'occupant : son carnet et le scan des joueurs d'abord, puis ce qu'il administre pour son stand.
   occupant: [

@@ -149,6 +149,7 @@ export const api = {
   users: (token) => request('/users', authorized(token)),
   contactStats: (token) => request('/contacts/admin/stats', authorized(token)),
   standContacts: (token, occupantId) => request(`/contacts/admin/stands/${occupantId}`, authorized(token)),
+  auditLogs: (token) => request('/audit-logs', authorized(token)),
   createUser: (token, values) =>
     request('/users', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   updateUser: (token, id, values) =>

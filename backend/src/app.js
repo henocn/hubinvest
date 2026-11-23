@@ -24,6 +24,8 @@ const dashboardRoutes = require('./modules/dashboard/dashboard.route');
 const liveQuestionRoutes = require('./modules/live-question/live-question.route');
 const seoRoutes = require('./modules/seo/seo.route');
 const httpLogger = require('./middlewares/http-logger.middleware');
+const audit = require('./middlewares/audit.middleware');
+const auditLogRoutes = require('./modules/audit-log/audit-log.route');
 const notFound = require('./middlewares/not-found.middleware');
 const errorHandler = require('./middlewares/error.middleware');
 
@@ -48,6 +50,8 @@ app.use(
   }),
 );
 app.use(express.json({ limit: '1mb' }));
+// Journal des actions de l'espace équipe (modifications réussies des comptes connectés).
+app.use(audit);
 app.use('/uploads', express.static(path.resolve(__dirname, '..', 'uploads')));
 
 app.use('/api/health', healthRoutes);
@@ -69,6 +73,7 @@ app.use('/api/realtime', realtimeRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/live-questions', liveQuestionRoutes);
+app.use('/api/audit-logs', auditLogRoutes);
 
 // Pages HTML et sitemap servis par Nginx via l'API ; l'en-tête CSP de Helmet ne s'applique pas au site.
 app.use((request, response, next) => {

@@ -14,6 +14,7 @@ import OccupantChallengePage from './pages/OccupantChallengePage';
 import OccupantProfilePage from './pages/OccupantProfilePage';
 import LiveQuestionsPage from './pages/LiveQuestionsPage';
 import StudioPage from './admin/pages/StudioPage';
+import AuditLogPage from './admin/pages/AuditLogPage';
 import { api } from './lib/api';
 import { adminSectionForPath, homeForRole, isManagerRole } from './navigation';
 import { SessionProvider, useSession } from './session';
@@ -83,6 +84,7 @@ function AdminSection() {
   const section = adminSectionForPath(location.pathname, session.user.role);
   if (!section) return <Navigate to={homeForRole(session.user.role)} replace />;
   if (section === 'studio') return <StudioPage session={session} onLogout={logout} />;
+  if (section === 'audit') return <AuditLogPage session={session} onLogout={logout} />;
   return <BackofficePage session={session} onLogout={logout} section={section} />;
 }
 

@@ -20,6 +20,7 @@ const defineWheelCode = require('./wheel-code.model');
 const defineWheelPlay = require('./wheel-play.model');
 const defineAppSetting = require('./app-setting.model');
 const defineLiveQuestion = require('./live-question.model');
+const defineAuditLog = require('./audit-log.model');
 
 const Occupant = defineOccupant(sequelize, DataTypes);
 const User = defineUser(sequelize, DataTypes);
@@ -41,6 +42,7 @@ const WheelCode = defineWheelCode(sequelize, DataTypes);
 const WheelPlay = defineWheelPlay(sequelize, DataTypes);
 const AppSetting = defineAppSetting(sequelize, DataTypes);
 const LiveQuestion = defineLiveQuestion(sequelize, DataTypes);
+const AuditLog = defineAuditLog(sequelize, DataTypes);
 
 Occupant.hasMany(User, { foreignKey: 'occupantId', as: 'users' });
 User.belongsTo(Occupant, { foreignKey: 'occupantId', as: 'occupant' });
@@ -131,4 +133,5 @@ module.exports = {
   WheelPlay,
   AppSetting,
   LiveQuestion,
+  AuditLog,
 };

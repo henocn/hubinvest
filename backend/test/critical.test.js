@@ -1690,3 +1690,17 @@ test('la fiche de diagnostic se télécharge en PDF une fois le diagnostic enreg
   assert.equal(buffer.subarray(0, 5).toString(), '%PDF-');
   assert.match(fileName, /^fiche-diagnostic-DG-\d{2}-[A-Z0-9-]+\.pdf$/);
 });
+
+const auditLogService = require('../src/modules/audit-log/audit-log.service');
+
+test('le journal des actions décrit chaque modification de l’espace équipe sans garder le contenu saisi', () => {
+  const id = '3f2a9c1e-7b4d-4e2a-9f10-aa12bb34cc56';
+  assert.deepEqual(auditLogService.describe('PATCH', `/api/investor-requests/${id}/follow-ups/${id}`), { section: 'Guichets', action: 'Modification · relance' });
+  assert.deepEqual(auditLogService.describe('POST', `/api/studio-invitations/${id}/schedule`), { section: 'Studio', action: 'Créneau fixé' });
+  assert.deepEqual(auditLogService.describe('DELETE', `/api/occupants/${id}`), { section: 'Stands', action: 'Suppression' });
+  assert.deepEqual(auditLogService.describe('POST', '/api/challenge-passages'), { section: 'Défis', action: 'Passage validé' });
+  assert.equal(auditLogService.describe('POST', '/api/push-subscriptions'), null);
+  assert.equal(auditLogService.describe('GET', '/api/occupants'), null);
+  assert.equal(auditLogService.targetOf({ firstName: 'Afi', lastName: 'Koudjo', passwordHash: 'x' }), 'Afi Koudjo');
+  assert.equal(auditLogService.targetOf([{ name: 'liste' }]), null);
+});
