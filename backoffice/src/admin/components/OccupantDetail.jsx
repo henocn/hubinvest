@@ -98,10 +98,10 @@ function StandContacts({ occupant, token }) {
   );
 }
 
-// Fiche complète d'un stand dans l'administration, en onglets : la fiche, son carnet de contacts, ses comptes, son
-// programme et ses besoins B2B.
+// Fiche complète d'un stand dans l'administration, en onglets : son carnet de contacts (ouvert d'abord), ses comptes,
+// son programme, ses besoins B2B, puis la fiche elle-même.
 export default function OccupantDetail({ occupant, token, users, contactCount, programEvents, b2bNeeds, challengePassports, onEdit, onDelete, onQrCode }) {
-  const [tab, setTab] = useState('details');
+  const [tab, setTab] = useState('contacts');
   const isActive = occupant.status === 'active';
   const publicUrl = `${publicBaseUrl}/stands/${occupant.slug}`;
   const own = belongsTo(occupant.id);
@@ -116,11 +116,11 @@ export default function OccupantDetail({ occupant, token, users, contactCount, p
     ...(occupant.gallery || []).map((url, index) => ({ url, label: `Photo ${index + 1}` })),
   ].filter(Boolean);
   const tabs = [
-    ['details', 'Fiche'],
     ['contacts', 'Contacts'],
     ['accounts', 'Comptes'],
     ['program', 'Programme', upcomingEvents],
     ['needs', 'Besoins B2B'],
+    ['details', 'Fiche'],
   ];
 
   return (
