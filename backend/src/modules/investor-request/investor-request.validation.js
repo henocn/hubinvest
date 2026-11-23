@@ -79,7 +79,7 @@ const meeting = Joi.object({
 });
 
 // Valider (tenu) ou annuler un rendez-vous prévu.
-const meetingStatus = Joi.object({ status: Joi.string().valid('scheduled', 'held', 'cancelled').required() });
+const meetingStatus = Joi.object({ status: Joi.string().valid('held', 'cancelled').required() });
 
 const params = Joi.object({ id: uuid.required() });
 const followUpParams = Joi.object({ id: uuid.required(), followUpId: uuid.required() });

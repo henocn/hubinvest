@@ -82,15 +82,14 @@ const investorFollowUpChanged = (request) => dispatch(async () => {
   ));
 });
 
-// Rendez-vous aux guichets demandé, confirmé, fixé, déplacé ou annulé : la personne reçoit un e-mail. Une demande en ligne
-// n'a pas de rappel tant que l'équipe ne l'a pas confirmée ; ensuite, un rappel la veille et une heure avant. Un
-// déplacement remplace les rappels, une annulation les retire.
+// Rendez-vous aux guichets fixé, déplacé ou annulé : la personne reçoit un e-mail, puis un rappel la veille et une heure
+// avant ; un déplacement remplace les rappels, une annulation les retire.
 const investorMeetingChanged = (kind, meeting, request) => dispatch(async () => {
   const dedupeKey = `investor-meeting-reminder:${meeting.id}`;
   await notificationRepository.cancelPending(dedupeKey);
   const email = (payload, extra = {}) => ({ channel: 'email', recipient: request.email, payload, ...extra });
   const start = new Date(meeting.startsAt).getTime();
-  const reminders = ['cancelled', 'requested'].includes(kind) ? [] : [start - 24 * 60 * 60 * 1000, start - 60 * 60 * 1000]
+  const reminders = kind === 'cancelled' ? [] : [start - 24 * 60 * 60 * 1000, start - 60 * 60 * 1000]
     .filter((time) => time > Date.now())
     .map((time) => email(templates.investorMeeting({ kind: 'reminder', meeting, request }), { dedupeKey, availableAt: new Date(time) }));
   await notificationRepository.enqueue([email(templates.investorMeeting({ kind, meeting, request })), ...reminders]);

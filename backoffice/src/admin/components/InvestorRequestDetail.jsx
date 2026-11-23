@@ -9,9 +9,7 @@ import RowMenu from './RowMenu';
 
 const dateTime = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Africa/Lome', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 const statusClass = { new: ' is-new', in_progress: ' is-active', closed: '' };
-// « À confirmer » : réservé en ligne, la personne attend la confirmation de l'équipe avant de venir.
-const meetingStatus = { requested: ['À confirmer', ' is-lost'], scheduled: ['Confirmé', ' is-new'], held: ['Tenu', ' is-done'], cancelled: ['Annulé', ' is-lost'] };
-const meetingOpen = (meeting) => ['requested', 'scheduled'].includes(meeting.status);
+const meetingStatus = { scheduled: ['Prévu', ' is-new'], held: ['Tenu', ' is-done'], cancelled: ['Annulé', ' is-lost'] };
 const fullName = (user) => [user?.firstName, user?.lastName].filter(Boolean).join(' ');
 // Heure de Lomé = UTC : un champ date-heure se lit et s'écrit en UTC.
 const toInput = (value) => (value ? new Date(value).toISOString().slice(0, 16) : '');
@@ -78,25 +76,19 @@ function MeetingForm({ request, meeting, loading, error, onClose, onSave }) {
 }
 
 // Valider (le rendez-vous a eu lieu) ou annuler (l'investisseur est prévenu par e-mail) un rendez-vous prévu.
-// Confirmer une demande en ligne, valider un rendez-vous tenu ou l'annuler.
-function ConfirmMeeting({ meeting, action, loading, error, onCancel, onConfirm }) {
+function ConfirmMeeting({ meeting, cancel, loading, error, onCancel, onConfirm }) {
   const when = dateTime.format(new Date(meeting.startsAt));
-  const copy = {
-    confirm: ['Confirmer le rendez-vous', `La personne reçoit la confirmation du rendez-vous du ${when} par e-mail, puis un rappel la veille et une heure avant.`, 'Confirmer'],
-    hold: ['Valider le rendez-vous', `Le rendez-vous du ${when} a bien eu lieu.`, 'Valider'],
-    cancel: ['Annuler le rendez-vous', `Le rendez-vous du ${when} est annulé ; la personne en est prévenue par e-mail.`, 'Annuler le rendez-vous'],
-  }[action];
   return (
     <div className="dialog-backdrop" role="presentation" onMouseDown={onCancel}>
       <section className="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="meeting-status-title" onMouseDown={(event) => event.stopPropagation()}>
         <div>
-          <h2 id="meeting-status-title">{copy[0]}</h2>
-          <p>{copy[1]}</p>
+          <h2 id="meeting-status-title">{cancel ? 'Annuler le rendez-vous' : 'Valider le rendez-vous'}</h2>
+          <p>{cancel ? `Le rendez-vous du ${when} est annulé ; la personne en est prévenue par e-mail.` : `Le rendez-vous du ${when} a bien eu lieu.`}</p>
         </div>
         {error && <p className="admin-form-error dialog-error">{error}</p>}
         <footer>
           <button className="button button-secondary" type="button" onClick={onCancel} disabled={loading}>Retour</button>
-          <button className={`button ${action === 'cancel' ? 'button-danger' : 'button-primary'}`} type="button" onClick={onConfirm} disabled={loading}>{loading ? 'Enregistrement…' : copy[2]}</button>
+          <button className={`button ${cancel ? 'button-danger' : 'button-primary'}`} type="button" onClick={onConfirm} disabled={loading}>{loading ? 'Enregistrement…' : cancel ? 'Annuler le rendez-vous' : 'Valider'}</button>
         </footer>
       </section>
     </div>
@@ -326,7 +318,6 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
   const commitmentLate = request.classification === 'support' && request.commitmentDueAt && !request.resolvedAt && new Date(request.commitmentDueAt) < new Date();
   const followUps = request.followUps || [];
   const meetings = request.meetings || [];
-  const pendingMeeting = meetings.find((item) => item.status === 'requested');
   // Une entreprise installée en difficulté a sa fiche « difficultés » ; les autres contacts, la fiche de diagnostic.
   const companyCase = request.guichet === 'company' || request.classification === 'support';
 
@@ -343,12 +334,6 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
 
       {overdue && <p className="panel-message is-error investor-overdue" role="alert">Relance en retard depuis le {dateTime.format(new Date(request.nextFollowUpAt))}.</p>}
       {commitmentLate && <p className="panel-message is-error investor-overdue" role="alert">Réponse promise pour le {day.format(new Date(request.commitmentDueAt))}, pas encore donnée.</p>}
-      {pendingMeeting && (
-        <p className="panel-message investor-pending" role="status">
-          Rendez-vous demandé pour le {dateTime.format(new Date(pendingMeeting.startsAt))}, à confirmer : la personne attend votre e-mail.{' '}
-          <button className="button button-primary" type="button" onClick={() => open('confirm-meeting', pendingMeeting)} disabled={busy}>Confirmer</button>
-        </p>
-      )}
       {actionError && !dialog && <p className="panel-message is-error" role="alert">{actionError}</p>}
       {/* Onglets : détails et classe, la fiche du guichet (diagnostic ou difficultés), rendez-vous, relances. */}
       <nav className="section-tabs detail-tabs" aria-label="Fiche du contact">
@@ -419,10 +404,9 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
                   <td>{item.location}</td>
                   <td><span className={`status-pill${meetingStatus[item.status]?.[1] || ''}`}>{meetingStatus[item.status]?.[0]}</span></td>
                   <td><RowMenu label="Actions du rendez-vous" items={[
-                    ...(item.status === 'requested' ? [{ label: 'Confirmer', onClick: () => open('confirm-meeting', item) }] : []),
-                    { label: 'Valider', onClick: () => open('hold-meeting', item), disabled: item.status !== 'scheduled' || new Date(item.startsAt) > new Date(), hint: item.status === 'requested' ? 'Confirmez d’abord le rendez-vous' : item.status !== 'scheduled' ? 'Rendez-vous déjà tenu ou annulé' : 'Se valide une fois l’heure passée' },
-                    { label: item.status === 'requested' ? 'Proposer une autre heure' : 'Modifier', onClick: () => open('meeting', item), disabled: !meetingOpen(item), hint: 'Rendez-vous déjà tenu ou annulé' },
-                    { label: 'Annuler', onClick: () => open('cancel-meeting', item), disabled: !meetingOpen(item), hint: 'Rendez-vous déjà tenu ou annulé' },
+                    { label: 'Valider', onClick: () => open('hold-meeting', item), disabled: item.status !== 'scheduled' || new Date(item.startsAt) > new Date(), hint: item.status !== 'scheduled' ? 'Rendez-vous déjà tenu ou annulé' : 'Se valide une fois l’heure passée' },
+                    { label: 'Modifier', onClick: () => open('meeting', item), disabled: item.status !== 'scheduled', hint: 'Rendez-vous déjà tenu ou annulé' },
+                    { label: 'Annuler', onClick: () => open('cancel-meeting', item), disabled: item.status !== 'scheduled', hint: 'Rendez-vous déjà tenu ou annulé' },
                     { label: 'Supprimer', onClick: () => open('delete-meeting', item), danger: true },
                   ]} /></td>
                 </tr>
@@ -465,8 +449,8 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
       {dialog?.type === 'meeting' && <MeetingForm request={request} meeting={dialog.item} loading={busy} error={actionError} onClose={close}
         onSave={(values) => run(() => (dialog.item ? api.updateInvestorMeeting(session.token, request.id, dialog.item.id, values) : api.addInvestorMeeting(session.token, request.id, values)))} />}
       {dialog?.type === 'delete-follow-up' && <ConfirmDelete subject={{ label: `la relance du ${dateTime.format(new Date(dialog.item.doneAt))}` }} loading={busy} error={actionError} onCancel={close} onConfirm={() => run(() => api.deleteInvestorFollowUp(session.token, request.id, dialog.item.id))} />}
-      {['confirm-meeting', 'hold-meeting', 'cancel-meeting'].includes(dialog?.type) && <ConfirmMeeting meeting={dialog.item} action={dialog.type.replace('-meeting', '')} loading={busy} error={actionError} onCancel={close}
-        onConfirm={() => run(() => api.setInvestorMeetingStatus(session.token, request.id, dialog.item.id, { confirm: 'scheduled', hold: 'held', cancel: 'cancelled' }[dialog.type.replace('-meeting', '')]))} />}
+      {(dialog?.type === 'hold-meeting' || dialog?.type === 'cancel-meeting') && <ConfirmMeeting meeting={dialog.item} cancel={dialog.type === 'cancel-meeting'} loading={busy} error={actionError} onCancel={close}
+        onConfirm={() => run(() => api.setInvestorMeetingStatus(session.token, request.id, dialog.item.id, dialog.type === 'cancel-meeting' ? 'cancelled' : 'held'))} />}
       {dialog?.type === 'delete-meeting' && <ConfirmDelete subject={{ label: `le rendez-vous du ${dateTime.format(new Date(dialog.item.startsAt))} (sans prévenir la personne : pour le décommander, annulez-le)` }} loading={busy} error={actionError} onCancel={close} onConfirm={() => run(() => api.deleteInvestorMeeting(session.token, request.id, dialog.item.id))} />}
     </main>
   );

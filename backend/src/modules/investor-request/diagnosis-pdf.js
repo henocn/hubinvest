@@ -152,8 +152,6 @@ const header = (w, request) => {
   const { doc } = w;
   const top = PAGE.margin - 8;
   doc.image(LOGO, PAGE.margin, top, { height: 40 });
-  w.font('Helvetica', 7.5, COLORS.muted);
-  w.label('Agence de Promotion des Investissements et de la Zone Franche', PAGE.margin, top + 44);
 
   const right = PAGE.margin + WIDTH - 210;
   w.font('Helvetica-Bold', 10);
@@ -168,9 +166,7 @@ const header = (w, request) => {
 
   const refWidth = 160;
   w.font('Helvetica-Bold', 17);
-  w.label('FICHE DE DIAGNOSTIC', PAGE.margin, y + 3, { characterSpacing: 0.5 });
-  w.font('Helvetica', 9, COLORS.muted);
-  w.label('Guichets du Stand API-ZF · Foire internationale de Lomé 2026', PAGE.margin, y + 24);
+  w.label('FICHE DE DIAGNOSTIC', PAGE.margin, y + 11, { characterSpacing: 0.5 });
 
   const refX = PAGE.margin + WIDTH - refWidth;
   doc.save().lineWidth(1).strokeColor(COLORS.ink).rect(refX, y, refWidth, 38).stroke().restore();
@@ -243,8 +239,8 @@ const qualificationTable = (w, fields, answers) => {
   w.y += 4;
 };
 
-// Pied de chaque page : mention de confidentialité, numéro de page, bandeau de motifs.
-const footers = (doc, request) => {
+// Pied de chaque page : numéro de page et bandeau de motifs.
+const footers = (doc) => {
   const range = doc.bufferedPageRange();
   for (let index = range.start; index < range.start + range.count; index += 1) {
     doc.switchToPage(index);
@@ -253,7 +249,6 @@ const footers = (doc, request) => {
     const top = PAGE.height - 44;
     doc.save().lineWidth(0.6).strokeColor(COLORS.line).moveTo(PAGE.margin, top).lineTo(PAGE.margin + WIDTH, top).stroke().restore();
     doc.font('Helvetica').fontSize(7.2).fillColor(COLORS.muted);
-    doc.text(clean(`API-ZF · HubInvest · FIL 2026 · Fiche ${reference(request)} · Document confidentiel, à usage interne`), PAGE.margin, top + 6, { lineBreak: false });
     doc.text(`Page ${index - range.start + 1} / ${range.count}`, PAGE.margin + WIDTH - 70, top + 6, { width: 70, align: 'right', lineBreak: false });
     doc.image(BAND, 0, PAGE.height - 16, { width: PAGE.width, height: 16 });
     doc.page.margins = margins;
@@ -295,7 +290,7 @@ const renderDiagnosisPdf = ({ request, fields }) => new Promise((resolve, reject
     w.choiceRow('Guichet', Object.entries(GUICHETS).map(([key, labels]) => ({ label: `${GUICHET_NUMBERS[key]} · ${labels.fr}`, checked: request.guichet === key })));
     w.choiceRow('Classe', CLASSES.map(([key, name]) => ({ label: name, checked: request.classification === key })));
     w.choiceRow('Service', SERVICES.map((service) => ({ label: service.title, checked: request.recommendedService === service.key })));
-    footers(doc, request);
+    footers(doc);
     doc.end();
   } catch (error) {
     reject(error);

@@ -47,13 +47,13 @@ const create = (values) => InvestorRequest.create(values);
 // Rendez-vous réservé en ligne : le contact et son rendez-vous sont créés ensemble, ou pas du tout.
 const createWithMeeting = (values, meetingValues) => sequelize.transaction(async (transaction) => {
   const investorRequest = await InvestorRequest.create(values, { transaction });
-  const meeting = await InvestorMeeting.create({ ...meetingValues, investorRequestId: investorRequest.id, status: 'requested' }, { transaction });
+  const meeting = await InvestorMeeting.create({ ...meetingValues, investorRequestId: investorRequest.id, status: 'scheduled' }, { transaction });
   return { investorRequest, meeting };
 });
 
 // Rendez-vous prévus à un guichet entre deux instants (créneaux déjà pris).
 const findGuichetMeetingsBetween = (guichet, from, to) => InvestorMeeting.findAll({
-  where: { guichet, status: { [Op.in]: ['requested', 'scheduled'] }, startsAt: { [Op.gte]: from, [Op.lt]: to } },
+  where: { guichet, status: 'scheduled', startsAt: { [Op.gte]: from, [Op.lt]: to } },
   attributes: ['id', 'startsAt'],
 });
 
