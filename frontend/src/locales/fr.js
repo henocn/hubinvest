@@ -97,7 +97,7 @@ export default {
     unavailable: "Ce stand n’est pas disponible ou n’existe plus.",
   },
   contact: {
-    title: "Être recontacté par ce stand",
+    title: "Prendre contact",
     intro: "Adressez votre demande à l’équipe de {{name}}.",
     success: "Votre demande a été enregistrée. L’équipe de ce stand pourra vous recontacter.",
     fullName: "Nom complet",

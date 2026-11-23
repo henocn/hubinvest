@@ -3,11 +3,24 @@ import { api } from '../lib/api';
 import { useTranslation } from 'react-i18next';
 import { publicErrorMessage } from '../lib/public-error';
 import PhoneField from './PhoneField';
+import PublicDialog from './PublicDialog';
 import { isValidPhone, toInternationalPhone } from '../lib/phone';
 
-export default function ContactRequestForm({ stand }) {
+// Identifiant de la demande (un envoi répété n'en crée pas deux) ; crypto.randomUUID n'existe qu'en HTTPS.
+const newRequestId = () => {
+  if (crypto.randomUUID) return crypto.randomUUID();
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = [...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+};
+
+// « Prendre contact » avec un stand : la demande s'ouvre dans une fenêtre (nom, téléphone, demande facultative).
+export default function ContactRequestForm({ stand, onClose }) {
   const { t } = useTranslation();
-  const requestId = useRef(crypto.randomUUID());
+  const requestId = useRef(null);
+  if (!requestId.current) requestId.current = newRequestId();
   const [form, setForm] = useState({ fullName: '', phone: '', need: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -31,11 +44,7 @@ export default function ContactRequestForm({ stand }) {
   };
 
   return (
-    <section className="request-panel" aria-labelledby="request-title">
-      <div className="request-intro">
-        <h2 id="request-title">{t('contact.title')}</h2>
-        <p>{t('contact.intro', { name: stand.name })}</p>
-      </div>
+    <PublicDialog title={t('contact.title')} intro={received ? null : t('contact.intro', { name: stand.name })} onClose={onClose} locked={loading} className="contact-dialog">
       {received ? (
         <p className="request-success" role="status">{t('contact.success')}</p>
       ) : (
@@ -47,6 +56,6 @@ export default function ContactRequestForm({ stand }) {
           <button className="button button-primary" type="submit" disabled={loading}>{loading ? t('common.sending') : t('contact.submit')}</button>
         </form>
       )}
-    </section>
+    </PublicDialog>
   );
 }

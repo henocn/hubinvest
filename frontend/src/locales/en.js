@@ -97,7 +97,7 @@ export default {
     unavailable: "This stand is unavailable or no longer exists.",
   },
   contact: {
-    title: "Ask this stand to contact you",
+    title: "Get in touch",
     intro: "Send your request to the {{name}} team.",
     success: "Your request has been recorded. This stand’s team can now contact you.",
     fullName: "Full name",

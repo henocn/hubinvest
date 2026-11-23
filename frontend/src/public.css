@@ -3418,3 +3418,31 @@ main h1:not(.sr-only)::before {
 .phone-field .PhoneInputCountrySelect {
   min-height: 0;
 }
+
+/* Fiche d'un stand : retour à gauche, « Prendre contact » à droite ; le même bouton en fin de fiche. */
+.stand-detail-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.stand-detail-bar .public-back {
+  margin-bottom: 0;
+}
+
+.stand-contact-end {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.stand-contact-end .button {
+  min-width: min(100%, 280px);
+}
+
+.contact-dialog .request-form {
+  display: grid;
+  gap: 14px;
+}
