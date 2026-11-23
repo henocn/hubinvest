@@ -57,7 +57,7 @@ function FollowUpForm({ request, loading, error, onClose, onSave }) {
       <label>Moyen<select value={form.channel} onChange={set('channel')}>{Object.entries(investorChannelLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
       <label>Ce qui s’est dit<textarea rows="4" value={form.note} onChange={set('note')} maxLength={2000} /></label>
       <label>Étape suivante{required && ' (obligatoire pour un contact A ou B)'}<input value={form.nextStep} onChange={set('nextStep')} maxLength={255} required={required} /></label>
-      <label>Prochaine relance<input type="datetime-local" value={form.nextFollowUpAt} onChange={set('nextFollowUpAt')} /><span className="field-hint">Heure de Lomé. Sans date, la demande passe à « Terminé ».</span></label>
+      <label>Prochaine relance<input type="datetime-local" value={form.nextFollowUpAt} onChange={set('nextFollowUpAt')} /><span className="field-hint">Sans date, la demande passe à « Terminé ».</span></label>
     </Modal>
   );
 }
@@ -68,7 +68,7 @@ function MeetingForm({ request, meeting, loading, error, onClose, onSave }) {
   return (
     <Modal eyebrow={request.fullName} title={meeting ? 'Modifier le rendez-vous' : 'Fixer un rendez-vous'} error={error} loading={loading} submitLabel={meeting ? 'Déplacer le rendez-vous' : 'Fixer le rendez-vous'} onClose={onClose}
       onSubmit={() => onSave({ startsAt: fromInput(form.startsAt), atGuichet: form.atGuichet, ...(!form.atGuichet && { location: form.location }) })}>
-      <label>Date et heure<input type="datetime-local" value={form.startsAt} onChange={set('startsAt')} required /><span className="field-hint">Heure de Lomé. La personne reçoit le rendez-vous par e-mail, puis un rappel la veille et une heure avant.</span></label>
+      <label>Date et heure<input type="datetime-local" value={form.startsAt} onChange={set('startsAt')} required /><span className="field-hint">La personne reçoit le rendez-vous par e-mail, puis un rappel la veille et une heure avant.</span></label>
       <label className="checkbox-field"><input type="checkbox" checked={form.atGuichet} onChange={set('atGuichet')} /> Au guichet « {guichetLabels[request.guichet]} »</label>
       {!form.atGuichet && <label>Lieu<input value={form.location} onChange={set('location')} minLength={2} maxLength={160} required /></label>}
     </Modal>

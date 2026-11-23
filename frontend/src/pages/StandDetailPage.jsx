@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { ArrowLeft, ExternalLink, MapPin } from 'lucide-react';
+import { ArrowLeft, ExternalLink, MapPin, MessageSquare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import ContactRequestForm from '../components/ContactRequestForm';
 import ImageCarousel from '../components/ImageCarousel';
@@ -30,6 +30,7 @@ export default function StandDetailPage({ slug }) {
   const [stand, setStand] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [contacting, setContacting] = useState(false);
 
   useEffect(() => {
     api.publicOccupant(slug)
@@ -45,7 +46,10 @@ export default function StandDetailPage({ slug }) {
 
   return (
     <main className="public-container public-detail">
-      <Link className="public-back" to="/stands"><ArrowLeft size={18} /> {t('stands.all')}</Link>
+      <div className="stand-detail-bar">
+        <Link className="public-back" to="/stands"><ArrowLeft size={18} /> {t('stands.all')}</Link>
+        {stand && settings.contactRequestsOpen && <button className="button button-primary" type="button" onClick={() => setContacting(true)}><MessageSquare size={18} aria-hidden="true" />{t('contact.title')}</button>}
+      </div>
       {loading && <p className="public-message">{t('stands.loadingOne')}</p>}
       {error && <p className="public-message is-error">{error}</p>}
       {stand && (
@@ -94,7 +98,10 @@ export default function StandDetailPage({ slug }) {
           )}
         </article>
       )}
-      {stand && (settings.contactRequestsOpen ? <ContactRequestForm stand={stand} /> : <p className="public-message is-closed">{t('closed.contact')}</p>)}
+      {stand && (settings.contactRequestsOpen
+        ? <div className="stand-contact-end"><button className="button button-primary" type="button" onClick={() => setContacting(true)}><MessageSquare size={18} aria-hidden="true" />{t('contact.title')}</button></div>
+        : <p className="public-message is-closed">{t('closed.contact')}</p>)}
+      {contacting && stand && <ContactRequestForm stand={stand} onClose={() => setContacting(false)} />}
     </main>
   );
 }

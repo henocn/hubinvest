@@ -105,7 +105,6 @@ export default function ProgramEventDrawer({ programEvent, occupants, onClose, o
             <textarea value={form.description} onChange={setField('description')} rows={4} maxLength={2000} />
             {isSpotlight && <span className="field-hint">Laissez vide pour reprendre l’activité du stand.</span>}
           </label>
-          <span className="field-hint">Les horaires sont ceux du Hub (heure de Lomé).</span>
           {error && <p className="admin-form-error">{error}</p>}
           <footer className="drawer-actions">
             <button className="button button-secondary" type="button" onClick={onClose}>Annuler</button>

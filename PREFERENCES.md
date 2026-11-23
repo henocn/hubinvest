@@ -30,7 +30,7 @@ Ce fichier conserve les préférences durables exprimées pendant le projet. Il 
 - Ne pas afficher d’aperçu complet d’une fiche dans son formulaire d’édition.
 - Ne pas répéter un contenu libre potentiellement long dans l’étape suivante d’un formulaire.
 - Une image administrée se choisit comme fichier ; ne pas demander à l’utilisateur de saisir son URL.
-- Le téléphone est obligatoire dans tous les formulaires de contact (sauf l’identification des Défis, qui accepte un téléphone ou un e-mail). Sa validité et sa mise en forme sont contrôlées uniquement au frontend avec une bibliothèque dédiée (libphonenumber-js), sans vérification supplémentaire au backend.
+- Le téléphone est obligatoire dans tous les formulaires de contact (sauf l’identification des Défis, qui accepte un téléphone ou un e-mail). Partout (site public et back office), le champ est celui de la Semaine de l’Industrie (react-phone-number-input) : pays avec drapeau (Togo par défaut), indicatif verrouillé, numéro mis en forme à la saisie et refusé s’il n’existe pas pour le pays ; valeur enregistrée au format international (+228…). Contrôle uniquement au frontend.
 - Les cases à cocher gardent une taille fixe et restent correctement alignées avec leur texte.
 - Les champs d’un même niveau ont la même hauteur.
 - Tous les champs de mot de passe disposent d’une action pour afficher ou masquer la valeur. La modification du mot de passe ne demande pas de confirmation et un champ vide ne le modifie pas.

@@ -143,7 +143,7 @@ export default function SettingsPage({ session, onLogout }) {
             <h2>Rendez-vous B2B</h2>
             <SettingField settingKey="b2bTables" label="Nombre de tables" type="number" min="1" max="50" value={settings.b2bTables} saving={savingKey} saved={savedKey} onSave={save} />
             <SettingField settingKey="b2bMeetingMinutes" label="Durée d’un rendez-vous (minutes)" hint="20 minutes selon le document" type="number" min="5" max="120" value={settings.b2bMeetingMinutes} saving={savingKey} saved={savedKey} onSave={save} />
-            <SettingField settingKey="b2bDayStart" label="Premier rendez-vous" hint="Heure de Lomé" type="time" value={settings.b2bDayStart} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="b2bDayStart" label="Premier rendez-vous" type="time" value={settings.b2bDayStart} saving={savingKey} saved={savedKey} onSave={save} />
             <SettingField settingKey="b2bDayEnd" label="Fin des rendez-vous" hint="Le dernier rendez-vous se termine au plus tard à cette heure" type="time" value={settings.b2bDayEnd} saving={savingKey} saved={savedKey} onSave={save} />
           </section>
 

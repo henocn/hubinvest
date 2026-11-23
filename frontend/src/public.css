@@ -3378,3 +3378,71 @@ main h1:not(.sr-only)::before {
   color: var(--ink);
   line-height: 1.5;
 }
+
+/* Téléphone (comme la Semaine de l'Industrie) : le pays et le numéro dans un seul champ, bordé comme les autres. */
+.phone-field .PhoneInput {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 13px;
+  border: 1px solid #abb1af;
+  background: #fff;
+}
+
+.phone-field .PhoneInput:hover {
+  border-color: #4d4d4d;
+}
+
+.phone-field .PhoneInput:focus-within {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(21, 108, 83, 0.12);
+}
+
+.phone-field .PhoneInput .PhoneInputInput {
+  min-width: 0;
+  min-height: 46px;
+  flex: 1;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+  font: inherit;
+  font-weight: 400;
+}
+
+.phone-field .PhoneInputCountry {
+  --PhoneInputCountrySelectArrow-color: #4d4d4d;
+}
+
+.phone-field .PhoneInputCountrySelect {
+  min-height: 0;
+}
+
+/* Fiche d'un stand : retour à gauche, « Prendre contact » à droite ; le même bouton en fin de fiche. */
+.stand-detail-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.stand-detail-bar .public-back {
+  margin-bottom: 0;
+}
+
+.stand-contact-end {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.stand-contact-end .button {
+  min-width: min(100%, 280px);
+}
+
+.contact-dialog .request-form {
+  display: grid;
+  gap: 14px;
+}
