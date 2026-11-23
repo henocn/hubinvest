@@ -47,12 +47,13 @@
 - Actions courantes en icônes avec `aria-label` et infobulle.
 - Une fiche détaillée (guichets, B2B) est découpée en onglets ; les listes liées (rendez-vous, relances) ont leur propre onglet.
 - Listes datées (rendez-vous, relances) : ce qui est à venir ou à faire d'abord, puis le reste ; toujours du plus proche au plus lointain.
-- Pastille rouge sur une rubrique au nombre exact d'éléments à traiter (jamais « 99+ »).
+- Pastille ou nombre (menu, onglets) : seulement à partir de 1, jamais « 0 » ni « 99+ » ; il ne compte que ce qui reste à venir, à faire ou à traiter, jamais le terminé.
 - Statut d'une ligne signalé par un fond très léger (vert ou rouge), pas par une colonne de plus.
 
 ## Écrans particuliers
 
-- Guichets : fiche en onglets Détails, Diagnostic (structure, projet, informations de qualification, service, étape suivante ; PDF une fois enregistré) ou Difficultés, Rendez-vous, Relances.
+- Guichets : fiche en onglets Détails, Diagnostic, Rendez-vous, Relances. L'onglet s'appelle toujours Diagnostic ; pour une entreprise installée (guichet 3 ou Accompagnement), il contient la fiche des difficultés et l'engagement de suivi, dont la date de réponse crée une relance automatique.
+- Diagnostic d'un projet : structure, projet, informations de qualification, service, étape suivante ; PDF une fois enregistré.
 - Fiche PDF du diagnostic : une page, format administratif (cases à cocher, lignes pointillées) ; classes A, B, C et Accompagnement sans explication, ni responsable, ni signatures.
 - Relances : Ajouter (date et heure, motif obligatoire, jamais prérempli) ; Marquer faite avec la prochaine étape (Terminée avec note facultative, Relancer avec date et motif, Autre avec texte) ; Supprimer.
 - Compte rendu B2B : bouton message du rendez-vous → Présent (vert) ou Absent (rouge), puis la prochaine étape (texte) et la note. Un visiteur absent se reprogramme en un clic (fenêtre de nouveau rendez-vous ouverte aussitôt, bouton « Reprogrammer » sur la ligne tant qu'aucun rendez-vous ne suit).

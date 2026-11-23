@@ -279,7 +279,10 @@
 .admin-app .investor-class.is-support { width: auto; padding: 0 6px; background: var(--green); }
 .admin-app .investor-owner { max-width: 320px; }
 .admin-app .investor-qualification-grid .is-wide { grid-column: 1 / -1; }
-.admin-app .investor-subtitle { margin: 4px 0 0; color: var(--ink); font-size: 13px; }
+.admin-app .investor-subtitle { display: flex; align-items: center; gap: 6px; margin: 4px 0 0; color: var(--ink); font-size: 13px; }
+.admin-app .investor-commitment > span { display: inline-flex; align-items: center; gap: 6px; }
+.admin-app .investor-locked { min-width: 0; margin: 0; padding: 0; border: 0; }
+.admin-app .investor-locked:disabled { opacity: .6; }
 .admin-app .investor-commitment { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 14px 14px 0; padding: 10px 12px; border: 1px solid #f0d58a; border-radius: 0; background: #fff8e1; font-size: 13px; font-weight: 700; }
 .admin-app .investor-commitment.is-done { border-color: #b9dfcd; background: #eef8f3; }
 .admin-app .meeting-note { margin: 6px 0 0; color: var(--muted); font-size: 12px; line-height: 1.4; white-space: pre-wrap; }

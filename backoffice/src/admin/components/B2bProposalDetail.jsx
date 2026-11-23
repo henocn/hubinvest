@@ -140,6 +140,8 @@ export default function B2bProposalDetail({ id, session, onLogout }) {
   if (!proposal) return <main className="admin-workspace"><p className="panel-message">{error || 'Chargement…'}</p></main>;
 
   const meetings = upcomingFirst(proposal.meetings || [], (item) => item.startsAt, (item) => new Date(item.startsAt) >= new Date());
+  // Le nombre de l'onglet ne compte que les rendez-vous à venir, et disparaît à zéro.
+  const upcomingMeetings = meetings.filter((item) => new Date(item.startsAt) >= new Date()).length;
   const accepted = proposal.status === 'accepted';
 
   return (
@@ -163,7 +165,7 @@ export default function B2bProposalDetail({ id, session, onLogout }) {
       {/* Onglets : la demande, puis ses rendez-vous et leurs comptes rendus. */}
       <nav className="section-tabs detail-tabs" aria-label="Fiche de la demande">
         <button type="button" className={tab === 'details' ? 'is-active' : ''} onClick={() => setTab('details')} aria-pressed={tab === 'details'}>Demande</button>
-        <button type="button" className={tab === 'meetings' ? 'is-active' : ''} onClick={() => setTab('meetings')} aria-pressed={tab === 'meetings'}>Rendez-vous <b>{meetings.length}</b></button>
+        <button type="button" className={tab === 'meetings' ? 'is-active' : ''} onClick={() => setTab('meetings')} aria-pressed={tab === 'meetings'}>Rendez-vous{upcomingMeetings > 0 && <b>{upcomingMeetings}</b>}</button>
       </nav>
 
       {tab === 'details' && (
@@ -184,7 +186,7 @@ export default function B2bProposalDetail({ id, session, onLogout }) {
       {tab === 'meetings' && (
       <section className="data-panel stand-panel">
         <header className="settings-panel-head">
-          <h2>Rendez-vous <span>{meetings.length}</span></h2>
+          <h2>Rendez-vous</h2>
           <button className="button button-primary" type="button" onClick={() => open('meeting')} disabled={!accepted} title={accepted ? 'Fixer un rendez-vous' : 'Acceptez d’abord la demande'}><CalendarPlus size={16} /> Rendez-vous</button>
         </header>
         {!accepted && <p className="panel-message">{proposal.status === 'pending' ? 'Acceptez la demande pour fixer un rendez-vous.' : 'Demande refusée : pas de rendez-vous.'}</p>}

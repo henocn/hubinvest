@@ -42,25 +42,47 @@ const refreshStatus = async (investorRequest) => {
 
 // Relances : à l'heure prévue, le responsable du contact (ou, sans responsable, l'équipe API-ZF) est notifié.
 const scheduleFollowUps = (investorRequest, followUps) => followUps.forEach((item) => notificationService.investorFollowUpChanged(item, investorRequest));
-const autoReason = (classification) => `Relance du contact classé ${classification}`;
+const CLASS_SOURCES = ['A', 'B'];
+const COMMITMENT_SOURCE = 'commitment';
 
-// Classe A ou B : sa relance automatique (48 h ou 7 jours, réglables). Un changement de classe retire la relance
-// automatique encore à faire et crée celle de la nouvelle classe ; C et Accompagnement n'en ont pas. Une relance déjà
-// faite, ou ajoutée à la main, reste.
-const applyClassFollowUp = async (investorRequest, classification, userId = null) => {
-  const previous = await investorRequestRepository.findPendingFollowUps(investorRequest.id, { auto: true });
+// Retire les relances automatiques encore à faire de ces origines (une relance faite, ou ajoutée à la main, reste).
+const removePendingAuto = async (investorRequest, sources) => {
+  const previous = await investorRequestRepository.findPendingFollowUps(investorRequest.id, { sources });
   await Promise.all(previous.map(async (item) => {
     await investorRequestRepository.destroyFollowUp(item);
     notificationService.investorFollowUpRemoved(item);
   }));
+};
+
+// Classe A ou B : sa relance automatique (48 h ou 7 jours, réglables). Un changement de classe remplace la relance
+// automatique de l'ancienne classe ; C et Accompagnement n'en ont pas.
+const applyClassFollowUp = async (investorRequest, classification, userId = null) => {
+  await removePendingAuto(investorRequest, CLASS_SOURCES);
   const delay = settingsService.investorFollowUpDelay(classification);
   if (!delay) return null;
   return investorRequestRepository.createFollowUp({
     investorRequestId: investorRequest.id,
     dueAt: new Date(Date.now() + delay),
-    reason: autoReason(classification),
-    autoClass: classification,
+    reason: `Relance du contact classé ${classification}`,
+    autoSource: classification,
     createdByUserId: userId,
+  });
+};
+
+// Engagement de suivi : une relance le jour de la réponse promise, à 9 h (heure de Lomé = UTC). Un engagement modifié
+// la remplace ; une réponse donnée, ou un engagement retiré, la retire.
+const applyCommitmentFollowUp = async (investorRequest) => {
+  await removePendingAuto(investorRequest, [COMMITMENT_SOURCE]);
+  const { commitmentDueAt, commitmentNote, resolvedAt } = investorRequest;
+  if (!commitmentDueAt || resolvedAt) return null;
+  const dueAt = new Date(commitmentDueAt);
+  dueAt.setUTCHours(9, 0, 0, 0);
+  if (dueAt.getTime() <= Date.now()) return null;
+  return investorRequestRepository.createFollowUp({
+    investorRequestId: investorRequest.id,
+    dueAt,
+    reason: `Réponse promise : ${commitmentNote}`.slice(0, 255),
+    autoSource: COMMITMENT_SOURCE,
   });
 };
 
@@ -212,7 +234,6 @@ const update = async (id, values) => {
   const updated = await getRequest(id);
   if ('contactUserId' in next) scheduleFollowUps(updated, await investorRequestRepository.findPendingFollowUps(updated.id));
   else if (created) scheduleFollowUps(updated, [created]);
-  if ('contactUserId' in next && updated.classification === 'support') notificationService.investorCommitmentChanged(updated);
   realtime.investorRequestsChanged();
   return updated;
 };
@@ -252,9 +273,10 @@ const saveDifficulty = async (id, { difficulty, commitmentService = null, commit
   assertService(commitmentService);
   if (commitmentDueAt && new Date(commitmentDueAt).getTime() <= Date.now()) throw new AppError(422, 'COMMITMENT_DUE_IN_PAST', 'Choisissez un délai à venir.');
   if (Boolean(commitmentDueAt) !== Boolean(commitmentNote)) throw new AppError(422, 'COMMITMENT_INCOMPLETE', 'L’engagement demande un texte et un délai de réponse.');
-  const commitmentChanged = Boolean(commitmentNote) && (commitmentNote !== investorRequest.commitmentNote
-    || new Date(commitmentDueAt).getTime() !== new Date(investorRequest.commitmentDueAt || 0).getTime()
-    || commitmentService !== investorRequest.commitmentService);
+  const commitmentChanged = (commitmentNote || null) !== (investorRequest.commitmentNote || null)
+    || new Date(commitmentDueAt || 0).getTime() !== new Date(investorRequest.commitmentDueAt || 0).getTime()
+    || (commitmentService || null) !== (investorRequest.commitmentService || null);
+  if (commitmentChanged && investorRequest.resolvedAt) throw new AppError(409, 'COMMITMENT_LOCKED', 'Réponse donnée : rouvrez l’engagement pour le modifier.');
   const classChanged = investorRequest.classification !== 'support';
   await investorRequestRepository.update(investorRequest, {
     difficulty,
@@ -262,26 +284,37 @@ const saveDifficulty = async (id, { difficulty, commitmentService = null, commit
     commitmentService,
     commitmentDueAt,
     commitmentNote,
-    ...(commitmentChanged && { resolvedAt: null }),
   });
   if (classChanged) await applyClassFollowUp(investorRequest, 'support');
+  const created = commitmentChanged ? await applyCommitmentFollowUp(investorRequest) : null;
   await refreshStatus(investorRequest);
   const updated = await getRequest(id);
-  notificationService.investorCommitmentChanged(updated);
+  if (created) scheduleFollowUps(updated, [created]);
   realtime.investorRequestsChanged();
   return updated;
 };
 
-// Réponse apportée à l'entreprise : l'engagement est tenu, le contact est terminé et l'alerte retirée.
+// Réponse apportée à l'entreprise : l'engagement est tenu, sa relance est marquée faite et le contact est terminé.
+// Rouvrir l'engagement recrée sa relance si la date promise est encore à venir.
 const resolve = async (id, { resolved }) => {
   const investorRequest = await getRequest(id);
   if (investorRequest.classification !== 'support' || !investorRequest.commitmentDueAt) {
     throw new AppError(409, 'COMMITMENT_MISSING', 'Aucun engagement de suivi n’est en cours.');
   }
   await investorRequestRepository.update(investorRequest, { resolvedAt: resolved ? new Date() : null });
+  let created = null;
+  if (resolved) {
+    const pending = await investorRequestRepository.findPendingFollowUps(investorRequest.id, { sources: [COMMITMENT_SOURCE] });
+    await Promise.all(pending.map(async (item) => {
+      await investorRequestRepository.updateFollowUp(item, { doneAt: new Date(), outcome: 'closed', outcomeNote: 'Réponse donnée' });
+      notificationService.investorFollowUpRemoved(item);
+    }));
+  } else {
+    created = await applyCommitmentFollowUp(investorRequest);
+  }
   await refreshStatus(investorRequest);
   const updated = await getRequest(id);
-  notificationService.investorCommitmentChanged(updated);
+  if (created) scheduleFollowUps(updated, [created]);
   realtime.investorRequestsChanged();
   return updated;
 };

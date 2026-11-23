@@ -50,8 +50,8 @@ const overview = async (user) => {
     isSuperAdmin ? InvestorRequest.count({ where: { status: 'new' } }) : 0,
     isSuperAdmin ? InvestorRequest.count({ where: { status: 'in_progress' } }) : 0,
     isSuperAdmin ? InvestorRequest.count() : 0,
-    // Alerte du document : contacts A dont la relance a dépassé son délai.
-    isSuperAdmin ? InvestorRequest.count({ where: { classification: 'A', status: { [Op.ne]: 'closed' }, nextFollowUpAt: { [Op.lt]: new Date() } } }) : 0,
+    // Contacts dont une relance à faire a dépassé son heure (relance de classe, d'engagement ou ajoutée à la main).
+    isSuperAdmin ? InvestorRequest.count({ where: { nextFollowUpAt: { [Op.lt]: new Date() } } }) : 0,
     B2bProposal.count({ where: { status: 'pending' }, include: [{ model: B2bNeed, as: 'need', attributes: [], where: byStand, required: true }] }),
     B2bNeed.count({ where: { ...byStand, status: 'open' } }),
     // Studio : invités qui n'ont pas encore choisi leur créneau, passages réservés à venir.
@@ -93,7 +93,7 @@ const overview = async (user) => {
 
   // Ce qui attend une action : affiché en pastille dans le menu, au nombre exact.
   result.todo = {
-    ...(isSuperAdmin && { 'investor-requests': investorNew + investorOverdue + result.investor.commitmentsOverdue }),
+    ...(isSuperAdmin && { 'investor-requests': investorNew + investorOverdue }),
     b2b: b2bPending,
     challenges: rewardsToHand,
     wheel: wheelToHand,

@@ -1,6 +1,7 @@
 // Relance d'un contact des guichets : un rappel au gestionnaire, à une date et heure, avec son motif. Elle reste « à faire »
 // tant qu'on ne l'a pas marquée faite ; on note alors la prochaine étape : terminée, relancer (une nouvelle relance est
-// créée) ou autre (un texte). Une classe A ou B crée sa relance automatique (autoClass).
+// créée) ou autre (un texte). Une classe A ou B, ou la date de réponse d'un engagement de suivi, crée sa relance
+// automatique (autoSource : 'A', 'B' ou 'commitment').
 const INVESTOR_FOLLOW_UP_OUTCOMES = ['closed', 'again', 'other'];
 
 module.exports = (sequelize, DataTypes) =>
@@ -11,7 +12,7 @@ module.exports = (sequelize, DataTypes) =>
       investorRequestId: { type: DataTypes.UUID, allowNull: false, field: 'investor_request_id' },
       dueAt: { type: DataTypes.DATE, allowNull: false, field: 'due_at' },
       reason: { type: DataTypes.STRING(255), allowNull: false },
-      autoClass: { type: DataTypes.STRING(1), allowNull: true, field: 'auto_class' },
+      autoSource: { type: DataTypes.STRING(12), allowNull: true, field: 'auto_source' },
       doneAt: { type: DataTypes.DATE, allowNull: true, field: 'done_at' },
       outcome: { type: DataTypes.STRING(12), allowNull: true, validate: { isIn: [INVESTOR_FOLLOW_UP_OUTCOMES] } },
       outcomeNote: { type: DataTypes.STRING(500), allowNull: true, field: 'outcome_note' },

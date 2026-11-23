@@ -1385,12 +1385,12 @@ const investorSetup = (context, { request, followUps = [] }) => {
   context.mock.method(investorRequestRepository, 'update', async (item, values) => { saved.push(values); return Object.assign(item, values); });
   context.mock.method(investorRequestRepository, 'countFollowUps', async () => store.length);
   context.mock.method(investorRequestRepository, 'findTeamMember', async (id) => (id === 'apizf-1' ? { id } : null));
-  context.mock.method(investorRequestRepository, 'createFollowUp', async (values) => { const item = { id: `fu-${++sequence}`, doneAt: null, autoClass: null, ...values }; store.push(item); return item; });
+  context.mock.method(investorRequestRepository, 'createFollowUp', async (values) => { const item = { id: `fu-${++sequence}`, doneAt: null, autoSource: null, ...values }; store.push(item); return item; });
   context.mock.method(investorRequestRepository, 'findFollowUp', async (id) => store.find((item) => item.id === id) || null);
   context.mock.method(investorRequestRepository, 'updateFollowUp', async (item, values) => Object.assign(item, values));
   context.mock.method(investorRequestRepository, 'destroyFollowUp', async (item) => { store.splice(store.indexOf(item), 1); });
-  context.mock.method(investorRequestRepository, 'findPendingFollowUps', async (_id, { auto = false } = {}) => store
-    .filter((item) => !item.doneAt && (!auto || item.autoClass))
+  context.mock.method(investorRequestRepository, 'findPendingFollowUps', async (_id, { sources = null } = {}) => store
+    .filter((item) => !item.doneAt && (!sources || sources.includes(item.autoSource)))
     .sort((a, b) => new Date(a.dueAt) - new Date(b.dueAt)));
   context.mock.method(notificationService, 'investorFollowUpChanged', (item) => { reminders.push(item); });
   context.mock.method(notificationService, 'investorFollowUpRemoved', (item) => { removed.push(item); });
@@ -1404,7 +1404,7 @@ test('Guichets : la classe A crée une relance sous 48 h, B la remplace sous 7 j
 
   await investorRequestService.update('ir-1', { classification: 'A' });
   assert.equal(store.length, 1);
-  assert.equal(store[0].autoClass, 'A');
+  assert.equal(store[0].autoSource, 'A');
   const dueA = new Date(store[0].dueAt).getTime() - before;
   assert.ok(dueA >= 48 * 3600000 && dueA < 48 * 3600000 + 5000);
   assert.equal(request.status, 'in_progress');
@@ -1413,7 +1413,7 @@ test('Guichets : la classe A crée une relance sous 48 h, B la remplace sous 7 j
 
   await investorRequestService.update('ir-1', { classification: 'B' });
   assert.equal(store.length, 1);
-  assert.equal(store[0].autoClass, 'B');
+  assert.equal(store[0].autoSource, 'B');
   const dueB = new Date(store[0].dueAt).getTime() - before;
   assert.ok(dueB >= 7 * 24 * 3600000 && dueB < 7 * 24 * 3600000 + 5000);
 
@@ -1481,25 +1481,44 @@ test('Guichets : une relance s’ajoute (date et motif), se marque faite avec sa
   assert.ok(investorRequestValidation.followUpDone.validate({ outcome: 'again' }).error);
 });
 
-test('Guichets : la fiche « Mon entreprise, mes difficultés » passe en Accompagnement, note l’engagement écrit (alerte à l’échéance) et se termine à la réponse', async (context) => {
+test('Guichets : la fiche « Mon entreprise, mes difficultés » passe en Accompagnement ; la date de réponse promise crée une relance, faite à la réponse', async (context) => {
   const request = { id: 'ir-4', classification: null, status: 'new', email: 'dg@usine.tg', commitmentNote: null, commitmentDueAt: null, commitmentService: null, resolvedAt: null, language: 'fr' };
-  investorSetup(context, { request });
-  const commitments = [];
-  context.mock.method(notificationService, 'investorCommitmentChanged', (item) => { commitments.push(item.commitmentDueAt); });
+  const { store, reminders } = investorSetup(context, { request });
   const difficulty = { company: 'Usine du Golfe', regime: 'free_zone', nature: 'Dédouanement', description: 'Retards à l’import des intrants.' };
 
   await investorRequestService.saveDifficulty('ir-4', { difficulty });
   assert.equal(request.classification, 'support');
   assert.equal(request.status, 'new');
+  assert.equal(store.length, 0);
 
   await assert.rejects(investorRequestService.saveDifficulty('ir-4', { difficulty, commitmentNote: 'Rendez-vous avec la douane' }), (error) => error.code === 'COMMITMENT_INCOMPLETE');
   const due = new Date(Date.now() + 10 * 24 * 3600000);
   await investorRequestService.saveDifficulty('ir-4', { difficulty, commitmentService: 'aftercare', commitmentDueAt: due, commitmentNote: 'Rendez-vous avec la douane' });
   assert.equal(request.status, 'in_progress');
-  assert.equal(commitments.at(-1), due);
+  assert.equal(store.length, 1);
+  assert.equal(store[0].autoSource, 'commitment');
+  assert.equal(store[0].reason, 'Réponse promise : Rendez-vous avec la douane');
+  assert.equal(new Date(store[0].dueAt).getUTCHours(), 9);
+  assert.equal(reminders.length, 1);
 
+  // Le même engagement réenregistré ne recrée pas sa relance ; une nouvelle date la remplace.
+  await investorRequestService.saveDifficulty('ir-4', { difficulty, commitmentService: 'aftercare', commitmentDueAt: due, commitmentNote: 'Rendez-vous avec la douane' });
+  assert.equal(store.length, 1);
+  const later = new Date(due.getTime() + 2 * 24 * 3600000);
+  await investorRequestService.saveDifficulty('ir-4', { difficulty, commitmentService: 'aftercare', commitmentDueAt: later, commitmentNote: 'Rendez-vous avec la douane' });
+  assert.equal(store.length, 1);
+  assert.equal(new Date(store[0].dueAt).getUTCDate(), later.getUTCDate());
+
+  // Réponse donnée : la relance est marquée faite et le contact est terminé.
   await investorRequestService.resolve('ir-4', { resolved: true });
+  assert.ok(store[0].doneAt);
+  assert.equal(store[0].outcome, 'closed');
   assert.equal(request.status, 'closed');
+
+  // Engagement verrouillé tant qu'on ne le rouvre pas ; la fiche des difficultés reste modifiable.
+  await assert.rejects(investorRequestService.saveDifficulty('ir-4', { difficulty, commitmentService: 'aftercare', commitmentDueAt: later, commitmentNote: 'Autre engagement' }), (error) => error.code === 'COMMITMENT_LOCKED');
+  await investorRequestService.saveDifficulty('ir-4', { difficulty: { ...difficulty, nature: 'Douane' }, commitmentService: 'aftercare', commitmentDueAt: later, commitmentNote: 'Rendez-vous avec la douane' });
+  assert.equal(request.difficulty.nature, 'Douane');
 });
 
 test('Guichets : un rendez-vous se réserve sur un créneau proposé, une seule fois par guichet', async (context) => {

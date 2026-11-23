@@ -29,7 +29,7 @@ export default function DashboardPage({ session }) {
             <h2 id="dashboard-todo">À traiter</h2>
             <div className="dashboard-grid">
               {isSuperAdmin && <Stat value={data.investor.new} label="Guichets" detail="contacts à traiter" to="/guichets" urgent />}
-              {isSuperAdmin && <Stat value={data.investor.overdue ?? 0} label="Relances A en retard" detail="délai de 48 h dépassé" to="/guichets" urgent />}
+              {isSuperAdmin && <Stat value={data.investor.overdue ?? 0} label="Relances en retard" detail="heure de relance dépassée" to="/guichets" urgent />}
               {isSuperAdmin && <Stat value={data.investor.commitmentsOverdue ?? 0} label="Engagements en retard" detail="réponse promise non donnée" to="/guichets" urgent />}
               <Stat value={data.b2b.pendingProposals} label="Demandes B2B" detail="à traiter" to="/b2b" urgent />
               <Stat value={data.studio.pending} label="Studio" detail="invités sans créneau" to="/studio" />

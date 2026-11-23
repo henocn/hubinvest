@@ -68,9 +68,10 @@ const createFollowUp = (values) => InvestorFollowUp.create(values);
 const findFollowUp = (id, investorRequestId) => InvestorFollowUp.findOne({ where: { id, investorRequestId } });
 const updateFollowUp = (followUp, values) => followUp.update(values);
 const destroyFollowUp = (followUp) => followUp.destroy();
-// Relances encore à faire d'un contact ; « auto » : seulement celles créées par sa classe A ou B.
-const findPendingFollowUps = (investorRequestId, { auto = false } = {}) => InvestorFollowUp.findAll({
-  where: { investorRequestId, doneAt: null, ...(auto && { autoClass: { [Op.ne]: null } }) },
+// Relances encore à faire d'un contact ; « sources » : seulement les relances automatiques de ces origines
+// ('A', 'B' pour la classe, 'commitment' pour l'engagement de suivi).
+const findPendingFollowUps = (investorRequestId, { sources = null } = {}) => InvestorFollowUp.findAll({
+  where: { investorRequestId, doneAt: null, ...(sources && { autoSource: { [Op.in]: sources } }) },
   order: [['dueAt', 'ASC']],
 });
 

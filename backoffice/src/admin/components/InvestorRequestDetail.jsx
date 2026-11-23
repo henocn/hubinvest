@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, CalendarPlus, FileDown, PhoneCall, X } from 'lucide-react';
+import { ArrowLeft, CalendarPlus, FileDown, Lock, PhoneCall, X } from 'lucide-react';
 import { api } from '../lib/api';
 import { upcomingFirst } from '../lib/order';
 import { useRealtimeEvent } from '../../lib/realtime';
@@ -71,6 +71,8 @@ function FollowUpForm({ request, loading, error, onClose, onSave }) {
 
 // Relance faite : la prochaine étape. « Relancer » programme la relance suivante ; « Autre » se décrit en quelques mots.
 const outcomeLabels = { closed: 'Terminée', again: 'Relancer', other: 'Autre' };
+// Origine d'une relance automatique, affichée sous sa date.
+const autoLabel = (item) => ({ A: 'Automatique (classe A)', B: 'Automatique (classe B)', commitment: 'Automatique (engagement)' })[item.autoSource];
 function CompleteFollowUpForm({ request, followUp, loading, error, onClose, onSave }) {
   const [outcome, setOutcome] = useState('closed');
   const [note, setNote] = useState('');
@@ -131,7 +133,7 @@ function ConfirmMeeting({ meeting, cancel, loading, error, onCancel, onConfirm }
 // Confirmation du classement ; un changement de classe est signalé, avec son effet sur la relance prévue.
 function ConfirmClass({ request, classification, loading, error, onCancel, onConfirm }) {
   const change = Boolean(request.classification);
-  const replaced = (request.followUps || []).some((item) => item.autoClass && !item.doneAt);
+  const replaced = (request.followUps || []).some((item) => ['A', 'B'].includes(item.autoSource) && !item.doneAt);
   const effect = classification === 'support'
     ? 'Le suivi passe par la fiche « Mon entreprise, mes difficultés » et son engagement de suivi écrit.'
     : classification === 'C'
@@ -239,6 +241,9 @@ function DifficultyForm({ request, busy, saved, onSave, onResolve }) {
   });
   const set = (key) => (event) => setForm({ ...form, [key]: event.target.value });
   const committed = Boolean(request.commitmentDueAt);
+  // Réponse donnée : l'engagement est verrouillé (cadenas) jusqu'à ce qu'on le rouvre ; la confirmer passe par une fenêtre.
+  const locked = Boolean(request.resolvedAt);
+  const [confirming, setConfirming] = useState(false);
   const submit = (event) => {
     event.preventDefault();
     onSave({
@@ -255,9 +260,25 @@ function DifficultyForm({ request, busy, saved, onSave, onResolve }) {
         {saved && <span className="investor-saved">Enregistré</span>}
       </header>
       {committed && (
-        <div className={`investor-commitment${request.resolvedAt ? ' is-done' : ''}`}>
-          <span>{request.resolvedAt ? `Réponse donnée le ${dateTime.format(new Date(request.resolvedAt))}` : `Réponse promise au plus tard le ${day.format(new Date(request.commitmentDueAt))}`}</span>
-          <button className="button button-secondary" type="button" disabled={busy} onClick={() => onResolve(!request.resolvedAt)}>{request.resolvedAt ? 'Rouvrir' : 'Réponse donnée'}</button>
+        <div className={`investor-commitment${locked ? ' is-done' : ''}`}>
+          <span>{locked
+            ? <><Lock size={15} aria-hidden="true" /> Réponse donnée le {dateTime.format(new Date(request.resolvedAt))}</>
+            : `Réponse promise au plus tard le ${day.format(new Date(request.commitmentDueAt))}`}</span>
+          <button className="button button-secondary" type="button" disabled={busy} onClick={() => (locked ? onResolve(false) : setConfirming(true))}>{locked ? 'Rouvrir' : 'Réponse donnée'}</button>
+        </div>
+      )}
+      {confirming && (
+        <div className="dialog-backdrop" role="presentation" onMouseDown={() => setConfirming(false)}>
+          <section className="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="resolve-title" onMouseDown={(event) => event.stopPropagation()}>
+            <div>
+              <h2 id="resolve-title">Réponse donnée</h2>
+              <p>Vous confirmez que la réponse promise à {request.difficulty?.company || request.fullName} a été donnée. L’engagement est verrouillé, sa relance est marquée faite et le contact passe à « Terminé ».</p>
+            </div>
+            <footer>
+              <button className="button button-secondary" type="button" onClick={() => setConfirming(false)} disabled={busy}>Retour</button>
+              <button className="button button-primary" type="button" disabled={busy} onClick={async () => { await onResolve(true); setConfirming(false); }}>{busy ? 'Enregistrement…' : 'Confirmer'}</button>
+            </footer>
+          </section>
         </div>
       )}
       <form className="investor-qualification" onSubmit={submit}>
@@ -267,13 +288,13 @@ function DifficultyForm({ request, busy, saved, onSave, onResolve }) {
           <label>Nature de la difficulté<input value={form.nature} onChange={set('nature')} minLength={2} maxLength={160} required /></label>
           <label className="is-wide">Description<textarea rows="4" value={form.description} onChange={set('description')} minLength={2} maxLength={4000} required /></label>
         </div>
-        <h3 className="investor-subtitle">Engagement de suivi écrit</h3>
-        <div className="investor-qualification-grid">
+        <h3 className="investor-subtitle">Engagement de suivi écrit{locked && <Lock size={15} aria-label="Verrouillé" />}</h3>
+        <fieldset className="investor-qualification-grid investor-locked" disabled={locked}>
           <label>Service concerné<select value={form.serviceId} onChange={set('serviceId')}><option value="">—</option>{(request.services || []).map((service) => <option key={service.key} value={service.key}>{service.title}</option>)}</select></label>
           <label>Réponse au plus tard le<input type="date" value={form.dueAt} onChange={set('dueAt')} required={Boolean(form.note.trim())} /></label>
           <label className="is-wide">Engagement pris auprès de l’entreprise<textarea rows="3" value={form.note} onChange={set('note')} maxLength={2000} required={Boolean(form.dueAt)} /></label>
-        </div>
-        <p className="field-hint">Le responsable est alerté à l’échéance si la réponse n’est pas notée.</p>
+        </fieldset>
+        <p className="field-hint">{locked ? 'Réponse donnée : rouvrez l’engagement pour le modifier.' : 'Une relance est ajoutée le jour de la réponse promise.'}</p>
         <div className="investor-form-actions"><button className="button button-primary" type="submit" disabled={busy}>Enregistrer la fiche</button></div>
       </form>
     </section>
@@ -356,6 +377,9 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
   const commitmentLate = request.classification === 'support' && request.commitmentDueAt && !request.resolvedAt && new Date(request.commitmentDueAt) < new Date();
   const followUps = upcomingFirst(request.followUps || [], (item) => item.dueAt, (item) => !item.doneAt);
   const meetings = upcomingFirst(request.meetings || [], (item) => item.startsAt, (item) => item.status === 'scheduled' && new Date(item.startsAt) >= new Date());
+  // Les nombres des onglets ne comptent que ce qui reste à venir ou à faire, et disparaissent à zéro.
+  const upcomingMeetings = meetings.filter((item) => item.status === 'scheduled' && new Date(item.startsAt) >= new Date()).length;
+  const pendingFollowUps = followUps.filter((item) => !item.doneAt).length;
   // Une entreprise installée en difficulté a sa fiche « difficultés » ; les autres contacts, la fiche de diagnostic.
   const companyCase = request.guichet === 'company' || request.classification === 'support';
 
@@ -376,9 +400,9 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
       {/* Onglets : détails et classe, la fiche du guichet (diagnostic ou difficultés), rendez-vous, relances. */}
       <nav className="section-tabs detail-tabs" aria-label="Fiche du contact">
         <button type="button" className={tab === 'details' ? 'is-active' : ''} onClick={() => setTab('details')} aria-pressed={tab === 'details'}>Détails</button>
-        <button type="button" className={tab === 'sheet' ? 'is-active' : ''} onClick={() => setTab('sheet')} aria-pressed={tab === 'sheet'}>{companyCase ? 'Difficultés' : 'Diagnostic'}</button>
-        <button type="button" className={tab === 'meetings' ? 'is-active' : ''} onClick={() => setTab('meetings')} aria-pressed={tab === 'meetings'}>Rendez-vous <b>{meetings.length}</b></button>
-        <button type="button" className={tab === 'follow-ups' ? 'is-active' : ''} onClick={() => setTab('follow-ups')} aria-pressed={tab === 'follow-ups'}>Relances <b>{followUps.length}</b></button>
+        <button type="button" className={tab === 'sheet' ? 'is-active' : ''} onClick={() => setTab('sheet')} aria-pressed={tab === 'sheet'}>Diagnostic</button>
+        <button type="button" className={tab === 'meetings' ? 'is-active' : ''} onClick={() => setTab('meetings')} aria-pressed={tab === 'meetings'}>Rendez-vous{upcomingMeetings > 0 && <b>{upcomingMeetings}</b>}</button>
+        <button type="button" className={tab === 'follow-ups' ? 'is-active' : ''} onClick={() => setTab('follow-ups')} aria-pressed={tab === 'follow-ups'}>Relances{pendingFollowUps > 0 && <b>{pendingFollowUps}</b>}</button>
       </nav>
 
       {tab === 'details' && <>
@@ -429,7 +453,7 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
       {tab === 'meetings' && (
       <section className="data-panel stand-panel">
         <header className="settings-panel-head">
-          <h2>Rendez-vous <span>{meetings.length}</span></h2>
+          <h2>Rendez-vous</h2>
           <button className="button button-primary" type="button" onClick={() => open('meeting')}><CalendarPlus size={16} /> Rendez-vous</button>
         </header>
         {!meetings.length ? <p className="panel-message">Aucun rendez-vous fixé.</p> : (
@@ -458,7 +482,7 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
       {tab === 'follow-ups' && (
       <section className="data-panel stand-panel">
         <header className="settings-panel-head">
-          <h2>Relances <span>{followUps.length}</span></h2>
+          <h2>Relances</h2>
           <button className="button button-primary" type="button" onClick={() => open('follow-up')}><PhoneCall size={16} /> Ajouter</button>
         </header>
         {!followUps.length ? <p className="panel-message">Aucune relance.</p> : (
@@ -469,7 +493,7 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
                 const late = !item.doneAt && new Date(item.dueAt) < new Date();
                 return (
                   <tr key={item.id}>
-                    <td className="stand-nowrap"><strong>{dateTime.format(new Date(item.dueAt))}</strong><small>{item.autoClass ? `Automatique (classe ${item.autoClass})` : fullName(item.createdBy)}</small></td>
+                    <td className="stand-nowrap"><strong>{dateTime.format(new Date(item.dueAt))}</strong><small>{autoLabel(item) || fullName(item.createdBy)}</small></td>
                     <td className="meeting-note-cell">{item.reason}</td>
                     <td className="stand-nowrap">{item.doneAt
                       ? <span className="status-pill is-done" title={`Faite le ${dateTime.format(new Date(item.doneAt))}`}>Faite</span>

@@ -65,19 +65,6 @@ const investorFollowUpDue = ({ user, request, followUp }) => {
   };
 };
 
-// Alerte au responsable : l'engagement de suivi d'une entreprise arrive à échéance sans réponse enregistrée.
-const investorCommitmentDue = ({ user, request }) => {
-  const url = teamUrl(`/guichets/${request.id}`);
-  const company = request.difficulty?.company || request.organization || request.fullName;
-  return {
-    title: 'Engagement de suivi à échéance',
-    body: `${company} attend la réponse promise.`,
-    url,
-    subject: `Engagement de suivi à échéance : ${company}`,
-    text: teamText(user, [`Le délai de réponse promis à ${company} (${request.fullName}) est atteint.`, 'Enregistrez la réponse sur sa fiche :'], url),
-  };
-};
-
 // Prévient l'équipe qu'une proposition de rencontre répond à un besoin B2B.
 const b2bProposalReceived = ({ user, need }) => ({
   title: 'Nouvelle proposition B2B',
@@ -286,7 +273,6 @@ module.exports = {
   studioCancellation,
   studioCapsule,
   investorFollowUpDue,
-  investorCommitmentDue,
   investorMeeting,
   b2bMeetingScheduled,
   b2bMeetingMoved,
