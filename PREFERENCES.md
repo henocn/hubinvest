@@ -52,10 +52,11 @@
 
 ## Écrans particuliers
 
-- Guichets : fiche en onglets Détails, Diagnostic, Rendez-vous, Relances. L'onglet s'appelle toujours Diagnostic ; pour une entreprise installée (guichet 3 ou Accompagnement), il contient la fiche des difficultés et l'engagement de suivi, dont la date de réponse crée une relance automatique.
+- Guichets : fiche en onglets Détails, Diagnostic, Rendez-vous, Relances. L'onglet s'appelle toujours Diagnostic ; pour une entreprise installée (guichet 3 ou Accompagnement), il contient la fiche des difficultés et l'engagement de suivi, dont la date de réponse crée une relance automatique. « Réponse donnée » passe par une fenêtre de confirmation, puis l'engagement est verrouillé (cadenas) jusqu'à « Rouvrir ».
 - Diagnostic d'un projet : structure, projet, informations de qualification, service, étape suivante ; PDF une fois enregistré.
 - Fiche PDF du diagnostic : une page, format administratif (cases à cocher, lignes pointillées) ; classes A, B, C et Accompagnement sans explication, ni responsable, ni signatures.
 - Relances : Ajouter (date et heure, motif obligatoire, jamais prérempli) ; Marquer faite avec la prochaine étape (Terminée avec note facultative, Relancer avec date et motif, Autre avec texte) ; Supprimer.
 - Compte rendu B2B : bouton message du rendez-vous → Présent (vert) ou Absent (rouge), puis la prochaine étape (texte) et la note. Un visiteur absent se reprogramme en un clic (fenêtre de nouveau rendez-vous ouverte aussitôt, bouton « Reprogrammer » sur la ligne tant qu'aucun rendez-vous ne suit).
+- Studio : l'invité choisit son créneau une seule fois (ou décline avant de choisir) ; ensuite, changer ou annuler passe uniquement par l'équipe dans le back office (« Fixer / Modifier le créneau », « Annuler le passage »).
 - Défis : QR du code participant puis le code lisible ; cinq pastilles d'étapes ; côté stand, compteur, bouton Scanner et saisie du code avec « OK » à côté.
 - Remises de l'animateur : Participant, Contact, Remise le, la plus récente d'abord ; ses propres remises sur fond vert léger.

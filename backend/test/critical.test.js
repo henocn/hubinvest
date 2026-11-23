@@ -487,9 +487,17 @@ test('l’invité du Studio réserve lui-même un créneau libre ; la page publi
   assert.equal('createdByUserId' in result, false);
   assert.deepEqual(booked, [false]);
 
-  // Changer de créneau reste possible ; décliner annule le créneau.
-  await studioInvitationService.book(invitation.token, `${day}T14:00:00Z`);
+  // Une fois réservé, l'invité ne change ni n'annule lui-même : seule l'équipe déplace le passage.
+  await assert.rejects(studioInvitationService.book(invitation.token, `${day}T14:00:00Z`), (error) => error.code === 'STUDIO_ALREADY_BOOKED');
+  await assert.rejects(studioInvitationService.decline(invitation.token), (error) => error.code === 'STUDIO_ALREADY_BOOKED');
+  context.mock.method(studioInvitationRepository, 'findById', async () => invitation);
+  await studioInvitationService.schedule({ id: 'u1', role: 'super-admin' }, invitation.id, { startsAt: `${day}T14:00:00Z` });
+  assert.equal(invitation.scheduledAt.toISOString(), `${day}T14:00:00.000Z`);
   assert.deepEqual(booked, [false, true]);
+
+  // Avant de choisir, l'invité peut décliner.
+  invitation.status = 'invited';
+  invitation.scheduledAt = null;
   context.mock.method(notificationService, 'studioDeclined', () => {});
   const declined = await studioInvitationService.decline(invitation.token);
   assert.equal(declined.status, 'declined');

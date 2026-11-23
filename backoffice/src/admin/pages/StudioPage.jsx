@@ -88,6 +88,50 @@ function DeliverForm({ invitation, loading, error, onClose, onSave }) {
   );
 }
 
+// L'équipe fixe le créneau d'un invité, ou le déplace : une fois réservé, l'invité ne le change plus lui-même.
+// Choix par listes (Jour, puis Heure) parmi les créneaux libres ; l'invité reçoit la confirmation et ses rappels.
+const dayLabel = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Africa/Lome', weekday: 'long', day: 'numeric', month: 'long' });
+const timeLabel = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Africa/Lome', hour: '2-digit', minute: '2-digit' });
+const dayKey = (value) => new Date(value).toISOString().slice(0, 10);
+
+function ScheduleForm({ invitation, token, loading, error, onClose, onSave }) {
+  const [slots, setSlots] = useState(null);
+  const [loadError, setLoadError] = useState('');
+  const [day, setDay] = useState('');
+  const [time, setTime] = useState('');
+
+  useEffect(() => {
+    api.studioTeamSlots(token, invitation.id)
+      .then((data) => {
+        setSlots(data.slots);
+        const first = invitation.scheduledAt && data.slots.includes(new Date(invitation.scheduledAt).toISOString()) ? new Date(invitation.scheduledAt).toISOString() : data.slots[0];
+        if (first) { setDay(dayKey(first)); setTime(first); }
+      })
+      .catch((requestError) => setLoadError(requestError.message));
+  }, [invitation.id, invitation.scheduledAt, token]);
+
+  const days = [...new Set((slots || []).map(dayKey))];
+  const times = (slots || []).filter((slot) => dayKey(slot) === day);
+  const moving = invitation.status === 'booked';
+  return (
+    <Modal eyebrow={invitation.guestName} title={moving ? 'Modifier le créneau' : 'Fixer le créneau'} error={error || loadError} loading={loading} submitLabel={moving ? 'Déplacer le passage' : 'Fixer le passage'} onClose={onClose} onSubmit={() => time && onSave(time)}>
+      {moving && <p className="field-hint">Créneau actuel : {dateTime.format(new Date(invitation.scheduledAt))}</p>}
+      {!slots && !loadError && <p className="panel-message">Chargement des créneaux…</p>}
+      {slots && !slots.length && <p className="panel-message">Aucun créneau libre.</p>}
+      {slots && slots.length > 0 && (
+        <div className="field-row">
+          <label>Jour<select value={day} onChange={(event) => { setDay(event.target.value); setTime(slots.find((slot) => dayKey(slot) === event.target.value) || ''); }}>
+            {days.map((value) => <option key={value} value={value}>{dayLabel.format(new Date(`${value}T12:00:00Z`))}</option>)}
+          </select></label>
+          <label>Heure<select value={time} onChange={(event) => setTime(event.target.value)} required>
+            {times.map((value) => <option key={value} value={value}>{timeLabel.format(new Date(value))}</option>)}
+          </select></label>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
 function ConfirmCancel({ invitation, loading, error, onCancel, onConfirm }) {
   return (
     <div className="dialog-backdrop" role="presentation" onMouseDown={onCancel}>
@@ -213,6 +257,7 @@ export default function StudioPage({ session, onLogout }) {
                   <td><RowMenu label={`Actions pour ${item.guestName}`} items={[
                     { label: 'Copier le lien de l’invité', onClick: () => { void copyLink(item); }, disabled: !isOpen(item), hint: 'Invitation fermée' },
                     { label: 'Renvoyer l’invitation', onClick: () => { void run(() => api.resendStudioInvitation(session.token, item.id), `Invitation renvoyée à ${item.email}.`); }, disabled: !isOpen(item) || !item.email, hint: 'Invitation fermée' },
+                    { label: item.status === 'booked' ? 'Modifier le créneau' : 'Fixer le créneau', onClick: () => open('schedule', item), disabled: !isOpen(item), hint: 'Invitation fermée' },
                     { label: item.status === 'delivered' ? 'Renvoyer la capsule' : 'Livrer la capsule', onClick: () => open('deliver', item), disabled: !['booked', 'delivered'].includes(item.status), hint: 'Après la réservation du créneau' },
                     { label: 'Modifier', onClick: () => open('form', item) },
                     { label: 'Annuler le passage', onClick: () => open('cancel', item), disabled: !isOpen(item), hint: 'Invitation déjà fermée' },
@@ -228,6 +273,8 @@ export default function StudioPage({ session, onLogout }) {
       {dialog?.type === 'form' && <InvitationForm invitation={dialog.item} formats={formats} occupants={occupants} fixedOccupant={isSuperAdmin ? null : session.user.occupant} loading={busy} error={actionError} onClose={close}
         onSave={(values) => run(() => (dialog.item ? api.updateStudioInvitation(session.token, dialog.item.id, values) : api.createStudioInvitation(session.token, values)), dialog.item ? '' : `Invitation envoyée à ${values.email}.`)} />}
       {dialog?.type === 'deliver' && <DeliverForm invitation={dialog.item} loading={busy} error={actionError} onClose={close} onSave={(url) => run(() => api.deliverStudioCapsule(session.token, dialog.item.id, url), `Capsule envoyée à ${dialog.item.guestName}.`)} />}
+      {dialog?.type === 'schedule' && <ScheduleForm invitation={dialog.item} token={session.token} loading={busy} error={actionError} onClose={close}
+        onSave={(startsAt) => run(() => api.scheduleStudioInvitation(session.token, dialog.item.id, startsAt), `Créneau fixé pour ${dialog.item.guestName} ; il en est prévenu par e-mail.`)} />}
       {dialog?.type === 'cancel' && <ConfirmCancel invitation={dialog.item} loading={busy} error={actionError} onCancel={close} onConfirm={() => run(() => api.cancelStudioInvitation(session.token, dialog.item.id))} />}
       {dialog?.type === 'delete' && <ConfirmDelete subject={{ label: `l’invitation de ${dialog.item.guestName} (sans prévenir l’invité : pour le décommander, annulez son passage)` }} loading={busy} error={actionError} onCancel={close} onConfirm={() => run(() => api.deleteStudioInvitation(session.token, dialog.item.id))} />}
     </main>

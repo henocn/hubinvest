@@ -13,6 +13,8 @@ const formats = (request, response) => response.json({ data: studioInvitationSer
 const create = async (request, response) => response.status(201).json({ data: await studioInvitationService.create(request.user, request.body), message: 'Invitation envoyée.' });
 const update = async (request, response) => response.json({ data: await studioInvitationService.update(request.user, request.params.id, request.body), message: 'Invitation mise à jour.' });
 const resend = async (request, response) => response.json({ data: await studioInvitationService.resend(request.user, request.params.id), message: 'Invitation renvoyée.' });
+const teamSlots = async (request, response) => response.json({ data: await studioInvitationService.teamSlots(request.user, request.params.id) });
+const schedule = async (request, response) => response.json({ data: await studioInvitationService.schedule(request.user, request.params.id, request.body), message: 'Créneau fixé.' });
 const cancel = async (request, response) => response.json({ data: await studioInvitationService.cancel(request.user, request.params.id), message: 'Passage annulé.' });
 const deliver = async (request, response) => response.json({ data: await studioInvitationService.deliver(request.user, request.params.id, request.body), message: 'Capsule envoyée.' });
 
@@ -21,4 +23,4 @@ const remove = async (request, response) => {
   response.json({ message: 'Invitation supprimée.' });
 };
 
-module.exports = { getPublic, publicSlots, book, decline, list, formats, create, update, resend, cancel, deliver, remove };
+module.exports = { getPublic, publicSlots, book, decline, list, formats, create, update, resend, teamSlots, schedule, cancel, deliver, remove };

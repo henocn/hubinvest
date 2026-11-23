@@ -149,7 +149,8 @@ const studioInvited = (invitation) => dispatch(async () => {
 });
 
 // Créneau réservé ou changé : confirmation à l'invité, rappels la veille et une heure avant, information de l'équipe.
-const studioBooked = (invitation, changed) => dispatch(async () => {
+// « byTeam » : l'équipe a fixé ou déplacé le créneau elle-même ; seul l'invité est prévenu.
+const studioBooked = (invitation, changed, { byTeam = false } = {}) => dispatch(async () => {
   const dedupeKey = studioReminderKey(invitation);
   await notificationRepository.cancelPending(dedupeKey);
   const start = new Date(invitation.scheduledAt).getTime();
@@ -158,7 +159,7 @@ const studioBooked = (invitation, changed) => dispatch(async () => {
     .map((time) => studioEmail(invitation, templates.studioReminder({ invitation }), { dedupeKey, availableAt: new Date(time) }));
   await notificationRepository.enqueue([
     ...(invitation.email ? [studioEmail(invitation, templates.studioBookingConfirmation({ invitation, changed })), ...reminders] : []),
-    ...forUsers(await studioTeam(invitation), (user) => templates.studioGuestAnswered({ user, invitation, answer: changed ? 'moved' : 'booked' })),
+    ...(byTeam ? [] : forUsers(await studioTeam(invitation), (user) => templates.studioGuestAnswered({ user, invitation, answer: changed ? 'moved' : 'booked' }))),
   ]);
 });
 
