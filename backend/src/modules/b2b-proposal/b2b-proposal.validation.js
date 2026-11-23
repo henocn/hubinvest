@@ -27,9 +27,10 @@ const schedule = Joi.object({
   startsAt: Joi.date().iso().required(),
   tableNumber: Joi.number().integer().min(1).max(50).required(),
 });
-// Compte rendu en un clic, et note facultative ; une issue vide annule le compte rendu.
+// Compte rendu : présent ou absent (vide l'annule), prochaine étape et note facultatives.
 const report = Joi.object({
   outcome: Joi.string().valid('present', 'absent').allow(null, ''),
+  nextStep: Joi.string().trim().max(255).allow('', null),
   note: Joi.string().trim().max(2000).allow('', null),
 }).min(1);
 

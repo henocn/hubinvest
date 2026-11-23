@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, CalendarPlus, FileDown, PhoneCall, X } from 'lucide-react';
 import { api } from '../lib/api';
+import { upcomingFirst } from '../lib/order';
 import { useRealtimeEvent } from '../../lib/realtime';
 import { companyRegimeLabels, contactSourceLabels, guichetLabels, investorClassHints, investorClassLabels, investorClassShort, investorStatusLabel } from '../constants/access';
 import ConfirmDelete from './ConfirmDelete';
@@ -353,9 +354,8 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
 
   const overdue = request.classification !== 'support' && request.nextFollowUpAt && new Date(request.nextFollowUpAt) < new Date() && request.status !== 'closed';
   const commitmentLate = request.classification === 'support' && request.commitmentDueAt && !request.resolvedAt && new Date(request.commitmentDueAt) < new Date();
-  // Relances à faire d'abord, puis les faites ; dans chaque groupe, de la plus proche à la plus lointaine.
-  const followUps = [...(request.followUps || [])].sort((a, b) => (Boolean(a.doneAt) - Boolean(b.doneAt)) || (new Date(a.dueAt) - new Date(b.dueAt)));
-  const meetings = request.meetings || [];
+  const followUps = upcomingFirst(request.followUps || [], (item) => item.dueAt, (item) => !item.doneAt);
+  const meetings = upcomingFirst(request.meetings || [], (item) => item.startsAt, (item) => item.status === 'scheduled' && new Date(item.startsAt) >= new Date());
   // Une entreprise installée en difficulté a sa fiche « difficultés » ; les autres contacts, la fiche de diagnostic.
   const companyCase = request.guichet === 'company' || request.classification === 'support';
 
