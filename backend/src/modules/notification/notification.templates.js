@@ -190,14 +190,14 @@ const meetingWhen = (meeting, language) => new Intl.DateTimeFormat(language === 
 const meetingCopy = {
   fr: {
     scheduledSubject: 'Votre rendez-vous B2B est fixé',
-    scheduledBody: (when, minutes, table, need, occupant) => `Votre rendez-vous avec ${occupant} pour le besoin « ${need} » est fixé le ${when} (heure de Lomé), pour ${minutes} minutes, à la table ${table} de l’espace B2B du Hub.`,
+    scheduledBody: (when, minutes, table, need, occupant) => `Votre rendez-vous avec ${occupant} pour le besoin « ${need} » est fixé le ${when}, pour ${minutes} minutes, à la table ${table} de l’espace B2B du Hub.`,
     movedSubject: 'Votre rendez-vous B2B est déplacé',
     cancelledSubject: 'Votre rendez-vous B2B est annulé',
     cancelledBody: (when, need, occupant) => `Le rendez-vous avec ${occupant} pour le besoin « ${need} », prévu le ${when}, est annulé. L’équipe du stand reviendra vers vous si une autre date est proposée.`,
   },
   en: {
     scheduledSubject: 'Your B2B meeting is confirmed',
-    scheduledBody: (when, minutes, table, need, occupant) => `Your meeting with ${occupant} about the need “${need}” is set for ${when} (Lomé time), for ${minutes} minutes, at table ${table} in the Hub’s B2B area.`,
+    scheduledBody: (when, minutes, table, need, occupant) => `Your meeting with ${occupant} about the need “${need}” is set for ${when}, for ${minutes} minutes, at table ${table} in the Hub’s B2B area.`,
     movedSubject: 'Your B2B meeting has been moved',
     cancelledSubject: 'Your B2B meeting is cancelled',
     cancelledBody: (when, need, occupant) => `The meeting with ${occupant} about the need “${need}”, planned for ${when}, is cancelled. The stand team will get back to you if another date is offered.`,
@@ -227,15 +227,15 @@ const b2bMeetingCancelled = ({ meeting, proposal, need, occupant }) => {
 
 const investorMeetingCopy = {
   fr: {
-    scheduled: ['Votre rendez-vous avec l’API-ZF', (when, place) => `Votre rendez-vous avec l’équipe de l’API-ZF est fixé le ${when} (heure de Lomé), lieu : ${place}.`],
-    moved: ['Votre rendez-vous avec l’API-ZF est déplacé', (when, place) => `Votre rendez-vous avec l’équipe de l’API-ZF est déplacé au ${when} (heure de Lomé), lieu : ${place}.`],
-    reminder: ['Rappel : votre rendez-vous avec l’API-ZF', (when, place) => `Nous vous attendons le ${when} (heure de Lomé), lieu : ${place}.`],
+    scheduled: ['Votre rendez-vous avec l’API-ZF', (when, place) => `Votre rendez-vous avec l’équipe de l’API-ZF est fixé le ${when}, lieu : ${place}.`],
+    moved: ['Votre rendez-vous avec l’API-ZF est déplacé', (when, place) => `Votre rendez-vous avec l’équipe de l’API-ZF est déplacé au ${when}, lieu : ${place}.`],
+    reminder: ['Rappel : votre rendez-vous avec l’API-ZF', (when, place) => `Nous vous attendons le ${when}, lieu : ${place}.`],
     cancelled: ['Votre rendez-vous avec l’API-ZF est annulé', (when) => `Le rendez-vous avec l’équipe de l’API-ZF prévu le ${when} est annulé. Votre interlocuteur reviendra vers vous.`],
   },
   en: {
-    scheduled: ['Your meeting with API-ZF', (when, place) => `Your meeting with the API-ZF team is set for ${when} (Lomé time), at: ${place}.`],
-    moved: ['Your meeting with API-ZF has been moved', (when, place) => `Your meeting with the API-ZF team has been moved to ${when} (Lomé time), at: ${place}.`],
-    reminder: ['Reminder: your meeting with API-ZF', (when, place) => `We look forward to seeing you on ${when} (Lomé time), at: ${place}.`],
+    scheduled: ['Your meeting with API-ZF', (when, place) => `Your meeting with the API-ZF team is set for ${when}, at: ${place}.`],
+    moved: ['Your meeting with API-ZF has been moved', (when, place) => `Your meeting with the API-ZF team has been moved to ${when}, at: ${place}.`],
+    reminder: ['Reminder: your meeting with API-ZF', (when, place) => `We look forward to seeing you on ${when}, at: ${place}.`],
     cancelled: ['Your meeting with API-ZF is cancelled', (when) => `The meeting with the API-ZF team planned for ${when} is cancelled. Your contact will get back to you.`],
   },
 };
@@ -255,9 +255,9 @@ const studioCopy = {
     invite: (format, link) => `Vous êtes invité(e) à enregistrer « ${format} » au Studio du Hub de l’Investissement (FIL 2026). Choisissez vous-même votre créneau sur votre page personnelle : ${link}`,
     bookedSubject: 'Votre passage au Studio est réservé',
     movedSubject: 'Votre passage au Studio est déplacé',
-    booked: (when, minutes, link) => `Votre passage au Studio est réservé le ${when} (heure de Lomé), pour ${minutes} minutes. Vous pouvez changer de créneau jusqu’à une heure avant : ${link}`,
+    booked: (when, minutes, link) => `Votre passage au Studio est réservé le ${when}, pour ${minutes} minutes. Vous pouvez changer de créneau jusqu’à une heure avant : ${link}`,
     reminderSubject: 'Rappel : votre passage au Studio',
-    reminder: (when, link) => `Nous vous attendons au Studio du Hub de l’Investissement le ${when} (heure de Lomé). Votre page : ${link}`,
+    reminder: (when, link) => `Nous vous attendons au Studio du Hub de l’Investissement le ${when}. Votre page : ${link}`,
     cancelledSubject: 'Votre passage au Studio est annulé',
     cancelled: (when) => `Votre passage au Studio prévu le ${when} est annulé. L’équipe du Studio reviendra vers vous.`,
     capsuleSubject: 'Votre capsule est prête à partager',
@@ -268,9 +268,9 @@ const studioCopy = {
     invite: (format, link) => `You are invited to record “${format}” at the Investment Hub Studio (FIL 2026). Choose your own time slot on your personal page: ${link}`,
     bookedSubject: 'Your Studio session is booked',
     movedSubject: 'Your Studio session has been moved',
-    booked: (when, minutes, link) => `Your Studio session is booked for ${when} (Lomé time), for ${minutes} minutes. You can change your slot up to one hour before: ${link}`,
+    booked: (when, minutes, link) => `Your Studio session is booked for ${when}, for ${minutes} minutes. You can change your slot up to one hour before: ${link}`,
     reminderSubject: 'Reminder: your Studio session',
-    reminder: (when, link) => `We look forward to seeing you at the Investment Hub Studio on ${when} (Lomé time). Your page: ${link}`,
+    reminder: (when, link) => `We look forward to seeing you at the Investment Hub Studio on ${when}. Your page: ${link}`,
     cancelledSubject: 'Your Studio session is cancelled',
     cancelled: (when) => `Your Studio session planned for ${when} is cancelled. The Studio team will get back to you.`,
     capsuleSubject: 'Your video is ready to share',
