@@ -73,11 +73,11 @@ const outcomeLabels = { closed: 'Terminée', again: 'Relancer', other: 'Autre' }
 function CompleteFollowUpForm({ request, followUp, loading, error, onClose, onSave }) {
   const [outcome, setOutcome] = useState('closed');
   const [note, setNote] = useState('');
-  const [next, setNext] = useState({ dueAt: '', reason: followUp.reason });
+  const [next, setNext] = useState({ dueAt: '', reason: '' });
   const setNextField = (key) => (event) => setNext({ ...next, [key]: event.target.value });
   return (
     <Modal eyebrow={request.fullName} title="Relance faite" error={error} loading={loading} submitLabel="Marquer faite" onClose={onClose}
-      onSubmit={() => onSave({ outcome, ...(outcome === 'other' && { note }), ...(outcome === 'again' && { next: { dueAt: fromInput(next.dueAt), reason: next.reason } }) })}>
+      onSubmit={() => onSave({ outcome, note: outcome === 'again' ? null : note || null, ...(outcome === 'again' && { next: { dueAt: fromInput(next.dueAt), reason: next.reason } }) })}>
       <p className="field-hint">{followUp.reason} · prévue le {dateTime.format(new Date(followUp.dueAt))}</p>
       <label>Prochaine étape
         <select value={outcome} onChange={(event) => setOutcome(event.target.value)}>
@@ -85,7 +85,11 @@ function CompleteFollowUpForm({ request, followUp, loading, error, onClose, onSa
         </select>
       </label>
       {outcome === 'again' && <FollowUpFields form={next} set={setNextField} />}
-      {outcome === 'other' && <label>Précisez<input value={note} onChange={(event) => setNote(event.target.value)} minLength={2} maxLength={500} required /></label>}
+      {outcome !== 'again' && (
+        <label>{outcome === 'other' ? 'Précisez' : 'Note (facultative)'}
+          <textarea rows="3" value={note} onChange={(event) => setNote(event.target.value)} minLength={outcome === 'other' ? 2 : undefined} maxLength={500} required={outcome === 'other'} placeholder="Ce qui s’est dit, ce qui a été convenu…" />
+        </label>
+      )}
     </Modal>
   );
 }
@@ -349,7 +353,8 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
 
   const overdue = request.classification !== 'support' && request.nextFollowUpAt && new Date(request.nextFollowUpAt) < new Date() && request.status !== 'closed';
   const commitmentLate = request.classification === 'support' && request.commitmentDueAt && !request.resolvedAt && new Date(request.commitmentDueAt) < new Date();
-  const followUps = request.followUps || [];
+  // Relances à faire d'abord, puis les faites ; dans chaque groupe, de la plus proche à la plus lointaine.
+  const followUps = [...(request.followUps || [])].sort((a, b) => (Boolean(a.doneAt) - Boolean(b.doneAt)) || (new Date(a.dueAt) - new Date(b.dueAt)));
   const meetings = request.meetings || [];
   // Une entreprise installée en difficulté a sa fiche « difficultés » ; les autres contacts, la fiche de diagnostic.
   const companyCase = request.guichet === 'company' || request.classification === 'support';
@@ -469,7 +474,9 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
                     <td className="stand-nowrap">{item.doneAt
                       ? <span className="status-pill is-done" title={`Faite le ${dateTime.format(new Date(item.doneAt))}`}>Faite</span>
                       : <span className={`status-pill${late ? ' is-lost' : ' is-new'}`}>{late ? 'En retard' : 'À faire'}</span>}</td>
-                    <td>{item.doneAt ? (item.outcome === 'other' ? item.outcomeNote : outcomeLabels[item.outcome]) : '—'}</td>
+                    <td className="meeting-note-cell">{item.doneAt
+                      ? <><strong>{outcomeLabels[item.outcome]}</strong>{item.outcomeNote && <small>{item.outcomeNote}</small>}</>
+                      : '—'}</td>
                     <td><RowMenu label="Actions de la relance" items={[
                       { label: 'Marquer faite', onClick: () => open('complete-follow-up', item), disabled: Boolean(item.doneAt), hint: 'Relance déjà faite' },
                       { label: 'Supprimer', onClick: () => open('delete-follow-up', item), danger: true },

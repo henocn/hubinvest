@@ -69,10 +69,11 @@ const followUp = Joi.object({
   reason: Joi.string().trim().min(2).max(255).required(),
 });
 
-// Relance faite : la prochaine étape. « Relancer » crée la relance suivante ; « Autre » se décrit en texte.
+// Relance faite : la prochaine étape et un commentaire (obligatoire pour « Autre », facultatif sinon).
+// « Relancer » crée la relance suivante.
 const followUpDone = Joi.object({
   outcome: Joi.string().valid('closed', 'again', 'other').required(),
-  note: Joi.when('outcome', { is: 'other', then: Joi.string().trim().min(2).max(500).required(), otherwise: Joi.any().strip() }),
+  note: Joi.when('outcome', { is: 'other', then: Joi.string().trim().min(2).max(500).required(), otherwise: Joi.string().trim().max(500).allow('', null) }),
   next: Joi.when('outcome', { is: 'again', then: followUp.required(), otherwise: Joi.any().strip() }),
 });
 

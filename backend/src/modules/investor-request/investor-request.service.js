@@ -308,12 +308,13 @@ const getFollowUp = async (id, followUpId) => {
   return { investorRequest, followUp };
 };
 
-// Marquer une relance faite, avec la prochaine étape : terminée, relancer (la relance suivante est créée) ou autre (texte).
+// Marquer une relance faite, avec la prochaine étape : terminée, relancer (la relance suivante est créée) ou autre, et un
+// commentaire (obligatoire pour « autre »).
 const completeFollowUp = async (user, id, followUpId, { outcome, note = null, next = null }) => {
   const { investorRequest, followUp } = await getFollowUp(id, followUpId);
   if (followUp.doneAt) throw new AppError(409, 'INVESTOR_FOLLOW_UP_DONE', 'Cette relance est déjà faite.');
   if (outcome === 'again') assertFollowUpFuture(next.dueAt);
-  await investorRequestRepository.updateFollowUp(followUp, { doneAt: new Date(), outcome, outcomeNote: outcome === 'other' ? note : null });
+  await investorRequestRepository.updateFollowUp(followUp, { doneAt: new Date(), outcome, outcomeNote: note || null });
   notificationService.investorFollowUpRemoved(followUp);
   const created = outcome === 'again'
     ? await investorRequestRepository.createFollowUp({ investorRequestId: investorRequest.id, dueAt: next.dueAt, reason: next.reason, createdByUserId: user.id })
