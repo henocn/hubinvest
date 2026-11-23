@@ -54,15 +54,11 @@ const contactReminderChanged = (contact) => dispatch(async () => {
   ));
 });
 
-// Prévient l'équipe de l'API-ZF (super administrateurs) et confirme à l'investisseur la réception de sa demande.
-// Nouveau contact aux guichets : l'équipe API-ZF est prévenue ; une demande de rappel est confirmée par e-mail
-// (un rendez-vous réservé reçoit sa propre confirmation, avec ses rappels).
+// Nouveau contact aux guichets : l'équipe de l'API-ZF (super administrateurs) est prévenue. Une demande de rappel
+// n'envoie rien à la personne : l'équipe la rappelle (un rendez-vous réservé reçoit son propre e-mail, avec ses rappels).
 const investorRequestReceived = (request) => dispatch(async () => {
   const team = await notificationRepository.findSuperAdmins();
-  await notificationRepository.enqueue([
-    ...forUsers(team, (user) => templates.investorRequestReceived({ user, request })),
-    ...(request.source === 'callback' ? [{ channel: 'email', recipient: request.email, payload: templates.investorRequestConfirmation({ request }) }] : []),
-  ]);
+  if (team.length) await notificationRepository.enqueue(forUsers(team, (user) => templates.investorRequestReceived({ user, request })));
 });
 
 // Alerte de relance Investor Desk : à l'heure limite (A sous 48 h, B sous 7 jours), l'interlocuteur nommé

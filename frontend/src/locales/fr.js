@@ -130,7 +130,7 @@ export default {
     questionCompany: "Quelle difficulté rencontre votre entreprise ?",
     details: "Vos coordonnées",
     successTitle: "Demande transmise",
-    successText: "L’API-ZF vous recontactera. Une confirmation vous a été envoyée par e-mail.",
+    successText: "L’API-ZF vous recontactera.",
     submit: "Transmettre ma demande",
   },
   slots: {

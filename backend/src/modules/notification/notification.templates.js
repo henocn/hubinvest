@@ -105,8 +105,6 @@ const publicCopy = {
   fr: {
     hello: (name) => `Bonjour ${name},`,
     signature: 'L’équipe HubInvest',
-    investorSubject: 'Votre demande a bien été reçue',
-    investorBody: (guichet) => `Votre demande de rappel adressée à l’API-ZF (guichet « ${guichet} ») a bien été enregistrée. Un membre de l’équipe vous recontactera.`,
     commitmentSubject: 'Notre engagement de suivi',
     commitmentBody: (company, service, note, due) => `L’API-ZF a enregistré la difficulté signalée pour ${company}.${service ? ` Service concerné : ${service}.` : ''}
 
@@ -123,8 +121,6 @@ Réponse au plus tard le ${due}.`,
   en: {
     hello: (name) => `Hello ${name},`,
     signature: 'The HubInvest team',
-    investorSubject: 'We have received your request',
-    investorBody: (guichet) => `Your call-back request to API-ZF (“${guichet}” desk) has been recorded. A team member will contact you.`,
     commitmentSubject: 'Our follow-up commitment',
     commitmentBody: (company, service, note, due) => `API-ZF has recorded the difficulty reported for ${company}.${service ? ` Service concerned: ${service}.` : ''}
 
@@ -148,12 +144,6 @@ const publicEmail = (copy, name, subject, body) => ({
   subject,
   text: [copy.hello(name), '', body, '', copy.signature].join('\n'),
 });
-
-// Confirme à l'investisseur que sa demande est enregistrée.
-const investorRequestConfirmation = ({ request }) => {
-  const copy = copyFor(request.language);
-  return publicEmail(copy, request.fullName, copy.investorSubject, copy.investorBody(guichetLabel(request.guichet, request.language)));
-};
 
 // Engagement de suivi écrit remis à l'entreprise en difficulté : le service concerné, l'engagement et le délai de réponse.
 const investorSupportCommitment = ({ request, serviceTitle }) => {
@@ -325,7 +315,6 @@ module.exports = {
   contactReminder,
   investorRequestReceived,
   b2bProposalReceived,
-  investorRequestConfirmation,
   b2bProposalConfirmation,
   b2bProposalDecision,
 };

@@ -190,11 +190,12 @@ const update = async (id, values) => {
 
 // Fiche de diagnostic (15 minutes) : les neuf informations, le service vers lequel la personne est orientée et l'étape
 // suivante, obligatoire (« Personne ne repart sans étape suivante »). La première saisie compte comme diagnostic réalisé.
-// Le projet, que la réservation en ligne ne demande pas, se décrit pendant l'entretien.
-const saveDiagnosis = async (id, { projectSummary, qualification, recommendedService = null, nextAction }) => {
+// La structure et le projet, que la réservation en ligne ne demande pas, se renseignent pendant l'entretien.
+const saveDiagnosis = async (id, { organization, projectSummary, qualification, recommendedService = null, nextAction }) => {
   const investorRequest = await getRequest(id);
   assertService(recommendedService);
   await investorRequestRepository.update(investorRequest, {
+    ...(organization !== undefined && { organization: organization || null }),
     ...(projectSummary !== undefined && { projectSummary: projectSummary || null }),
     qualification: cleanQualification(qualification),
     recommendedService,

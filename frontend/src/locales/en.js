@@ -130,7 +130,7 @@ export default {
     questionCompany: "What difficulty is your company facing?",
     details: "Your contact details",
     successTitle: "Request sent",
-    successText: "API-ZF will get back to you. A confirmation has been sent by email.",
+    successText: "API-ZF will get back to you.",
     submit: "Send my request",
   },
   slots: {

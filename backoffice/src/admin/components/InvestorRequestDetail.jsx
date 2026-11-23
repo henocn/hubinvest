@@ -157,13 +157,17 @@ function DiagnosisForm({ request, busy, saved, onSave, onDownload }) {
   const [serviceId, setServiceId] = useState(request.recommendedService || '');
   const [nextAction, setNextAction] = useState(request.nextAction || '');
   const [projectSummary, setProjectSummary] = useState(request.projectSummary || '');
+  const [organization, setOrganization] = useState(request.organization || '');
   return (
     <section className="data-panel stand-panel">
       <header className="settings-panel-head">
         <h2>Diagnostic</h2>
         {saved ? <span className="investor-saved">Enregistré</span> : <span className="data-note">{request.diagnosedAt ? `Réalisé le ${dateTime.format(new Date(request.diagnosedAt))}` : 'À faire'}</span>}
       </header>
-      <form className="investor-qualification" onSubmit={(event) => { event.preventDefault(); onSave({ projectSummary, qualification: answers, recommendedService: serviceId || null, nextAction }); }}>
+      <form className="investor-qualification" onSubmit={(event) => { event.preventDefault(); onSave({ organization, projectSummary, qualification: answers, recommendedService: serviceId || null, nextAction }); }}>
+        <label className="investor-project">Structure
+          <input value={organization} onChange={(event) => setOrganization(event.target.value)} maxLength={160} placeholder="Entreprise, organisation ou projet porté par la personne" />
+        </label>
         <label className="investor-project">Projet ou besoin
           <textarea rows="4" value={projectSummary} onChange={(event) => setProjectSummary(event.target.value)} maxLength={6000} placeholder="Ce que la personne veut faire : activité, lieu, capacité, ce qu’elle attend de l’API-ZF…" />
         </label>
