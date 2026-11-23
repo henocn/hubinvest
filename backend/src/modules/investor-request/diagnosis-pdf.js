@@ -16,7 +16,8 @@ const WIDTH = PAGE.width - PAGE.margin * 2;
 const BOTTOM = PAGE.height - 56;
 
 const GUICHET_NUMBERS = { project: 1, regime: 2, company: 3 };
-const CLASSES = [['A', 'A · Projet prioritaire'], ['B', 'B · Potentiel à suivre'], ['C', 'C · Contact à nourrir'], ['support', 'Accompagnement (entreprise installée en difficulté)']];
+// La fiche peut être remise à la personne : les classes ne portent que leur lettre, sans dire ce qu'elles signifient.
+const CLASSES = [['A', 'A'], ['B', 'B'], ['C', 'C'], ['support', 'Accompagnement']];
 
 // Les polices standard du PDF ne couvrent que le jeu Windows-1252 : tout autre caractère est remplacé.
 const WIN_ANSI_EXTRA = '€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ';
@@ -29,7 +30,6 @@ const lomeDate = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Africa/Lome', day
 const lomeTime = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Africa/Lome', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 const formatDate = (value) => (value ? lomeDate.format(new Date(value)) : '');
 const formatDateTime = (value) => (value ? `${formatDate(value)} à ${lomeTime.format(new Date(value)).replace(':', ' h ')}` : '');
-const fullName = (user) => (user ? [user.firstName, user.lastName].filter(Boolean).join(' ') : '');
 
 const reference = (request) => {
   const year = new Date(request.diagnosedAt || request.createdAt || Date.now()).getUTCFullYear().toString().slice(-2);
@@ -295,8 +295,6 @@ const renderDiagnosisPdf = ({ request, fields }) => new Promise((resolve, reject
     w.choiceRow('Guichet', Object.entries(GUICHETS).map(([key, labels]) => ({ label: `${GUICHET_NUMBERS[key]} · ${labels.fr}`, checked: request.guichet === key })));
     w.choiceRow('Classe', CLASSES.map(([key, name]) => ({ label: name, checked: request.classification === key })));
     w.choiceRow('Service', SERVICES.map((service) => ({ label: service.title, checked: request.recommendedService === service.key })));
-    w.lineRow('Responsable', fullName(request.contactUser));
-
     footers(doc, request);
     doc.end();
   } catch (error) {
