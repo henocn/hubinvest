@@ -95,7 +95,6 @@ export const tableSettings = {
       { header: 'Prochaine relance', value: (item) => formatDate(item.nextFollowUpAt), width: 18 },
       { header: 'Statut', value: (item) => investorStatusLabel(item) || item.status, width: 16 },
       { header: 'Étape suivante', value: (item) => item.nextAction, width: 36 },
-      { header: 'Accord API-ZF', value: (item) => Boolean(item.consentApizf), width: 14 },
     ],
   },
   b2b: {

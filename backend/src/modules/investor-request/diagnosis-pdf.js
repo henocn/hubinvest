@@ -4,7 +4,7 @@ const { GUICHETS } = require('../../shared/guichets');
 const { SERVICES } = require('../../shared/services');
 
 // Fiche de diagnostic au format d'un formulaire administratif : rubriques numérotées, cases à cocher pour chaque choix
-// (la réponse donnée est cochée, les autres restent visibles), lignes pour les réponses libres, signatures.
+// (la réponse donnée est cochée, les autres restent visibles), lignes pour les réponses libres.
 
 const ASSETS = path.resolve(__dirname, '..', '..', 'assets');
 const LOGO = path.join(ASSETS, 'apizf-logo.png');
@@ -16,11 +16,7 @@ const WIDTH = PAGE.width - PAGE.margin * 2;
 const BOTTOM = PAGE.height - 56;
 
 const GUICHET_NUMBERS = { project: 1, regime: 2, company: 3 };
-const SOURCES = [
-  ['online_booking', 'Rendez-vous réservé en ligne'],
-  ['callback', 'Demande de rappel'],
-  ['desk', 'Passage au guichet'],
-];
+const CLASSES = [['A', 'A · Projet prioritaire'], ['B', 'B · Potentiel à suivre'], ['C', 'C · Contact à nourrir'], ['support', 'Accompagnement (entreprise installée en difficulté)']];
 
 // Les polices standard du PDF ne couvrent que le jeu Windows-1252 : tout autre caractère est remplacé.
 const WIN_ANSI_EXTRA = '€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ';
@@ -247,50 +243,6 @@ const qualificationTable = (w, fields, answers) => {
   w.y += 4;
 };
 
-// Les quatre classes côte à côte : la classe retenue est cochée et encadrée en vert.
-const classification = (w, request, delays) => {
-  const { doc } = w;
-  const items = [
-    ['A', 'A · Projet prioritaire', `Relance sous ${delays.aHours} h par le responsable nommé`],
-    ['B', 'B · Potentiel à suivre', `Relance sous ${delays.bDays} jours avec documentation adaptée`],
-    ['C', 'C · Contact à nourrir', 'Intégré à la lettre d’information'],
-    ['support', 'Accompagnement', 'Entreprise installée en difficulté, engagement de suivi écrit'],
-  ];
-  const gap = 8;
-  const colWidth = (WIDTH - gap * 3) / 4;
-  const height = 46;
-  w.ensure(height + 4);
-  items.forEach(([key, name, hint], index) => {
-    const checked = request.classification === key;
-    const x = PAGE.margin + index * (colWidth + gap);
-    const top = w.y;
-    doc.save().lineWidth(checked ? 1.4 : 0.6).strokeColor(checked ? COLORS.green : COLORS.line).rect(x, top, colWidth, height).stroke().restore();
-    if (checked) doc.save().rect(x, top, colWidth, 3).fill(COLORS.green).restore();
-    w.checkbox(x + 7, top + 8, checked);
-    w.font('Helvetica-Bold', 8.5);
-    w.label(name, x + 20, top + 8.5);
-    w.font('Helvetica', 7.2, COLORS.muted);
-    w.write(hint, x + 7, top + 22, colWidth - 12, { lineGap: 0.5 });
-  });
-  w.y += height + 6;
-};
-
-const signatures = (w) => {
-  const { doc } = w;
-  const height = 58;
-  w.ensure(height + 4);
-  const half = (WIDTH - 16) / 2;
-  [['Pour l’API-ZF', 'Nom et signature de l’agent'], ['Le visiteur', 'Mention « Lu et approuvé » et signature']].forEach(([title, hint], index) => {
-    const x = PAGE.margin + index * (half + 16);
-    doc.save().lineWidth(0.8).strokeColor(COLORS.line).rect(x, w.y, half, height).stroke().restore();
-    w.font('Helvetica-Bold', 9);
-    w.label(title, x + 8, w.y + 6);
-    w.font('Helvetica-Oblique', 7.8, COLORS.muted);
-    w.label(hint, x + 8, w.y + 18);
-  });
-  w.y += height + 4;
-};
-
 // Pied de chaque page : mention de confidentialité, numéro de page, bandeau de motifs.
 const footers = (doc, request) => {
   const range = doc.bufferedPageRange();
@@ -309,7 +261,7 @@ const footers = (doc, request) => {
 };
 
 // Produit la fiche en PDF (Buffer) à partir de la fiche complète du contact.
-const renderDiagnosisPdf = ({ request, fields, delays }) => new Promise((resolve, reject) => {
+const renderDiagnosisPdf = ({ request, fields }) => new Promise((resolve, reject) => {
   const doc = new PDFDocument({
     size: 'A4',
     margins: { top: PAGE.margin, bottom: PAGE.margin, left: PAGE.margin, right: PAGE.margin },
@@ -325,36 +277,25 @@ const renderDiagnosisPdf = ({ request, fields, delays }) => new Promise((resolve
     const w = createWriter(doc);
     header(w, request);
 
-    w.section(1, 'Identification du contact');
+    w.section(1, 'Contact');
     w.lineRow('Nom et prénom', request.fullName);
-    w.lineRow('Entreprise ou structure', request.organization);
-    w.lineRowPair(['E-mail', request.email], ['Téléphone', request.phone]);
-    w.choiceRow('Origine du contact', SOURCES.map(([key, name]) => ({ label: name, checked: request.source === key })));
-    w.lineRow('Contact enregistré le', formatDateTime(request.createdAt));
+    w.lineRow('Reçu le', formatDateTime(request.createdAt));
+    w.lineRow('Structure', request.organization);
+    w.lineRowPair(['Téléphone', request.phone], ['E-mail', request.email]);
 
-    w.section(2, 'Guichet');
-    w.choiceRow('Guichet consulté', Object.entries(GUICHETS).map(([key, labels]) => ({ label: `${GUICHET_NUMBERS[key]} · ${labels.fr}`, checked: request.guichet === key })));
-
-    w.section(3, 'Projet ou besoin exprimé');
+    w.section(2, 'Projet ou besoin exprimé');
     w.box(request.projectSummary, { placeholder: 'Non renseigné.' });
 
-    w.section(4, `Qualification (${fields.length} information${fields.length > 1 ? 's' : ''})`);
+    // Le cœur de la fiche : les informations recueillies pendant les 15 minutes.
+    w.section(3, `Diagnostic (${fields.length} information${fields.length > 1 ? 's' : ''})`);
     qualificationTable(w, fields, request.qualification || {});
 
-    w.section(5, 'Classement');
-    classification(w, request, delays);
-
-    w.section(6, 'Orientation et suite donnée');
-    w.choiceRow('Service d’orientation', SERVICES.map((service) => ({ label: service.title, checked: request.recommendedService === service.key })));
-    w.ensure(50);
-    w.font('Helvetica', 8.5, COLORS.muted);
-    w.label('Étape suivante convenue :', PAGE.margin, w.y + 1);
-    w.y += 13;
-    w.box(request.nextAction, { minHeight: 26 });
-    w.lineRowPair(['Responsable', fullName(request.contactUser)], ['Prochaine relance', formatDateTime(request.nextFollowUpAt)]);
-
-    w.section(7, 'Signatures');
-    signatures(w);
+    // Guichet, classe et service : où la personne a été reçue et la suite que l'API-ZF lui donne.
+    w.section(4, 'Orientation');
+    w.choiceRow('Guichet', Object.entries(GUICHETS).map(([key, labels]) => ({ label: `${GUICHET_NUMBERS[key]} · ${labels.fr}`, checked: request.guichet === key })));
+    w.choiceRow('Classe', CLASSES.map(([key, name]) => ({ label: name, checked: request.classification === key })));
+    w.choiceRow('Service', SERVICES.map((service) => ({ label: service.title, checked: request.recommendedService === service.key })));
+    w.lineRow('Responsable', fullName(request.contactUser));
 
     footers(doc, request);
     doc.end();

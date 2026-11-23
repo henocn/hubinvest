@@ -41,6 +41,7 @@ const answers = Joi.object().pattern(Joi.string().max(40), Joi.alternatives(Joi.
 
 // Fiche de diagnostic : les neuf informations, le service d'orientation, l'étape suivante (obligatoire).
 const diagnosis = Joi.object({
+  projectSummary: Joi.string().trim().max(6000).allow('', null),
   qualification: answers.default({}),
   recommendedService: serviceKey,
   nextAction: Joi.string().trim().min(2).max(255).required(),

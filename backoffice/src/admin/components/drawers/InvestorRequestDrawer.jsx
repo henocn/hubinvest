@@ -7,10 +7,10 @@ import PhoneInputField from '../../../components/PhoneInputField';
 // Saisie d'un contact reçu hors du site (passage au guichet, appel…). Il démarre « À traiter » ;
 // le diagnostic ou la fiche de difficulté, la classe, les relances et les rendez-vous se gèrent ensuite sur sa fiche.
 export default function InvestorRequestDrawer({ onClose, onSaved, token }) {
-  const [form, setForm] = useState({ guichet: 'project', fullName: '', email: '', phone: '', organization: '', projectSummary: '', consentApizf: false });
+  const [form, setForm] = useState({ guichet: 'project', fullName: '', email: '', phone: '', organization: '', projectSummary: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const set = (key) => (event) => setForm({ ...form, [key]: event.target.type === 'checkbox' ? event.target.checked : event.target.value });
+  const set = (key) => (event) => setForm({ ...form, [key]: event.target.value });
 
   const submit = async (event) => {
     event.preventDefault();
@@ -42,7 +42,6 @@ export default function InvestorRequestDrawer({ onClose, onSaved, token }) {
           </div>
           <label>Entreprise ou structure<input value={form.organization} onChange={set('organization')} maxLength={160} /></label>
           <label>Projet ou besoin<textarea rows="5" value={form.projectSummary} onChange={set('projectSummary')} minLength={10} maxLength={6000} required /></label>
-          <label className="checkbox-field"><input type="checkbox" checked={form.consentApizf} onChange={set('consentApizf')} /> La personne accepte que l’API-ZF garde ses coordonnées pour la suite</label>
           {error && <p className="admin-form-error">{error}</p>}
           <footer className="drawer-actions">
             <button className="button button-secondary" type="button" onClick={onClose}>Annuler</button>

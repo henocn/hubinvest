@@ -156,13 +156,17 @@ function DiagnosisForm({ request, busy, saved, onSave, onDownload }) {
   const [answers, setAnswers] = useState(request.qualification || {});
   const [serviceId, setServiceId] = useState(request.recommendedService || '');
   const [nextAction, setNextAction] = useState(request.nextAction || '');
+  const [projectSummary, setProjectSummary] = useState(request.projectSummary || '');
   return (
     <section className="data-panel stand-panel">
       <header className="settings-panel-head">
         <h2>Diagnostic</h2>
         {saved ? <span className="investor-saved">Enregistré</span> : <span className="data-note">{request.diagnosedAt ? `Réalisé le ${dateTime.format(new Date(request.diagnosedAt))}` : 'À faire'}</span>}
       </header>
-      <form className="investor-qualification" onSubmit={(event) => { event.preventDefault(); onSave({ qualification: answers, recommendedService: serviceId || null, nextAction }); }}>
+      <form className="investor-qualification" onSubmit={(event) => { event.preventDefault(); onSave({ projectSummary, qualification: answers, recommendedService: serviceId || null, nextAction }); }}>
+        <label className="investor-project">Projet ou besoin
+          <textarea rows="4" value={projectSummary} onChange={(event) => setProjectSummary(event.target.value)} maxLength={6000} placeholder="Ce que la personne veut faire : activité, lieu, capacité, ce qu’elle attend de l’API-ZF…" />
+        </label>
         <div className="investor-qualification-grid">
           {fields.map((field) => (
             <label key={field.key}>{field.label}
@@ -350,7 +354,6 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
           <Field label="Structure">{request.organization}</Field>
           <Field label="Téléphone">{request.phone && <a href={`tel:${request.phone}`}>{request.phone}</a>}</Field>
           <Field label="E-mail"><a href={`mailto:${request.email}`}>{request.email}</a></Field>
-          <Field label="Accord API-ZF">{request.consentApizf ? 'Oui' : 'Non'}</Field>
           <Field label="Projet ou besoin"><p className="stand-text">{request.projectSummary}</p></Field>
         </dl>
       </section>

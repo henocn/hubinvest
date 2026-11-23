@@ -190,10 +190,12 @@ const update = async (id, values) => {
 
 // Fiche de diagnostic (15 minutes) : les neuf informations, le service vers lequel la personne est orientée et l'étape
 // suivante, obligatoire (« Personne ne repart sans étape suivante »). La première saisie compte comme diagnostic réalisé.
-const saveDiagnosis = async (id, { qualification, recommendedService = null, nextAction }) => {
+// Le projet, que la réservation en ligne ne demande pas, se décrit pendant l'entretien.
+const saveDiagnosis = async (id, { projectSummary, qualification, recommendedService = null, nextAction }) => {
   const investorRequest = await getRequest(id);
   assertService(recommendedService);
   await investorRequestRepository.update(investorRequest, {
+    ...(projectSummary !== undefined && { projectSummary: projectSummary || null }),
     qualification: cleanQualification(qualification),
     recommendedService,
     nextAction,
@@ -209,11 +211,7 @@ const diagnosisPdf = async (id) => {
   if (!investorRequest) throw new AppError(404, 'INVESTOR_REQUEST_NOT_FOUND', 'Contact introuvable.');
   if (!investorRequest.diagnosedAt) throw new AppError(409, 'DIAGNOSIS_MISSING', 'Enregistrez d’abord le diagnostic.');
   const request = plain(investorRequest);
-  const delays = {
-    aHours: Math.round(settingsService.investorFollowUpDelay('A') / 3600000),
-    bDays: Math.round(settingsService.investorFollowUpDelay('B') / 86400000),
-  };
-  const buffer = await renderDiagnosisPdf({ request, fields: settingsService.investorQualificationFields(), delays });
+  const buffer = await renderDiagnosisPdf({ request, fields: settingsService.investorQualificationFields() });
   return { buffer, fileName: `fiche-diagnostic-${reference(request)}.pdf` };
 };
 
