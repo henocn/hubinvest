@@ -162,7 +162,7 @@ export default {
     phone: "Phone",
     lastName: "Last name",
     firstName: "First name",
-    phoneInvalid: "Invalid number. Add the country code for a foreign number (e.g. +33…).",
+    phoneInvalid: "Invalid number for the selected country.",
   },
   studio: {
     loading: "Loading invitation…",

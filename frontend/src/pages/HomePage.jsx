@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { ArrowRight, CalendarCheck, MessageCircleQuestion, PhoneCall, Star } from 'lucide-react';
+import { ArrowRight, CalendarCheck, MessageCircleQuestion, PhoneCall } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { api, resolveAssetUrl } from '../lib/api';
 import { publicErrorMessage } from '../lib/public-error';
@@ -83,7 +83,6 @@ function HomeHero({ data, formats, now }) {
         <nav className="home-hero-actions" aria-label={t('home.actions')}>
           <Link className="button button-primary" to="/guichets"><CalendarCheck size={18} aria-hidden="true" />{t('home.book')}</Link>
           <Link className="button home-hero-action" to="/guichets/rappel"><PhoneCall size={18} aria-hidden="true" />{t('home.callBack')}</Link>
-          <Link className="button home-hero-action" to="/defis"><Star size={18} aria-hidden="true" />{t('home.play')}</Link>
         </nav>
         {featured && (
           <div className={`home-hero-now${live ? ' is-live' : ''}`}>

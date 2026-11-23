@@ -6,6 +6,7 @@ import { publicBaseUrl, studioStatusLabels } from '../constants/access';
 import ConfirmDelete from '../components/ConfirmDelete';
 import EmptyState from '../components/EmptyState';
 import RowMenu from '../components/RowMenu';
+import PhoneInputField from '../../components/PhoneInputField';
 
 const dateTime = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Africa/Lome', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 const statusClass = { invited: ' is-new', booked: ' is-active', delivered: ' is-done', declined: ' is-lost', cancelled: '' };
@@ -61,7 +62,7 @@ function InvitationForm({ invitation, formats, occupants, fixedOccupant, loading
       <label>Nom et prénom<input value={form.guestName} onChange={set('guestName')} minLength={2} maxLength={160} required /></label>
       <div className="field-row">
         <label>E-mail<input type="email" value={form.email} onChange={set('email')} maxLength={180} required /></label>
-        <label>Téléphone<input type="tel" value={form.phone} onChange={set('phone')} minLength={6} maxLength={32} /></label>
+        <PhoneInputField value={form.phone} onChange={(phone) => setForm((current) => ({ ...current, phone }))} />
       </div>
       <div className="field-row">
         <label>Format<select value={form.format} onChange={set('format')}>{formats.map((format) => <option key={format.key} value={format.key}>{format.label}</option>)}</select></label>

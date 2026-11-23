@@ -3,9 +3,10 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Check, Clock3, Cloud, Download, Pencil, Phone, Plus, RefreshCw, Search, UserRound } from 'lucide-react';
 import { api } from '../lib/api';
 import { exportToExcel, formatDate } from '../lib/excel';
-import { formatPhoneInput, isValidPhone, toInternationalPhone } from '../lib/phone';
+import { isValidPhone, toInternationalPhone } from '../lib/phone';
 import { useRealtimeEvent } from '../lib/realtime';
 import { listStoredContacts, mergeServerContacts, queueContact, syncPendingContacts } from '../lib/contact-store';
+import PhoneInputField from '../components/PhoneInputField';
 
 // Qualification des contacts du stand, sur le modèle de l'Investor Desk (document : A sous 48 h, B sous 7 jours, C à nourrir).
 const qualificationLabels = {
@@ -87,18 +88,7 @@ function ContactForm({ onCancel, onCreated }) {
           Nom complet
           <input value={form.fullName} onChange={(event) => field('fullName', event.target.value)} required />
         </label>
-        <label>
-          Numéro de téléphone
-          <input
-            type="tel"
-            inputMode="tel"
-            value={form.phone}
-            onChange={(event) => field('phone', formatPhoneInput(event.target.value))}
-            placeholder="+228 90 12 34 56"
-            autoComplete="tel"
-            required
-          />
-        </label>
+        <PhoneInputField label="Numéro de téléphone" value={form.phone} onChange={(phone) => field('phone', phone)} required />
         <label>
           Entreprise
           <input value={form.company} onChange={(event) => field('company', event.target.value)} />

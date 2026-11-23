@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { availableRoles, roleLabels } from '../../constants/access';
 import { api } from '../../lib/api';
 import PasswordInput from '../PasswordInput';
+import PhoneInputField from '../../../components/PhoneInputField';
 
 export default function UserDrawer({ user, occupants, onClose, onSaved, token, currentRole, currentUserId }) {
   const isEditing = Boolean(user);
@@ -61,7 +62,7 @@ export default function UserDrawer({ user, occupants, onClose, onSaved, token, c
             <label>Nom<input value={form.lastName} onChange={(event) => setForm({ ...form, lastName: event.target.value })} minLength={2} required /></label>
           </div>
           <label>Adresse e-mail<input type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} required /></label>
-          <label>Téléphone<input type="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} /></label>
+          <PhoneInputField value={form.phone} onChange={(phone) => setForm((current) => ({ ...current, phone }))} />
           <label>Rôle<select value={form.role} disabled={isCurrentUser} onChange={(event) => setForm({ ...form, role: event.target.value, occupantId: '' })}>{Object.entries(roleLabels).filter(([value]) => availableRoles.has(value) && (currentRole === 'super-admin' || value !== 'super-admin')).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
           {needsStand && <label>Stand rattaché<select value={form.occupantId} onChange={(event) => setForm({ ...form, occupantId: event.target.value })} required><option value="">Sélectionner un stand</option>{occupants.map((occupant) => <option key={occupant.id} value={occupant.id}>{occupant.name}</option>)}</select></label>}
           {isEditing && <label>Statut<select value={form.isActive ? 'active' : 'inactive'} disabled={isCurrentUser} onChange={(event) => setForm({ ...form, isActive: event.target.value === 'active' })}><option value="active">Actif</option><option value="inactive">Inactif</option></select></label>}

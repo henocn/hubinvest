@@ -162,7 +162,7 @@ export default {
     phone: "Téléphone",
     lastName: "Nom",
     firstName: "Prénom",
-    phoneInvalid: "Numéro invalide. Ajoutez l’indicatif pour un numéro étranger (ex. +33…).",
+    phoneInvalid: "Numéro invalide pour le pays choisi.",
   },
   studio: {
     loading: "Chargement de l’invitation…",

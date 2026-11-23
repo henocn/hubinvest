@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X } from 'lucide-react';
 import { api } from '../../lib/api';
 import { guichetLabels } from '../../constants/access';
+import PhoneInputField from '../../../components/PhoneInputField';
 
 // Saisie d'un contact reçu hors du site (passage au guichet, appel…). Il démarre « À traiter » ;
 // le diagnostic ou la fiche de difficulté, la classe, les relances et les rendez-vous se gèrent ensuite sur sa fiche.
@@ -37,7 +38,7 @@ export default function InvestorRequestDrawer({ onClose, onSaved, token }) {
           <label>Nom et prénom<input value={form.fullName} onChange={set('fullName')} minLength={2} maxLength={160} required /></label>
           <div className="field-row">
             <label>E-mail<input type="email" value={form.email} onChange={set('email')} maxLength={180} required /></label>
-            <label>Téléphone<input type="tel" value={form.phone} onChange={set('phone')} minLength={6} maxLength={32} /></label>
+            <PhoneInputField value={form.phone} onChange={(phone) => setForm((current) => ({ ...current, phone }))} />
           </div>
           <label>Entreprise ou structure<input value={form.organization} onChange={set('organization')} maxLength={160} /></label>
           <label>Projet ou besoin<textarea rows="5" value={form.projectSummary} onChange={set('projectSummary')} minLength={10} maxLength={6000} required /></label>
