@@ -273,7 +273,7 @@ function DifficultyForm({ request, busy, saved, onSave, onResolve }) {
           <label>Réponse au plus tard le<input type="date" value={form.dueAt} onChange={set('dueAt')} required={Boolean(form.note.trim())} /></label>
           <label className="is-wide">Engagement pris auprès de l’entreprise<textarea rows="3" value={form.note} onChange={set('note')} maxLength={2000} required={Boolean(form.dueAt)} /></label>
         </div>
-        <p className="field-hint">Un nouvel engagement, ou un engagement modifié, est envoyé par e-mail à {request.email}. Le responsable est alerté à l’échéance si la réponse n’est pas notée.</p>
+        <p className="field-hint">Le responsable est alerté à l’échéance si la réponse n’est pas notée.</p>
         <div className="investor-form-actions"><button className="button button-primary" type="submit" disabled={busy}>Enregistrer la fiche</button></div>
       </form>
     </section>

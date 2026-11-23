@@ -98,19 +98,16 @@ const investorMeetingChanged = (kind, meeting, request) => dispatch(async () => 
 // Rendez-vous retiré sans prévenir la personne (erreur de saisie) : ses rappels disparaissent.
 const investorMeetingRemoved = (meeting) => dispatch(() => notificationRepository.cancelPending(`investor-meeting-reminder:${meeting.id}`));
 
-// Engagement de suivi d'une entreprise en difficulté : l'engagement écrit lui est envoyé ; le responsable (ou l'équipe API-ZF)
-// est alerté à l'échéance si aucune réponse n'est enregistrée. Une réponse enregistrée retire l'alerte.
-const investorCommitmentChanged = (request, { notifyCompany = false, serviceTitle = null } = {}) => dispatch(async () => {
+// Engagement de suivi d'une entreprise en difficulté, noté sur sa fiche : le responsable (ou l'équipe API-ZF) est alerté à
+// l'échéance si aucune réponse n'est enregistrée. Une réponse enregistrée retire l'alerte.
+const investorCommitmentChanged = (request) => dispatch(async () => {
   const dedupeKey = `investor-commitment:${request.id}`;
   await notificationRepository.cancelPending(dedupeKey);
-  const jobs = notifyCompany ? [{ channel: 'email', recipient: request.email, payload: templates.investorSupportCommitment({ request, serviceTitle }) }] : [];
   const dueAt = request.commitmentDueAt ? new Date(request.commitmentDueAt) : null;
-  if (dueAt && dueAt > new Date() && !request.resolvedAt) {
-    const contact = request.contactUserId ? await notificationRepository.findActiveUser(request.contactUserId) : null;
-    const users = contact ? [contact] : await notificationRepository.findSuperAdmins();
-    jobs.push(...forUsers(users, (user) => ({ ...templates.investorCommitmentDue({ user, request }), tag: dedupeKey }), { dedupeKey, availableAt: dueAt }));
-  }
-  if (jobs.length) await notificationRepository.enqueue(jobs);
+  if (!dueAt || dueAt <= new Date() || request.resolvedAt) return;
+  const contact = request.contactUserId ? await notificationRepository.findActiveUser(request.contactUserId) : null;
+  const users = contact ? [contact] : await notificationRepository.findSuperAdmins();
+  if (users.length) await notificationRepository.enqueue(forUsers(users, (user) => ({ ...templates.investorCommitmentDue({ user, request }), tag: dedupeKey }), { dedupeKey, availableAt: dueAt }));
 });
 
 // Prévient l'équipe du stand et confirme au professionnel l'envoi de sa proposition.

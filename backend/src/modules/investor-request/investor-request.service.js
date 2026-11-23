@@ -6,7 +6,7 @@ const { events: realtime } = require('../realtime/realtime.service');
 const settingsService = require('../settings/settings.service');
 const { slotGrid } = require('../../shared/slot-grid');
 const { guichetLocation } = require('../../shared/guichets');
-const { SERVICES, SERVICE_KEYS, serviceTitle } = require('../../shared/services');
+const { SERVICES, SERVICE_KEYS } = require('../../shared/services');
 const { renderDiagnosisPdf, reference } = require('./diagnosis-pdf');
 
 // Les guichets et le registre unique (document v4, M3). Les données restent réservées à l'API-ZF (super administrateurs).
@@ -246,7 +246,7 @@ const diagnosisPdf = async (id) => {
 };
 
 // Fiche « Mon entreprise, mes difficultés » et engagement de suivi écrit (service concerné, réponse promise, délai).
-// Le contact passe en Accompagnement ; l'engagement est envoyé à l'entreprise s'il est nouveau ou modifié.
+// Le contact passe en Accompagnement ; l'engagement est noté sur la fiche, le responsable est alerté à l'échéance.
 const saveDifficulty = async (id, { difficulty, commitmentService = null, commitmentDueAt = null, commitmentNote = null }) => {
   const investorRequest = await getRequest(id);
   assertService(commitmentService);
@@ -267,7 +267,7 @@ const saveDifficulty = async (id, { difficulty, commitmentService = null, commit
   if (classChanged) await applyClassFollowUp(investorRequest, 'support');
   await refreshStatus(investorRequest);
   const updated = await getRequest(id);
-  notificationService.investorCommitmentChanged(updated, { notifyCompany: commitmentChanged, serviceTitle: serviceTitle(commitmentService, updated.language) });
+  notificationService.investorCommitmentChanged(updated);
   realtime.investorRequestsChanged();
   return updated;
 };

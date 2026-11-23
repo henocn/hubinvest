@@ -105,12 +105,6 @@ const publicCopy = {
   fr: {
     hello: (name) => `Bonjour ${name},`,
     signature: 'L’équipe HubInvest',
-    commitmentSubject: 'Notre engagement de suivi',
-    commitmentBody: (company, service, note, due) => `L’API-ZF a enregistré la difficulté signalée pour ${company}.${service ? ` Service concerné : ${service}.` : ''}
-
-Notre engagement : ${note}
-
-Réponse au plus tard le ${due}.`,
     proposalSubject: 'Votre proposition a bien été transmise',
     proposalBody: (need, occupant) => `Votre proposition pour le besoin « ${need} » a bien été transmise à ${occupant}. Vous recevrez un e-mail dès qu’elle aura été examinée.`,
     acceptedSubject: 'Votre proposition a été acceptée',
@@ -121,12 +115,6 @@ Réponse au plus tard le ${due}.`,
   en: {
     hello: (name) => `Hello ${name},`,
     signature: 'The HubInvest team',
-    commitmentSubject: 'Our follow-up commitment',
-    commitmentBody: (company, service, note, due) => `API-ZF has recorded the difficulty reported for ${company}.${service ? ` Service concerned: ${service}.` : ''}
-
-Our commitment: ${note}
-
-Answer by ${due} at the latest.`,
     proposalSubject: 'Your proposal has been sent',
     proposalBody: (need, occupant) => `Your proposal for the need “${need}” has been sent to ${occupant}. You will receive an email once it has been reviewed.`,
     acceptedSubject: 'Your proposal has been accepted',
@@ -145,13 +133,6 @@ const publicEmail = (copy, name, subject, body) => ({
   text: [copy.hello(name), '', body, '', copy.signature].join('\n'),
 });
 
-// Engagement de suivi écrit remis à l'entreprise en difficulté : le service concerné, l'engagement et le délai de réponse.
-const investorSupportCommitment = ({ request, serviceTitle }) => {
-  const copy = copyFor(request.language);
-  const due = new Intl.DateTimeFormat(request.language === 'en' ? 'en-GB' : 'fr-FR', { timeZone: 'Africa/Lome', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(request.commitmentDueAt));
-  const company = request.difficulty?.company || request.organization || request.fullName;
-  return publicEmail(copy, request.fullName, copy.commitmentSubject, copy.commitmentBody(company, serviceTitle, request.commitmentNote, due));
-};
 
 // Confirme au professionnel que sa proposition B2B est transmise.
 const b2bProposalConfirmation = ({ proposal, need, occupant }) => {
@@ -306,7 +287,6 @@ module.exports = {
   studioCapsule,
   investorFollowUpDue,
   investorCommitmentDue,
-  investorSupportCommitment,
   investorMeeting,
   b2bMeetingScheduled,
   b2bMeetingMoved,

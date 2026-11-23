@@ -1481,11 +1481,11 @@ test('Guichets : une relance s’ajoute (date et motif), se marque faite avec sa
   assert.ok(investorRequestValidation.followUpDone.validate({ outcome: 'again' }).error);
 });
 
-test('Guichets : la fiche « Mon entreprise, mes difficultés » passe en Accompagnement, envoie l’engagement écrit et se termine à la réponse', async (context) => {
+test('Guichets : la fiche « Mon entreprise, mes difficultés » passe en Accompagnement, note l’engagement écrit (alerte à l’échéance) et se termine à la réponse', async (context) => {
   const request = { id: 'ir-4', classification: null, status: 'new', email: 'dg@usine.tg', commitmentNote: null, commitmentDueAt: null, commitmentService: null, resolvedAt: null, language: 'fr' };
   investorSetup(context, { request });
   const commitments = [];
-  context.mock.method(notificationService, 'investorCommitmentChanged', (item, options = {}) => { commitments.push(options); });
+  context.mock.method(notificationService, 'investorCommitmentChanged', (item) => { commitments.push(item.commitmentDueAt); });
   const difficulty = { company: 'Usine du Golfe', regime: 'free_zone', nature: 'Dédouanement', description: 'Retards à l’import des intrants.' };
 
   await investorRequestService.saveDifficulty('ir-4', { difficulty });
@@ -1496,11 +1496,7 @@ test('Guichets : la fiche « Mon entreprise, mes difficultés » passe en Accomp
   const due = new Date(Date.now() + 10 * 24 * 3600000);
   await investorRequestService.saveDifficulty('ir-4', { difficulty, commitmentService: 'aftercare', commitmentDueAt: due, commitmentNote: 'Rendez-vous avec la douane' });
   assert.equal(request.status, 'in_progress');
-  assert.deepEqual(commitments.at(-1), { notifyCompany: true, serviceTitle: 'Accompagnement après implantation' });
-
-  // Même engagement réenregistré : pas de nouvel e-mail.
-  await investorRequestService.saveDifficulty('ir-4', { difficulty, commitmentService: 'aftercare', commitmentDueAt: due, commitmentNote: 'Rendez-vous avec la douane' });
-  assert.equal(commitments.at(-1).notifyCompany, false);
+  assert.equal(commitments.at(-1), due);
 
   await investorRequestService.resolve('ir-4', { resolved: true });
   assert.equal(request.status, 'closed');
