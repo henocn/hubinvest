@@ -153,6 +153,7 @@ const create = async (user, values) => {
 // Corrige l'invité (coordonnées, format, sujet) ; le créneau reste choisi par l'invité.
 const update = async (user, id, values) => {
   const invitation = await get(user, id);
+  if (['declined', 'cancelled'].includes(invitation.status)) throw new AppError(409, 'STUDIO_INVITATION_CLOSED', 'Invitation déclinée ou annulée : elle ne se modifie plus.');
   const previousOccupantId = invitation.occupantId;
   const next = { ...values };
   if (user.role === roles.ADMIN) delete next.occupantId;

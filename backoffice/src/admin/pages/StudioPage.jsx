@@ -259,7 +259,7 @@ export default function StudioPage({ session, onLogout }) {
                     { label: 'Renvoyer l’invitation', onClick: () => { void run(() => api.resendStudioInvitation(session.token, item.id), `Invitation renvoyée à ${item.email}.`); }, disabled: !isOpen(item) || !item.email, hint: 'Invitation fermée' },
                     { label: item.status === 'booked' ? 'Modifier le créneau' : 'Fixer le créneau', onClick: () => open('schedule', item), disabled: !isOpen(item), hint: 'Invitation fermée' },
                     { label: item.status === 'delivered' ? 'Renvoyer la capsule' : 'Livrer la capsule', onClick: () => open('deliver', item), disabled: !['booked', 'delivered'].includes(item.status), hint: 'Après la réservation du créneau' },
-                    { label: 'Modifier', onClick: () => open('form', item) },
+                    { label: 'Modifier', onClick: () => open('form', item), disabled: ['declined', 'cancelled'].includes(item.status), hint: item.status === 'declined' ? 'Invitation déclinée' : 'Passage annulé' },
                     { label: 'Annuler le passage', onClick: () => open('cancel', item), disabled: !isOpen(item), hint: 'Invitation déjà fermée' },
                     { label: 'Supprimer', onClick: () => open('delete', item), danger: true },
                   ]} /></td>
