@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CalendarPlus, Check, MessageSquareText, Pencil, RotateCcw, Trash2, X } from 'lucide-react';
+import { ArrowLeft, CalendarPlus, Check, MessageSquareText, Pencil, Trash2, X } from 'lucide-react';
 import { api } from '../lib/api';
 import { useRealtimeEvent } from '../../lib/realtime';
 import { b2bMeetingOutcomeLabels, b2bProposalLabels } from '../constants/access';
@@ -20,18 +20,33 @@ function Field({ label, children }) {
   return <div className="stand-field"><dt>{label}</dt><dd>{empty ? <span className="stand-empty">—</span> : children}</dd></div>;
 }
 
-// Note facultative d'un rendez-vous, modifiable à tout moment.
-function NoteDialog({ meeting, loading, error, onCancel, onSave }) {
+// Compte rendu d'un rendez-vous : l'issue (trois boutons, une fois le rendez-vous commencé ; un second clic la retire),
+// puis le texte, facultatif et modifiable à tout moment.
+function ReportDialog({ meeting, loading, error, onCancel, onSave }) {
+  const started = new Date(meeting.startsAt).getTime() <= Date.now();
+  const [outcome, setOutcome] = useState(meeting.outcome || null);
   const [note, setNote] = useState(meeting.note || '');
+  const submit = (event) => {
+    event.preventDefault();
+    onSave({ note, ...(outcome !== (meeting.outcome || null) && { outcome }) });
+  };
   return (
     <div className="drawer-backdrop" role="presentation" onMouseDown={onCancel}>
-      <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="note-title" onMouseDown={(event) => event.stopPropagation()}>
+      <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="report-title" onMouseDown={(event) => event.stopPropagation()}>
         <header className="drawer-header">
-          <div><span className="eyebrow">{dateTime.format(new Date(meeting.startsAt))} · table {meeting.tableNumber}</span><h2 id="note-title">Note du rendez-vous</h2></div>
+          <div><span className="eyebrow">{dateTime.format(new Date(meeting.startsAt))} · table {meeting.tableNumber}</span><h2 id="report-title">Compte rendu</h2></div>
           <button className="admin-icon-button" type="button" onClick={onCancel} aria-label="Fermer"><X size={18} /></button>
         </header>
-        <form className="drawer-form" onSubmit={(event) => { event.preventDefault(); onSave(note); }}>
-          <label>Note<textarea rows="6" value={note} onChange={(event) => setNote(event.target.value)} maxLength={2000} autoFocus /></label>
+        <form className="drawer-form" onSubmit={submit}>
+          <fieldset className="meeting-outcomes" disabled={!started}>
+            <legend>Issue du rendez-vous</legend>
+            {Object.entries(b2bMeetingOutcomeLabels).map(([value, label]) => (
+              <button key={value} type="button" className={`meeting-outcome is-${value}${outcome === value ? ' is-selected' : ''}`} aria-pressed={outcome === value}
+                onClick={() => setOutcome(outcome === value ? null : value)}>{label}</button>
+            ))}
+            {!started && <span className="field-hint">L’issue se choisit une fois le rendez-vous commencé.</span>}
+          </fieldset>
+          <label>Texte<textarea rows="6" value={note} onChange={(event) => setNote(event.target.value)} maxLength={2000} placeholder="Ce qui s’est dit, la suite convenue…" /></label>
           {error && <p className="admin-form-error">{error}</p>}
           <footer className="drawer-actions">
             <button className="button button-secondary" type="button" onClick={onCancel}>Annuler</button>
@@ -43,25 +58,19 @@ function NoteDialog({ meeting, loading, error, onCancel, onSave }) {
   );
 }
 
-// Compte rendu en un clic : trois issues une fois le rendez-vous commencé ; avant, « À venir ».
-function MeetingReport({ meeting, busy, onReport }) {
+// Dans le tableau : l'issue retenue (ou « À venir » / « À faire »), son auteur, et le texte en dessous.
+function MeetingReport({ meeting }) {
   const started = new Date(meeting.startsAt).getTime() <= Date.now();
-  if (meeting.outcome) {
-    return (
-      <div className="meeting-report">
-        <span className={`status-pill${outcomeClass[meeting.outcome] || ''}`}>{b2bMeetingOutcomeLabels[meeting.outcome]}</span>
-        {meeting.reportedBy && <small>par {fullName(meeting.reportedBy)}</small>}
-        <button className="table-action is-icon" type="button" onClick={() => onReport(meeting, null)} disabled={busy} title="Annuler le compte rendu" aria-label="Annuler le compte rendu"><RotateCcw size={14} /></button>
-      </div>
-    );
-  }
-  if (!started) return <span className="status-pill">À venir</span>;
   return (
-    <div className="meeting-report">
-      {Object.entries(b2bMeetingOutcomeLabels).map(([value, label]) => (
-        <button key={value} className={`table-action meeting-outcome is-${value}`} type="button" onClick={() => onReport(meeting, value)} disabled={busy}>{label}</button>
-      ))}
-    </div>
+    <>
+      <div className="meeting-report">
+        {meeting.outcome
+          ? <span className={`status-pill${outcomeClass[meeting.outcome] || ''}`}>{b2bMeetingOutcomeLabels[meeting.outcome]}</span>
+          : <span className={`status-pill${started ? ' is-new' : ''}`}>{started ? 'À faire' : 'À venir'}</span>}
+        {meeting.outcome && meeting.reportedBy && <small>par {fullName(meeting.reportedBy)}</small>}
+      </div>
+      {meeting.note && <p className="meeting-note">{meeting.note}</p>}
+    </>
   );
 }
 
@@ -164,13 +173,10 @@ export default function B2bProposalDetail({ id, session, onLogout }) {
                 <tr key={meeting.id}>
                   <td className="stand-nowrap"><strong>{dateTime.format(new Date(meeting.startsAt))}</strong><small>{meeting.durationMinutes} min</small></td>
                   <td>Table {meeting.tableNumber}</td>
-                  <td>
-                    <MeetingReport meeting={meeting} busy={busy} onReport={(item, outcome) => run(() => api.updateB2bMeeting(session.token, proposal.id, item.id, { outcome }))} />
-                    {meeting.note && <p className="meeting-note">{meeting.note}</p>}
-                  </td>
+                  <td><MeetingReport meeting={meeting} /></td>
                   <td><div className="row-actions">
                     <button className="table-action is-icon" type="button" onClick={() => open('meeting', meeting)} disabled={Boolean(meeting.outcome)} title={meeting.outcome ? 'Compte rendu fait : le rendez-vous ne peut plus être déplacé' : 'Modifier le rendez-vous'} aria-label="Modifier le rendez-vous"><Pencil size={16} /></button>
-                    <button className="table-action is-icon" type="button" onClick={() => open('note', meeting)} title="Note" aria-label="Écrire une note"><MessageSquareText size={16} /></button>
+                    <button className="table-action is-icon" type="button" onClick={() => open('report', meeting)} title="Compte rendu" aria-label="Faire le compte rendu"><MessageSquareText size={16} /></button>
                     <button className="table-action is-icon is-danger" type="button" onClick={() => open('cancel', meeting)} title="Annuler le rendez-vous" aria-label="Annuler le rendez-vous"><Trash2 size={16} /></button>
                   </div></td>
                 </tr>
@@ -181,7 +187,7 @@ export default function B2bProposalDetail({ id, session, onLogout }) {
       </section>
 
       {dialog?.type === 'meeting' && <B2bMeetingDialog proposal={proposal} meeting={dialog.item} token={session.token} onClose={close} onSaved={async () => { close(); await load(); }} />}
-      {dialog?.type === 'note' && <NoteDialog meeting={dialog.item} loading={busy} error={actionError} onCancel={close} onSave={(note) => run(() => api.updateB2bMeeting(session.token, proposal.id, dialog.item.id, { note }))} />}
+      {dialog?.type === 'report' && <ReportDialog meeting={dialog.item} loading={busy} error={actionError} onCancel={close} onSave={(values) => run(() => api.updateB2bMeeting(session.token, proposal.id, dialog.item.id, values))} />}
       {dialog?.type === 'cancel' && <ConfirmDelete subject={{ label: `le rendez-vous du ${dateTime.format(new Date(dialog.item.startsAt))} (le visiteur est prévenu par e-mail s’il n’a pas encore eu lieu)` }} loading={busy} error={actionError} onCancel={close} onConfirm={() => run(() => api.deleteB2bMeeting(session.token, proposal.id, dialog.item.id))} />}
       {dialog?.type === 'decide' && <ConfirmDecision proposal={proposal} status={dialog.item} loading={busy} error={actionError} onCancel={close} onConfirm={() => run(() => api.updateB2bProposal(session.token, proposal.id, { status: dialog.item }))} />}
       {dialog?.type === 'edit' && <B2bProposalDrawer proposal={proposal} token={session.token} onClose={close} onSaved={async () => { close(); await load(); }} />}
