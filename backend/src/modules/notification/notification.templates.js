@@ -38,17 +38,19 @@ const contactReminder = ({ user, contact }) => {
   };
 };
 
-// Prévient l'équipe qu'un rendez-vous au guichet vient d'être réservé, ou qu'une personne demande à être rappelée.
+// Prévient l'équipe qu'un rendez-vous au guichet est demandé (à confirmer), ou qu'une personne demande à être rappelée.
 const investorRequestReceived = ({ user, request }) => {
   const url = teamUrl(`/guichets/${request.id}`);
   const guichet = guichetLabel(request.guichet);
   const booked = request.source === 'online_booking';
-  const body = booked ? `${request.fullName} a réservé un rendez-vous au guichet « ${guichet} ».` : `${request.fullName} demande à être rappelé (guichet « ${guichet} »).`;
+  const body = booked
+    ? `${request.fullName} demande un rendez-vous au guichet « ${guichet} ». Confirmez-le, ou proposez une autre heure, depuis sa fiche : la personne attend votre confirmation.`
+    : `${request.fullName} demande à être rappelé (guichet « ${guichet} »).`;
   return {
-    title: booked ? 'Rendez-vous au guichet' : 'Demande de rappel',
+    title: booked ? 'Rendez-vous à confirmer' : 'Demande de rappel',
     body,
     url,
-    subject: booked ? `Rendez-vous au guichet : ${request.fullName}` : `Demande de rappel : ${request.fullName}`,
+    subject: booked ? `Rendez-vous à confirmer : ${request.fullName}` : `Demande de rappel : ${request.fullName}`,
     text: teamText(user, [body, 'Consultez sa fiche :'], url),
   };
 };
@@ -227,12 +229,16 @@ const b2bMeetingCancelled = ({ meeting, proposal, need, occupant }) => {
 
 const investorMeetingCopy = {
   fr: {
+    requested: ['Votre demande de rendez-vous avec l’API-ZF', (when, place) => `Votre demande de rendez-vous pour le ${when}, lieu : ${place}, est bien reçue. Ce créneau vous est réservé en attendant : l’équipe de l’API-ZF vous enverra une confirmation par e-mail. Merci de l’attendre avant de vous présenter.`],
+    confirmed: ['Votre rendez-vous avec l’API-ZF est confirmé', (when, place) => `Votre rendez-vous avec l’équipe de l’API-ZF est confirmé le ${when}, lieu : ${place}. Nous vous attendons.`],
     scheduled: ['Votre rendez-vous avec l’API-ZF', (when, place) => `Votre rendez-vous avec l’équipe de l’API-ZF est fixé le ${when}, lieu : ${place}.`],
     moved: ['Votre rendez-vous avec l’API-ZF est déplacé', (when, place) => `Votre rendez-vous avec l’équipe de l’API-ZF est déplacé au ${when}, lieu : ${place}.`],
     reminder: ['Rappel : votre rendez-vous avec l’API-ZF', (when, place) => `Nous vous attendons le ${when}, lieu : ${place}.`],
     cancelled: ['Votre rendez-vous avec l’API-ZF est annulé', (when) => `Le rendez-vous avec l’équipe de l’API-ZF prévu le ${when} est annulé. Votre interlocuteur reviendra vers vous.`],
   },
   en: {
+    requested: ['Your meeting request with API-ZF', (when, place) => `Your meeting request for ${when}, at: ${place}, has been received. This slot is held for you in the meantime: the API-ZF team will send you a confirmation by email. Please wait for it before coming.`],
+    confirmed: ['Your meeting with API-ZF is confirmed', (when, place) => `Your meeting with the API-ZF team is confirmed for ${when}, at: ${place}. We look forward to seeing you.`],
     scheduled: ['Your meeting with API-ZF', (when, place) => `Your meeting with the API-ZF team is set for ${when}, at: ${place}.`],
     moved: ['Your meeting with API-ZF has been moved', (when, place) => `Your meeting with the API-ZF team has been moved to ${when}, at: ${place}.`],
     reminder: ['Reminder: your meeting with API-ZF', (when, place) => `We look forward to seeing you on ${when}, at: ${place}.`],

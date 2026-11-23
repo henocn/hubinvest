@@ -81,8 +81,9 @@ const publicSlots = async (guichet) => {
   return { minutes, slots: slots.filter((start) => !taken.has(start)).map((start) => new Date(start).toISOString()) };
 };
 
-// « Prendre rendez-vous » : la personne choisit son guichet et un créneau libre ; elle reçoit la confirmation puis deux
-// rappels. La base refuse une double réservation du même créneau au même guichet.
+// « Prendre rendez-vous » : la personne choisit son guichet et un créneau libre. C'est une demande : le créneau est
+// bloqué, la personne est prévenue qu'une confirmation suivra ; l'équipe confirme (e-mail et rappels) ou propose une
+// autre heure. La base refuse une double réservation du même créneau au même guichet.
 const book = async (values, language = 'fr') => {
   settingsService.assertOpen('investorDeskOpen');
   const start = new Date(values.startsAt).getTime();
@@ -99,7 +100,7 @@ const book = async (values, language = 'fr') => {
   }
   const { investorRequest, meeting } = created;
   notificationService.investorRequestReceived(investorRequest);
-  notificationService.investorMeetingChanged('scheduled', meeting, investorRequest);
+  notificationService.investorMeetingChanged('requested', meeting, investorRequest);
   realtime.investorRequestsChanged();
   return { guichet: meeting.guichet, startsAt: meeting.startsAt, location: meeting.location, minutes: settingsService.guichetSchedule().minutes };
 };
@@ -329,30 +330,37 @@ const getMeeting = async (id, meetingId) => {
   return { investorRequest, meeting };
 };
 
-const assertScheduled = (meeting) => {
-  if (meeting.status !== 'scheduled') throw new AppError(409, 'INVESTOR_MEETING_CLOSED', 'Ce rendez-vous est déjà tenu ou annulé.');
+// Un rendez-vous demandé (réservé en ligne, pas encore confirmé) ou prévu peut encore changer ; tenu ou annulé, plus.
+const assertOpen = (meeting) => {
+  if (!['requested', 'scheduled'].includes(meeting.status)) throw new AppError(409, 'INVESTOR_MEETING_CLOSED', 'Ce rendez-vous est déjà tenu ou annulé.');
 };
 
-// Modifier : seulement un rendez-vous prévu ; la personne reçoit la nouvelle date.
+// Modifier : la personne reçoit la nouvelle date. Proposer une autre heure pour une demande vaut confirmation.
 const updateMeeting = async (id, meetingId, values) => {
   const { investorRequest, meeting } = await getMeeting(id, meetingId);
-  assertScheduled(meeting);
+  assertOpen(meeting);
   assertFuture(values.startsAt);
-  await saveMeeting(() => investorRequestRepository.updateMeeting(meeting, meetingValues(investorRequest, values)));
-  notificationService.investorMeetingChanged('moved', meeting, investorRequest);
+  const confirming = meeting.status === 'requested';
+  await saveMeeting(() => investorRequestRepository.updateMeeting(meeting, { ...meetingValues(investorRequest, values), status: 'scheduled' }));
+  notificationService.investorMeetingChanged(confirming ? 'confirmed' : 'moved', meeting, investorRequest);
   realtime.investorRequestsChanged();
   return meeting;
 };
 
-// Valider (le rendez-vous a eu lieu, une fois son heure passée) ou annuler (la personne est prévenue par e-mail).
+// Confirmer une demande (la personne reçoit la confirmation, puis les rappels), valider (le rendez-vous a eu lieu, une
+// fois son heure passée) ou annuler (la personne est prévenue par e-mail).
 const setMeetingStatus = async (id, meetingId, status) => {
   const { investorRequest, meeting } = await getMeeting(id, meetingId);
-  assertScheduled(meeting);
+  assertOpen(meeting);
+  if (status === 'scheduled' && meeting.status !== 'requested') throw new AppError(409, 'INVESTOR_MEETING_ALREADY_CONFIRMED', 'Ce rendez-vous est déjà confirmé.');
+  if (status === 'held' && meeting.status !== 'scheduled') throw new AppError(409, 'INVESTOR_MEETING_NOT_CONFIRMED', 'Confirmez d’abord ce rendez-vous.');
   if (status === 'held' && new Date(meeting.startsAt).getTime() > Date.now()) {
     throw new AppError(409, 'INVESTOR_MEETING_NOT_STARTED', 'Un rendez-vous se valide une fois son heure passée.');
   }
   await investorRequestRepository.updateMeeting(meeting, { status });
-  if (status === 'cancelled' && new Date(meeting.startsAt).getTime() > Date.now()) notificationService.investorMeetingChanged('cancelled', meeting, investorRequest);
+  const upcoming = new Date(meeting.startsAt).getTime() > Date.now();
+  if (status === 'scheduled') notificationService.investorMeetingChanged('confirmed', meeting, investorRequest);
+  else if (status === 'cancelled' && upcoming) notificationService.investorMeetingChanged('cancelled', meeting, investorRequest);
   else notificationService.investorMeetingRemoved(meeting);
   realtime.investorRequestsChanged();
   return meeting;

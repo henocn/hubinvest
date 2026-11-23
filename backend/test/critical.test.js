@@ -1488,7 +1488,7 @@ test('Guichets : un rendez-vous se réserve sur un créneau proposé, une seule 
   context.mock.method(notificationService, 'investorMeetingChanged', (kind) => { sent.push(kind); });
   const result = await investorRequestService.book({ ...values, startsAt: `${day}T09:30:00Z` }, 'fr');
   assert.equal(result.location, 'Stand API-ZF · guichet « Quel régime pour mon investissement ? »');
-  assert.deepEqual(sent, ['online_booking', 'scheduled']);
+  assert.deepEqual(sent, ['online_booking', 'requested']);
 });
 
 
@@ -1625,4 +1625,23 @@ test('la fiche de diagnostic se télécharge en PDF une fois le diagnostic enreg
   const { buffer, fileName } = await investorRequestService.diagnosisPdf('ir-6');
   assert.equal(buffer.subarray(0, 5).toString(), '%PDF-');
   assert.match(fileName, /^fiche-diagnostic-DG-\d{2}-[A-Z0-9-]+\.pdf$/);
+});
+
+test('Guichets : un rendez-vous demandé en ligne se confirme par l’équipe, ou se déplace, avant d’être validé', async (context) => {
+  const request = { id: 'ir-10', email: 'a@b.tg', guichet: 'project', language: 'fr' };
+  const asked = { id: 'm-asked', startsAt: new Date(Date.now() + 3600000), status: 'requested' };
+  const other = { id: 'm-other', startsAt: new Date(Date.now() + 3600000), status: 'requested', guichet: 'project' };
+  const emails = [];
+  context.mock.method(investorRequestRepository, 'findById', async () => request);
+  context.mock.method(investorRequestRepository, 'findMeeting', async (id) => ({ 'm-asked': asked, 'm-other': other })[id] || null);
+  context.mock.method(investorRequestRepository, 'updateMeeting', async (meeting, values) => Object.assign(meeting, values));
+  context.mock.method(notificationService, 'investorMeetingChanged', (kind) => { emails.push(kind); });
+
+  await assert.rejects(investorRequestService.setMeetingStatus('ir-10', 'm-asked', 'held'), (error) => error.code === 'INVESTOR_MEETING_NOT_CONFIRMED');
+  await investorRequestService.setMeetingStatus('ir-10', 'm-asked', 'scheduled');
+  assert.equal(asked.status, 'scheduled');
+  await assert.rejects(investorRequestService.setMeetingStatus('ir-10', 'm-asked', 'scheduled'), (error) => error.code === 'INVESTOR_MEETING_ALREADY_CONFIRMED');
+  await investorRequestService.updateMeeting('ir-10', 'm-other', { startsAt: new Date(Date.now() + 7200000), atGuichet: true });
+  assert.equal(other.status, 'scheduled');
+  assert.deepEqual(emails, ['confirmed', 'confirmed']);
 });
