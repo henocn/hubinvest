@@ -8,7 +8,7 @@ export const roleLabels = {
 export const backofficeRoles = new Set(['super-admin', 'admin']);
 export const availableRoles = new Set(['super-admin', 'admin', 'occupant', 'animateur']);
 // Compte rendu en un clic d'un rendez-vous B2B.
-export const b2bMeetingOutcomeLabels = { held_follow_up: 'Tenue · suite à donner', held_no_follow_up: 'Tenue · sans suite', no_show: 'Visiteur absent' };
+export const b2bMeetingOutcomeLabels = { present: 'Présent', absent: 'Absent' };
 export const b2bProposalLabels = { pending: 'À traiter', accepted: 'Acceptée', declined: 'Refusée' };
 // Classes des guichets (document v4 : A relancé sous 48 h, B sous 7 jours, C intégré à la lettre d'information,
 // Accompagnement pour une entreprise installée qui signale une difficulté).

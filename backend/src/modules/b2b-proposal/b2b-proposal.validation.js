@@ -29,7 +29,7 @@ const schedule = Joi.object({
 });
 // Compte rendu en un clic, et note facultative ; une issue vide annule le compte rendu.
 const report = Joi.object({
-  outcome: Joi.string().valid('held_follow_up', 'held_no_follow_up', 'no_show').allow(null, ''),
+  outcome: Joi.string().valid('present', 'absent').allow(null, ''),
   note: Joi.string().trim().max(2000).allow('', null),
 }).min(1);
 

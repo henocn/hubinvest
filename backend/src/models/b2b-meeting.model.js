@@ -1,5 +1,6 @@
 // Rendez-vous d'une demande B2B acceptée : créneau et table, puis compte rendu en un clic.
-const B2B_MEETING_OUTCOMES = ['held_follow_up', 'held_no_follow_up', 'no_show'];
+// Compte rendu : le visiteur était présent ou absent.
+const B2B_MEETING_OUTCOMES = ['present', 'absent'];
 
 module.exports = (sequelize, DataTypes) =>
   sequelize.define(

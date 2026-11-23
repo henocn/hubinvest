@@ -12,7 +12,7 @@ import ConfirmDelete from './ConfirmDelete';
 const dateTime = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Africa/Lome', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 const received = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Africa/Lome', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
 const statusClass = { pending: ' is-new', accepted: ' is-active', declined: '' };
-const outcomeClass = { held_follow_up: ' is-done', held_no_follow_up: ' is-active', no_show: ' is-lost' };
+const outcomeClass = { present: ' is-done', absent: ' is-lost' };
 const fullName = (user) => [user?.firstName, user?.lastName].filter(Boolean).join(' ');
 
 function Field({ label, children }) {
@@ -20,8 +20,8 @@ function Field({ label, children }) {
   return <div className="stand-field"><dt>{label}</dt><dd>{empty ? <span className="stand-empty">—</span> : children}</dd></div>;
 }
 
-// Compte rendu d'un rendez-vous : l'issue (trois boutons, une fois le rendez-vous commencé ; un second clic la retire),
-// puis le texte, facultatif et modifiable à tout moment.
+// Compte rendu d'un rendez-vous : le visiteur était présent ou absent (une fois le rendez-vous commencé ; un second clic
+// retire le choix), puis la note, facultative et modifiable à tout moment.
 function ReportDialog({ meeting, loading, error, onCancel, onSave }) {
   const started = new Date(meeting.startsAt).getTime() <= Date.now();
   const [outcome, setOutcome] = useState(meeting.outcome || null);
@@ -39,14 +39,14 @@ function ReportDialog({ meeting, loading, error, onCancel, onSave }) {
         </header>
         <form className="drawer-form" onSubmit={submit}>
           <fieldset className="meeting-outcomes" disabled={!started}>
-            <legend>Issue du rendez-vous</legend>
+            <legend>Le visiteur était</legend>
             {Object.entries(b2bMeetingOutcomeLabels).map(([value, label]) => (
               <button key={value} type="button" className={`meeting-outcome is-${value}${outcome === value ? ' is-selected' : ''}`} aria-pressed={outcome === value}
                 onClick={() => setOutcome(outcome === value ? null : value)}>{label}</button>
             ))}
-            {!started && <span className="field-hint">L’issue se choisit une fois le rendez-vous commencé.</span>}
+            {!started && <span className="field-hint">La présence se note une fois le rendez-vous commencé.</span>}
           </fieldset>
-          <label>Texte<textarea rows="6" value={note} onChange={(event) => setNote(event.target.value)} maxLength={2000} placeholder="Ce qui s’est dit, la suite convenue…" /></label>
+          <label>Note<textarea rows="6" value={note} onChange={(event) => setNote(event.target.value)} maxLength={2000} placeholder="Ce qui s’est dit, la suite convenue…" /></label>
           {error && <p className="admin-form-error">{error}</p>}
           <footer className="drawer-actions">
             <button className="button button-secondary" type="button" onClick={onCancel}>Annuler</button>
