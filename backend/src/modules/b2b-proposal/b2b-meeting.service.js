@@ -119,8 +119,8 @@ const reschedule = async (user, id, meetingId, { startsAt, tableNumber }) => {
   return plain(meeting);
 };
 
-// Compte rendu en un clic (tenue avec suite, tenue sans suite, absent), une fois le rendez-vous commencé ;
-// la note reste facultative et se modifie à tout moment. Une issue vide annule le compte rendu.
+// Compte rendu : présent ou absent, une fois le rendez-vous commencé (une issue vide l'annule) ; la prochaine étape et
+// la note restent facultatives et se modifient à tout moment.
 const report = async (user, id, meetingId, values) => {
   const { proposal, meeting } = await getMeeting(user, id, meetingId);
   const next = {};
@@ -132,6 +132,7 @@ const report = async (user, id, meetingId, values) => {
     next.reportedAt = values.outcome ? new Date() : null;
     next.reportedByUserId = values.outcome ? user.id : null;
   }
+  if ('nextStep' in values) next.nextStep = values.nextStep || null;
   if ('note' in values) next.note = values.note || null;
   await b2bMeetingRepository.update(meeting, next);
   realtime.b2bChanged(proposal.need.occupantId);

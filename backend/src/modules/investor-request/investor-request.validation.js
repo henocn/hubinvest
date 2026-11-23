@@ -41,6 +41,8 @@ const answers = Joi.object().pattern(Joi.string().max(40), Joi.alternatives(Joi.
 
 // Fiche de diagnostic : les neuf informations, le service d'orientation, l'étape suivante (obligatoire).
 const diagnosis = Joi.object({
+  organization: Joi.string().trim().max(160).allow('', null),
+  projectSummary: Joi.string().trim().max(6000).allow('', null),
   qualification: answers.default({}),
   recommendedService: serviceKey,
   nextAction: Joi.string().trim().min(2).max(255).required(),
@@ -61,13 +63,18 @@ const difficulty = Joi.object({
 
 const resolve = Joi.object({ resolved: Joi.boolean().required() });
 
-// Relance faite : moyen (appel ou message), note, étape suivante (obligatoire pour A et B, contrôlée par le service), date de la prochaine relance.
+// Relance à faire : quand (date et heure) et pourquoi.
 const followUp = Joi.object({
-  channel: Joi.string().valid('call', 'message').required(),
-  note: Joi.string().trim().max(2000).allow('', null),
-  nextStep: Joi.string().trim().max(255).allow('', null),
-  nextFollowUpAt: Joi.date().iso().allow(null),
-  doneAt: Joi.date().iso().max('now'),
+  dueAt: Joi.date().iso().required(),
+  reason: Joi.string().trim().min(2).max(255).required(),
+});
+
+// Relance faite : la prochaine étape et un commentaire (obligatoire pour « Autre », facultatif sinon).
+// « Relancer » crée la relance suivante.
+const followUpDone = Joi.object({
+  outcome: Joi.string().valid('closed', 'again', 'other').required(),
+  note: Joi.when('outcome', { is: 'other', then: Joi.string().trim().min(2).max(500).required(), otherwise: Joi.string().trim().max(500).allow('', null) }),
+  next: Joi.when('outcome', { is: 'again', then: followUp.required(), otherwise: Joi.any().strip() }),
 });
 
 // Rendez-vous : date et heure ; au guichet de la personne (créneau réservé) ou dans un lieu libre.
@@ -93,4 +100,4 @@ const query = Joi.object({
   offset: Joi.number().integer().min(0).default(0),
 });
 
-module.exports = { createPublic, book, slotsQuery, createManual, update, diagnosis, difficulty, resolve, followUp, meeting, meetingStatus, params, followUpParams, meetingParams, query };
+module.exports = { createPublic, book, slotsQuery, createManual, update, diagnosis, difficulty, resolve, followUp, followUpDone, meeting, meetingStatus, params, followUpParams, meetingParams, query };

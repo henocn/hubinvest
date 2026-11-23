@@ -53,28 +53,15 @@ const investorRequestReceived = ({ user, request }) => {
   };
 };
 
-// Alerte à l'interlocuteur : la relance d'un contact A ou B arrive à échéance sans avoir été faite.
-const investorFollowUpDue = ({ user, request }) => {
+// Rappel au responsable : c'est l'heure d'une relance, avec son motif.
+const investorFollowUpDue = ({ user, request, followUp }) => {
   const url = teamUrl(`/guichets/${request.id}`);
   return {
-    title: `Relance à faire : contact ${request.classification}`,
-    body: `${request.fullName} attend sa relance (classe ${request.classification}).`,
+    title: `Relance à faire : ${request.fullName}`,
+    body: `Relancer ${request.fullName} : ${followUp.reason}`,
     url,
-    subject: `Relance à faire : ${request.fullName} (classe ${request.classification})`,
-    text: teamText(user, [`Le délai de relance de ${request.fullName}, classé ${request.classification}, est atteint.`, 'Notez la relance sur sa fiche :'], url),
-  };
-};
-
-// Alerte au responsable : l'engagement de suivi d'une entreprise arrive à échéance sans réponse enregistrée.
-const investorCommitmentDue = ({ user, request }) => {
-  const url = teamUrl(`/guichets/${request.id}`);
-  const company = request.difficulty?.company || request.organization || request.fullName;
-  return {
-    title: 'Engagement de suivi à échéance',
-    body: `${company} attend la réponse promise.`,
-    url,
-    subject: `Engagement de suivi à échéance : ${company}`,
-    text: teamText(user, [`Le délai de réponse promis à ${company} (${request.fullName}) est atteint.`, 'Enregistrez la réponse sur sa fiche :'], url),
+    subject: `Relance à faire : ${request.fullName}`,
+    text: teamText(user, [`C’est l’heure de relancer ${request.fullName} : ${followUp.reason}.`, 'Une fois la relance faite, marquez-la faite sur sa fiche :'], url),
   };
 };
 
@@ -105,14 +92,6 @@ const publicCopy = {
   fr: {
     hello: (name) => `Bonjour ${name},`,
     signature: 'L’équipe HubInvest',
-    investorSubject: 'Votre demande a bien été reçue',
-    investorBody: (guichet) => `Votre demande de rappel adressée à l’API-ZF (guichet « ${guichet} ») a bien été enregistrée. Un membre de l’équipe vous recontactera.`,
-    commitmentSubject: 'Notre engagement de suivi',
-    commitmentBody: (company, service, note, due) => `L’API-ZF a enregistré la difficulté signalée pour ${company}.${service ? ` Service concerné : ${service}.` : ''}
-
-Notre engagement : ${note}
-
-Réponse au plus tard le ${due}.`,
     proposalSubject: 'Votre proposition a bien été transmise',
     proposalBody: (need, occupant) => `Votre proposition pour le besoin « ${need} » a bien été transmise à ${occupant}. Vous recevrez un e-mail dès qu’elle aura été examinée.`,
     acceptedSubject: 'Votre proposition a été acceptée',
@@ -123,14 +102,6 @@ Réponse au plus tard le ${due}.`,
   en: {
     hello: (name) => `Hello ${name},`,
     signature: 'The HubInvest team',
-    investorSubject: 'We have received your request',
-    investorBody: (guichet) => `Your call-back request to API-ZF (“${guichet}” desk) has been recorded. A team member will contact you.`,
-    commitmentSubject: 'Our follow-up commitment',
-    commitmentBody: (company, service, note, due) => `API-ZF has recorded the difficulty reported for ${company}.${service ? ` Service concerned: ${service}.` : ''}
-
-Our commitment: ${note}
-
-Answer by ${due} at the latest.`,
     proposalSubject: 'Your proposal has been sent',
     proposalBody: (need, occupant) => `Your proposal for the need “${need}” has been sent to ${occupant}. You will receive an email once it has been reviewed.`,
     acceptedSubject: 'Your proposal has been accepted',
@@ -149,19 +120,6 @@ const publicEmail = (copy, name, subject, body) => ({
   text: [copy.hello(name), '', body, '', copy.signature].join('\n'),
 });
 
-// Confirme à l'investisseur que sa demande est enregistrée.
-const investorRequestConfirmation = ({ request }) => {
-  const copy = copyFor(request.language);
-  return publicEmail(copy, request.fullName, copy.investorSubject, copy.investorBody(guichetLabel(request.guichet, request.language)));
-};
-
-// Engagement de suivi écrit remis à l'entreprise en difficulté : le service concerné, l'engagement et le délai de réponse.
-const investorSupportCommitment = ({ request, serviceTitle }) => {
-  const copy = copyFor(request.language);
-  const due = new Intl.DateTimeFormat(request.language === 'en' ? 'en-GB' : 'fr-FR', { timeZone: 'Africa/Lome', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(request.commitmentDueAt));
-  const company = request.difficulty?.company || request.organization || request.fullName;
-  return publicEmail(copy, request.fullName, copy.commitmentSubject, copy.commitmentBody(company, serviceTitle, request.commitmentNote, due));
-};
 
 // Confirme au professionnel que sa proposition B2B est transmise.
 const b2bProposalConfirmation = ({ proposal, need, occupant }) => {
@@ -227,13 +185,13 @@ const b2bMeetingCancelled = ({ meeting, proposal, need, occupant }) => {
 
 const investorMeetingCopy = {
   fr: {
-    scheduled: ['Votre rendez-vous avec l’API-ZF', (when, place) => `Votre rendez-vous avec l’équipe de l’API-ZF est fixé le ${when}, lieu : ${place}.`],
+    scheduled: ['Votre rendez-vous avec l’API-ZF', (when, place) => `Votre rendez-vous avec l’équipe de l’API-ZF est fixé le ${when}, lieu : ${place}. Nous vous attendons, sauf si vous recevez un e-mail de modification ou d’annulation.`],
     moved: ['Votre rendez-vous avec l’API-ZF est déplacé', (when, place) => `Votre rendez-vous avec l’équipe de l’API-ZF est déplacé au ${when}, lieu : ${place}.`],
     reminder: ['Rappel : votre rendez-vous avec l’API-ZF', (when, place) => `Nous vous attendons le ${when}, lieu : ${place}.`],
     cancelled: ['Votre rendez-vous avec l’API-ZF est annulé', (when) => `Le rendez-vous avec l’équipe de l’API-ZF prévu le ${when} est annulé. Votre interlocuteur reviendra vers vous.`],
   },
   en: {
-    scheduled: ['Your meeting with API-ZF', (when, place) => `Your meeting with the API-ZF team is set for ${when}, at: ${place}.`],
+    scheduled: ['Your meeting with API-ZF', (when, place) => `Your meeting with the API-ZF team is set for ${when}, at: ${place}. We look forward to seeing you, unless you receive an email changing or cancelling it.`],
     moved: ['Your meeting with API-ZF has been moved', (when, place) => `Your meeting with the API-ZF team has been moved to ${when}, at: ${place}.`],
     reminder: ['Reminder: your meeting with API-ZF', (when, place) => `We look forward to seeing you on ${when}, at: ${place}.`],
     cancelled: ['Your meeting with API-ZF is cancelled', (when) => `The meeting with the API-ZF team planned for ${when} is cancelled. Your contact will get back to you.`],
@@ -255,7 +213,7 @@ const studioCopy = {
     invite: (format, link) => `Vous êtes invité(e) à enregistrer « ${format} » au Studio du Hub de l’Investissement (FIL 2026). Choisissez vous-même votre créneau sur votre page personnelle : ${link}`,
     bookedSubject: 'Votre passage au Studio est réservé',
     movedSubject: 'Votre passage au Studio est déplacé',
-    booked: (when, minutes, link) => `Votre passage au Studio est réservé le ${when}, pour ${minutes} minutes. Vous pouvez changer de créneau jusqu’à une heure avant : ${link}`,
+    booked: (when, minutes, link) => `Votre passage au Studio est réservé le ${when}, pour ${minutes} minutes. Pour le changer ou l’annuler, contactez l’équipe du Studio. Votre page : ${link}`,
     reminderSubject: 'Rappel : votre passage au Studio',
     reminder: (when, link) => `Nous vous attendons au Studio du Hub de l’Investissement le ${when}. Votre page : ${link}`,
     cancelledSubject: 'Votre passage au Studio est annulé',
@@ -268,7 +226,7 @@ const studioCopy = {
     invite: (format, link) => `You are invited to record “${format}” at the Investment Hub Studio (FIL 2026). Choose your own time slot on your personal page: ${link}`,
     bookedSubject: 'Your Studio session is booked',
     movedSubject: 'Your Studio session has been moved',
-    booked: (when, minutes, link) => `Your Studio session is booked for ${when}, for ${minutes} minutes. You can change your slot up to one hour before: ${link}`,
+    booked: (when, minutes, link) => `Your Studio session is booked for ${when}, for ${minutes} minutes. To change or cancel it, please contact the Studio team. Your page: ${link}`,
     reminderSubject: 'Reminder: your Studio session',
     reminder: (when, link) => `We look forward to seeing you at the Investment Hub Studio on ${when}. Your page: ${link}`,
     cancelledSubject: 'Your Studio session is cancelled',
@@ -315,8 +273,6 @@ module.exports = {
   studioCancellation,
   studioCapsule,
   investorFollowUpDue,
-  investorCommitmentDue,
-  investorSupportCommitment,
   investorMeeting,
   b2bMeetingScheduled,
   b2bMeetingMoved,
@@ -325,7 +281,6 @@ module.exports = {
   contactReminder,
   investorRequestReceived,
   b2bProposalReceived,
-  investorRequestConfirmation,
   b2bProposalConfirmation,
   b2bProposalDecision,
 };

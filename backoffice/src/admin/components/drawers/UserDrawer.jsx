@@ -20,7 +20,7 @@ export default function UserDrawer({ user, occupants, onClose, onSaved, token, c
   }));
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const needsStand = ['admin', 'occupant'].includes(form.role);
+  const needsStand = form.role === 'occupant';
 
   const submit = async (event) => {
     event.preventDefault();

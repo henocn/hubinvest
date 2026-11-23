@@ -1,12 +1,14 @@
 const AppError = require('../../shared/app-error');
 const roles = require('../../shared/roles');
+const { isGlobal } = require('../../shared/access');
 const { translatePublicContent } = require('../../shared/translation.service');
 const b2bNeedRepository = require('./b2b-need.repository');
 const { events: realtime } = require('../realtime/realtime.service');
 
+// Équipe API-ZF : tous les stands ; occupant : le sien.
 const standFor = (user) => {
-  if (user.role === roles.SUPER_ADMIN) return null;
-  if (!user.occupantId) throw new AppError(403, 'STAND_REQUIRED', 'Cet administrateur n’est rattaché à aucun stand.');
+  if (isGlobal(user)) return null;
+  if (!user.occupantId) throw new AppError(403, 'STAND_REQUIRED', 'Ce compte n’est rattaché à aucun stand.');
   return user.occupantId;
 };
 
@@ -57,7 +59,7 @@ const update = async (user, id, values) => {
   const need = await getManaged(user, id);
   const previousOccupantId = need.occupantId;
   const nextValues = { ...values };
-  if (user.role === roles.ADMIN) delete nextValues.occupantId;
+  if (user.role === roles.OCCUPANT) delete nextValues.occupantId;
   if (nextValues.occupantId) await requireOccupant(nextValues.occupantId);
   const updated = await b2bNeedRepository.update(need, nextValues);
   realtime.b2bChanged([previousOccupantId, updated.occupantId]);

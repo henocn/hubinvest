@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, CalendarPlus, PhoneCall, X } from 'lucide-react';
+import { ArrowLeft, CalendarPlus, FileDown, Lock, PhoneCall, X } from 'lucide-react';
 import { api } from '../lib/api';
+import { upcomingFirst } from '../lib/order';
 import { useRealtimeEvent } from '../../lib/realtime';
-import { companyRegimeLabels, contactSourceLabels, guichetLabels, investorChannelLabels, investorClassHints, investorClassLabels, investorClassShort, investorStatusLabel } from '../constants/access';
+import { companyRegimeLabels, contactSourceLabels, guichetLabels, investorClassHints, investorClassLabels, investorClassShort, investorStatusLabel } from '../constants/access';
 import ConfirmDelete from './ConfirmDelete';
 import RowMenu from './RowMenu';
 
@@ -46,18 +47,52 @@ function Modal({ eyebrow, title, error, loading, submitLabel, onClose, onSubmit,
   );
 }
 
-// Relancer : appel ou message, ce qui s'est dit, étape suivante (obligatoire pour A et B) et date de la prochaine relance.
+// Une relance : quand (date et heure) et pourquoi. À l'heure dite, le responsable est rappelé de relancer la personne.
+function FollowUpFields({ form, set }) {
+  return (
+    <>
+      <label>Date et heure<input type="datetime-local" value={form.dueAt} onChange={set('dueAt')} required /></label>
+      <label>Motif<input value={form.reason} onChange={set('reason')} minLength={2} maxLength={255} placeholder="Ex. Envoyer l’Investor Pack" required /></label>
+    </>
+  );
+}
+
 function FollowUpForm({ request, loading, error, onClose, onSave }) {
-  const required = ['A', 'B'].includes(request.classification);
-  const [form, setForm] = useState({ channel: 'call', note: '', nextStep: '', nextFollowUpAt: '' });
+  const [form, setForm] = useState({ dueAt: '', reason: '' });
   const set = (key) => (event) => setForm({ ...form, [key]: event.target.value });
   return (
-    <Modal eyebrow={request.fullName} title="Relancer" error={error} loading={loading} submitLabel="Enregistrer la relance" onClose={onClose}
-      onSubmit={() => onSave({ channel: form.channel, note: form.note || null, nextStep: form.nextStep || null, nextFollowUpAt: fromInput(form.nextFollowUpAt) })}>
-      <label>Moyen<select value={form.channel} onChange={set('channel')}>{Object.entries(investorChannelLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-      <label>Ce qui s’est dit<textarea rows="4" value={form.note} onChange={set('note')} maxLength={2000} /></label>
-      <label>Étape suivante{required && ' (obligatoire pour un contact A ou B)'}<input value={form.nextStep} onChange={set('nextStep')} maxLength={255} required={required} /></label>
-      <label>Prochaine relance<input type="datetime-local" value={form.nextFollowUpAt} onChange={set('nextFollowUpAt')} /><span className="field-hint">Sans date, la demande passe à « Terminé ».</span></label>
+    <Modal eyebrow={request.fullName} title="Ajouter une relance" error={error} loading={loading} submitLabel="Ajouter" onClose={onClose}
+      onSubmit={() => onSave({ dueAt: fromInput(form.dueAt), reason: form.reason })}>
+      <FollowUpFields form={form} set={set} />
+      <span className="field-hint">À cette heure, le responsable du contact (ou l’équipe API-ZF) reçoit un rappel.</span>
+    </Modal>
+  );
+}
+
+// Relance faite : la prochaine étape. « Relancer » programme la relance suivante ; « Autre » se décrit en quelques mots.
+const outcomeLabels = { closed: 'Terminée', again: 'Relancer', other: 'Autre' };
+// Origine d'une relance automatique, affichée sous sa date.
+const autoLabel = (item) => ({ A: 'Automatique (classe A)', B: 'Automatique (classe B)', commitment: 'Automatique (engagement)' })[item.autoSource];
+function CompleteFollowUpForm({ request, followUp, loading, error, onClose, onSave }) {
+  const [outcome, setOutcome] = useState('closed');
+  const [note, setNote] = useState('');
+  const [next, setNext] = useState({ dueAt: '', reason: '' });
+  const setNextField = (key) => (event) => setNext({ ...next, [key]: event.target.value });
+  return (
+    <Modal eyebrow={request.fullName} title="Relance faite" error={error} loading={loading} submitLabel="Marquer faite" onClose={onClose}
+      onSubmit={() => onSave({ outcome, note: outcome === 'again' ? null : note || null, ...(outcome === 'again' && { next: { dueAt: fromInput(next.dueAt), reason: next.reason } }) })}>
+      <p className="field-hint">{followUp.reason} · prévue le {dateTime.format(new Date(followUp.dueAt))}</p>
+      <label>Prochaine étape
+        <select value={outcome} onChange={(event) => setOutcome(event.target.value)}>
+          {Object.entries(outcomeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select>
+      </label>
+      {outcome === 'again' && <FollowUpFields form={next} set={setNextField} />}
+      {outcome !== 'again' && (
+        <label>{outcome === 'other' ? 'Précisez' : 'Note (facultative)'}
+          <textarea rows="3" value={note} onChange={(event) => setNote(event.target.value)} minLength={outcome === 'other' ? 2 : undefined} maxLength={500} required={outcome === 'other'} placeholder="Ce qui s’est dit, ce qui a été convenu…" />
+        </label>
+      )}
     </Modal>
   );
 }
@@ -98,12 +133,13 @@ function ConfirmMeeting({ meeting, cancel, loading, error, onCancel, onConfirm }
 // Confirmation du classement ; un changement de classe est signalé, avec son effet sur la relance prévue.
 function ConfirmClass({ request, classification, loading, error, onCancel, onConfirm }) {
   const change = Boolean(request.classification);
-  const relanced = (request.followUps || []).length > 0;
+  const replaced = (request.followUps || []).some((item) => ['A', 'B'].includes(item.autoSource) && !item.doneAt);
   const effect = classification === 'support'
     ? 'Le suivi passe par la fiche « Mon entreprise, mes difficultés » et son engagement de suivi écrit.'
     : classification === 'C'
-    ? 'Intégré à la lettre d’information, sans relance individuelle : le contact passe à « Terminé ».'
-    : relanced ? 'Une relance a déjà été faite : la date de la prochaine relance ne change pas.' : `La relance est prévue ${classification === 'A' ? 'sous 48 h' : 'sous 7 jours'}.`;
+    ? 'Intégré à la lettre d’information, sans relance automatique.'
+    : `Une relance est ajoutée ${classification === 'A' ? 'dans 48 h' : 'dans 7 jours'}.`;
+  const note = replaced ? ' La relance automatique de l’ancienne classe, pas encore faite, est retirée.' : '';
   return (
     <div className="dialog-backdrop" role="presentation" onMouseDown={onCancel}>
       <section className="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="class-title" onMouseDown={(event) => event.stopPropagation()}>
@@ -112,7 +148,7 @@ function ConfirmClass({ request, classification, loading, error, onCancel, onCon
           <p>{change
             ? <>Vous changez la classe de {request.fullName} : <strong>{investorClassLabels[request.classification]}</strong> devient <strong>{investorClassLabels[classification]}</strong>.</>
             : <>Vous classez {request.fullName} en <strong>{investorClassLabels[classification]}</strong>.</>}</p>
-          <p>{effect}</p>
+          <p>{effect}{note}</p>
         </div>
         {error && <p className="admin-form-error dialog-error">{error}</p>}
         <footer>
@@ -136,18 +172,41 @@ function QualificationInput({ field, value, onChange }) {
 }
 
 // Fiche de diagnostic (15 minutes) : les neuf informations, le service vers lequel la personne est orientée et l'étape suivante.
-function DiagnosisForm({ request, busy, saved, onSave }) {
+// Télécharge un fichier reçu de l'API sous le nom donné.
+const saveFile = (blob, fileName) => {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+const fileSlug = (value) => String(value || 'contact').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase();
+
+// Fiche de diagnostic : les informations de qualification, l'orientation et l'étape suivante. Une fois enregistrée,
+// elle se télécharge en PDF (formulaire à cases cochées, à imprimer et faire signer).
+function DiagnosisForm({ request, busy, saved, onSave, onDownload }) {
   const fields = request.qualificationFields || [];
   const [answers, setAnswers] = useState(request.qualification || {});
   const [serviceId, setServiceId] = useState(request.recommendedService || '');
   const [nextAction, setNextAction] = useState(request.nextAction || '');
+  const [projectSummary, setProjectSummary] = useState(request.projectSummary || '');
+  const [organization, setOrganization] = useState(request.organization || '');
   return (
     <section className="data-panel stand-panel">
       <header className="settings-panel-head">
         <h2>Diagnostic</h2>
         {saved ? <span className="investor-saved">Enregistré</span> : <span className="data-note">{request.diagnosedAt ? `Réalisé le ${dateTime.format(new Date(request.diagnosedAt))}` : 'À faire'}</span>}
       </header>
-      <form className="investor-qualification" onSubmit={(event) => { event.preventDefault(); onSave({ qualification: answers, recommendedService: serviceId || null, nextAction }); }}>
+      <form className="investor-qualification" onSubmit={(event) => { event.preventDefault(); onSave({ organization, projectSummary, qualification: answers, recommendedService: serviceId || null, nextAction }); }}>
+        <label className="investor-project">Structure
+          <input value={organization} onChange={(event) => setOrganization(event.target.value)} maxLength={160} placeholder="Entreprise, organisation ou projet porté par la personne" />
+        </label>
+        <label className="investor-project">Projet ou besoin
+          <textarea rows="4" value={projectSummary} onChange={(event) => setProjectSummary(event.target.value)} maxLength={6000} placeholder="Ce que la personne veut faire : activité, lieu, capacité, ce qu’elle attend de l’API-ZF…" />
+        </label>
         <div className="investor-qualification-grid">
           {fields.map((field) => (
             <label key={field.key}>{field.label}
@@ -159,7 +218,10 @@ function DiagnosisForm({ request, busy, saved, onSave }) {
           </label>
           <label>Étape suivante<input value={nextAction} onChange={(event) => setNextAction(event.target.value)} minLength={2} maxLength={255} required /></label>
         </div>
-        <div className="investor-form-actions"><button className="button button-primary" type="submit" disabled={busy}>Enregistrer le diagnostic</button></div>
+        <div className="investor-form-actions">
+          {request.diagnosedAt && <button className="button button-secondary" type="button" onClick={onDownload} disabled={busy}><FileDown size={16} /> Fiche PDF</button>}
+          <button className="button button-primary" type="submit" disabled={busy}>Enregistrer le diagnostic</button>
+        </div>
       </form>
     </section>
   );
@@ -179,6 +241,9 @@ function DifficultyForm({ request, busy, saved, onSave, onResolve }) {
   });
   const set = (key) => (event) => setForm({ ...form, [key]: event.target.value });
   const committed = Boolean(request.commitmentDueAt);
+  // Réponse donnée : l'engagement est verrouillé (cadenas) jusqu'à ce qu'on le rouvre ; la confirmer passe par une fenêtre.
+  const locked = Boolean(request.resolvedAt);
+  const [confirming, setConfirming] = useState(false);
   const submit = (event) => {
     event.preventDefault();
     onSave({
@@ -195,9 +260,25 @@ function DifficultyForm({ request, busy, saved, onSave, onResolve }) {
         {saved && <span className="investor-saved">Enregistré</span>}
       </header>
       {committed && (
-        <div className={`investor-commitment${request.resolvedAt ? ' is-done' : ''}`}>
-          <span>{request.resolvedAt ? `Réponse donnée le ${dateTime.format(new Date(request.resolvedAt))}` : `Réponse promise au plus tard le ${day.format(new Date(request.commitmentDueAt))}`}</span>
-          <button className="button button-secondary" type="button" disabled={busy} onClick={() => onResolve(!request.resolvedAt)}>{request.resolvedAt ? 'Rouvrir' : 'Réponse donnée'}</button>
+        <div className={`investor-commitment${locked ? ' is-done' : ''}`}>
+          <span>{locked
+            ? <><Lock size={15} aria-hidden="true" /> Réponse donnée le {dateTime.format(new Date(request.resolvedAt))}</>
+            : `Réponse promise au plus tard le ${day.format(new Date(request.commitmentDueAt))}`}</span>
+          <button className="button button-secondary" type="button" disabled={busy} onClick={() => (locked ? onResolve(false) : setConfirming(true))}>{locked ? 'Rouvrir' : 'Réponse donnée'}</button>
+        </div>
+      )}
+      {confirming && (
+        <div className="dialog-backdrop" role="presentation" onMouseDown={() => setConfirming(false)}>
+          <section className="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="resolve-title" onMouseDown={(event) => event.stopPropagation()}>
+            <div>
+              <h2 id="resolve-title">Réponse donnée</h2>
+              <p>Vous confirmez que la réponse promise à {request.difficulty?.company || request.fullName} a été donnée. L’engagement est verrouillé, sa relance est marquée faite et le contact passe à « Terminé ».</p>
+            </div>
+            <footer>
+              <button className="button button-secondary" type="button" onClick={() => setConfirming(false)} disabled={busy}>Retour</button>
+              <button className="button button-primary" type="button" disabled={busy} onClick={async () => { await onResolve(true); setConfirming(false); }}>{busy ? 'Enregistrement…' : 'Confirmer'}</button>
+            </footer>
+          </section>
         </div>
       )}
       <form className="investor-qualification" onSubmit={submit}>
@@ -207,13 +288,13 @@ function DifficultyForm({ request, busy, saved, onSave, onResolve }) {
           <label>Nature de la difficulté<input value={form.nature} onChange={set('nature')} minLength={2} maxLength={160} required /></label>
           <label className="is-wide">Description<textarea rows="4" value={form.description} onChange={set('description')} minLength={2} maxLength={4000} required /></label>
         </div>
-        <h3 className="investor-subtitle">Engagement de suivi écrit</h3>
-        <div className="investor-qualification-grid">
+        <h3 className="investor-subtitle">Engagement de suivi écrit{locked && <Lock size={15} aria-label="Verrouillé" />}</h3>
+        <fieldset className="investor-qualification-grid investor-locked" disabled={locked}>
           <label>Service concerné<select value={form.serviceId} onChange={set('serviceId')}><option value="">—</option>{(request.services || []).map((service) => <option key={service.key} value={service.key}>{service.title}</option>)}</select></label>
           <label>Réponse au plus tard le<input type="date" value={form.dueAt} onChange={set('dueAt')} required={Boolean(form.note.trim())} /></label>
           <label className="is-wide">Engagement pris auprès de l’entreprise<textarea rows="3" value={form.note} onChange={set('note')} maxLength={2000} required={Boolean(form.dueAt)} /></label>
-        </div>
-        <p className="field-hint">Un nouvel engagement, ou un engagement modifié, est envoyé par e-mail à {request.email}. Le responsable est alerté à l’échéance si la réponse n’est pas notée.</p>
+        </fieldset>
+        <p className="field-hint">{locked ? 'Réponse donnée : rouvrez l’engagement pour le modifier.' : 'Une relance est ajoutée le jour de la réponse promise.'}</p>
         <div className="investor-form-actions"><button className="button button-primary" type="submit" disabled={busy}>Enregistrer la fiche</button></div>
       </form>
     </section>
@@ -258,6 +339,19 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
   const close = () => setDialog(null);
 
   // Enregistre une action ; l'erreur reste dans la fenêtre ouverte, sinon au-dessus de la section.
+  // Téléchargement de la fiche PDF : sans recharger la fiche, pour ne pas perdre une saisie en cours.
+  const downloadDiagnosis = async () => {
+    setBusy(true);
+    setActionError('');
+    try {
+      saveFile(await api.investorDiagnosisPdf(session.token, request.id), `fiche-diagnostic-${fileSlug(request.fullName)}.pdf`);
+    } catch (requestError) {
+      setActionError(requestError.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const run = async (work, savedLabel = '') => {
     setBusy(true);
     setActionError('');
@@ -281,8 +375,11 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
 
   const overdue = request.classification !== 'support' && request.nextFollowUpAt && new Date(request.nextFollowUpAt) < new Date() && request.status !== 'closed';
   const commitmentLate = request.classification === 'support' && request.commitmentDueAt && !request.resolvedAt && new Date(request.commitmentDueAt) < new Date();
-  const followUps = request.followUps || [];
-  const meetings = request.meetings || [];
+  const followUps = upcomingFirst(request.followUps || [], (item) => item.dueAt, (item) => !item.doneAt);
+  const meetings = upcomingFirst(request.meetings || [], (item) => item.startsAt, (item) => item.status === 'scheduled' && new Date(item.startsAt) >= new Date());
+  // Les nombres des onglets ne comptent que ce qui reste à venir ou à faire, et disparaissent à zéro.
+  const upcomingMeetings = meetings.filter((item) => item.status === 'scheduled' && new Date(item.startsAt) >= new Date()).length;
+  const pendingFollowUps = followUps.filter((item) => !item.doneAt).length;
   // Une entreprise installée en difficulté a sa fiche « difficultés » ; les autres contacts, la fiche de diagnostic.
   const companyCase = request.guichet === 'company' || request.classification === 'support';
 
@@ -303,9 +400,9 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
       {/* Onglets : détails et classe, la fiche du guichet (diagnostic ou difficultés), rendez-vous, relances. */}
       <nav className="section-tabs detail-tabs" aria-label="Fiche du contact">
         <button type="button" className={tab === 'details' ? 'is-active' : ''} onClick={() => setTab('details')} aria-pressed={tab === 'details'}>Détails</button>
-        <button type="button" className={tab === 'sheet' ? 'is-active' : ''} onClick={() => setTab('sheet')} aria-pressed={tab === 'sheet'}>{companyCase ? 'Difficultés' : 'Diagnostic'}</button>
-        <button type="button" className={tab === 'meetings' ? 'is-active' : ''} onClick={() => setTab('meetings')} aria-pressed={tab === 'meetings'}>Rendez-vous <b>{meetings.length}</b></button>
-        <button type="button" className={tab === 'follow-ups' ? 'is-active' : ''} onClick={() => setTab('follow-ups')} aria-pressed={tab === 'follow-ups'}>Relances <b>{followUps.length}</b></button>
+        <button type="button" className={tab === 'sheet' ? 'is-active' : ''} onClick={() => setTab('sheet')} aria-pressed={tab === 'sheet'}>Diagnostic</button>
+        <button type="button" className={tab === 'meetings' ? 'is-active' : ''} onClick={() => setTab('meetings')} aria-pressed={tab === 'meetings'}>Rendez-vous{upcomingMeetings > 0 && <b>{upcomingMeetings}</b>}</button>
+        <button type="button" className={tab === 'follow-ups' ? 'is-active' : ''} onClick={() => setTab('follow-ups')} aria-pressed={tab === 'follow-ups'}>Relances{pendingFollowUps > 0 && <b>{pendingFollowUps}</b>}</button>
       </nav>
 
       {tab === 'details' && <>
@@ -319,7 +416,6 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
           <Field label="Structure">{request.organization}</Field>
           <Field label="Téléphone">{request.phone && <a href={`tel:${request.phone}`}>{request.phone}</a>}</Field>
           <Field label="E-mail"><a href={`mailto:${request.email}`}>{request.email}</a></Field>
-          <Field label="Accord API-ZF">{request.consentApizf ? 'Oui' : 'Non'}</Field>
           <Field label="Projet ou besoin"><p className="stand-text">{request.projectSummary}</p></Field>
         </dl>
       </section>
@@ -351,12 +447,13 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
 
       {tab === 'sheet' && (companyCase
         ? <DifficultyForm key={formKey} request={request} busy={busy} saved={saved === 'sheet'} onSave={(values) => run(() => api.saveInvestorDifficulty(session.token, request.id, values), 'sheet')} onResolve={(resolved) => run(() => api.resolveInvestorCommitment(session.token, request.id, resolved), 'sheet')} />
-        : <DiagnosisForm key={formKey} request={request} busy={busy} saved={saved === 'sheet'} onSave={(values) => run(() => api.saveInvestorDiagnosis(session.token, request.id, values), 'sheet')} />)}
+        : <DiagnosisForm key={formKey} request={request} busy={busy} saved={saved === 'sheet'} onSave={(values) => run(() => api.saveInvestorDiagnosis(session.token, request.id, values), 'sheet')}
+          onDownload={downloadDiagnosis} />)}
 
       {tab === 'meetings' && (
       <section className="data-panel stand-panel">
         <header className="settings-panel-head">
-          <h2>Rendez-vous <span>{meetings.length}</span></h2>
+          <h2>Rendez-vous</h2>
           <button className="button button-primary" type="button" onClick={() => open('meeting')}><CalendarPlus size={16} /> Rendez-vous</button>
         </header>
         {!meetings.length ? <p className="panel-message">Aucun rendez-vous fixé.</p> : (
@@ -385,22 +482,32 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
       {tab === 'follow-ups' && (
       <section className="data-panel stand-panel">
         <header className="settings-panel-head">
-          <h2>Relances <span>{followUps.length}</span></h2>
-          <button className="button button-primary" type="button" onClick={() => open('follow-up')}><PhoneCall size={16} /> Relancer</button>
+          <h2>Relances</h2>
+          <button className="button button-primary" type="button" onClick={() => open('follow-up')}><PhoneCall size={16} /> Ajouter</button>
         </header>
-        {!followUps.length ? <p className="panel-message">Aucune relance enregistrée.</p> : (
+        {!followUps.length ? <p className="panel-message">Aucune relance.</p> : (
           <div className="table-scroll">
             <table>
-              <thead><tr><th>Date</th><th>Moyen</th><th>Ce qui s’est dit</th><th>Étape suivante</th><th className="actions-heading">Actions</th></tr></thead>
-              <tbody>{followUps.map((item) => (
-                <tr key={item.id}>
-                  <td className="stand-nowrap"><strong>{dateTime.format(new Date(item.doneAt))}</strong><small>{fullName(item.createdBy)}</small></td>
-                  <td>{investorChannelLabels[item.channel]}</td>
-                  <td className="meeting-note-cell">{item.note || '—'}</td>
-                  <td>{item.nextStep || '—'}</td>
-                  <td><RowMenu label="Actions de la relance" items={[{ label: 'Supprimer', onClick: () => open('delete-follow-up', item), danger: true }]} /></td>
-                </tr>
-              ))}</tbody>
+              <thead><tr><th>Date et heure</th><th>Motif</th><th>Statut</th><th>Prochaine étape</th><th className="actions-heading">Actions</th></tr></thead>
+              <tbody>{followUps.map((item) => {
+                const late = !item.doneAt && new Date(item.dueAt) < new Date();
+                return (
+                  <tr key={item.id}>
+                    <td className="stand-nowrap"><strong>{dateTime.format(new Date(item.dueAt))}</strong><small>{autoLabel(item) || fullName(item.createdBy)}</small></td>
+                    <td className="meeting-note-cell">{item.reason}</td>
+                    <td className="stand-nowrap">{item.doneAt
+                      ? <span className="status-pill is-done" title={`Faite le ${dateTime.format(new Date(item.doneAt))}`}>Faite</span>
+                      : <span className={`status-pill${late ? ' is-lost' : ' is-new'}`}>{late ? 'En retard' : 'À faire'}</span>}</td>
+                    <td className="meeting-note-cell">{item.doneAt
+                      ? <><strong>{outcomeLabels[item.outcome]}</strong>{item.outcomeNote && <small>{item.outcomeNote}</small>}</>
+                      : '—'}</td>
+                    <td><RowMenu label="Actions de la relance" items={[
+                      { label: 'Marquer faite', onClick: () => open('complete-follow-up', item), disabled: Boolean(item.doneAt), hint: 'Relance déjà faite' },
+                      { label: 'Supprimer', onClick: () => open('delete-follow-up', item), danger: true },
+                    ]} /></td>
+                  </tr>
+                );
+              })}</tbody>
             </table>
           </div>
         )}
@@ -413,7 +520,9 @@ export default function InvestorRequestDetail({ id, session, onLogout }) {
       {dialog?.type === 'follow-up' && <FollowUpForm request={request} loading={busy} error={actionError} onClose={close} onSave={(values) => run(() => api.addInvestorFollowUp(session.token, request.id, values))} />}
       {dialog?.type === 'meeting' && <MeetingForm request={request} meeting={dialog.item} loading={busy} error={actionError} onClose={close}
         onSave={(values) => run(() => (dialog.item ? api.updateInvestorMeeting(session.token, request.id, dialog.item.id, values) : api.addInvestorMeeting(session.token, request.id, values)))} />}
-      {dialog?.type === 'delete-follow-up' && <ConfirmDelete subject={{ label: `la relance du ${dateTime.format(new Date(dialog.item.doneAt))}` }} loading={busy} error={actionError} onCancel={close} onConfirm={() => run(() => api.deleteInvestorFollowUp(session.token, request.id, dialog.item.id))} />}
+      {dialog?.type === 'complete-follow-up' && <CompleteFollowUpForm request={request} followUp={dialog.item} loading={busy} error={actionError} onClose={close}
+        onSave={(values) => run(() => api.completeInvestorFollowUp(session.token, request.id, dialog.item.id, values))} />}
+      {dialog?.type === 'delete-follow-up' && <ConfirmDelete subject={{ label: `la relance du ${dateTime.format(new Date(dialog.item.dueAt))} (${dialog.item.reason})` }} loading={busy} error={actionError} onCancel={close} onConfirm={() => run(() => api.deleteInvestorFollowUp(session.token, request.id, dialog.item.id))} />}
       {(dialog?.type === 'hold-meeting' || dialog?.type === 'cancel-meeting') && <ConfirmMeeting meeting={dialog.item} cancel={dialog.type === 'cancel-meeting'} loading={busy} error={actionError} onCancel={close}
         onConfirm={() => run(() => api.setInvestorMeetingStatus(session.token, request.id, dialog.item.id, dialog.type === 'cancel-meeting' ? 'cancelled' : 'held'))} />}
       {dialog?.type === 'delete-meeting' && <ConfirmDelete subject={{ label: `le rendez-vous du ${dateTime.format(new Date(dialog.item.startsAt))} (sans prévenir la personne : pour le décommander, annulez-le)` }} loading={busy} error={actionError} onCancel={close} onConfirm={() => run(() => api.deleteInvestorMeeting(session.token, request.id, dialog.item.id))} />}

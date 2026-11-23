@@ -20,7 +20,7 @@ const serialize = (user) => {
 };
 
 const validateOccupant = async (values) => {
-  const requiresStand = [roles.ADMIN, roles.OCCUPANT].includes(values.role);
+  const requiresStand = values.role === roles.OCCUPANT;
   if (requiresStand && !values.occupantId) {
     throw new AppError(422, 'OCCUPANT_REQUIRED', 'Ce compte doit être rattaché à un stand.');
   }
@@ -67,7 +67,7 @@ const changePassword = async (actor, values) => {
 const create = async (actor, values) => {
   protectSuperAdmin(actor, values.role);
   const normalized = { ...values, email: values.email.toLowerCase() };
-  normalized.occupantId = [roles.ADMIN, roles.OCCUPANT].includes(normalized.role) ? normalized.occupantId : null;
+  normalized.occupantId = normalized.role === roles.OCCUPANT ? normalized.occupantId : null;
   await validateOccupant(normalized);
   normalized.passwordHash = await bcrypt.hash(normalized.password, 12);
   delete normalized.password;
@@ -101,7 +101,7 @@ const update = async (actor, id, values) => {
       : user.occupantId,
   };
 
-  if (![roles.ADMIN, roles.OCCUPANT].includes(resultingValues.role)) resultingValues.occupantId = null;
+  if (resultingValues.role !== roles.OCCUPANT) resultingValues.occupantId = null;
 
   await validateOccupant(resultingValues);
 

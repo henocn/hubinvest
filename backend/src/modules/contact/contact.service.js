@@ -1,6 +1,6 @@
 const { UniqueConstraintError } = require('sequelize');
 const AppError = require('../../shared/app-error');
-const roles = require('../../shared/roles');
+const { isGlobal } = require('../../shared/access');
 const contactRepository = require('./contact.repository');
 const occupantRepository = require('../occupant/occupant.repository');
 const notificationService = require('../notification/notification.service');
@@ -149,7 +149,7 @@ const stats = async (user) => {
 };
 
 const adminStats = async (user) => {
-  if (user.role !== roles.SUPER_ADMIN) {
+  if (!isGlobal(user)) {
     throw new AppError(403, 'FORBIDDEN', "Vous n’avez pas accès à cette action.");
   }
 
@@ -166,4 +166,7 @@ const adminStats = async (user) => {
   return { total, byOccupant };
 };
 
-module.exports = { list, get, create, createPublic, update, stats, adminStats };
+// Carnet d'un stand, en lecture, pour l'API-ZF (super administrateurs) : tous ses contacts, du plus récent au plus ancien.
+const standContacts = async (occupantId) => (await contactRepository.findAll({ occupantId })).rows;
+
+module.exports = { list, get, create, createPublic, update, stats, adminStats, standContacts };

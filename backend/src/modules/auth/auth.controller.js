@@ -1,7 +1,9 @@
 const authService = require('./auth.service');
+const auditLogService = require('../audit-log/audit-log.service');
 
 const login = async (request, response) => {
   const result = await authService.login(request.body);
+  auditLogService.recordLogin(result.user, request.ip);
   response.json({ data: result, message: 'Connexion réussie.' });
 };
 

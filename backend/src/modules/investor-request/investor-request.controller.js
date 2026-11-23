@@ -30,9 +30,16 @@ const update = async (request, response) => {
 // Fiche d'une demande : qualification, classe, interlocuteur, relances et rendez-vous.
 const detail = async (request, response) => response.json({ data: await investorRequestService.detail(request.params.id) });
 const saveDiagnosis = async (request, response) => response.json({ data: await investorRequestService.saveDiagnosis(request.params.id, request.body), message: 'Diagnostic enregistré.' });
+// Fiche de diagnostic en PDF, téléchargée depuis la fiche du contact.
+const diagnosisPdf = async (request, response) => {
+  const { buffer, fileName } = await investorRequestService.diagnosisPdf(request.params.id);
+  response.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="${fileName}"`, 'Cache-Control': 'no-store' });
+  response.send(buffer);
+};
 const saveDifficulty = async (request, response) => response.json({ data: await investorRequestService.saveDifficulty(request.params.id, request.body), message: 'Fiche enregistrée.' });
 const resolve = async (request, response) => response.json({ data: await investorRequestService.resolve(request.params.id, request.body), message: request.body.resolved ? 'Réponse enregistrée.' : 'Engagement rouvert.' });
-const addFollowUp = async (request, response) => response.status(201).json({ data: await investorRequestService.addFollowUp(request.user, request.params.id, request.body), message: 'Relance enregistrée.' });
+const addFollowUp = async (request, response) => response.status(201).json({ data: await investorRequestService.addFollowUp(request.user, request.params.id, request.body), message: 'Relance ajoutée.' });
+const completeFollowUp = async (request, response) => response.json({ data: await investorRequestService.completeFollowUp(request.user, request.params.id, request.params.followUpId, request.body), message: 'Relance marquée faite.' });
 const removeFollowUp = async (request, response) => {
   await investorRequestService.removeFollowUp(request.params.id, request.params.followUpId);
   response.status(204).end();
@@ -45,4 +52,4 @@ const removeMeeting = async (request, response) => {
   response.status(204).end();
 };
 
-module.exports = { list, createPublic, publicSlots, book, createManual, saveDiagnosis, saveDifficulty, resolve, update, detail, addFollowUp, removeFollowUp, addMeeting, updateMeeting, setMeetingStatus, removeMeeting };
+module.exports = { list, createPublic, publicSlots, book, createManual, saveDiagnosis, diagnosisPdf, saveDifficulty, resolve, update, detail, addFollowUp, completeFollowUp, removeFollowUp, addMeeting, updateMeeting, setMeetingStatus, removeMeeting };

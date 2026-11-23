@@ -69,21 +69,26 @@ test('les comptes utilisent seulement les quatre rôles retenus', () => {
   assert.deepEqual(Object.values(roles).sort(), ['admin', 'animateur', 'occupant', 'super-admin']);
 });
 
-test('un administrateur doit être rattaché à un stand', async (context) => {
+test('un occupant doit être rattaché à un stand ; l’administrateur (API-ZF) ne l’est jamais', async (context) => {
   context.mock.method(userRepository, 'findOccupantById', async (id) => (id === 'occupant-a' ? { id } : null));
   context.mock.method(userRepository, 'create', async (values) => ({ toJSON: () => values }));
 
   await assert.rejects(
     userService.create({ role: 'super-admin' }, {
-      firstName: 'Koffi', lastName: 'Mensah', email: 'admin@example.com', password: 'secret-test', role: 'admin',
+      firstName: 'Koffi', lastName: 'Mensah', email: 'stand@example.com', password: 'secret-test', role: 'occupant',
     }),
     (error) => error.status === 422 && error.code === 'OCCUPANT_REQUIRED',
   );
 
   const created = await userService.create({ role: 'super-admin' }, {
-    firstName: 'Koffi', lastName: 'Mensah', email: 'admin@example.com', password: 'secret-test', role: 'admin', occupantId: 'occupant-a',
+    firstName: 'Koffi', lastName: 'Mensah', email: 'stand@example.com', password: 'secret-test', role: 'occupant', occupantId: 'occupant-a',
   });
   assert.equal(created.occupantId, 'occupant-a');
+
+  const apizf = await userService.create({ role: 'super-admin' }, {
+    firstName: 'Ama', lastName: 'Kossi', email: 'apizf@example.com', password: 'secret-test', role: 'admin', occupantId: 'occupant-a',
+  });
+  assert.equal(apizf.occupantId, null);
 });
 
 test('la récupération envoie cinq chiffres et ne stocke jamais le code en clair', async (context) => {
@@ -383,13 +388,13 @@ test('la liste publique B2B ne contient que les besoins ouverts de stands actifs
   assert.equal(result.include[0].required, true);
 });
 
-test('un administrateur publie un besoin B2B uniquement pour son stand', async (context) => {
+test('un occupant publie un besoin B2B uniquement pour son stand', async (context) => {
   let saved;
   context.mock.method(b2bNeedRepository, 'findOccupantById', async (id) => ({ id }));
   context.mock.method(b2bNeedRepository, 'create', async (values) => { saved = values; return values; });
 
   await b2bNeedService.create(
-    { id: 'admin-a', role: 'admin', occupantId: 'occupant-a' },
+    { id: 'admin-a', role: 'occupant', occupantId: 'occupant-a' },
     { occupantId: 'occupant-b', title: 'Besoin test', description: 'Description du besoin test.' },
   );
   assert.equal(saved.occupantId, 'occupant-a');
@@ -406,14 +411,14 @@ test('une proposition B2B sans consentement est refusée avant toute écriture',
   );
 });
 
-test('la liste des demandes B2B se limite au stand d’un administrateur de stand', async (context) => {
+test('la liste des demandes B2B se limite au stand d’un occupant', async (context) => {
   const scopes = [];
   context.mock.method(b2bProposalRepository, 'findAllVisible', async (occupantId = null) => { scopes.push(occupantId); return []; });
 
-  await b2bProposalService.listAll({ role: 'admin', occupantId: 'occupant-b' });
+  await b2bProposalService.listAll({ role: 'occupant', occupantId: 'occupant-b' });
   await b2bProposalService.listAll({ role: 'super-admin' });
   assert.deepEqual(scopes, ['occupant-b', null]);
-  await assert.rejects(b2bProposalService.listAll({ role: 'admin', occupantId: null }), (error) => error.code === 'STAND_REQUIRED');
+  await assert.rejects(b2bProposalService.listAll({ role: 'occupant', occupantId: null }), (error) => error.code === 'STAND_REQUIRED');
 });
 
 test('corriger une demande B2B ne prévient pas la personne ; la supprimer reste limité au stand', async (context) => {
@@ -425,16 +430,16 @@ test('corriger une demande B2B ne prévient pas la personne ; la supprimer reste
   context.mock.method(b2bProposalRepository, 'destroy', async () => { destroyed = true; });
   const decided = context.mock.method(notificationService, 'b2bProposalDecided', () => {});
 
-  await b2bProposalService.update({ id: 'user-b', role: 'admin', occupantId: 'occupant-b' }, 'proposal-a', { email: 'Awa@Exemple.tg', phone: '' });
+  await b2bProposalService.update({ id: 'user-b', role: 'occupant', occupantId: 'occupant-b' }, 'proposal-a', { email: 'Awa@Exemple.tg', phone: '' });
   assert.deepEqual(saved, { email: 'awa@exemple.tg', phone: null });
   assert.equal(decided.mock.callCount(), 0);
 
   await assert.rejects(
-    b2bProposalService.remove({ role: 'admin', occupantId: 'occupant-a' }, 'proposal-a'),
+    b2bProposalService.remove({ role: 'occupant', occupantId: 'occupant-a' }, 'proposal-a'),
     (error) => error.code === 'B2B_PROPOSAL_NOT_FOUND',
   );
   assert.equal(destroyed, false);
-  await b2bProposalService.remove({ role: 'admin', occupantId: 'occupant-b' }, 'proposal-a');
+  await b2bProposalService.remove({ role: 'occupant', occupantId: 'occupant-b' }, 'proposal-a');
   assert.equal(destroyed, true);
 });
 
@@ -442,7 +447,7 @@ test('le backoffice B2B peut lire les propositions d’un besoin existant', asyn
   context.mock.method(b2bNeedRepository, 'findById', async () => ({ id: 'need-b', occupantId: 'occupant-b' }));
   context.mock.method(b2bProposalRepository, 'findAllByNeed', async (needId) => [{ id: 'proposal-a', b2bNeedId: needId }]);
 
-  const result = await b2bProposalService.list({ role: 'admin', occupantId: 'occupant-b' }, 'need-b');
+  const result = await b2bProposalService.list({ role: 'occupant', occupantId: 'occupant-b' }, 'need-b');
   assert.deepEqual(result, [{ id: 'proposal-a', b2bNeedId: 'need-b' }]);
 });
 
@@ -454,7 +459,7 @@ test('une invitation Studio utilise un lien personnel imprévisible et l’envoi
   context.mock.method(notificationService, 'studioInvited', (invitation) => { sent.push(invitation.email); });
 
   await studioInvitationService.create(
-    { id: 'campaign-user', role: 'admin', occupantId: 'occupant-a' },
+    { id: 'campaign-user', role: 'occupant', occupantId: 'occupant-a' },
     { guestName: 'Invité Test', email: 'Invite@Example.com', format: 'two_minutes' },
   );
 
@@ -487,9 +492,17 @@ test('l’invité du Studio réserve lui-même un créneau libre ; la page publi
   assert.equal('createdByUserId' in result, false);
   assert.deepEqual(booked, [false]);
 
-  // Changer de créneau reste possible ; décliner annule le créneau.
-  await studioInvitationService.book(invitation.token, `${day}T14:00:00Z`);
+  // Une fois réservé, l'invité ne change ni n'annule lui-même : seule l'équipe déplace le passage.
+  await assert.rejects(studioInvitationService.book(invitation.token, `${day}T14:00:00Z`), (error) => error.code === 'STUDIO_ALREADY_BOOKED');
+  await assert.rejects(studioInvitationService.decline(invitation.token), (error) => error.code === 'STUDIO_ALREADY_BOOKED');
+  context.mock.method(studioInvitationRepository, 'findById', async () => invitation);
+  await studioInvitationService.schedule({ id: 'u1', role: 'super-admin' }, invitation.id, { startsAt: `${day}T14:00:00Z` });
+  assert.equal(invitation.scheduledAt.toISOString(), `${day}T14:00:00.000Z`);
   assert.deepEqual(booked, [false, true]);
+
+  // Avant de choisir, l'invité peut décliner.
+  invitation.status = 'invited';
+  invitation.scheduledAt = null;
   context.mock.method(notificationService, 'studioDeclined', () => {});
   const declined = await studioInvitationService.decline(invitation.token);
   assert.equal(declined.status, 'declined');
@@ -512,7 +525,7 @@ test('la capsule du Studio se livre après le passage et part à l’invité', a
   assert.deepEqual(delivered, ['https://videos.tg/afi']);
 });
 
-test('le planning Studio d’un administrateur est filtré sur son stand', async (context) => {
+test('le planning Studio d’un occupant est filtré sur son stand', async (context) => {
   const originalSecret = env.auth.secret;
   env.auth.secret = 'hubinvest-studio-test-secret';
   context.after(() => { env.auth.secret = originalSecret; });
@@ -522,7 +535,7 @@ test('le planning Studio d’un administrateur est filtré sur son stand', async
     toJSON: () => ({
       id: where.id,
       occupantId: `occupant-${where.id}`,
-      role: 'admin',
+      role: 'occupant',
     }),
   }));
   const requestedStands = [];
@@ -580,14 +593,14 @@ test('la liste des joueurs conserve le validateur et son stand pour chaque scan'
   assert.deepEqual(result.passages[0].occupant, passage.occupant);
 });
 
-test('la liste des joueurs d’un administrateur est limitée aux scans de son stand', async (context) => {
+test('la liste des joueurs d’un occupant est limitée aux scans de son stand', async (context) => {
   let requestedStand;
   context.mock.method(challengePassportRepository, 'findAll', async (occupantId) => {
     requestedStand = occupantId;
     return [];
   });
 
-  await challengePassportService.list({ role: 'admin', occupantId: 'occupant-a' });
+  await challengePassportService.list({ role: 'occupant', occupantId: 'occupant-a' });
   assert.equal(requestedStand, 'occupant-a');
 });
 
@@ -915,10 +928,10 @@ const readSseEvents = async (response, count, timeout = 2000) => {
 
 test('chaque rôle n’écoute que les canaux de son stand ou de son rôle', () => {
   assert.deepEqual(realtimeService.channelsFor({ id: 'u1', role: 'super-admin', occupantId: null }), ['user:u1', 'super-admin']);
-  assert.deepEqual(realtimeService.channelsFor({ id: 'u2', role: 'admin', occupantId: 'stand-a' }), ['user:u2', 'admins', 'admin:stand-a']);
-  assert.deepEqual(realtimeService.channelsFor({ id: 'u3', role: 'occupant', occupantId: 'stand-a' }), ['user:u3', 'occupant:stand-a']);
+  assert.deepEqual(realtimeService.channelsFor({ id: 'u2', role: 'admin', occupantId: 'stand-a' }), ['user:u2', 'super-admin']);
+  assert.deepEqual(realtimeService.channelsFor({ id: 'u3', role: 'occupant', occupantId: 'stand-a' }), ['user:u3', 'admins', 'occupant:stand-a', 'admin:stand-a']);
   assert.deepEqual(realtimeService.channelsFor({ id: 'u4', role: 'animateur', occupantId: null }), ['user:u4', 'animateur']);
-  assert.deepEqual(realtimeService.channelsFor({ id: 'u5', role: 'admin', occupantId: null }), ['user:u5', 'admins']);
+  assert.deepEqual(realtimeService.channelsFor({ id: 'u5', role: 'admin', occupantId: null }), ['user:u5', 'super-admin']);
 });
 
 test('un jeton de flux ne sert qu’une fois et expire', (context) => {
@@ -1374,33 +1387,51 @@ test('le compte rendu en un clic ne se fait qu’une fois le rendez-vous commenc
   await assert.rejects(b2bMeetingService.report({ id: 'u1' }, 'prop-1', 'absent', { note: 'x' }), (error) => error.status === 404);
 });
 
-const investorSetup = (context, { request, followUps = 0 }) => {
+// Relances en mémoire : création, recherche, mise à jour, suppression.
+const investorSetup = (context, { request, followUps = [] }) => {
   const saved = [];
   const reminders = [];
+  const removed = [];
+  const store = followUps;
+  let sequence = 0;
   context.mock.method(investorRequestRepository, 'findById', async () => request);
   context.mock.method(investorRequestRepository, 'update', async (item, values) => { saved.push(values); return Object.assign(item, values); });
-  context.mock.method(investorRequestRepository, 'countFollowUps', async () => followUps);
+  context.mock.method(investorRequestRepository, 'countFollowUps', async () => store.length);
   context.mock.method(investorRequestRepository, 'findTeamMember', async (id) => (id === 'apizf-1' ? { id } : null));
-  context.mock.method(investorRequestRepository, 'createFollowUp', async (values) => values);
-  context.mock.method(notificationService, 'investorFollowUpChanged', (item) => { reminders.push(item.nextFollowUpAt); });
-  return { saved, reminders };
+  context.mock.method(investorRequestRepository, 'createFollowUp', async (values) => { const item = { id: `fu-${++sequence}`, doneAt: null, autoSource: null, ...values }; store.push(item); return item; });
+  context.mock.method(investorRequestRepository, 'findFollowUp', async (id) => store.find((item) => item.id === id) || null);
+  context.mock.method(investorRequestRepository, 'updateFollowUp', async (item, values) => Object.assign(item, values));
+  context.mock.method(investorRequestRepository, 'destroyFollowUp', async (item) => { store.splice(store.indexOf(item), 1); });
+  context.mock.method(investorRequestRepository, 'findPendingFollowUps', async (_id, { sources = null } = {}) => store
+    .filter((item) => !item.doneAt && (!sources || sources.includes(item.autoSource)))
+    .sort((a, b) => new Date(a.dueAt) - new Date(b.dueAt)));
+  context.mock.method(notificationService, 'investorFollowUpChanged', (item) => { reminders.push(item); });
+  context.mock.method(notificationService, 'investorFollowUpRemoved', (item) => { removed.push(item); });
+  return { saved, reminders, removed, store };
 };
 
-test('Guichets : la classe A fixe une relance sous 48 h, B sous 7 jours, C aucune', async (context) => {
+test('Guichets : la classe A crée une relance sous 48 h, B la remplace sous 7 jours, C la retire', async (context) => {
   const request = { id: 'ir-1', classification: null, status: 'new' };
-  investorSetup(context, { request });
+  const { store, reminders } = investorSetup(context, { request });
   const before = Date.now();
 
   await investorRequestService.update('ir-1', { classification: 'A' });
-  const dueA = request.nextFollowUpAt.getTime() - before;
+  assert.equal(store.length, 1);
+  assert.equal(store[0].autoSource, 'A');
+  const dueA = new Date(store[0].dueAt).getTime() - before;
   assert.ok(dueA >= 48 * 3600000 && dueA < 48 * 3600000 + 5000);
   assert.equal(request.status, 'in_progress');
+  assert.equal(request.nextFollowUpAt, store[0].dueAt);
+  assert.equal(reminders.length, 1);
 
   await investorRequestService.update('ir-1', { classification: 'B' });
-  const dueB = request.nextFollowUpAt.getTime() - before;
+  assert.equal(store.length, 1);
+  assert.equal(store[0].autoSource, 'B');
+  const dueB = new Date(store[0].dueAt).getTime() - before;
   assert.ok(dueB >= 7 * 24 * 3600000 && dueB < 7 * 24 * 3600000 + 5000);
 
   await investorRequestService.update('ir-1', { classification: 'C' });
+  assert.equal(store.length, 0);
   assert.equal(request.nextFollowUpAt, null);
   assert.equal(request.status, 'closed');
   assert.equal(investorRequestService.progressStatus({ nextFollowUpAt: null, classification: null }, false), 'new');
@@ -1422,52 +1453,85 @@ test('Guichets : le responsable est un membre de l’équipe API-ZF ; le diagnos
   assert.equal(request.diagnosedAt, firstDiagnosis);
 });
 
-test('Guichets : une relance d’un contact A exige l’étape suivante et remplace la date de relance', async (context) => {
-  const request = { id: 'ir-3', classification: 'A', status: 'new', nextAction: null, nextFollowUpAt: new Date() };
-  const { reminders } = investorSetup(context, { request, followUps: 1 });
-  await assert.rejects(investorRequestService.addFollowUp({ id: 'u1' }, 'ir-3', { channel: 'call' }), (error) => error.code === 'INVESTOR_NEXT_STEP_REQUIRED');
+test('Guichets : une relance s’ajoute (date et motif), se marque faite avec sa prochaine étape, et reste à faire sinon', async (context) => {
+  const request = { id: 'ir-3', classification: null, status: 'new' };
+  const { store, reminders, removed } = investorSetup(context, { request });
+  await assert.rejects(investorRequestService.addFollowUp({ id: 'u1' }, 'ir-3', { dueAt: new Date(Date.now() - 60000), reason: 'Rappeler' }), (error) => error.code === 'INVESTOR_FOLLOW_UP_IN_PAST');
 
-  const next = new Date(Date.now() + 3 * 24 * 3600000);
-  const followUp = await investorRequestService.addFollowUp({ id: 'u1' }, 'ir-3', { channel: 'call', nextStep: 'Envoyer le dossier d’agrément', nextFollowUpAt: next });
+  const due = new Date(Date.now() + 3 * 24 * 3600000);
+  const followUp = await investorRequestService.addFollowUp({ id: 'u1' }, 'ir-3', { dueAt: due, reason: 'Envoyer l’Investor Pack' });
   assert.equal(followUp.createdByUserId, 'u1');
-  assert.equal(request.nextAction, 'Envoyer le dossier d’agrément');
-  assert.equal(request.nextFollowUpAt, next);
   assert.equal(request.status, 'in_progress');
+  assert.equal(request.nextFollowUpAt, due);
   assert.equal(reminders.length, 1);
 
-  // Relance sans prochaine date : le contact est terminé.
-  await investorRequestService.addFollowUp({ id: 'u1' }, 'ir-3', { channel: 'message', nextStep: 'Dossier envoyé' });
-  assert.equal(request.status, 'closed');
+  // « Relancer » : la relance est faite et la suivante est créée.
+  const later = new Date(Date.now() + 5 * 24 * 3600000);
+  await investorRequestService.completeFollowUp({ id: 'u1' }, 'ir-3', followUp.id, { outcome: 'again', next: { dueAt: later, reason: 'Récupérer le business plan' } });
+  assert.ok(followUp.doneAt instanceof Date);
+  assert.equal(followUp.outcome, 'again');
+  assert.equal(removed.length, 1);
+  assert.equal(store.length, 2);
+  assert.equal(request.nextFollowUpAt, later);
+  await assert.rejects(investorRequestService.completeFollowUp({ id: 'u1' }, 'ir-3', followUp.id, { outcome: 'closed' }), (error) => error.code === 'INVESTOR_FOLLOW_UP_DONE');
 
-  // Une relance déjà faite garde sa date même si la classe change.
-  await investorRequestService.update('ir-3', { classification: 'B' });
+  // « Autre » : un texte ; plus rien à faire, le contact est terminé.
+  await investorRequestService.completeFollowUp({ id: 'u1' }, 'ir-3', store[1].id, { outcome: 'other', note: 'Attend le retour de son associé' });
+  assert.equal(store[1].outcomeNote, 'Attend le retour de son associé');
   assert.equal(request.nextFollowUpAt, null);
   assert.equal(request.status, 'closed');
+
+  // Une relance faite reste si la classe change ; la classe B ajoute sa relance automatique.
+  await investorRequestService.update('ir-3', { classification: 'B' });
+  assert.equal(store.length, 3);
+  assert.equal(request.status, 'in_progress');
+
+  // Supprimer retire la relance et son alerte.
+  await investorRequestService.removeFollowUp('ir-3', store[2].id);
+  assert.equal(store.length, 2);
+  assert.equal(request.status, 'closed');
+  assert.ok(investorRequestValidation.followUpDone.validate({ outcome: 'other' }).error);
+  assert.ok(investorRequestValidation.followUpDone.validate({ outcome: 'again' }).error);
 });
 
-test('Guichets : la fiche « Mon entreprise, mes difficultés » passe en Accompagnement, envoie l’engagement écrit et se termine à la réponse', async (context) => {
+test('Guichets : la fiche « Mon entreprise, mes difficultés » passe en Accompagnement ; la date de réponse promise crée une relance, faite à la réponse', async (context) => {
   const request = { id: 'ir-4', classification: null, status: 'new', email: 'dg@usine.tg', commitmentNote: null, commitmentDueAt: null, commitmentService: null, resolvedAt: null, language: 'fr' };
-  investorSetup(context, { request });
-  const commitments = [];
-  context.mock.method(notificationService, 'investorCommitmentChanged', (item, options = {}) => { commitments.push(options); });
+  const { store, reminders } = investorSetup(context, { request });
   const difficulty = { company: 'Usine du Golfe', regime: 'free_zone', nature: 'Dédouanement', description: 'Retards à l’import des intrants.' };
 
   await investorRequestService.saveDifficulty('ir-4', { difficulty });
   assert.equal(request.classification, 'support');
   assert.equal(request.status, 'new');
+  assert.equal(store.length, 0);
 
   await assert.rejects(investorRequestService.saveDifficulty('ir-4', { difficulty, commitmentNote: 'Rendez-vous avec la douane' }), (error) => error.code === 'COMMITMENT_INCOMPLETE');
   const due = new Date(Date.now() + 10 * 24 * 3600000);
   await investorRequestService.saveDifficulty('ir-4', { difficulty, commitmentService: 'aftercare', commitmentDueAt: due, commitmentNote: 'Rendez-vous avec la douane' });
   assert.equal(request.status, 'in_progress');
-  assert.deepEqual(commitments.at(-1), { notifyCompany: true, serviceTitle: 'Accompagnement après implantation' });
+  assert.equal(store.length, 1);
+  assert.equal(store[0].autoSource, 'commitment');
+  assert.equal(store[0].reason, 'Réponse promise : Rendez-vous avec la douane');
+  assert.equal(new Date(store[0].dueAt).getUTCHours(), 9);
+  assert.equal(reminders.length, 1);
 
-  // Même engagement réenregistré : pas de nouvel e-mail.
+  // Le même engagement réenregistré ne recrée pas sa relance ; une nouvelle date la remplace.
   await investorRequestService.saveDifficulty('ir-4', { difficulty, commitmentService: 'aftercare', commitmentDueAt: due, commitmentNote: 'Rendez-vous avec la douane' });
-  assert.equal(commitments.at(-1).notifyCompany, false);
+  assert.equal(store.length, 1);
+  const later = new Date(due.getTime() + 2 * 24 * 3600000);
+  await investorRequestService.saveDifficulty('ir-4', { difficulty, commitmentService: 'aftercare', commitmentDueAt: later, commitmentNote: 'Rendez-vous avec la douane' });
+  assert.equal(store.length, 1);
+  assert.equal(new Date(store[0].dueAt).getUTCDate(), later.getUTCDate());
 
+  // Réponse donnée : la relance est marquée faite et le contact est terminé.
   await investorRequestService.resolve('ir-4', { resolved: true });
+  assert.ok(store[0].doneAt);
+  assert.equal(store[0].outcome, 'closed');
   assert.equal(request.status, 'closed');
+
+  // Engagement verrouillé tant qu'on ne le rouvre pas ; la fiche des difficultés reste modifiable.
+  await assert.rejects(investorRequestService.saveDifficulty('ir-4', { difficulty, commitmentService: 'aftercare', commitmentDueAt: later, commitmentNote: 'Autre engagement' }), (error) => error.code === 'COMMITMENT_LOCKED');
+  await investorRequestService.saveDifficulty('ir-4', { difficulty: { ...difficulty, nature: 'Douane' }, commitmentService: 'aftercare', commitmentDueAt: later, commitmentNote: 'Rendez-vous avec la douane' });
+  assert.equal(request.difficulty.nature, 'Douane');
 });
 
 test('Guichets : un rendez-vous se réserve sur un créneau proposé, une seule fois par guichet', async (context) => {
@@ -1615,4 +1679,28 @@ test('l’accueil servi aux moteurs contient son texte, l’événement FIL 2026
   assert.equal(graph.find((item) => item.hasOfferCatalog).hasOfferCatalog.itemListElement.length, 6);
   assert.equal((await seoService.pageMeta('/ecran')).robots, 'noindex, nofollow');
   assert.equal((await seoService.pageMeta('/investor-desk')).canonical, '/guichets/rappel');
+});
+
+test('la fiche de diagnostic se télécharge en PDF une fois le diagnostic enregistré', async (context) => {
+  const request = { id: 'ir-6', fullName: 'Ama Ségbé', email: 'ama@example.tg', guichet: 'project', source: 'desk', classification: 'B', status: 'new', diagnosedAt: null, qualification: { sector: 'Industrie', jobs: 12, agreement: true, origin: 'Bénin 🇧🇯' }, createdAt: new Date() };
+  investorSetup(context, { request });
+  await assert.rejects(investorRequestService.diagnosisPdf('ir-6'), (error) => error.code === 'DIAGNOSIS_MISSING');
+  request.diagnosedAt = new Date();
+  const { buffer, fileName } = await investorRequestService.diagnosisPdf('ir-6');
+  assert.equal(buffer.subarray(0, 5).toString(), '%PDF-');
+  assert.match(fileName, /^fiche-diagnostic-DG-\d{2}-[A-Z0-9-]+\.pdf$/);
+});
+
+const auditLogService = require('../src/modules/audit-log/audit-log.service');
+
+test('le journal des actions décrit chaque modification de l’espace équipe sans garder le contenu saisi', () => {
+  const id = '3f2a9c1e-7b4d-4e2a-9f10-aa12bb34cc56';
+  assert.deepEqual(auditLogService.describe('PATCH', `/api/investor-requests/${id}/follow-ups/${id}`), { section: 'Guichets', action: 'Modification · relance' });
+  assert.deepEqual(auditLogService.describe('POST', `/api/studio-invitations/${id}/schedule`), { section: 'Studio', action: 'Créneau fixé' });
+  assert.deepEqual(auditLogService.describe('DELETE', `/api/occupants/${id}`), { section: 'Stands', action: 'Suppression' });
+  assert.deepEqual(auditLogService.describe('POST', '/api/challenge-passages'), { section: 'Défis', action: 'Passage validé' });
+  assert.equal(auditLogService.describe('POST', '/api/push-subscriptions'), null);
+  assert.equal(auditLogService.describe('GET', '/api/occupants'), null);
+  assert.equal(auditLogService.targetOf({ firstName: 'Afi', lastName: 'Koudjo', passwordHash: 'x' }), 'Afi Koudjo');
+  assert.equal(auditLogService.targetOf([{ name: 'liste' }]), null);
 });

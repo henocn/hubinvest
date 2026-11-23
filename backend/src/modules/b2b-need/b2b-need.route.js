@@ -7,7 +7,7 @@ const validation = require('./b2b-need.validation');
 const controller = require('./b2b-need.controller');
 
 const router = express.Router();
-const b2bAdminOnly = requireRoles(roles.SUPER_ADMIN, roles.ADMIN);
+const b2bAdminOnly = requireRoles(roles.SUPER_ADMIN, roles.ADMIN, roles.OCCUPANT);
 
 router.get('/public', asyncHandler(controller.listPublic));
 router.get('/public/:id', validate(validation.params, 'params'), asyncHandler(controller.getPublic));

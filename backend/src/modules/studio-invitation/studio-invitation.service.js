@@ -2,23 +2,24 @@ const crypto = require('node:crypto');
 const { UniqueConstraintError } = require('sequelize');
 const AppError = require('../../shared/app-error');
 const roles = require('../../shared/roles');
+const { isGlobal } = require('../../shared/access');
 const { translatePublicContent } = require('../../shared/translation.service');
 const studioInvitationRepository = require('./studio-invitation.repository');
 const notificationService = require('../notification/notification.service');
 const { events: realtime } = require('../realtime/realtime.service');
 const settingsService = require('../settings/settings.service');
-const { MINUTE, slotGrid } = require('../../shared/slot-grid');
+const { slotGrid } = require('../../shared/slot-grid');
 
 // Studio (document, module M5) : invitation personnelle, créneau réservé par l'invité, rappels automatiques,
 // livraison de la capsule. Heures de Lomé = UTC.
-// L'invité peut changer de créneau jusqu'à une heure avant.
-const CHANGE_LIMIT = 60 * MINUTE;
+// Une fois son créneau choisi, l'invité ne le change plus lui-même : l'équipe le déplace ou l'annule.
 
 const plain = (value) => (value?.toJSON ? value.toJSON() : value);
 
+// Équipe API-ZF : tous les stands ; occupant : le sien.
 const standFor = (user) => {
-  if (user.role === roles.SUPER_ADMIN) return null;
-  if (!user.occupantId) throw new AppError(403, 'STAND_REQUIRED', 'Cet administrateur n’est rattaché à aucun stand.');
+  if (isGlobal(user)) return null;
+  if (!user.occupantId) throw new AppError(403, 'STAND_REQUIRED', 'Ce compte n’est rattaché à aucun stand.');
   return user.occupantId;
 };
 
@@ -64,27 +65,35 @@ const publicSlots = async (token) => {
   return { minutes: settingsService.studioSchedule().minutes, slots: await freeSlots(invitation.id) };
 };
 
+// L'invité choisit son créneau une seule fois (ou décline avant de choisir) ; ensuite, seule l'équipe le change ou
+// l'annule, depuis le back office.
 const assertOpenForGuest = (invitation) => {
-  if (!['invited', 'booked'].includes(invitation.status)) throw new AppError(409, 'STUDIO_INVITATION_CLOSED', 'Cette invitation n’est plus ouverte.');
-  if (invitation.status === 'booked' && new Date(invitation.scheduledAt).getTime() - Date.now() < CHANGE_LIMIT) {
-    throw new AppError(409, 'STUDIO_TOO_LATE', 'Votre passage est dans moins d’une heure : contactez l’équipe du Studio.');
-  }
+  if (invitation.status === 'booked') throw new AppError(409, 'STUDIO_ALREADY_BOOKED', 'Votre créneau est réservé : pour le changer ou l’annuler, contactez l’équipe du Studio.');
+  if (invitation.status !== 'invited') throw new AppError(409, 'STUDIO_INVITATION_CLOSED', 'Cette invitation n’est plus ouverte.');
 };
 
-// L'invité réserve (ou change) son créneau parmi ceux encore libres ; la base refuse une double réservation.
-const book = async (token, startsAt, language) => {
-  const invitation = await getByToken(token);
-  assertOpenForGuest(invitation);
+const assertSlot = (startsAt) => {
   const start = new Date(startsAt).getTime();
   if (!allSlots().includes(start) || start <= Date.now()) throw new AppError(422, 'STUDIO_SLOT_INVALID', 'Ce créneau n’est pas proposé.');
-  const previousStatus = invitation.status;
+  return new Date(start);
+};
+
+// Enregistre le créneau ; la base refuse une double réservation.
+const saveSlot = async (invitation, values) => {
   try {
-    await studioInvitationRepository.update(invitation, { scheduledAt: new Date(start), status: 'booked', bookedAt: new Date(), respondedAt: new Date() });
+    await studioInvitationRepository.update(invitation, values);
   } catch (error) {
     if (error instanceof UniqueConstraintError) throw new AppError(409, 'STUDIO_SLOT_TAKEN', 'Ce créneau vient d’être réservé. Choisissez-en un autre.');
     throw error;
   }
-  notificationService.studioBooked(invitation, previousStatus === 'booked');
+};
+
+// L'invité réserve son créneau parmi ceux encore libres.
+const book = async (token, startsAt, language) => {
+  const invitation = await getByToken(token);
+  assertOpenForGuest(invitation);
+  await saveSlot(invitation, { scheduledAt: assertSlot(startsAt), status: 'booked', bookedAt: new Date(), respondedAt: new Date() });
+  notificationService.studioBooked(invitation, false);
   realtime.studioChanged(invitation.occupantId);
   return translatePublicContent(publicPayload(invitation, language), ['subject'], language);
 };
@@ -146,9 +155,10 @@ const create = async (user, values) => {
 // Corrige l'invité (coordonnées, format, sujet) ; le créneau reste choisi par l'invité.
 const update = async (user, id, values) => {
   const invitation = await get(user, id);
+  if (['declined', 'cancelled'].includes(invitation.status)) throw new AppError(409, 'STUDIO_INVITATION_CLOSED', 'Invitation déclinée ou annulée : elle ne se modifie plus.');
   const previousOccupantId = invitation.occupantId;
   const next = { ...values };
-  if (user.role === roles.ADMIN) delete next.occupantId;
+  if (user.role === roles.OCCUPANT) delete next.occupantId;
   if ('occupantId' in next) await assertOccupant(next.occupantId);
   if (next.format && next.format !== invitation.format) assertFormat(next.format);
   if (next.email) next.email = next.email.toLowerCase();
@@ -162,6 +172,24 @@ const resend = async (user, id) => {
   const invitation = await get(user, id);
   if (!['invited', 'booked'].includes(invitation.status)) throw new AppError(409, 'STUDIO_INVITATION_CLOSED', 'Cette invitation n’est plus ouverte.');
   notificationService.studioInvited(invitation);
+  return invitation;
+};
+
+// Créneaux libres proposés à l'équipe pour fixer ou déplacer le passage d'un invité.
+const teamSlots = async (user, id) => {
+  const invitation = await get(user, id);
+  return { minutes: settingsService.studioSchedule().minutes, slots: await freeSlots(invitation.id) };
+};
+
+// L'équipe fixe le créneau (invité passé au stand, Face-à-face du jour) ou le déplace à la demande de l'invité ; celui-ci
+// reçoit la confirmation et ses rappels.
+const schedule = async (user, id, { startsAt }) => {
+  const invitation = await get(user, id);
+  if (!['invited', 'booked'].includes(invitation.status)) throw new AppError(409, 'STUDIO_INVITATION_CLOSED', 'Cette invitation n’est plus ouverte.');
+  const moved = invitation.status === 'booked';
+  await saveSlot(invitation, { scheduledAt: assertSlot(startsAt), status: 'booked', bookedAt: invitation.bookedAt || new Date() });
+  notificationService.studioBooked(invitation, moved, { byTeam: true });
+  realtime.studioChanged(invitation.occupantId);
   return invitation;
 };
 
@@ -195,4 +223,4 @@ const remove = async (user, id) => {
   realtime.studioChanged(invitation.occupantId);
 };
 
-module.exports = { getPublic, publicSlots, book, decline, list, formats, create, update, resend, cancel, deliver, remove, allSlots, freeSlots };
+module.exports = { getPublic, publicSlots, book, decline, list, formats, create, update, resend, teamSlots, schedule, cancel, deliver, remove, allSlots, freeSlots };

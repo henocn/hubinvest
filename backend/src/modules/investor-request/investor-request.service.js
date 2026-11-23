@@ -6,15 +6,16 @@ const { events: realtime } = require('../realtime/realtime.service');
 const settingsService = require('../settings/settings.service');
 const { slotGrid } = require('../../shared/slot-grid');
 const { guichetLocation } = require('../../shared/guichets');
-const { SERVICES, SERVICE_KEYS, serviceTitle } = require('../../shared/services');
+const { SERVICES, SERVICE_KEYS } = require('../../shared/services');
+const { renderDiagnosisPdf, reference } = require('./diagnosis-pdf');
 
 // Les guichets et le registre unique (document v4, M3). Les données restent réservées à l'API-ZF (super administrateurs).
 const plain = (value) => (value?.toJSON ? value.toJSON() : value);
 
 // Statut calculé, jamais saisi :
 // - Accompagnement : « À traiter » sans engagement, « À suivre » tant que l'engagement court, « Terminé » une fois la réponse donnée ;
-// - autres contacts : « À traiter » tant que rien n'est fait, « À relancer » dès qu'une prochaine relance est prévue,
-//   « Terminé » quand le contact est classé ou relancé sans nouvelle relance prévue.
+// - autres contacts : « À traiter » tant que rien n'est fait, « À relancer » tant qu'une relance reste à faire,
+//   « Terminé » quand le contact est classé ou relancé sans relance restant à faire.
 const progressStatus = ({ nextFollowUpAt, classification, commitmentDueAt, resolvedAt }, hasFollowUps) => {
   if (classification === 'support') {
     if (resolvedAt) return 'closed';
@@ -24,12 +25,65 @@ const progressStatus = ({ nextFollowUpAt, classification, commitmentDueAt, resol
   return classification || hasFollowUps ? 'closed' : 'new';
 };
 
-// Recalcule le statut après une modification.
+// Recalcule le statut et la prochaine relance (la plus proche des relances à faire, reprise dans la liste et le tableau
+// de bord) après une modification.
 const refreshStatus = async (investorRequest) => {
-  const hasFollowUps = (await investorRequestRepository.countFollowUps(investorRequest.id)) > 0;
-  const status = progressStatus(investorRequest, hasFollowUps);
-  if (status !== investorRequest.status) await investorRequestRepository.update(investorRequest, { status });
+  const pending = await investorRequestRepository.findPendingFollowUps(investorRequest.id);
+  const hasFollowUps = pending.length > 0 || (await investorRequestRepository.countFollowUps(investorRequest.id)) > 0;
+  const nextFollowUpAt = pending[0]?.dueAt || null;
+  const { classification, commitmentDueAt, resolvedAt } = investorRequest;
+  const status = progressStatus({ nextFollowUpAt, classification, commitmentDueAt, resolvedAt }, hasFollowUps);
+  const changes = {};
+  if (status !== investorRequest.status) changes.status = status;
+  if (new Date(nextFollowUpAt || 0).getTime() !== new Date(investorRequest.nextFollowUpAt || 0).getTime()) changes.nextFollowUpAt = nextFollowUpAt;
+  if (Object.keys(changes).length) await investorRequestRepository.update(investorRequest, changes);
   return investorRequest;
+};
+
+// Relances : à l'heure prévue, le responsable du contact (ou, sans responsable, l'équipe API-ZF) est notifié.
+const scheduleFollowUps = (investorRequest, followUps) => followUps.forEach((item) => notificationService.investorFollowUpChanged(item, investorRequest));
+const CLASS_SOURCES = ['A', 'B'];
+const COMMITMENT_SOURCE = 'commitment';
+
+// Retire les relances automatiques encore à faire de ces origines (une relance faite, ou ajoutée à la main, reste).
+const removePendingAuto = async (investorRequest, sources) => {
+  const previous = await investorRequestRepository.findPendingFollowUps(investorRequest.id, { sources });
+  await Promise.all(previous.map(async (item) => {
+    await investorRequestRepository.destroyFollowUp(item);
+    notificationService.investorFollowUpRemoved(item);
+  }));
+};
+
+// Classe A ou B : sa relance automatique (48 h ou 7 jours, réglables). Un changement de classe remplace la relance
+// automatique de l'ancienne classe ; C et Accompagnement n'en ont pas.
+const applyClassFollowUp = async (investorRequest, classification, userId = null) => {
+  await removePendingAuto(investorRequest, CLASS_SOURCES);
+  const delay = settingsService.investorFollowUpDelay(classification);
+  if (!delay) return null;
+  return investorRequestRepository.createFollowUp({
+    investorRequestId: investorRequest.id,
+    dueAt: new Date(Date.now() + delay),
+    reason: `Relance du contact classé ${classification}`,
+    autoSource: classification,
+    createdByUserId: userId,
+  });
+};
+
+// Engagement de suivi : une relance le jour de la réponse promise, à 9 h (heure de Lomé = UTC). Un engagement modifié
+// la remplace ; une réponse donnée, ou un engagement retiré, la retire.
+const applyCommitmentFollowUp = async (investorRequest) => {
+  await removePendingAuto(investorRequest, [COMMITMENT_SOURCE]);
+  const { commitmentDueAt, commitmentNote, resolvedAt } = investorRequest;
+  if (!commitmentDueAt || resolvedAt) return null;
+  const dueAt = new Date(commitmentDueAt);
+  dueAt.setUTCHours(9, 0, 0, 0);
+  if (dueAt.getTime() <= Date.now()) return null;
+  return investorRequestRepository.createFollowUp({
+    investorRequestId: investorRequest.id,
+    dueAt,
+    reason: `Réponse promise : ${commitmentNote}`.slice(0, 255),
+    autoSource: COMMITMENT_SOURCE,
+  });
 };
 
 const list = async (query) => {
@@ -164,8 +218,8 @@ const assertService = (key) => {
   if (key && !SERVICE_KEYS.includes(key)) throw new AppError(422, 'SERVICE_NOT_FOUND', 'Service introuvable.');
 };
 
-// Fiche : coordonnées, guichet, classe et responsable ; le statut suit. Une première classe A ou B fixe la date de relance
-// (48 h ou 7 jours, réglables) ; C et Accompagnement n'ont pas de relance individuelle. Une relance déjà faite garde sa date.
+// Fiche : coordonnées, guichet, classe et responsable ; le statut suit. La classe A ou B crée sa relance automatique,
+// remplacée si la classe change. Un nouveau responsable reçoit les alertes des relances encore à faire.
 const update = async (id, values) => {
   const investorRequest = await getRequest(id);
   const next = { ...values };
@@ -173,26 +227,26 @@ const update = async (id, values) => {
   if (next.phone === '') next.phone = null;
   if (next.email) next.email = next.email.toLowerCase();
   if ('contactUserId' in next) await assertTeamMember(next.contactUserId);
-  if ('classification' in next && next.classification !== investorRequest.classification) {
-    const delay = settingsService.investorFollowUpDelay(next.classification);
-    if (!delay) next.nextFollowUpAt = null;
-    else if (!(await investorRequestRepository.countFollowUps(investorRequest.id))) next.nextFollowUpAt = new Date(Date.now() + delay);
-  }
+  const classChanged = 'classification' in next && next.classification !== investorRequest.classification;
   await investorRequestRepository.update(investorRequest, next);
+  const created = classChanged ? await applyClassFollowUp(investorRequest, next.classification) : null;
   await refreshStatus(investorRequest);
   const updated = await getRequest(id);
-  notificationService.investorFollowUpChanged(updated);
-  if ('contactUserId' in next && updated.classification === 'support') notificationService.investorCommitmentChanged(updated);
+  if ('contactUserId' in next) scheduleFollowUps(updated, await investorRequestRepository.findPendingFollowUps(updated.id));
+  else if (created) scheduleFollowUps(updated, [created]);
   realtime.investorRequestsChanged();
   return updated;
 };
 
 // Fiche de diagnostic (15 minutes) : les neuf informations, le service vers lequel la personne est orientée et l'étape
 // suivante, obligatoire (« Personne ne repart sans étape suivante »). La première saisie compte comme diagnostic réalisé.
-const saveDiagnosis = async (id, { qualification, recommendedService = null, nextAction }) => {
+// La structure et le projet, que la réservation en ligne ne demande pas, se renseignent pendant l'entretien.
+const saveDiagnosis = async (id, { organization, projectSummary, qualification, recommendedService = null, nextAction }) => {
   const investorRequest = await getRequest(id);
   assertService(recommendedService);
   await investorRequestRepository.update(investorRequest, {
+    ...(organization !== undefined && { organization: organization || null }),
+    ...(projectSummary !== undefined && { projectSummary: projectSummary || null }),
     qualification: cleanQualification(qualification),
     recommendedService,
     nextAction,
@@ -202,77 +256,113 @@ const saveDiagnosis = async (id, { qualification, recommendedService = null, nex
   return getRequest(id);
 };
 
+// Fiche de diagnostic imprimable (PDF), disponible une fois le diagnostic enregistré.
+const diagnosisPdf = async (id) => {
+  const investorRequest = await investorRequestRepository.findById(id);
+  if (!investorRequest) throw new AppError(404, 'INVESTOR_REQUEST_NOT_FOUND', 'Contact introuvable.');
+  if (!investorRequest.diagnosedAt) throw new AppError(409, 'DIAGNOSIS_MISSING', 'Enregistrez d’abord le diagnostic.');
+  const request = plain(investorRequest);
+  const buffer = await renderDiagnosisPdf({ request, fields: settingsService.investorQualificationFields() });
+  return { buffer, fileName: `fiche-diagnostic-${reference(request)}.pdf` };
+};
+
 // Fiche « Mon entreprise, mes difficultés » et engagement de suivi écrit (service concerné, réponse promise, délai).
-// Le contact passe en Accompagnement ; l'engagement est envoyé à l'entreprise s'il est nouveau ou modifié.
+// Le contact passe en Accompagnement ; l'engagement est noté sur la fiche, le responsable est alerté à l'échéance.
 const saveDifficulty = async (id, { difficulty, commitmentService = null, commitmentDueAt = null, commitmentNote = null }) => {
   const investorRequest = await getRequest(id);
   assertService(commitmentService);
   if (commitmentDueAt && new Date(commitmentDueAt).getTime() <= Date.now()) throw new AppError(422, 'COMMITMENT_DUE_IN_PAST', 'Choisissez un délai à venir.');
   if (Boolean(commitmentDueAt) !== Boolean(commitmentNote)) throw new AppError(422, 'COMMITMENT_INCOMPLETE', 'L’engagement demande un texte et un délai de réponse.');
-  const commitmentChanged = Boolean(commitmentNote) && (commitmentNote !== investorRequest.commitmentNote
-    || new Date(commitmentDueAt).getTime() !== new Date(investorRequest.commitmentDueAt || 0).getTime()
-    || commitmentService !== investorRequest.commitmentService);
+  const commitmentChanged = (commitmentNote || null) !== (investorRequest.commitmentNote || null)
+    || new Date(commitmentDueAt || 0).getTime() !== new Date(investorRequest.commitmentDueAt || 0).getTime()
+    || (commitmentService || null) !== (investorRequest.commitmentService || null);
+  if (commitmentChanged && investorRequest.resolvedAt) throw new AppError(409, 'COMMITMENT_LOCKED', 'Réponse donnée : rouvrez l’engagement pour le modifier.');
+  const classChanged = investorRequest.classification !== 'support';
   await investorRequestRepository.update(investorRequest, {
     difficulty,
     classification: 'support',
-    nextFollowUpAt: null,
     commitmentService,
     commitmentDueAt,
     commitmentNote,
-    ...(commitmentChanged && { resolvedAt: null }),
   });
+  if (classChanged) await applyClassFollowUp(investorRequest, 'support');
+  const created = commitmentChanged ? await applyCommitmentFollowUp(investorRequest) : null;
   await refreshStatus(investorRequest);
   const updated = await getRequest(id);
-  notificationService.investorFollowUpChanged(updated);
-  notificationService.investorCommitmentChanged(updated, { notifyCompany: commitmentChanged, serviceTitle: serviceTitle(commitmentService, updated.language) });
+  if (created) scheduleFollowUps(updated, [created]);
   realtime.investorRequestsChanged();
   return updated;
 };
 
-// Réponse apportée à l'entreprise : l'engagement est tenu, le contact est terminé et l'alerte retirée.
+// Réponse apportée à l'entreprise : l'engagement est tenu, sa relance est marquée faite et le contact est terminé.
+// Rouvrir l'engagement recrée sa relance si la date promise est encore à venir.
 const resolve = async (id, { resolved }) => {
   const investorRequest = await getRequest(id);
   if (investorRequest.classification !== 'support' || !investorRequest.commitmentDueAt) {
     throw new AppError(409, 'COMMITMENT_MISSING', 'Aucun engagement de suivi n’est en cours.');
   }
   await investorRequestRepository.update(investorRequest, { resolvedAt: resolved ? new Date() : null });
+  let created = null;
+  if (resolved) {
+    const pending = await investorRequestRepository.findPendingFollowUps(investorRequest.id, { sources: [COMMITMENT_SOURCE] });
+    await Promise.all(pending.map(async (item) => {
+      await investorRequestRepository.updateFollowUp(item, { doneAt: new Date(), outcome: 'closed', outcomeNote: 'Réponse donnée' });
+      notificationService.investorFollowUpRemoved(item);
+    }));
+  } else {
+    created = await applyCommitmentFollowUp(investorRequest);
+  }
   await refreshStatus(investorRequest);
   const updated = await getRequest(id);
-  notificationService.investorCommitmentChanged(updated);
+  if (created) scheduleFollowUps(updated, [created]);
   realtime.investorRequestsChanged();
   return updated;
 };
 
-// Relance faite (appel ou message). Pour un contact A ou B, l'étape suivante est obligatoire.
-// La prochaine relance prend la date donnée, ou aucune.
-const addFollowUp = async (user, id, values) => {
+// Ajouter une relance : quand (date et heure à venir) et pourquoi. Elle reste à faire jusqu'à ce qu'on la marque faite.
+const assertFollowUpFuture = (dueAt) => {
+  if (new Date(dueAt).getTime() <= Date.now()) throw new AppError(422, 'INVESTOR_FOLLOW_UP_IN_PAST', 'Choisissez une date et une heure à venir.');
+};
+
+const addFollowUp = async (user, id, { dueAt, reason }) => {
   const investorRequest = await getRequest(id);
-  if (['A', 'B'].includes(investorRequest.classification) && !values.nextStep) {
-    throw new AppError(422, 'INVESTOR_NEXT_STEP_REQUIRED', 'Contact A ou B : indiquez l’étape suivante.');
-  }
-  const followUp = await investorRequestRepository.createFollowUp({
-    investorRequestId: investorRequest.id,
-    doneAt: values.doneAt || new Date(),
-    channel: values.channel,
-    note: values.note || null,
-    nextStep: values.nextStep || null,
-    createdByUserId: user.id,
-  });
-  await investorRequestRepository.update(investorRequest, {
-    nextAction: values.nextStep || investorRequest.nextAction,
-    nextFollowUpAt: values.nextFollowUpAt || null,
-  });
+  assertFollowUpFuture(dueAt);
+  const followUp = await investorRequestRepository.createFollowUp({ investorRequestId: investorRequest.id, dueAt, reason, createdByUserId: user.id });
   await refreshStatus(investorRequest);
-  notificationService.investorFollowUpChanged(await getRequest(id));
+  scheduleFollowUps(investorRequest, [followUp]);
   realtime.investorRequestsChanged();
   return followUp;
 };
 
-const removeFollowUp = async (id, followUpId) => {
+const getFollowUp = async (id, followUpId) => {
   const investorRequest = await getRequest(id);
   const followUp = await investorRequestRepository.findFollowUp(followUpId, investorRequest.id);
   if (!followUp) throw new AppError(404, 'INVESTOR_FOLLOW_UP_NOT_FOUND', 'Relance introuvable.');
+  return { investorRequest, followUp };
+};
+
+// Marquer une relance faite, avec la prochaine étape : terminée, relancer (la relance suivante est créée) ou autre, et un
+// commentaire (obligatoire pour « autre »).
+const completeFollowUp = async (user, id, followUpId, { outcome, note = null, next = null }) => {
+  const { investorRequest, followUp } = await getFollowUp(id, followUpId);
+  if (followUp.doneAt) throw new AppError(409, 'INVESTOR_FOLLOW_UP_DONE', 'Cette relance est déjà faite.');
+  if (outcome === 'again') assertFollowUpFuture(next.dueAt);
+  await investorRequestRepository.updateFollowUp(followUp, { doneAt: new Date(), outcome, outcomeNote: note || null });
+  notificationService.investorFollowUpRemoved(followUp);
+  const created = outcome === 'again'
+    ? await investorRequestRepository.createFollowUp({ investorRequestId: investorRequest.id, dueAt: next.dueAt, reason: next.reason, createdByUserId: user.id })
+    : null;
+  await refreshStatus(investorRequest);
+  if (created) scheduleFollowUps(investorRequest, [created]);
+  realtime.investorRequestsChanged();
+  return followUp;
+};
+
+// Supprimer une relance (faite ou non) : son alerte disparaît.
+const removeFollowUp = async (id, followUpId) => {
+  const { investorRequest, followUp } = await getFollowUp(id, followUpId);
   await investorRequestRepository.destroyFollowUp(followUp);
+  notificationService.investorFollowUpRemoved(followUp);
   await refreshStatus(investorRequest);
   realtime.investorRequestsChanged();
 };
@@ -362,9 +452,11 @@ module.exports = {
   detail,
   update,
   saveDiagnosis,
+  diagnosisPdf,
   saveDifficulty,
   resolve,
   addFollowUp,
+  completeFollowUp,
   removeFollowUp,
   addMeeting,
   updateMeeting,

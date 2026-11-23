@@ -5,10 +5,9 @@ export const roleLabels = {
   animateur: 'Animateur',
 };
 
-export const backofficeRoles = new Set(['super-admin', 'admin']);
 export const availableRoles = new Set(['super-admin', 'admin', 'occupant', 'animateur']);
 // Compte rendu en un clic d'un rendez-vous B2B.
-export const b2bMeetingOutcomeLabels = { held_follow_up: 'Tenue · suite à donner', held_no_follow_up: 'Tenue · sans suite', no_show: 'Visiteur absent' };
+export const b2bMeetingOutcomeLabels = { present: 'Présent', absent: 'Absent' };
 export const b2bProposalLabels = { pending: 'À traiter', accepted: 'Acceptée', declined: 'Refusée' };
 // Classes des guichets (document v4 : A relancé sous 48 h, B sous 7 jours, C intégré à la lettre d'information,
 // Accompagnement pour une entreprise installée qui signale une difficulté).
@@ -20,7 +19,6 @@ export const guichetLabels = { project: 'Mon projet d’investissement', regime:
 export const guichetShortLabels = { project: 'Mon projet', regime: 'Quel régime', company: 'Mon entreprise' };
 export const contactSourceLabels = { online_booking: 'Rendez-vous en ligne', callback: 'Demande de rappel', desk: 'Passage au guichet' };
 export const companyRegimeLabels = { free_zone: 'Zone Franche', investment_code: 'Code des investissements', none: 'Aucun régime' };
-export const investorChannelLabels = { call: 'Appel', message: 'Message' };
 // Statut calculé par le serveur : rien de fait, relance prévue, ou classée et relancée sans nouvelle relance.
 // Studio : formats du document et suivi de chaque invité.
 export const studioStatusLabels = { invited: 'Créneau à choisir', booked: 'Créneau réservé', delivered: 'Capsule livrée', declined: 'Décliné', cancelled: 'Annulé' };

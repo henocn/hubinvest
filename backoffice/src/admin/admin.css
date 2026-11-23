@@ -228,8 +228,14 @@
 .admin-app .meeting-slot.is-selected { border-color: var(--green); color: #fff; background: var(--green); }
 .admin-app .meeting-report { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .admin-app .meeting-report small { display: inline; margin: 0; }
-.admin-app .meeting-outcome.is-held_follow_up { border-color: rgba(21, 108, 83, .4); color: var(--green); }
-.admin-app .meeting-outcome.is-no_show { border-color: #e3b3bd; color: #a62039; }
+/* Compte rendu B2B : Présent (vert) ou Absent (rouge) ; le bouton choisi est plein. */
+.admin-app .meeting-outcomes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0; padding: 0; border: 0; }
+.admin-app .meeting-outcomes legend { margin-bottom: 8px; padding: 0; color: var(--muted); font-size: 12px; font-weight: 700; }
+.admin-app .meeting-outcomes .field-hint { grid-column: 1 / -1; }
+.admin-app .meeting-outcome { --outcome: var(--green); min-height: 48px; padding: 0 14px; border: 2px solid var(--outcome); background: #fff; color: var(--outcome); font: inherit; font-size: 15px; font-weight: 800; cursor: pointer; }
+.admin-app .meeting-outcome.is-absent { --outcome: #d31b34; }
+.admin-app .meeting-outcome.is-selected { background: var(--outcome); color: #fff; }
+.admin-app .meeting-outcomes:disabled .meeting-outcome { cursor: not-allowed; opacity: .45; }
 /* Paramètres de l'Investor Desk : liste des informations de qualification. */
 .admin-app .qualification-settings { display: grid; gap: 8px; padding: 12px; }
 .admin-app .qualification-setting { display: grid; grid-template-columns: 24px minmax(0, 1.4fr) 140px minmax(0, 1.6fr) 28px; align-items: center; gap: 8px; }
@@ -267,13 +273,16 @@
 .admin-app .investor-class-option small { color: var(--muted); font-size: 11.5px; font-weight: 500; }
 .admin-app .investor-follow-facts { border: 1px solid var(--grid); }
 .admin-app .investor-qualification-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px 16px; }
-.admin-app .investor-form-actions { display: flex; justify-content: flex-end; }
+.admin-app .investor-form-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
 .admin-app .meeting-note-cell { max-width: 320px; white-space: pre-wrap; }
 @media (max-width: 720px) { .admin-app .investor-classes { grid-template-columns: 1fr; } }
 .admin-app .investor-class.is-support { width: auto; padding: 0 6px; background: var(--green); }
 .admin-app .investor-owner { max-width: 320px; }
 .admin-app .investor-qualification-grid .is-wide { grid-column: 1 / -1; }
-.admin-app .investor-subtitle { margin: 4px 0 0; color: var(--ink); font-size: 13px; }
+.admin-app .investor-subtitle { display: flex; align-items: center; gap: 6px; margin: 4px 0 0; color: var(--ink); font-size: 13px; }
+.admin-app .investor-commitment > span { display: inline-flex; align-items: center; gap: 6px; }
+.admin-app .investor-locked { min-width: 0; margin: 0; padding: 0; border: 0; }
+.admin-app .investor-locked:disabled { opacity: .6; }
 .admin-app .investor-commitment { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 14px 14px 0; padding: 10px 12px; border: 1px solid #f0d58a; border-radius: 0; background: #fff8e1; font-size: 13px; font-weight: 700; }
 .admin-app .investor-commitment.is-done { border-color: #b9dfcd; background: #eef8f3; }
 .admin-app .meeting-note { margin: 6px 0 0; color: var(--muted); font-size: 12px; line-height: 1.4; white-space: pre-wrap; }

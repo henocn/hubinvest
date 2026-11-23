@@ -5,15 +5,15 @@ import { api } from '../lib/api';
 import { publicErrorMessage } from '../lib/public-error';
 import SlotPicker from '../components/SlotPicker';
 
-// Page personnelle d'un invité du Studio (lien reçu par e-mail) : il choisit lui-même son créneau parmi ceux
-// encore libres, peut en changer jusqu'à une heure avant ou décliner, puis retrouve ici sa capsule une fois livrée.
+// Page personnelle d'un invité du Studio (lien reçu par e-mail) : il choisit une fois son créneau parmi ceux encore
+// libres (ou décline avant de choisir), puis retrouve ici sa capsule une fois livrée. Changer ou annuler un créneau
+// réservé passe par l'équipe du Studio.
 export default function StudioInvitationPage({ token }) {
   const { t, i18n } = useTranslation();
   const locale = i18n.resolvedLanguage?.startsWith('en') ? 'en-GB' : 'fr-FR';
   const [invitation, setInvitation] = useState(null);
   const [slots, setSlots] = useState(null);
   const [chosen, setChosen] = useState('');
-  const [choosing, setChoosing] = useState(false);
   const [confirmDecline, setConfirmDecline] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -42,24 +42,12 @@ export default function StudioInvitationPage({ token }) {
     return () => { active = false; };
   }, [loadSlots, t, token]);
 
-  const startChange = async () => {
-    setError('');
-    setChosen('');
-    setChoosing(true);
-    try {
-      await loadSlots();
-    } catch (requestError) {
-      setError(publicErrorMessage(t, requestError));
-    }
-  };
-
   const book = async () => {
     if (!chosen) return;
     setSaving(true);
     setError('');
     try {
       setInvitation(await api.bookStudio(token, chosen));
-      setChoosing(false);
       setChosen('');
     } catch (requestError) {
       setError(publicErrorMessage(t, requestError));
@@ -86,7 +74,7 @@ export default function StudioInvitationPage({ token }) {
   if (!invitation) return <main className="public-container studio-response-page"><p className="public-message is-error">{error || t('studio.notFound')}</p></main>;
 
   const { status } = invitation;
-  const showSlots = status === 'invited' || (status === 'booked' && choosing);
+  const showSlots = status === 'invited';
 
   return (
     <main className="public-container studio-response-page">
@@ -95,7 +83,7 @@ export default function StudioInvitationPage({ token }) {
         <h1>{t('studio.invitation', { name: invitation.guestName })}</h1>
         <p className="studio-subject">{[invitation.formatLabel && t('studio.format', { format: invitation.formatLabel }), invitation.subject].filter(Boolean).join(' · ')}</p>
 
-        {status === 'booked' && !choosing && (
+        {status === 'booked' && (
           <>
             <div className="studio-schedule">
               <span><CalendarDays size={20} /><strong>{formats.day.format(new Date(invitation.scheduledAt))}</strong></span>
@@ -124,9 +112,7 @@ export default function StudioInvitationPage({ token }) {
         <div className="studio-response-actions">
           {status === 'delivered' && invitation.capsuleUrl && <a className="button button-primary" href={invitation.capsuleUrl} target="_blank" rel="noreferrer"><PlayCircle size={18} /> {t('studio.watch')}</a>}
           {showSlots && slots?.slots.length > 0 && <button className="button button-primary" type="button" disabled={!chosen || saving} onClick={book}>{saving ? t('studio.saving') : t('studio.book')}</button>}
-          {status === 'booked' && !choosing && <button className="button studio-decline-button" type="button" onClick={startChange}>{t('studio.change')}</button>}
-          {status === 'booked' && choosing && <button className="button studio-decline-button" type="button" onClick={() => { setChoosing(false); setChosen(''); setError(''); }}>{t('studio.keep')}</button>}
-          {(status === 'invited' || status === 'booked') && !confirmDecline && <button className="button studio-decline-button" type="button" onClick={() => setConfirmDecline(true)}>{t('studio.decline')}</button>}
+          {status === 'invited' && !confirmDecline && <button className="button studio-decline-button" type="button" onClick={() => setConfirmDecline(true)}>{t('studio.decline')}</button>}
           {confirmDecline && <button className="button studio-decline-button is-danger" type="button" disabled={saving} onClick={decline}>{saving ? t('studio.saving') : t('studio.confirmDecline')}</button>}
         </div>
       </section>

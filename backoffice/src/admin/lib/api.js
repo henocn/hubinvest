@@ -72,10 +72,20 @@ export const api = {
     request('/investor-requests', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   // Fiche d'un contact des guichets : diagnostic, difficulté, relances et rendez-vous.
   saveInvestorDiagnosis: (token, id, values) => request(`/investor-requests/${id}/diagnosis`, authorized(token, { method: 'PUT', body: JSON.stringify(values) })),
+  // Fiche de diagnostic imprimable, renvoyée en PDF.
+  investorDiagnosisPdf: async (token, id) => {
+    const response = await fetch(`${API_URL}/investor-requests/${id}/diagnosis.pdf`, authorized(token));
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw new Error(payload.message || 'Téléchargement de la fiche impossible.');
+    }
+    return response.blob();
+  },
   saveInvestorDifficulty: (token, id, values) => request(`/investor-requests/${id}/difficulty`, authorized(token, { method: 'PUT', body: JSON.stringify(values) })),
   resolveInvestorCommitment: (token, id, resolved) => request(`/investor-requests/${id}/resolution`, authorized(token, { method: 'PATCH', body: JSON.stringify({ resolved }) })),
   investorRequest: (token, id) => request(`/investor-requests/${id}`, authorized(token)),
   addInvestorFollowUp: (token, id, values) => request(`/investor-requests/${id}/follow-ups`, authorized(token, { method: 'POST', body: JSON.stringify(values) })),
+  completeInvestorFollowUp: (token, id, followUpId, values) => request(`/investor-requests/${id}/follow-ups/${followUpId}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
   deleteInvestorFollowUp: (token, id, followUpId) => request(`/investor-requests/${id}/follow-ups/${followUpId}`, authorized(token, { method: 'DELETE' })),
   addInvestorMeeting: (token, id, values) => request(`/investor-requests/${id}/meetings`, authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   updateInvestorMeeting: (token, id, meetingId, values) => request(`/investor-requests/${id}/meetings/${meetingId}`, authorized(token, { method: 'PUT', body: JSON.stringify(values) })),
@@ -94,6 +104,8 @@ export const api = {
   createStudioInvitation: (token, values) => request('/studio-invitations', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   updateStudioInvitation: (token, id, values) => request(`/studio-invitations/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
   resendStudioInvitation: (token, id) => request(`/studio-invitations/${id}/resend`, authorized(token, { method: 'POST' })),
+  studioTeamSlots: (token, id) => request(`/studio-invitations/${id}/slots`, authorized(token)),
+  scheduleStudioInvitation: (token, id, startsAt) => request(`/studio-invitations/${id}/schedule`, authorized(token, { method: 'POST', body: JSON.stringify({ startsAt }) })),
   cancelStudioInvitation: (token, id) => request(`/studio-invitations/${id}/cancel`, authorized(token, { method: 'POST' })),
   deliverStudioCapsule: (token, id, capsuleUrl) => request(`/studio-invitations/${id}/deliver`, authorized(token, { method: 'POST', body: JSON.stringify({ capsuleUrl }) })),
   deleteStudioInvitation: (token, id) => request(`/studio-invitations/${id}`, authorized(token, { method: 'DELETE' })),
@@ -136,6 +148,8 @@ export const api = {
     request(`/wheel/segments/${id}`, authorized(token, { method: 'DELETE' })),
   users: (token) => request('/users', authorized(token)),
   contactStats: (token) => request('/contacts/admin/stats', authorized(token)),
+  standContacts: (token, occupantId) => request(`/contacts/admin/stands/${occupantId}`, authorized(token)),
+  auditLogs: (token) => request('/audit-logs', authorized(token)),
   createUser: (token, values) =>
     request('/users', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   updateUser: (token, id, values) =>

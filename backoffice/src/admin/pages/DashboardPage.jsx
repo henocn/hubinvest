@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useDashboard } from '../dashboard';
+import { isGlobalRole } from '../../navigation';
 
 // Une ligne : le libellé et son détail à gauche, le chiffre à droite ; cliquable vers la rubrique où agir.
 function Stat({ value, label, detail, to, urgent = false }) {
@@ -16,7 +17,7 @@ function Stat({ value, label, detail, to, urgent = false }) {
 // Accueil de l'administration : d'abord ce qui attend une action, puis les chiffres du Hub.
 export default function DashboardPage({ session }) {
   const { data, error } = useDashboard();
-  const isSuperAdmin = session.user.role === 'super-admin';
+  const isSuperAdmin = isGlobalRole(session.user.role);
 
   return (
     <main className="admin-workspace">
@@ -29,7 +30,7 @@ export default function DashboardPage({ session }) {
             <h2 id="dashboard-todo">À traiter</h2>
             <div className="dashboard-grid">
               {isSuperAdmin && <Stat value={data.investor.new} label="Guichets" detail="contacts à traiter" to="/guichets" urgent />}
-              {isSuperAdmin && <Stat value={data.investor.overdue ?? 0} label="Relances A en retard" detail="délai de 48 h dépassé" to="/guichets" urgent />}
+              {isSuperAdmin && <Stat value={data.investor.overdue ?? 0} label="Relances en retard" detail="heure de relance dépassée" to="/guichets" urgent />}
               {isSuperAdmin && <Stat value={data.investor.commitmentsOverdue ?? 0} label="Engagements en retard" detail="réponse promise non donnée" to="/guichets" urgent />}
               <Stat value={data.b2b.pendingProposals} label="Demandes B2B" detail="à traiter" to="/b2b" urgent />
               <Stat value={data.studio.pending} label="Studio" detail="invités sans créneau" to="/studio" />

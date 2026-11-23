@@ -28,7 +28,8 @@ import { exportToExcel } from '../../lib/excel';
 import { guichetShortLabels } from '../constants/access';
 import { api } from '../lib/api';
 import { useRealtimeEvent } from '../../lib/realtime';
-import { adminSections, groupTabs, sectionGroups } from '../../navigation';
+import { adminSections, groupTabs, isGlobalRole, sectionGroups } from '../../navigation';
+import B2bNeedsSettings from '../components/B2bNeedsSettings';
 import { useDashboard } from '../dashboard';
 
 const sectionMeta = {
@@ -36,7 +37,8 @@ const sectionMeta = {
   users: { title: 'Utilisateurs' },
   program: { title: 'Programme' },
   'investor-requests': { title: 'Guichets' },
-  b2b: { title: 'Rencontre B2B' },
+  b2b: { title: 'Demandes B2B' },
+  'b2b-needs': { title: 'Besoins B2B' },
   challenges: { title: 'Défi de passage' },
   wheel: { title: 'Roue des opportunités' },
 };
@@ -44,6 +46,8 @@ const sectionMeta = {
 // Page d'une rubrique de l'administration ; la rubrique vient de l'adresse (/stands, /b2b, /roue…).
 export default function BackofficePage({ session, onLogout, section }) {
   const isSuperAdmin = session.user.role === 'super-admin';
+  // Équipe API-ZF (super administrateur, administrateur) : tous les stands ; occupant : le sien.
+  const isGlobal = isGlobalRole(session.user.role);
   const todo = useDashboard()?.data?.todo || {};
   // Onglets de la rubrique quand elle fait partie d'un groupe (Jeux).
   const group = adminSections.find((item) => item.section === section)?.group;
@@ -90,10 +94,10 @@ export default function BackofficePage({ session, onLogout, section }) {
     setLoading(true);
     setError('');
     try {
-      if (isSuperAdmin) {
+      if (isGlobal) {
         const [occupantData, userData, statsData, investorData, b2bData, proposalData, challengeData, programData, wheelData] = await Promise.all([
           api.occupants(session.token),
-          api.users(session.token),
+          isSuperAdmin ? api.users(session.token) : Promise.resolve([]),
           api.contactStats(session.token),
           api.investorRequests(session.token),
           api.b2bNeeds(session.token),
@@ -129,7 +133,7 @@ export default function BackofficePage({ session, onLogout, section }) {
     } finally {
       setLoading(false);
     }
-  }, [isSuperAdmin, onLogout, session.token]);
+  }, [isGlobal, isSuperAdmin, onLogout, session.token]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -146,7 +150,7 @@ export default function BackofficePage({ session, onLogout, section }) {
       wheel: async () => setWheel(await api.wheel(token)),
       account: async () => { await api.profile(token); },
     };
-    if (isSuperAdmin) {
+    if (isGlobal) {
       Object.assign(loaders, {
         occupants: async () => {
           const [occupantData, programData] = await Promise.all([api.occupants(token), api.programEvents(token)]);
@@ -154,13 +158,13 @@ export default function BackofficePage({ session, onLogout, section }) {
           setProgramEvents(programData);
         },
         'investor-requests': async () => setInvestorRequests((await api.investorRequests(token)).items),
-        users: async () => setUsers(await api.users(token)),
+        ...(isSuperAdmin && { users: async () => setUsers(await api.users(token)) }),
         program: async () => setProgramEvents(await api.programEvents(token)),
         contacts: async () => setContactStats(await api.contactStats(token)),
       });
     }
     return loaders;
-  }, [isSuperAdmin, session.token]);
+  }, [isGlobal, isSuperAdmin, session.token]);
 
   const reloadTopic = useCallback(async (topic) => {
     const loader = silentLoaders[topic];
@@ -203,6 +207,7 @@ export default function BackofficePage({ session, onLogout, section }) {
   // Tri du tableau affiché : le premier tri proposé est celui par défaut.
   const settings = tableSettings[section];
   const arrange = (items) => {
+    if (!settings) return items;
     const sorter = settings.sorts.find((item) => item.value === sortValue) || settings.sorts[0];
     return [...items].sort(sorter.compare);
   };
@@ -369,6 +374,7 @@ export default function BackofficePage({ session, onLogout, section }) {
           : occupants.find((item) => item.id === detailId) ? (
             <OccupantDetail
               occupant={occupants.find((item) => item.id === detailId)}
+              token={session.token}
               users={users}
               contactCount={contactStats.byOccupant[detailId] || 0}
               programEvents={programEvents}
@@ -403,6 +409,7 @@ export default function BackofficePage({ session, onLogout, section }) {
           </div>}
         </header>
 
+        {section === 'b2b-needs' ? <B2bNeedsSettings session={session} onLogout={onLogout} /> : (
         <section className="data-panel">
           <header className="data-toolbar">
             <div className="data-toolbar-controls">
@@ -429,10 +436,11 @@ export default function BackofficePage({ session, onLogout, section }) {
           {!loading && !error && section === 'users' && <UsersTable selection={selection} users={rows} query={query} currentUserId={session.user.id} onEdit={(item) => setDrawer({ type: 'user', item })} onDelete={requestUserDelete} />}
           {!loading && !error && section === 'program' && <ProgramEventsTable selection={selection} events={rows} query={query} onEdit={(item) => setDrawer({ type: 'program', item })} onDelete={requestProgramDelete} />}
           {!loading && !error && section === 'investor-requests' && <InvestorRequestsTable selection={selection} requests={rows} query={query} onOpen={(item) => navigate(`/guichets/${item.id}`)} />}
-          {!loading && !error && section === 'b2b' && <B2bProposalsTable selection={selection} proposals={rows} query={query} showStand={isSuperAdmin} onOpen={(item) => navigate(`/b2b/${item.id}`)} onDecide={requestDecision} onEdit={(item) => setDrawer({ type: 'b2b-proposal', item })} onDelete={requestB2bProposalDelete} />}
-          {!loading && !error && section === 'challenges' && <ChallengePassportsTable selection={selection} passports={rows} query={query} allowReward={isSuperAdmin} onRedeem={(passport) => { setRewardError(''); setPendingReward(passport); }} onDelete={isSuperAdmin ? requestPassportDelete : undefined} />}
+          {!loading && !error && section === 'b2b' && <B2bProposalsTable selection={selection} proposals={rows} query={query} showStand={isGlobal} onOpen={(item) => navigate(`/b2b/${item.id}`)} onDecide={requestDecision} onEdit={(item) => setDrawer({ type: 'b2b-proposal', item })} onDelete={requestB2bProposalDelete} />}
+          {!loading && !error && section === 'challenges' && <ChallengePassportsTable selection={selection} passports={rows} query={query} allowReward={isGlobal} onRedeem={(passport) => { setRewardError(''); setPendingReward(passport); }} onDelete={isGlobal ? requestPassportDelete : undefined} />}
           {!loading && !error && section === 'wheel' && <WheelPlaysTable selection={selection} plays={rows} query={query} onClaim={(play) => { setRewardError(''); setPendingClaim(play); }} onDelete={isSuperAdmin ? requestWheelPlayDelete : undefined} />}
         </section>
+        )}
       </main>
       )}
 

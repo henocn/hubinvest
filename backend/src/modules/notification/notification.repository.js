@@ -1,6 +1,6 @@
 const { Op } = require('sequelize');
 const { sequelize, NotificationJob, User } = require('../../models');
-const roles = require('../../shared/roles');
+const { GLOBAL_ROLES } = require('../../shared/access');
 
 const STALE_LOCK_MINUTES = 10;
 
@@ -58,7 +58,7 @@ const findStandUsers = (occupantId, allowedRoles) => User.findAll({
 
 // Liste les super administrateurs actifs.
 const findSuperAdmins = () => User.findAll({
-  where: { role: roles.SUPER_ADMIN, isActive: true },
+  where: { role: { [Op.in]: GLOBAL_ROLES }, isActive: true },
   attributes: ['id', 'firstName', 'email'],
 });
 

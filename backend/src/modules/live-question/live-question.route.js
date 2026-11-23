@@ -36,7 +36,7 @@ router.post(
   }),
 );
 
-router.use(asyncHandler(authenticate), requireRoles(roles.SUPER_ADMIN, roles.ANIMATOR));
+router.use(asyncHandler(authenticate), requireRoles(roles.SUPER_ADMIN, roles.ADMIN, roles.ANIMATOR));
 router.get('/', asyncHandler(async (request, response) => response.json({ data: await liveQuestionService.list() })));
 router.patch(
   '/:id',

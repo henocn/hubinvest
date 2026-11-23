@@ -1,6 +1,6 @@
 const { Op } = require('sequelize');
 const { InvestorRequest, InvestorFollowUp, InvestorMeeting, User, sequelize } = require('../../models');
-const roles = require('../../shared/roles');
+const { GLOBAL_ROLES } = require('../../shared/access');
 
 const person = ['id', 'firstName', 'lastName'];
 const contactUserInclude = { model: User, as: 'contactUser', attributes: person, required: false };
@@ -37,7 +37,7 @@ const findDetail = (id) => InvestorRequest.findByPk(id, {
     { model: InvestorMeeting, as: 'meetings', required: false, include: [{ model: User, as: 'createdBy', attributes: person }] },
   ],
   order: [
-    [{ model: InvestorFollowUp, as: 'followUps' }, 'doneAt', 'DESC'],
+    [{ model: InvestorFollowUp, as: 'followUps' }, 'dueAt', 'DESC'],
     [{ model: InvestorMeeting, as: 'meetings' }, 'startsAt', 'ASC'],
   ],
 });
@@ -60,13 +60,20 @@ const findGuichetMeetingsBetween = (guichet, from, to) => InvestorMeeting.findAl
 const update = (request, values) => request.update(values);
 
 // L'interlocuteur nommé est un membre actif de l'équipe API-ZF (super administrateur).
-const findTeamMember = (id) => User.findOne({ where: { id, role: roles.SUPER_ADMIN, isActive: true }, attributes: person });
-const findTeam = () => User.findAll({ where: { role: roles.SUPER_ADMIN, isActive: true }, attributes: person, order: [['firstName', 'ASC']] });
+const findTeamMember = (id) => User.findOne({ where: { id, role: { [Op.in]: GLOBAL_ROLES }, isActive: true }, attributes: person });
+const findTeam = () => User.findAll({ where: { role: { [Op.in]: GLOBAL_ROLES }, isActive: true }, attributes: person, order: [['firstName', 'ASC']] });
 
 const countFollowUps = (investorRequestId) => InvestorFollowUp.count({ where: { investorRequestId } });
 const createFollowUp = (values) => InvestorFollowUp.create(values);
 const findFollowUp = (id, investorRequestId) => InvestorFollowUp.findOne({ where: { id, investorRequestId } });
+const updateFollowUp = (followUp, values) => followUp.update(values);
 const destroyFollowUp = (followUp) => followUp.destroy();
+// Relances encore à faire d'un contact ; « sources » : seulement les relances automatiques de ces origines
+// ('A', 'B' pour la classe, 'commitment' pour l'engagement de suivi).
+const findPendingFollowUps = (investorRequestId, { sources = null } = {}) => InvestorFollowUp.findAll({
+  where: { investorRequestId, doneAt: null, ...(sources && { autoSource: { [Op.in]: sources } }) },
+  order: [['dueAt', 'ASC']],
+});
 
 const createMeeting = (values) => InvestorMeeting.create(values);
 const findMeeting = (id, investorRequestId) => InvestorMeeting.findOne({ where: { id, investorRequestId } });
@@ -91,7 +98,9 @@ module.exports = {
   countFollowUps,
   createFollowUp,
   findFollowUp,
+  updateFollowUp,
   destroyFollowUp,
+  findPendingFollowUps,
   createMeeting,
   findMeeting,
   updateMeeting,

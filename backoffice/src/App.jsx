@@ -14,8 +14,9 @@ import OccupantChallengePage from './pages/OccupantChallengePage';
 import OccupantProfilePage from './pages/OccupantProfilePage';
 import LiveQuestionsPage from './pages/LiveQuestionsPage';
 import StudioPage from './admin/pages/StudioPage';
+import AuditLogPage from './admin/pages/AuditLogPage';
 import { api } from './lib/api';
-import { adminSectionForPath, homeForRole, isAdminRole } from './navigation';
+import { adminSectionForPath, homeForRole, isManagerRole } from './navigation';
 import { SessionProvider, useSession } from './session';
 
 const PUBLIC_URL = (import.meta.env.VITE_PUBLIC_URL || 'https://hub.investir.tg').replace(/\/$/, '');
@@ -83,6 +84,7 @@ function AdminSection() {
   const section = adminSectionForPath(location.pathname, session.user.role);
   if (!section) return <Navigate to={homeForRole(session.user.role)} replace />;
   if (section === 'studio') return <StudioPage session={session} onLogout={logout} />;
+  if (section === 'audit') return <AuditLogPage session={session} onLogout={logout} />;
   return <BackofficePage session={session} onLogout={logout} section={section} />;
 }
 
@@ -116,11 +118,11 @@ function TeamRoutes() {
             <Route path="/remises" element={<AnimatorRewardsPage {...props} />} />
           </>
         )}
-        {(role === 'animateur' || role === 'super-admin') && <Route path="/questions" element={<LiveQuestionsPage {...props} />} />}
+        {['animateur', 'super-admin', 'admin'].includes(role) && <Route path="/questions" element={<LiveQuestionsPage {...props} />} />}
         <Route path="/profil" element={<OccupantProfilePage {...props} />} />
-        {isAdminRole(role) && <Route path="/tableau-de-bord" element={<DashboardPage {...props} />} />}
-        {isAdminRole(role) && <Route path="/parametres" element={<SettingsPage {...props} />} />}
-        {isAdminRole(role) && <Route path="/*" element={<AdminSection />} />}
+        {isManagerRole(role) && <Route path="/tableau-de-bord" element={<DashboardPage {...props} />} />}
+        {role === 'super-admin' && <Route path="/parametres" element={<SettingsPage {...props} />} />}
+        {isManagerRole(role) && <Route path="/*" element={<AdminSection />} />}
       </Route>
       <Route path="*" element={session ? <Navigate to={homeForRole(role)} replace /> : <RequireSession />} />
     </Routes>

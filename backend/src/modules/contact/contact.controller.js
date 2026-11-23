@@ -37,4 +37,6 @@ const adminStats = async (request, response) => {
   response.json({ data: await contactService.adminStats(request.user) });
 };
 
-module.exports = { list, get, create, createPublic, update, stats, adminStats };
+const standContacts = async (request, response) => response.json({ data: await contactService.standContacts(request.params.occupantId) });
+
+module.exports = { list, get, create, createPublic, update, stats, adminStats, standContacts };

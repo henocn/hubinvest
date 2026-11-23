@@ -22,7 +22,7 @@ const counters = async () => {
     ChallengePassport.count(),
     ChallengePassport.count({ where: { status: { [Op.in]: ['completed', 'redeemed'] } } }),
     InvestorMeeting.count({ where: { status: { [Op.ne]: 'cancelled' } } }),
-    B2bMeeting.count({ where: { outcome: { [Op.in]: ['held_follow_up', 'held_no_follow_up'] } } }),
+    B2bMeeting.count({ where: { outcome: 'present' } }),
     StudioInvitation.count({ where: { status: 'delivered' } }),
   ]);
   return { players, stepsCompleted, guichetMeetings, b2bMeetings, capsules };

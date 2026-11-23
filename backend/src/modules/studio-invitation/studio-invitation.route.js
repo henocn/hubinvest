@@ -9,7 +9,7 @@ const rateLimit = require('../../middlewares/rate-limit.middleware');
 
 const router = express.Router();
 // Studio : l'API-ZF invite tout le monde ; un administrateur de stand invite pour son stand.
-const studioTeamOnly = requireRoles(roles.SUPER_ADMIN, roles.ADMIN);
+const studioTeamOnly = requireRoles(roles.SUPER_ADMIN, roles.ADMIN, roles.OCCUPANT);
 const tokenLimit = rateLimit.rateLimit({ windowMs: 15 * 60 * 1000, max: 30, key: (request) => `studio:${request.ip}:${request.params.token}` });
 
 // Page personnelle de l'invité (lien reçu par e-mail).
@@ -24,6 +24,8 @@ router.get('/formats', c.formats);
 router.post('/', validate(v.create), asyncHandler(c.create));
 router.patch('/:id', validate(v.idParams, 'params'), validate(v.update), asyncHandler(c.update));
 router.post('/:id/resend', validate(v.idParams, 'params'), asyncHandler(c.resend));
+router.get('/:id/slots', validate(v.idParams, 'params'), asyncHandler(c.teamSlots));
+router.post('/:id/schedule', validate(v.idParams, 'params'), validate(v.book), asyncHandler(c.schedule));
 router.post('/:id/cancel', validate(v.idParams, 'params'), asyncHandler(c.cancel));
 router.post('/:id/deliver', validate(v.idParams, 'params'), validate(v.deliver), asyncHandler(c.deliver));
 router.delete('/:id', validate(v.idParams, 'params'), asyncHandler(c.remove));
