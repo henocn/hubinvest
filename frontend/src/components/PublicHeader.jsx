@@ -5,6 +5,7 @@ import { Briefcase, Handshake, Home, LogIn, Menu, Search, Star, X } from 'lucide
 import hubLogoWhite from '../assets/brand/hub-logo-white.png';
 import BrandFooter from './BrandFooter';
 import { teamUrl } from '../lib/team';
+import { appVersionLabel } from '../lib/app-update';
 
 function LanguageFlag({ language }) {
   if (language === 'fr') {
@@ -82,6 +83,7 @@ function SideMenu({ path, onClose }) {
 
         <a className="side-menu-team" href={teamUrl('/connexion')}><LogIn size={19} aria-hidden="true" />{t('nav.team')}</a>
 
+        {appVersionLabel() && <p className="side-menu-version">{t('nav.version', { date: appVersionLabel() })}</p>}
         <BrandFooter className="side-menu-footer" />
       </aside>
     </div>

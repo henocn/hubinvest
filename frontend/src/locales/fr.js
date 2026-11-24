@@ -10,6 +10,7 @@ export default {
     english: "English",
   },
   nav: {
+    version: "Version du {{date}}",
     label: "Navigation principale",
     menu: "Menu",
     stands: "Les stands",

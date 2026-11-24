@@ -755,3 +755,11 @@ a.contact-row {
 .related-follow-ups li.is-today { background: rgba(255, 207, 21, 0.14); }
 .related-follow-ups li.is-today strong { color: #7a5b00; }
 .related-follow-ups li.is-done { color: var(--muted, #5d6670); }
+
+/* Version chargée, discrète, sous le compte. */
+.team-version {
+  display: block;
+  padding: 6px 16px 10px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.7rem;
+}

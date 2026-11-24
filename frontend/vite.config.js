@@ -3,10 +3,13 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  // Date et heure de la compilation : la version affichée dans le menu.
+  define: { __APP_VERSION__: JSON.stringify(new Date().toISOString()) },
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // Mise à jour pilotée par src/lib/app-update.js : vérification quasi instantanée et rechargement sans perdre une saisie.
+      registerType: 'prompt',
       includeAssets: ['favicon.png', 'apple-touch-icon.png', 'pwa-192.png', 'badge-96.png'],
       manifest: {
         name: 'Hub de l’Investissement',
@@ -42,8 +45,9 @@ export default defineConfig({
         ],
         importScripts: ['push-sw.js'],
       },
+      // Pas de service worker en développement : il servait des fichiers périmés malgré les modifications.
       devOptions: {
-        enabled: true,
+        enabled: false,
       },
     }),
   ],

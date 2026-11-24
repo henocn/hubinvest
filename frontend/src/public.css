@@ -3753,3 +3753,11 @@ main h1:not(.sr-only)::before {
   background: var(--tint);
   font-size: 0.88rem;
 }
+
+/* Version chargée, discrète, en bas du menu. */
+.side-menu-version {
+  margin: 0;
+  padding: 0 20px 8px;
+  color: var(--muted);
+  font-size: 0.72rem;
+}

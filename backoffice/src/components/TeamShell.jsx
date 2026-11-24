@@ -11,6 +11,7 @@ import { disablePush } from '../lib/push';
 import { useRealtimeConnection, useRealtimeEvent } from '../lib/realtime';
 import { accessRole, isManagerRole, linksForRole, roleLabels, tabsForRole } from '../navigation';
 import { useSession } from '../session';
+import { appVersionLabel } from '../lib/app-update';
 
 const adminTopics = ['occupants', 'users', 'program', 'contacts', 'investor-requests', 'b2b', 'studio', 'challenge', 'wheel', 'settings', 'live-questions', 'account'];
 const teamTopics = ['contacts', 'challenge', 'occupants', 'live-questions', 'account'];
@@ -170,6 +171,8 @@ function TeamShellLayout() {
             <button className="admin-icon-button" type="button" onClick={signOut} aria-label="Se déconnecter" title="Se déconnecter"><LogOut size={18} /></button>
           </span>
         </div>
+        {/* Date de la version chargée : comparée à celle du dernier déploiement, elle dit si l'appareil est à jour. */}
+        {appVersionLabel() && <small className="team-version">Version du {appVersionLabel()}</small>}
       </aside>
 
       <div className="team-content">
