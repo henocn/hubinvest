@@ -1,15 +1,16 @@
 const express = require('express');
 const asyncHandler = require('../../shared/async-handler');
 const validate = require('../../middlewares/validate.middleware');
-const { authenticate, requireRoles } = require('../../middlewares/auth.middleware');
-const roles = require('../../shared/roles');
+const { authenticate } = require('../../middlewares/auth.middleware');
+const AppError = require('../../shared/app-error');
+const { isApizfTeam } = require('../../shared/access');
 const investorRequestValidation = require('./investor-request.validation');
 const investorRequestController = require('./investor-request.controller');
 const rateLimit = require('../../middlewares/rate-limit.middleware');
 
 const router = express.Router();
-// Guichets et registre unique de l'API-ZF : réservés à son équipe (super administrateurs et administrateurs).
-const investorDeskOnly = requireRoles(roles.SUPER_ADMIN, roles.ADMIN);
+// Guichets et registre unique de l'API-ZF : réservés à son équipe (super administrateurs, administrateurs, occupants du Stand API-ZF).
+const investorDeskOnly = (request, response, next) => next(isApizfTeam(request.user) ? undefined : new AppError(403, 'FORBIDDEN', "Vous n’avez pas accès à cette action."));
 
 router.post(
   '/public',

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { CheckCircle2, Disc3, Gift, Ticket } from 'lucide-react';
+import { CheckCircle2, Gift } from 'lucide-react';
 import { api } from '../lib/api';
 
 // Code de jeu de la roue : 4 caractères. Code participant des Défis : 6 (ou 8 pour les anciens).
@@ -77,41 +77,4 @@ export function WheelPrizeCard({ prize, loading, onClaim }) {
 
 export function WheelPrizeResult({ text }) {
   return text ? <p className="challenge-validation-success" role="status"><CheckCircle2 size={20} /> {text}</p> : null;
-}
-
-// Délivre un code de jeu à donner au visiteur, affiché en grand ; il n'expire pas.
-export function WheelCodeGenerator({ session, onLogout }) {
-  const [wheelCode, setWheelCode] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const generate = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const data = await api.createWheelCode(session.token);
-      setWheelCode(data);
-    } catch (requestError) {
-      if (requestError.status === 401 || requestError.status === 403) onLogout();
-      else setError(requestError.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <section className="wheel-code-generator">
-      <button className="button button-secondary" type="button" onClick={generate} disabled={loading}>
-        {wheelCode ? <Ticket size={18} /> : <Disc3 size={18} />}
-        {loading ? 'Création…' : wheelCode ? 'Nouveau code de jeu' : 'Donner un code de jeu'}
-      </button>
-      {wheelCode && (
-        <div className="wheel-code-box" role="status">
-          <strong>{wheelCode.code}</strong>
-          <span>{wheelCode.spinsAllowed} tour{wheelCode.spinsAllowed > 1 ? 's' : ''}, sans limite de temps</span>
-        </div>
-      )}
-      {error && <p className="panel-error" role="alert">{error}</p>}
-    </section>
-  );
 }

@@ -1,6 +1,6 @@
 const { Op } = require('sequelize');
 const AppError = require('../../shared/app-error');
-const { isGlobal } = require('../../shared/access');
+const { isApizfTeam, isGlobal } = require('../../shared/access');
 const settingsService = require('../settings/settings.service');
 const {
   B2bMeeting, B2bNeed, B2bProposal, ChallengePassage, ChallengePassport, Contact, InvestorFollowUp, InvestorMeeting, InvestorRequest, Occupant,
@@ -84,6 +84,8 @@ const overview = async (user) => {
   const isSuperAdmin = isGlobal(user);
   if (!isSuperAdmin && !user.occupantId) throw new AppError(403, 'STAND_REQUIRED', 'Ce compte n’est rattaché à aucun stand.');
   const occupantId = isSuperAdmin ? null : user.occupantId;
+  // Guichets et roue : l'équipe API-ZF, dont les occupants du Stand API-ZF.
+  const apizf = isApizfTeam(user);
   const byStand = occupantId ? { occupantId } : {};
   const today = startOfToday();
 
@@ -95,13 +97,13 @@ const overview = async (user) => {
     wheelPlayed, wheelPlayedToday, wheelToHand,
   ] = await Promise.all([
     // Les guichets et le registre unique sont réservés à l'API-ZF : leurs chiffres ne concernent que le super administrateur.
-    isSuperAdmin ? InvestorRequest.count({ where: { status: 'new' } }) : 0,
-    isSuperAdmin ? InvestorRequest.count({ where: { status: 'in_progress' } }) : 0,
-    isSuperAdmin ? InvestorRequest.count() : 0,
+    apizf ? InvestorRequest.count({ where: { status: 'new' } }) : 0,
+    apizf ? InvestorRequest.count({ where: { status: 'in_progress' } }) : 0,
+    apizf ? InvestorRequest.count() : 0,
     // Contacts dont une relance à faire a dépassé son heure (relance de classe, d'engagement ou ajoutée à la main).
-    isSuperAdmin ? InvestorRequest.count({ where: { nextFollowUpAt: { [Op.lt]: new Date() } } }) : 0,
+    apizf ? InvestorRequest.count({ where: { nextFollowUpAt: { [Op.lt]: new Date() } } }) : 0,
     // Relances encore à l'heure, mais à faire avant la fin de la journée.
-    isSuperAdmin ? InvestorRequest.count({ where: { nextFollowUpAt: { [Op.gte]: new Date(), [Op.lt]: endOfToday() } } }) : 0,
+    apizf ? InvestorRequest.count({ where: { nextFollowUpAt: { [Op.gte]: new Date(), [Op.lt]: endOfToday() } } }) : 0,
     B2bProposal.count({ where: { status: 'pending' }, include: [{ model: B2bNeed, as: 'need', attributes: [], where: byStand, required: true }] }),
     B2bNeed.count({ where: { ...byStand, status: 'open' } }),
     // Studio : invités qui n'ont pas encore choisi leur créneau, passages réservés à venir.
@@ -120,10 +122,10 @@ const overview = async (user) => {
     studio: { pending: studioPending, confirmed: studioConfirmed },
     challenges: { players, rewardsToHand, rewardsHanded, ...(await rewardStock()) },
     wheel: { played: wheelPlayed, playedToday: wheelPlayedToday, prizesToHand: wheelToHand },
-    agenda: await agenda(isSuperAdmin, occupantId),
+    agenda: await agenda(apizf, occupantId),
   };
 
-  if (isSuperAdmin) {
+  if (apizf) {
     // Indicateurs du document v4 : diagnostics réalisés, sollicitations d'accompagnement prises en charge (avec un engagement
     // de suivi), et engagements dont la réponse promise n'est pas donnée à temps.
     const [diagnosed, supportTaken, commitmentsOverdue] = await Promise.all([
@@ -132,6 +134,9 @@ const overview = async (user) => {
       InvestorRequest.count({ where: { classification: 'support', resolvedAt: null, commitmentDueAt: { [Op.lt]: new Date() } } }),
     ]);
     result.investor = { new: investorNew, inProgress: investorInProgress, total: investorTotal, overdue: investorOverdue, dueToday: investorDueToday, diagnosed, supportTaken, commitmentsOverdue };
+  }
+
+  if (isSuperAdmin) {
     const [activeStands, contacts, contactsToday, siteRequests] = await Promise.all([
       Occupant.count({ where: { status: 'active' } }),
       Contact.count(),
@@ -145,10 +150,9 @@ const overview = async (user) => {
   // Ce qui attend une action : affiché en pastille dans le menu, au nombre exact.
   result.todo = {
     // Guichets : contacts à traiter et relances à faire aujourd'hui (en retard comprises).
-    ...(isSuperAdmin && { 'investor-requests': investorNew + investorOverdue + investorDueToday }),
+    ...(apizf && { 'investor-requests': investorNew + investorOverdue + investorDueToday, wheel: wheelToHand }),
     b2b: b2bPending,
-    challenges: rewardsToHand,
-    wheel: wheelToHand,
+    ...(isSuperAdmin && { challenges: rewardsToHand }),
   };
   return result;
 };

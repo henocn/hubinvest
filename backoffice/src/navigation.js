@@ -1,12 +1,17 @@
 import { BriefcaseBusiness, Building2, CalendarDays, Clapperboard, Disc3, Gift, Handshake, LayoutDashboard, MessageCircleQuestion, ScanLine, ScrollText, SlidersHorizontal, Trophy, Users } from 'lucide-react';
 
 // Rôles : le super administrateur voit tout ; l'administrateur (l'API-ZF) tout sauf Utilisateurs et Paramètres ;
-// l'occupant administre son stand (sa fiche, B2B, Défis, son carnet de contacts ; pas le Studio) ; l'animateur scanne et remet.
+// l'occupant administre son stand (sa fiche, B2B, scan de passage, son carnet de contacts ; pas le Studio) ; l'animateur scanne et remet.
+// Les occupants du Stand API-ZF (« occupant-apizf ») tiennent en plus les Guichets et la Roue des opportunités.
 export const isGlobalRole = (role) => role === 'super-admin' || role === 'admin';
-export const isManagerRole = (role) => isGlobalRole(role) || role === 'occupant';
+export const isOccupantRole = (role) => role === 'occupant' || role === 'occupant-apizf';
+export const isManagerRole = (role) => isGlobalRole(role) || isOccupantRole(role);
+export const isApizfTeamRole = (role) => isGlobalRole(role) || role === 'occupant-apizf';
+// Rôle qui règle le menu et les rubriques : l'occupant du Stand API-ZF a le sien.
+export const accessRole = (user) => (user?.role === 'occupant' && user.occupant?.space === 'apizf' ? 'occupant-apizf' : user?.role);
 
 // Rubriques de l'administration : chaque section a sa propre adresse.
-// « global » : réservée à l'équipe API-ZF ; « superOnly » : au super administrateur.
+// « global » : réservée à l'équipe API-ZF ; « apizf » : à l'équipe API-ZF et aux occupants du Stand API-ZF ; « superOnly » : au super administrateur.
 // « tab » place la rubrique dans la barre du bas sur téléphone (quatre au plus) ; les autres restent dans le menu.
 export const adminSections = [
   { section: 'occupants', path: '/stands', label: 'Stands', Icon: Building2, global: true, tab: true },
@@ -19,10 +24,11 @@ export const adminSections = [
   // Rencontres B2B : les demandes reçues, puis les besoins publiés.
   { section: 'b2b', path: '/b2b', label: 'Demandes', Icon: Handshake, group: 'b2b' },
   { section: 'b2b-needs', path: '/besoins-b2b', label: 'Besoins', Icon: Handshake, group: 'b2b' },
-  // Guichets du Stand API-ZF et registre unique des contacts : réservés à l'équipe API-ZF.
-  { section: 'investor-requests', path: '/guichets', label: 'Guichets', Icon: BriefcaseBusiness, global: true },
-  { section: 'challenges', path: '/participants', label: 'Défi de passage', Icon: Trophy, group: 'games' },
-  { section: 'wheel', path: '/roue', label: 'Roue des opportunités', Icon: Disc3, group: 'games' },
+  // Guichets du Stand API-ZF et registre unique des contacts : l'équipe API-ZF et les occupants du Stand API-ZF.
+  { section: 'investor-requests', path: '/guichets', label: 'Guichets', Icon: BriefcaseBusiness, apizf: true },
+  // Défi de passage (tous les joueurs, remise des récompenses) : l'équipe API-ZF ; un occupant a sa « Liste des scans ».
+  { section: 'challenges', path: '/participants', label: 'Défi de passage', Icon: Trophy, group: 'games', global: true },
+  { section: 'wheel', path: '/roue', label: 'Roue des opportunités', Icon: Disc3, group: 'games', apizf: true },
 ];
 
 // Rubriques réunies sous une seule entrée du menu, avec des onglets dans la page.
@@ -31,15 +37,17 @@ export const sectionGroups = {
   games: { label: 'Jeux et défis', Icon: Trophy },
 };
 
-const allowed = (role) => (item) => (!item.global || isGlobalRole(role)) && (!item.superOnly || role === 'super-admin');
+const allowed = (role) => (item) => (!item.global || isGlobalRole(role)) && (!item.apizf || isApizfTeamRole(role)) && (!item.superOnly || role === 'super-admin');
 
 // Onglets d'un groupe visibles pour un rôle.
 export const groupTabs = (group, role) => adminSections.filter((item) => item.group === group && allowed(role)(item));
 
 // Entrée du menu d'un groupe : mène au premier onglet, additionne leurs pastilles et reste active sur chacun.
+// Un groupe réduit à un onglet prend son nom (ex. « Roue des opportunités » pour un occupant du Stand API-ZF).
 const groupLink = (group, sections) => {
   const tabs = sections.filter((item) => item.group === group);
-  return { path: tabs[0].path, label: sectionGroups[group].label, Icon: sectionGroups[group].Icon, tab: true, sections: tabs.map((item) => item.section), matches: tabs.map((item) => item.path) };
+  const { label, Icon } = tabs.length === 1 ? tabs[0] : sectionGroups[group];
+  return { path: tabs[0].path, label, Icon, tab: true, sections: tabs.map((item) => item.section), matches: tabs.map((item) => item.path) };
 };
 
 // Entrées du menu : les rubriques permises au rôle, chaque groupe à la place de ses onglets.
@@ -60,18 +68,21 @@ const questionsLink = { path: '/questions', label: 'Questions', Icon: MessageCir
 const usersLink = adminSections.find((item) => item.section === 'users');
 const auditLink = adminSections.find((item) => item.section === 'audit');
 
+const occupantLinks = (role) => [
+  dashboardLink,
+  { path: '/mon-stand', label: 'Mon stand', Icon: Building2 },
+  { path: '/contacts', label: 'Mes contacts', Icon: Users, tab: true },
+  { path: '/defis', label: 'Scan de passage', tabLabel: 'Scan', Icon: ScanLine, tab: true },
+  ...menuSections(role),
+];
+
 const roleLinks = {
   // Utilisateurs, Journal puis Paramètres, en bas du menu.
   'super-admin': [dashboardLink, ...menuSections('super-admin'), { ...questionsLink, tab: false }, usersLink, auditLink, settingsLink],
   admin: [dashboardLink, ...menuSections('admin'), { ...questionsLink, tab: false }],
   // L'occupant : son stand (sa fiche, jamais la liste des stands), son carnet et le scan des joueurs, puis ce qu'il administre.
-  occupant: [
-    dashboardLink,
-    { path: '/mon-stand', label: 'Mon stand', Icon: Building2 },
-    { path: '/contacts', label: 'Mes contacts', Icon: Users, tab: true },
-    { path: '/defis', label: 'Scan de passage', tabLabel: 'Scan', Icon: ScanLine, tab: true },
-    ...menuSections('occupant'),
-  ],
+  occupant: occupantLinks('occupant'),
+  'occupant-apizf': occupantLinks('occupant-apizf'),
   animateur: [
     { path: '/scan', label: 'Scan', Icon: ScanLine, tab: true },
     questionsLink,

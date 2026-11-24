@@ -921,11 +921,13 @@ const readSseEvents = async (response, count, timeout = 2000) => {
 };
 
 test('chaque rôle n’écoute que les canaux de son stand ou de son rôle', () => {
-  assert.deepEqual(realtimeService.channelsFor({ id: 'u1', role: 'super-admin', occupantId: null }), ['user:u1', 'super-admin']);
-  assert.deepEqual(realtimeService.channelsFor({ id: 'u2', role: 'admin', occupantId: 'stand-a' }), ['user:u2', 'super-admin']);
+  assert.deepEqual(realtimeService.channelsFor({ id: 'u1', role: 'super-admin', occupantId: null }), ['user:u1', 'super-admin', 'apizf-team']);
+  assert.deepEqual(realtimeService.channelsFor({ id: 'u2', role: 'admin', occupantId: 'stand-a' }), ['user:u2', 'super-admin', 'apizf-team']);
   assert.deepEqual(realtimeService.channelsFor({ id: 'u3', role: 'occupant', occupantId: 'stand-a' }), ['user:u3', 'admins', 'occupant:stand-a', 'admin:stand-a']);
   assert.deepEqual(realtimeService.channelsFor({ id: 'u4', role: 'animateur', occupantId: null }), ['user:u4', 'animateur']);
-  assert.deepEqual(realtimeService.channelsFor({ id: 'u5', role: 'admin', occupantId: null }), ['user:u5', 'super-admin']);
+  assert.deepEqual(realtimeService.channelsFor({ id: 'u5', role: 'admin', occupantId: null }), ['user:u5', 'super-admin', 'apizf-team']);
+  // Occupant du Stand API-ZF : son stand, plus les guichets et la roue de l'équipe API-ZF.
+  assert.deepEqual(realtimeService.channelsFor({ id: 'u6', role: 'occupant', occupantId: 'stand-z', occupant: { space: 'apizf' } }), ['user:u6', 'apizf-team', 'admins', 'occupant:stand-z', 'admin:stand-z']);
 });
 
 test('un jeton de flux ne sert qu’une fois et expire', (context) => {
@@ -1008,7 +1010,7 @@ test('un passage validé prévient le stand, ses administrateurs, les animateurs
 
   published.length = 0;
   realtimeService.events.investorRequestsChanged();
-  assert.deepEqual(published[0], { channels: ['super-admin'], topic: 'investor-requests' });
+  assert.deepEqual(published[0], { channels: ['apizf-team'], topic: 'investor-requests' });
 });
 
 test('une diffusion en échec ne fait jamais échouer l’action métier', (context) => {
@@ -1802,4 +1804,30 @@ test('un occupant ne voit et ne modifie que son propre stand, sans toucher au no
   });
   assert.equal(response.status, 200);
   assert.deepEqual(updatedWith, { activity: 'Transformation du soja' });
+});
+
+test('guichets et roue : l’équipe API-ZF et les occupants du Stand API-ZF, pas les autres stands', async (context) => {
+  const originalSecret = env.auth.secret;
+  env.auth.secret = 'hubinvest-apizf-team-test-secret';
+  context.after(() => { env.auth.secret = originalSecret; });
+  const spaces = { zf: 'apizf', ind: 'industry' };
+  context.mock.method(User, 'findOne', async ({ where }) => ({
+    occupantId: `stand-${where.id}`,
+    occupant: { status: 'active', space: spaces[where.id] },
+    toJSON: () => ({ id: where.id, occupantId: `stand-${where.id}`, role: 'occupant', occupant: { status: 'active', space: spaces[where.id] } }),
+  }));
+  const wheelService = require('../src/modules/wheel/wheel.service');
+  context.mock.method(wheelService, 'overview', async () => ({ segments: [], codes: [], plays: [], stats: {} }));
+  context.mock.method(investorRequestRepository, 'findAll', async () => ({ rows: [], count: 0 }));
+
+  const server = app.listen(0, '127.0.0.1');
+  context.after(() => server.close());
+  await new Promise((resolve) => server.once('listening', resolve));
+  const base = `http://127.0.0.1:${server.address().port}/api`;
+  const requestAs = (subject, path) => fetch(`${base}${path}`, { headers: { Authorization: `Bearer ${jwt.sign({}, env.auth.secret, { subject })}` } });
+
+  assert.equal((await requestAs('ind', '/wheel')).status, 403);
+  assert.equal((await requestAs('ind', '/investor-requests')).status, 403);
+  assert.equal((await requestAs('zf', '/wheel')).status, 200);
+  assert.equal((await requestAs('zf', '/investor-requests')).status, 200);
 });

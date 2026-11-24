@@ -51,7 +51,7 @@
 - Statut d'une ligne signalé par un fond très léger (vert ou rouge), pas par une colonne de plus.
 - Une échéance qui approche se voit dans la liste, sans ouvrir la fiche : ligne sur fond rouge léger si elle est en retard, jaune léger si elle est pour aujourd'hui, avec une horloge et « En retard · … » ou « Aujourd'hui, 19:28 » ; un bouton « Relances du jour » (avec son nombre) filtre ces lignes.
 - Tableau de bord : d'abord « Aujourd'hui » (relances à faire et rendez-vous du jour, chaque ligne ouvre la fiche), puis « À traiter » sans les lignes à zéro, puis les chiffres.
-- Menu de l'occupant : Mon stand, Mes contacts, Scan de passage (« Scan » dans la barre du bas).
+- Menu de l'occupant : Mon stand, Mes contacts, Scan de passage (« Scan » dans la barre du bas), Rencontres B2B. La page Scan de passage a « Liste des scans » (fenêtre avec les joueurs scannés, le plus récent d'abord), pas de code de jeu. Les occupants du Stand API-ZF ont en plus Guichets et Roue des opportunités (entrée seule, pas « Jeux et défis »).
 
 ## Écrans particuliers
 

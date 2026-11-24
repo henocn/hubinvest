@@ -267,8 +267,8 @@ export default {
   live: {
     ask: "Ask a question",
     title: "Your question",
-    question: "Your question",
-    name: "Your name",
+    question: "Question",
+    name: "Name",
     send: "Send to the host",
     sent: "Question sent! The host sees it live.",
     another: "Ask another question",

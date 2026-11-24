@@ -28,7 +28,7 @@ import { exportToExcel } from '../../lib/excel';
 import { guichetShortLabels } from '../constants/access';
 import { api } from '../lib/api';
 import { useRealtimeEvent } from '../../lib/realtime';
-import { adminSections, groupTabs, isGlobalRole, sectionGroups } from '../../navigation';
+import { accessRole, adminSections, groupTabs, isApizfTeamRole, isGlobalRole, sectionGroups } from '../../navigation';
 import B2bNeedsSettings from '../components/B2bNeedsSettings';
 import { useDashboard } from '../dashboard';
 
@@ -48,10 +48,12 @@ export default function BackofficePage({ session, onLogout, section }) {
   const isSuperAdmin = session.user.role === 'super-admin';
   // Équipe API-ZF (super administrateur, administrateur) : tous les stands ; occupant : le sien.
   const isGlobal = isGlobalRole(session.user.role);
+  // Guichets et roue : l'équipe API-ZF et les occupants du Stand API-ZF.
+  const isApizfTeam = isApizfTeamRole(accessRole(session.user));
   const todo = useDashboard()?.data?.todo || {};
   // Onglets de la rubrique quand elle fait partie d'un groupe (Jeux).
   const group = adminSections.find((item) => item.section === section)?.group;
-  const tabs = group ? groupTabs(group, session.user.role) : [];
+  const tabs = group ? groupTabs(group, accessRole(session.user)) : [];
   const location = useLocation();
   const navigate = useNavigate();
   // Fiche d'un stand : /stands/<id>.
@@ -116,16 +118,18 @@ export default function BackofficePage({ session, onLogout, section }) {
         setProgramEvents(programData);
         setWheel(wheelData);
       } else {
-        const [needData, proposalData, challengeData, wheelData] = await Promise.all([
+        const [needData, proposalData, challengeData, wheelData, investorData] = await Promise.all([
           api.b2bNeeds(session.token),
           api.b2bAllProposals(session.token),
           api.challengePassports(session.token),
-          api.wheel(session.token),
+          isApizfTeam ? api.wheel(session.token) : null,
+          isApizfTeam ? api.investorRequests(session.token) : null,
         ]);
         setB2bNeeds(needData);
         setB2bProposals(proposalData);
         setChallengePassports(challengeData);
-        setWheel(wheelData);
+        if (wheelData) setWheel(wheelData);
+        if (investorData) setInvestorRequests(investorData.items);
       }
     } catch (requestError) {
       if (requestError.status === 401 || requestError.status === 403) onLogout();
@@ -133,7 +137,7 @@ export default function BackofficePage({ session, onLogout, section }) {
     } finally {
       setLoading(false);
     }
-  }, [isGlobal, isSuperAdmin, onLogout, session.token]);
+  }, [isApizfTeam, isGlobal, isSuperAdmin, onLogout, session.token]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -147,9 +151,14 @@ export default function BackofficePage({ session, onLogout, section }) {
         setB2bProposals(proposalData);
       },
       challenge: async () => setChallengePassports(await api.challengePassports(token)),
-      wheel: async () => setWheel(await api.wheel(token)),
       account: async () => { await api.profile(token); },
     };
+    if (isApizfTeam) {
+      Object.assign(loaders, {
+        wheel: async () => setWheel(await api.wheel(token)),
+        'investor-requests': async () => setInvestorRequests((await api.investorRequests(token)).items),
+      });
+    }
     if (isGlobal) {
       Object.assign(loaders, {
         occupants: async () => {
@@ -157,14 +166,13 @@ export default function BackofficePage({ session, onLogout, section }) {
           setOccupants(occupantData);
           setProgramEvents(programData);
         },
-        'investor-requests': async () => setInvestorRequests((await api.investorRequests(token)).items),
         ...(isSuperAdmin && { users: async () => setUsers(await api.users(token)) }),
         program: async () => setProgramEvents(await api.programEvents(token)),
         contacts: async () => setContactStats(await api.contactStats(token)),
       });
     }
     return loaders;
-  }, [isGlobal, isSuperAdmin, session.token]);
+  }, [isApizfTeam, isGlobal, isSuperAdmin, session.token]);
 
   const reloadTopic = useCallback(async (topic) => {
     const loader = silentLoaders[topic];

@@ -1,10 +1,12 @@
-import { CheckCircle2, ScanLine } from 'lucide-react';
+import { CheckCircle2, ListChecks, ScanLine } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ChallengeScannerDialog from '../components/ChallengeScannerDialog';
 import PlayerSearch from '../components/PlayerSearch';
-import { useWheelPrize, WheelCodeGenerator, WheelPrizeCard, WheelPrizeResult, wheelCodePattern } from '../components/WheelPrize';
+import ScanListDialog from '../components/ScanListDialog';
+import { useWheelPrize, WheelPrizeCard, WheelPrizeResult, wheelCodePattern } from '../components/WheelPrize';
 import { api } from '../lib/api';
 import { useRealtimeConnected, useRealtimeEvent } from '../lib/realtime';
+import { accessRole, isApizfTeamRole } from '../navigation';
 
 const participantCode = /^(?:[A-HJ-NP-Z2-9]{6}|[A-HJ-NP-Z2-9]{8})$/;
 
@@ -14,6 +16,9 @@ export default function OccupantChallengePage({ session, onLogout }) {
   const [statsError, setStatsError] = useState('');
   const [code, setCode] = useState('');
   const [open, setOpen] = useState(false);
+  const [listOpen, setListOpen] = useState(false);
+  // Lots de la roue : remis seulement par le Stand API-ZF ; les autres stands ne saisissent que des codes participants.
+  const handlesWheel = isApizfTeamRole(accessRole(session.user));
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -74,7 +79,7 @@ export default function OccupantChallengePage({ session, onLogout }) {
   // Code de 6 (ou 8) caractères : code participant, le passage est validé.
   const handleCode = useCallback((value) => {
     const normalized = value.trim().toUpperCase().replace(/[\s-]/g, '');
-    if (wheelCodePattern.test(normalized)) {
+    if (handlesWheel && wheelCodePattern.test(normalized)) {
       setError('');
       setResult(null);
       setCode('');
@@ -83,17 +88,19 @@ export default function OccupantChallengePage({ session, onLogout }) {
     }
     wheel.resetPrize();
     if (!participantCode.test(normalized)) {
-      setError('Saisissez le code participant (6 caractères) ou le code de jeu de la roue (4 caractères).');
+      setError(handlesWheel ? 'Saisissez le code participant (6 caractères) ou le code de jeu de la roue (4 caractères).' : 'Saisissez le code participant (6 caractères).');
       setResult(null);
       return;
     }
     void validateCode(normalized);
-  }, [validateCode, wheel]);
+  }, [handlesWheel, validateCode, wheel]);
 
   const scanned = useCallback((value) => {
     setOpen(false);
     handleCode(value);
   }, [handleCode]);
+
+  const closeList = useCallback(() => setListOpen(false), []);
 
   const submit = (event) => {
     event.preventDefault();
@@ -107,9 +114,9 @@ export default function OccupantChallengePage({ session, onLogout }) {
         {statsError && <p className="panel-error" role="alert">{statsError}</p>}
         <button className="button button-primary challenge-open-scanner" type="button" onClick={() => setOpen(true)} disabled={loading}><ScanLine size={20} /> Scanner</button>
         <form className="challenge-manual-form" onSubmit={submit}>
-          <label htmlFor="challenge-participant-code">Code participant ou code de jeu</label>
+          <label htmlFor="challenge-participant-code">{handlesWheel ? 'Code participant ou code de jeu' : 'Code participant'}</label>
           <div className="challenge-manual-row">
-            <input id="challenge-participant-code" className="challenge-code-input" value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} minLength={4} maxLength={8} autoCapitalize="characters" autoComplete="off" required />
+            <input id="challenge-participant-code" className="challenge-code-input" value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} minLength={handlesWheel ? 4 : 6} maxLength={8} autoCapitalize="characters" autoComplete="off" required />
             <button className="button button-secondary" type="submit" disabled={loading}>OK</button>
           </div>
         </form>
@@ -119,9 +126,10 @@ export default function OccupantChallengePage({ session, onLogout }) {
         <WheelPrizeCard prize={wheel.prize} loading={wheel.prizeLoading} onClaim={wheel.claimPrize} />
         {wheel.prizeError && <p className="panel-error" role="alert">{wheel.prizeError}</p>}
         <WheelPrizeResult text={wheel.claimed} />
-        <WheelCodeGenerator session={session} onLogout={onLogout} />
+        <div className="scan-list-open"><button className="button button-secondary" type="button" onClick={() => setListOpen(true)}><ListChecks size={18} /> Liste des scans</button></div>
       </section>
       {open && <ChallengeScannerDialog onCode={scanned} onClose={() => setOpen(false)} />}
+      {listOpen && <ScanListDialog session={session} onLogout={onLogout} onClose={closeList} />}
     </main>
   );
 }

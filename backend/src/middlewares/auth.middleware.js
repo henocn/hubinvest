@@ -8,7 +8,7 @@ const findSessionUser = async (userId) => {
   const user = await User.findOne({
     where: { id: userId, isActive: true },
     attributes: ['id', 'occupantId', 'email', 'firstName', 'lastName', 'role'],
-    include: [{ model: Occupant, as: 'occupant', attributes: ['status'], required: false }],
+    include: [{ model: Occupant, as: 'occupant', attributes: ['status', 'space'], required: false }],
   });
 
   if (!user) {

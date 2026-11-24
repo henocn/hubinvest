@@ -4,6 +4,7 @@ const validate = require('../../middlewares/validate.middleware');
 const { authenticate, requireRoles } = require('../../middlewares/auth.middleware');
 const roles = require('../../shared/roles');
 const AppError = require('../../shared/app-error');
+const { isApizfTeam } = require('../../shared/access');
 const wheelValidation = require('./wheel.validation');
 const wheelController = require('./wheel.controller');
 
@@ -34,17 +35,18 @@ router.get('/public', asyncHandler(wheelController.getPublic));
 router.post('/public/spin', limitFailedSpins, validate(wheelValidation.spin), asyncHandler(wheelController.spin));
 
 router.use(asyncHandler(authenticate));
-// Les équipes des stands délivrent aussi des codes ; toute l'équipe peut remettre un lot gagné.
-router.post('/codes', requireRoles(roles.SUPER_ADMIN, roles.ADMIN, roles.OCCUPANT), asyncHandler(wheelController.generateCode));
-const prizeTeam = requireRoles(roles.SUPER_ADMIN, roles.ADMIN, roles.OCCUPANT, roles.ANIMATOR);
+// Roue : seule l'API-ZF délivre les codes et remet les lots (équipe API-ZF, occupants du Stand API-ZF, animateurs pour les lots).
+const forbidden = () => new AppError(403, 'FORBIDDEN', "Vous n’avez pas accès à cette action.");
+const wheelTeam = (request, response, next) => next(isApizfTeam(request.user) ? undefined : forbidden());
+const prizeTeam = (request, response, next) => next(isApizfTeam(request.user) || request.user?.role === roles.ANIMATOR ? undefined : forbidden());
+router.post('/codes', wheelTeam, asyncHandler(wheelController.generateCode));
 router.get('/prizes/:code', prizeTeam, validate(wheelValidation.codeParams, 'params'), asyncHandler(wheelController.findPrize));
 router.post('/prizes/:code/claim', prizeTeam, validate(wheelValidation.codeParams, 'params'), asyncHandler(wheelController.claimPrize));
 // Bouton « Remis » de l'historique du back office : un tour précis.
-router.post('/plays/:id/claim', requireRoles(roles.SUPER_ADMIN, roles.ADMIN, roles.OCCUPANT), validate(wheelValidation.idParams, 'params'), asyncHandler(wheelController.claimPlay));
+router.post('/plays/:id/claim', wheelTeam, validate(wheelValidation.idParams, 'params'), asyncHandler(wheelController.claimPlay));
 
-// L'historique et les codes se consultent aussi par les administrateurs de stand ;
-// les cases et les lots de la roue (pour tout le salon) ne se gèrent que par l'API-ZF.
-router.get('/', requireRoles(roles.SUPER_ADMIN, roles.ADMIN, roles.OCCUPANT), asyncHandler(wheelController.overview));
+// L'historique et les codes : l'API-ZF ; les cases et les lots se règlent par le super administrateur.
+router.get('/', wheelTeam, asyncHandler(wheelController.overview));
 
 router.use(requireRoles(roles.SUPER_ADMIN));
 router.delete('/plays/:id', validate(wheelValidation.idParams, 'params'), asyncHandler(wheelController.removePlay));

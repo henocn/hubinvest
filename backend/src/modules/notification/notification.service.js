@@ -54,10 +54,10 @@ const contactReminderChanged = (contact) => dispatch(async () => {
   ));
 });
 
-// Nouveau contact aux guichets : l'équipe de l'API-ZF (super administrateurs) est prévenue. Une demande de rappel
+// Nouveau contact aux guichets : l'équipe de l'API-ZF (dont les occupants du Stand API-ZF) est prévenue. Une demande de rappel
 // n'envoie rien à la personne : l'équipe la rappelle (un rendez-vous réservé reçoit son propre e-mail, avec ses rappels).
 const investorRequestReceived = (request) => dispatch(async () => {
-  const team = await notificationRepository.findSuperAdmins();
+  const team = await notificationRepository.findApizfTeam();
   if (team.length) await notificationRepository.enqueue(forUsers(team, (user) => templates.investorRequestReceived({ user, request })));
 });
 
@@ -70,7 +70,7 @@ const investorFollowUpChanged = (followUp, request) => dispatch(async () => {
   const dueAt = new Date(followUp.dueAt);
   if (followUp.doneAt || Number.isNaN(dueAt.getTime()) || dueAt <= new Date()) return;
   const contact = request.contactUserId ? await notificationRepository.findActiveUser(request.contactUserId) : null;
-  const users = contact ? [contact] : await notificationRepository.findSuperAdmins();
+  const users = contact ? [contact] : await notificationRepository.findApizfTeam();
   if (users.length === 0) return;
   await notificationRepository.enqueue(forUsers(
     users,

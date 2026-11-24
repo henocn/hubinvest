@@ -1,6 +1,6 @@
 const { Op } = require('sequelize');
 const { InvestorRequest, InvestorFollowUp, InvestorMeeting, User, sequelize } = require('../../models');
-const { GLOBAL_ROLES } = require('../../shared/access');
+const { apizfTeamQuery } = require('../../shared/access');
 
 const person = ['id', 'firstName', 'lastName'];
 const contactUserInclude = { model: User, as: 'contactUser', attributes: person, required: false };
@@ -59,9 +59,9 @@ const findGuichetMeetingsBetween = (guichet, from, to) => InvestorMeeting.findAl
 
 const update = (request, values) => request.update(values);
 
-// L'interlocuteur nommé est un membre actif de l'équipe API-ZF (super administrateur).
-const findTeamMember = (id) => User.findOne({ where: { id, role: { [Op.in]: GLOBAL_ROLES }, isActive: true }, attributes: person });
-const findTeam = () => User.findAll({ where: { role: { [Op.in]: GLOBAL_ROLES }, isActive: true }, attributes: person, order: [['firstName', 'ASC']] });
+// L'interlocuteur nommé est un membre actif de l'équipe API-ZF (dont les occupants du Stand API-ZF).
+const findTeamMember = (id) => User.findOne({ ...apizfTeamQuery({ id }), attributes: person });
+const findTeam = () => User.findAll({ ...apizfTeamQuery(), attributes: person, order: [['firstName', 'ASC']] });
 
 const countFollowUps = (investorRequestId) => InvestorFollowUp.count({ where: { investorRequestId } });
 const createFollowUp = (values) => InvestorFollowUp.create(values);

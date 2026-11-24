@@ -9,7 +9,7 @@ import { DashboardProvider, useDashboard } from '../admin/dashboard';
 import { api, resolveAssetUrl } from '../lib/api';
 import { disablePush } from '../lib/push';
 import { useRealtimeConnection, useRealtimeEvent } from '../lib/realtime';
-import { isManagerRole, linksForRole, roleLabels, tabsForRole } from '../navigation';
+import { accessRole, isManagerRole, linksForRole, roleLabels, tabsForRole } from '../navigation';
 import { useSession } from '../session';
 
 const adminTopics = ['occupants', 'users', 'program', 'contacts', 'investor-requests', 'b2b', 'studio', 'challenge', 'wheel', 'settings', 'live-questions', 'account'];
@@ -55,8 +55,8 @@ function TeamShellLayout() {
   const isAdmin = isManagerRole(user.role);
   // Pages propres à l'occupant (carnet, scan des Défis, profil) : elles gardent leur présentation d'espace de stand.
   const standPage = user.role === 'occupant' && ['/contacts', '/defis', '/profil'].some((path) => location.pathname === path || location.pathname.startsWith(`${path}/`));
-  const links = linksForRole(user.role);
-  const tabs = tabsForRole(user.role);
+  const links = linksForRole(accessRole(user));
+  const tabs = tabsForRole(accessRole(user));
   const occupant = user.occupant;
 
   // Le profil (nom, stand, logo) modifié depuis l'administration s'affiche aussitôt.

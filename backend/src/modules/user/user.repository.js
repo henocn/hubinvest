@@ -1,6 +1,6 @@
 const { User, Occupant } = require('../../models');
 
-const includeOccupant = [{ model: Occupant, as: 'occupant', attributes: ['id', 'name', 'slug', 'standLabel', 'activity', 'logoUrl'] }];
+const includeOccupant = [{ model: Occupant, as: 'occupant', attributes: ['id', 'name', 'slug', 'standLabel', 'activity', 'logoUrl', 'space'] }];
 
 const findAll = () =>
   User.findAll({

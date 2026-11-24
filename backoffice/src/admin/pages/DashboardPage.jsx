@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { AlarmClock, CalendarClock } from 'lucide-react';
 import { useDashboard } from '../dashboard';
-import { isGlobalRole } from '../../navigation';
+import { accessRole, isApizfTeamRole, isGlobalRole } from '../../navigation';
 import { dueLabel, dueState } from '../lib/due';
 
 const time = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Africa/Lome', hour: '2-digit', minute: '2-digit' });
@@ -42,7 +42,9 @@ function AgendaList({ title, Icon, empty, items }) {
 // Accueil de l'administration : l'agenda du jour, ce qui attend une action, puis les chiffres du Hub.
 export default function DashboardPage({ session }) {
   const { data, error } = useDashboard();
+  // Équipe API-ZF (tous les stands) ; guichets et roue aussi pour les occupants du Stand API-ZF.
   const isApizf = isGlobalRole(session.user.role);
+  const hasGuichets = isApizfTeamRole(accessRole(session.user));
   const isSuperAdmin = session.user.role === 'super-admin';
 
   const followUps = (data?.agenda?.followUps || []).map((item) => {
@@ -67,13 +69,13 @@ export default function DashboardPage({ session }) {
 
   // À traiter : seulement ce qui attend vraiment une action (rien à zéro).
   const todo = data ? [
-    isApizf && { value: data.investor.new, label: 'Contacts des guichets', detail: 'à traiter', to: '/guichets' },
-    isApizf && { value: (data.investor.overdue ?? 0) + (data.investor.dueToday ?? 0), label: 'Relances du jour', detail: data.investor.overdue ? `dont ${data.investor.overdue} en retard` : 'à faire aujourd’hui', to: '/guichets?relances' },
-    isApizf && { value: data.investor.commitmentsOverdue ?? 0, label: 'Engagements en retard', detail: 'réponse promise non donnée', to: '/guichets' },
+    hasGuichets && { value: data.investor.new, label: 'Contacts des guichets', detail: 'à traiter', to: '/guichets' },
+    hasGuichets && { value: (data.investor.overdue ?? 0) + (data.investor.dueToday ?? 0), label: 'Relances du jour', detail: data.investor.overdue ? `dont ${data.investor.overdue} en retard` : 'à faire aujourd’hui', to: '/guichets?relances' },
+    hasGuichets && { value: data.investor.commitmentsOverdue ?? 0, label: 'Engagements en retard', detail: 'réponse promise non donnée', to: '/guichets' },
     { value: data.b2b.pendingProposals, label: 'Demandes B2B', detail: 'à accepter ou refuser', to: '/b2b' },
     isApizf && { value: data.studio.pending, label: 'Studio', detail: 'invités sans créneau', to: '/studio' },
-    { value: data.challenges.rewardsToHand, label: 'Récompenses à remettre', detail: 'les 5 étapes trouvées', to: '/participants' },
-    { value: data.wheel.prizesToHand, label: 'Lots de la roue', detail: 'gagnés, pas encore remis', to: '/roue' },
+    isApizf && { value: data.challenges.rewardsToHand, label: 'Récompenses à remettre', detail: 'les 5 étapes trouvées', to: '/participants' },
+    hasGuichets && { value: data.wheel.prizesToHand, label: 'Lots de la roue', detail: 'gagnés, pas encore remis', to: '/roue' },
     data.challenges.rewardsLeft !== null && data.challenges.rewardsLeft !== undefined && data.challenges.rewardsLeft <= 5
       && { value: data.challenges.rewardsLeft, label: 'Récompenses en stock', detail: `sur ${data.challenges.rewardStock}, à réapprovisionner`, to: isSuperAdmin ? '/parametres' : undefined },
   ].filter((item) => item && item.value > 0) : [];
@@ -87,8 +89,8 @@ export default function DashboardPage({ session }) {
         <>
           <section className="dashboard-group" aria-labelledby="dashboard-today">
             <h2 id="dashboard-today">Aujourd’hui</h2>
-            <div className={`dashboard-agenda${isApizf ? '' : ' is-single'}`}>
-              {isApizf && <AgendaList title="Relances à faire" Icon={AlarmClock} empty="Aucune relance à faire aujourd’hui." items={followUps} />}
+            <div className={`dashboard-agenda${hasGuichets ? '' : ' is-single'}`}>
+              {hasGuichets && <AgendaList title="Relances à faire" Icon={AlarmClock} empty="Aucune relance à faire aujourd’hui." items={followUps} />}
               <AgendaList title="Rendez-vous" Icon={CalendarClock} empty="Aucun rendez-vous aujourd’hui." items={meetings} />
             </div>
           </section>
@@ -107,11 +109,11 @@ export default function DashboardPage({ session }) {
             <div className="dashboard-grid">
               {isApizf && <Stat value={data.stands.active} label="Stands actifs" to="/stands" />}
               {isApizf && <Stat value={data.contacts.total} label="Contacts captés" detail={`dont ${data.contacts.today} aujourd’hui · ${data.contacts.fromSite} via le site`} />}
-              <Stat value={data.challenges.players} label={isApizf ? 'Joueurs des Défis' : 'Joueurs passés par le stand'} detail={`${data.challenges.rewardsHanded} récompense${data.challenges.rewardsHanded > 1 ? 's' : ''} remise${data.challenges.rewardsHanded > 1 ? 's' : ''}`} to="/participants" />
-              <Stat value={data.wheel.played} label="Parties de roue" detail={`dont ${data.wheel.playedToday} aujourd’hui`} to="/roue" />
-              {isApizf && <Stat value={data.investor.total} label="Contacts aux guichets" detail={`${data.investor.inProgress} en suivi`} to="/guichets" />}
-              {isApizf && <Stat value={data.investor.diagnosed ?? 0} label="Diagnostics réalisés" detail="fiches de diagnostic en 15 minutes" to="/guichets" />}
-              {isApizf && <Stat value={data.investor.supportTaken ?? 0} label="Sollicitations d’accompagnement" detail="prises en charge avec un engagement de suivi" to="/guichets" />}
+              <Stat value={data.challenges.players} label={isApizf ? 'Joueurs des Défis' : 'Joueurs passés par le stand'} detail={`${data.challenges.rewardsHanded} récompense${data.challenges.rewardsHanded > 1 ? 's' : ''} remise${data.challenges.rewardsHanded > 1 ? 's' : ''}`} to={isApizf ? '/participants' : '/defis'} />
+              {hasGuichets && <Stat value={data.wheel.played} label="Parties de roue" detail={`dont ${data.wheel.playedToday} aujourd’hui`} to="/roue" />}
+              {hasGuichets && <Stat value={data.investor.total} label="Contacts aux guichets" detail={`${data.investor.inProgress} en suivi`} to="/guichets" />}
+              {hasGuichets && <Stat value={data.investor.diagnosed ?? 0} label="Diagnostics réalisés" detail="fiches de diagnostic en 15 minutes" to="/guichets" />}
+              {hasGuichets && <Stat value={data.investor.supportTaken ?? 0} label="Sollicitations d’accompagnement" detail="prises en charge avec un engagement de suivi" to="/guichets" />}
               <Stat value={data.b2b.openNeeds} label="Besoins B2B ouverts" to="/besoins-b2b" />
               {isApizf && <Stat value={data.studio.confirmed} label="Passages au Studio" detail="réservés, à venir" to="/studio" />}
               {data.challenges.rewardsLeft !== null && data.challenges.rewardsLeft !== undefined && data.challenges.rewardsLeft > 5 && <Stat value={data.challenges.rewardsLeft} label="Récompenses en stock" detail={`sur ${data.challenges.rewardStock}`} to={isSuperAdmin ? '/parametres' : undefined} />}

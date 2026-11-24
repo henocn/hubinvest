@@ -1,6 +1,6 @@
 const { Op } = require('sequelize');
 const { sequelize, NotificationJob, User } = require('../../models');
-const { GLOBAL_ROLES } = require('../../shared/access');
+const { GLOBAL_ROLES, apizfTeamQuery } = require('../../shared/access');
 
 const STALE_LOCK_MINUTES = 10;
 
@@ -63,6 +63,9 @@ const findSuperAdmins = () => User.findAll({
   attributes: ['id', 'firstName', 'email'],
 });
 
+// Équipe des guichets : l'API-ZF et les occupants du Stand API-ZF.
+const findApizfTeam = () => User.findAll({ ...apizfTeamQuery(), attributes: ['id', 'firstName', 'email'] });
+
 // Retrouve un compte actif par son identifiant.
 const findActiveUser = (id) => User.findOne({
   where: { id, isActive: true },
@@ -70,6 +73,7 @@ const findActiveUser = (id) => User.findOne({
 });
 
 module.exports = {
+  findApizfTeam,
   enqueue,
   cancelPending,
   claimBatch,

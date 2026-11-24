@@ -17,7 +17,7 @@ import StudioPage from './admin/pages/StudioPage';
 import AuditLogPage from './admin/pages/AuditLogPage';
 import MyStandPage from './admin/pages/MyStandPage';
 import { api } from './lib/api';
-import { adminSectionForPath, homeForRole, isManagerRole } from './navigation';
+import { accessRole, adminSectionForPath, homeForRole, isManagerRole } from './navigation';
 import { SessionProvider, useSession } from './session';
 
 const PUBLIC_URL = (import.meta.env.VITE_PUBLIC_URL || 'https://hub.investir.tg').replace(/\/$/, '');
@@ -40,7 +40,7 @@ function LoginPage() {
     setError('');
     try {
       const result = await api.login(form);
-      const home = homeForRole(result.user.role);
+      const home = homeForRole(accessRole(result.user));
       if (!home) throw new Error('Ce compte n’a accès à aucun espace.');
       signIn(result);
       // Retour à la page demandée avant la connexion (lien d'une notification), sinon à l'accueil du rôle.
@@ -84,8 +84,8 @@ function AdminSection() {
   if (location.pathname.startsWith('/investor-desk')) return <Navigate to={location.pathname.replace('/investor-desk', '/guichets')} replace />;
   // L'occupant ne voit pas la liste des stands : Stands le mène à son propre stand.
   if (session.user.role === 'occupant' && /^\/stands(\/|$)/.test(location.pathname)) return <Navigate to="/mon-stand" replace />;
-  const section = adminSectionForPath(location.pathname, session.user.role);
-  if (!section) return <Navigate to={homeForRole(session.user.role)} replace />;
+  const section = adminSectionForPath(location.pathname, accessRole(session.user));
+  if (!section) return <Navigate to={homeForRole(accessRole(session.user))} replace />;
   if (section === 'studio') return <StudioPage session={session} onLogout={logout} />;
   if (section === 'audit') return <AuditLogPage session={session} onLogout={logout} />;
   return <BackofficePage session={session} onLogout={logout} section={section} />;
