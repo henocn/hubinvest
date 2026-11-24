@@ -20,8 +20,9 @@ const claimBatch = async (limit) => {
         SET status = 'processing', locked_at = NOW(), attempts = attempts + 1, updated_at = NOW()
       WHERE id IN (
         SELECT id FROM notification_jobs
-         WHERE (status = 'pending' AND available_at <= NOW())
-            OR (status = 'processing' AND locked_at < NOW() - INTERVAL '${STALE_LOCK_MINUTES} minutes')
+         WHERE channel IN ('email', 'user')
+           AND ((status = 'pending' AND available_at <= NOW())
+            OR (status = 'processing' AND locked_at < NOW() - INTERVAL '${STALE_LOCK_MINUTES} minutes'))
          ORDER BY available_at
          LIMIT :limit
          FOR UPDATE SKIP LOCKED

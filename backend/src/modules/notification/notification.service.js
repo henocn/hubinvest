@@ -82,23 +82,50 @@ const investorFollowUpChanged = (followUp, request) => dispatch(async () => {
 // Relance faite ou supprimée : son alerte disparaît.
 const investorFollowUpRemoved = (followUp) => dispatch(() => notificationRepository.cancelPending(followUpKey(followUp)));
 
-// Rendez-vous aux guichets fixé, déplacé ou annulé : la personne reçoit un e-mail, puis un rappel la veille et une heure
-// avant ; un déplacement remplace les rappels, une annulation les retire.
+// Messages aux visiteurs (sans compte) :
+// - confirmation, déplacement, annulation, invitation, capsule : l'e-mail, et WhatsApp en plus quand il est activé et que
+//   la personne a laissé un téléphone ;
+// - rappel (la veille et une heure avant) : WhatsApp quand c'est possible, l'e-mail sinon ; si WhatsApp échoue (numéro
+//   sans WhatsApp, plafond du jour…), le service notifier envoie l'e-mail prévu en repli.
+const whatsappReady = (phone) => env.whatsapp.enabled && Boolean(phone);
+const visitorJobs = ({ email, phone, emailPayload, whatsapp, extra = {} }) => [
+  ...(email ? [{ channel: 'email', recipient: email, payload: emailPayload, ...extra }] : []),
+  ...(whatsappReady(phone) && whatsapp ? [{ channel: 'whatsapp', recipient: phone, payload: whatsapp, ...extra }] : []),
+];
+const reminderJob = ({ email, phone, emailPayload, whatsapp, extra = {} }) => {
+  if (whatsappReady(phone) && whatsapp) {
+    return [{ channel: 'whatsapp', recipient: phone, payload: { ...whatsapp, fallback: email ? { recipient: email, ...emailPayload } : null }, ...extra }];
+  }
+  return email ? [{ channel: 'email', recipient: email, payload: emailPayload, ...extra }] : [];
+};
+// Rappels la veille et une heure avant un rendez-vous, s'ils sont encore à venir.
+const reminderTimes = (startsAt) => {
+  const start = new Date(startsAt).getTime();
+  return [start - 24 * 60 * 60 * 1000, start - 60 * 60 * 1000].filter((time) => time > Date.now()).map((time) => new Date(time));
+};
+
+// Rendez-vous aux guichets fixé, déplacé ou annulé : la personne est prévenue (e-mail, WhatsApp), puis rappelée la veille
+// et une heure avant ; un déplacement remplace les rappels, une annulation les retire.
 const investorMeetingChanged = (kind, meeting, request) => dispatch(async () => {
   const dedupeKey = `investor-meeting-reminder:${meeting.id}`;
   await notificationRepository.cancelPending(dedupeKey);
-  const email = (payload, extra = {}) => ({ channel: 'email', recipient: request.email, payload, ...extra });
-  const start = new Date(meeting.startsAt).getTime();
-  const reminders = kind === 'cancelled' ? [] : [start - 24 * 60 * 60 * 1000, start - 60 * 60 * 1000]
-    .filter((time) => time > Date.now())
-    .map((time) => email(templates.investorMeeting({ kind: 'reminder', meeting, request }), { dedupeKey, availableAt: new Date(time) }));
-  await notificationRepository.enqueue([email(templates.investorMeeting({ kind, meeting, request })), ...reminders]);
+  const contact = { email: request.email, phone: request.phone };
+  const reminders = kind === 'cancelled' ? [] : reminderTimes(meeting.startsAt).flatMap((availableAt) => reminderJob({
+    ...contact,
+    emailPayload: templates.investorMeeting({ kind: 'reminder', meeting, request }),
+    whatsapp: templates.investorMeetingWhatsapp({ kind: 'reminder', meeting, request }),
+    extra: { dedupeKey, availableAt },
+  }));
+  await notificationRepository.enqueue([
+    ...visitorJobs({ ...contact, emailPayload: templates.investorMeeting({ kind, meeting, request }), whatsapp: templates.investorMeetingWhatsapp({ kind, meeting, request }) }),
+    ...reminders,
+  ]);
 });
 
 // Rendez-vous retiré sans prévenir la personne (erreur de saisie) : ses rappels disparaissent.
 const investorMeetingRemoved = (meeting) => dispatch(() => notificationRepository.cancelPending(`investor-meeting-reminder:${meeting.id}`));
 
-// Prévient l'équipe du stand et confirme au professionnel l'envoi de sa proposition.
+// Prévient l'équipe du stand et confirme au professionnel l'envoi de sa proposition (e-mail seulement).
 const b2bProposalReceived = (proposal, need) => dispatch(async () => {
   const { occupant } = need;
   const team = await standTeam(occupant.id);
@@ -108,30 +135,46 @@ const b2bProposalReceived = (proposal, need) => dispatch(async () => {
   ]);
 });
 
-// Informe le professionnel de l'acceptation ou du refus de sa proposition.
+// Informe le professionnel de l'acceptation ou du refus de sa proposition (e-mail ; le rendez-vous suit par WhatsApp).
 const b2bProposalDecided = (proposal, need) => dispatch(async () => {
   await notificationRepository.enqueue([
     { channel: 'email', recipient: proposal.email, payload: templates.b2bProposalDecision({ proposal, need, occupant: need.occupant }) },
   ]);
 });
 
-// Envoie au visiteur le rendez-vous B2B fixé, ou son annulation.
-const b2bMeetingScheduled = (meeting, proposal) => dispatch(async () => {
+// Rendez-vous B2B fixé ou déplacé : le visiteur est prévenu, puis rappelé la veille et une heure avant.
+const b2bReminderKey = (meeting) => `b2b-meeting-reminder:${meeting.id}`;
+const b2bMeetingNotified = (kind, meeting, proposal) => dispatch(async () => {
+  const dedupeKey = b2bReminderKey(meeting);
+  await notificationRepository.cancelPending(dedupeKey);
+  const need = proposal.need;
+  const values = { meeting, proposal, need, occupant: need.occupant };
+  const contact = { email: proposal.email, phone: proposal.phone };
+  const emailPayload = kind === 'moved' ? templates.b2bMeetingMoved(values) : templates.b2bMeetingScheduled(values);
   await notificationRepository.enqueue([
-    { channel: 'email', recipient: proposal.email, payload: templates.b2bMeetingScheduled({ meeting, proposal, need: proposal.need, occupant: proposal.need.occupant }) },
+    ...visitorJobs({ ...contact, emailPayload, whatsapp: templates.b2bMeetingWhatsapp({ kind, ...values }) }),
+    ...reminderTimes(meeting.startsAt).flatMap((availableAt) => reminderJob({
+      ...contact,
+      emailPayload: templates.b2bMeetingReminder(values),
+      whatsapp: templates.b2bMeetingWhatsapp({ kind: 'reminder', ...values }),
+      extra: { dedupeKey, availableAt },
+    })),
   ]);
 });
+const b2bMeetingScheduled = (meeting, proposal) => b2bMeetingNotified('scheduled', meeting, proposal);
+const b2bMeetingMoved = (meeting, proposal) => b2bMeetingNotified('moved', meeting, proposal);
 
-const b2bMeetingMoved = (meeting, proposal) => dispatch(async () => {
-  await notificationRepository.enqueue([
-    { channel: 'email', recipient: proposal.email, payload: templates.b2bMeetingMoved({ meeting, proposal, need: proposal.need, occupant: proposal.need.occupant }) },
-  ]);
-});
-
-const b2bMeetingCancelled = (meeting, proposal) => dispatch(async () => {
-  await notificationRepository.enqueue([
-    { channel: 'email', recipient: proposal.email, payload: templates.b2bMeetingCancelled({ meeting, proposal, need: proposal.need, occupant: proposal.need.occupant }) },
-  ]);
+// Rendez-vous B2B annulé : ses rappels disparaissent ; le visiteur est prévenu s'il était à venir.
+const b2bMeetingCancelled = (meeting, proposal, { notifyVisitor = true } = {}) => dispatch(async () => {
+  await notificationRepository.cancelPending(b2bReminderKey(meeting));
+  if (!notifyVisitor) return;
+  const values = { meeting, proposal, need: proposal.need, occupant: proposal.need.occupant };
+  await notificationRepository.enqueue(visitorJobs({
+    email: proposal.email,
+    phone: proposal.phone,
+    emailPayload: templates.b2bMeetingCancelled(values),
+    whatsapp: templates.b2bMeetingWhatsapp({ kind: 'cancelled', ...values }),
+  }));
 });
 
 // Studio : l'auteur de l'invitation et l'équipe du stand (ou l'API-ZF) suivent les réponses de l'invité.
@@ -140,12 +183,12 @@ const studioTeam = async (invitation) => {
   return [...(creator ? [creator] : []), ...(await standTeam(invitation.occupantId))];
 };
 const studioReminderKey = (invitation) => `studio-reminder:${invitation.id}`;
-const studioEmail = (invitation, payload, extra = {}) => ({ channel: 'email', recipient: invitation.email, payload, ...extra });
+const guest = (invitation) => ({ email: invitation.email, phone: invitation.phone });
 
 // Invitation personnelle : le lien pour choisir son créneau.
 const studioInvited = (invitation) => dispatch(async () => {
-  if (!invitation.email) return;
-  await notificationRepository.enqueue([studioEmail(invitation, templates.studioInvitation({ invitation }))]);
+  const jobs = visitorJobs({ ...guest(invitation), emailPayload: templates.studioInvitation({ invitation }), whatsapp: templates.studioInvitationWhatsapp({ invitation }) });
+  if (jobs.length) await notificationRepository.enqueue(jobs);
 });
 
 // Créneau réservé ou changé : confirmation à l'invité, rappels la veille et une heure avant, information de l'équipe.
@@ -153,12 +196,15 @@ const studioInvited = (invitation) => dispatch(async () => {
 const studioBooked = (invitation, changed, { byTeam = false } = {}) => dispatch(async () => {
   const dedupeKey = studioReminderKey(invitation);
   await notificationRepository.cancelPending(dedupeKey);
-  const start = new Date(invitation.scheduledAt).getTime();
-  const reminders = [start - 24 * 60 * 60 * 1000, start - 60 * 60 * 1000]
-    .filter((time) => time > Date.now())
-    .map((time) => studioEmail(invitation, templates.studioReminder({ invitation }), { dedupeKey, availableAt: new Date(time) }));
+  const kind = changed ? 'moved' : 'scheduled';
   await notificationRepository.enqueue([
-    ...(invitation.email ? [studioEmail(invitation, templates.studioBookingConfirmation({ invitation, changed })), ...reminders] : []),
+    ...visitorJobs({ ...guest(invitation), emailPayload: templates.studioBookingConfirmation({ invitation, changed }), whatsapp: templates.studioMeetingWhatsapp({ kind, invitation }) }),
+    ...reminderTimes(invitation.scheduledAt).flatMap((availableAt) => reminderJob({
+      ...guest(invitation),
+      emailPayload: templates.studioReminder({ invitation }),
+      whatsapp: templates.studioMeetingWhatsapp({ kind: 'reminder', invitation }),
+      extra: { dedupeKey, availableAt },
+    })),
     ...(byTeam ? [] : forUsers(await studioTeam(invitation), (user) => templates.studioGuestAnswered({ user, invitation, answer: changed ? 'moved' : 'booked' }))),
   ]);
 });
@@ -171,13 +217,15 @@ const studioDeclined = (invitation) => dispatch(async () => {
 // Passage annulé par l'équipe (ou invitation supprimée) : plus de rappels ; l'invité est prévenu si son créneau était à venir.
 const studioCancelled = (invitation, notifyGuest) => dispatch(async () => {
   await notificationRepository.cancelPending(studioReminderKey(invitation));
-  if (notifyGuest && invitation.email) await notificationRepository.enqueue([studioEmail(invitation, templates.studioCancellation({ invitation }))]);
+  if (!notifyGuest) return;
+  const jobs = visitorJobs({ ...guest(invitation), emailPayload: templates.studioCancellation({ invitation }), whatsapp: templates.studioMeetingWhatsapp({ kind: 'cancelled', invitation }) });
+  if (jobs.length) await notificationRepository.enqueue(jobs);
 });
 
 // Livraison de la capsule, prête à partager.
 const studioCapsuleDelivered = (invitation) => dispatch(async () => {
-  if (!invitation.email) return;
-  await notificationRepository.enqueue([studioEmail(invitation, templates.studioCapsule({ invitation }))]);
+  const jobs = visitorJobs({ ...guest(invitation), emailPayload: templates.studioCapsule({ invitation }), whatsapp: templates.studioCapsuleWhatsapp({ invitation }) });
+  if (jobs.length) await notificationRepository.enqueue(jobs);
 });
 
 module.exports = {

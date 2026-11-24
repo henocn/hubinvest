@@ -67,6 +67,10 @@ module.exports = {
     maxAttempts: integer(process.env.NOTIFICATIONS_MAX_ATTEMPTS, 5),
     batchSize: integer(process.env.NOTIFICATIONS_BATCH_SIZE, 20),
   },
+  // WhatsApp : l'API met les messages dans la file ; le service notifier (notifier/) les envoie, avec l'e-mail en repli.
+  whatsapp: {
+    enabled: process.env.WHATSAPP_ENABLED === 'true',
+  },
   realtime: {
     enabled: process.env.REALTIME_ENABLED !== 'false',
     heartbeatInterval: duration(process.env.REALTIME_HEARTBEAT_INTERVAL, 25 * 1000),
