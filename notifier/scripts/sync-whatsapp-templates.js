@@ -32,6 +32,8 @@ const payloadFor = (template, language) => ({
   name: template.name,
   language,
   category: 'UTILITY',
+  // Meta refuse le modèle plutôt que de le passer en MARKETING sans prévenir (leçon de la SDI).
+  allow_category_change: false,
   components: [
     { type: 'BODY', text: template[language].text, example: { body_text: [template[language].example] } },
     { type: 'FOOTER', text: definitions.footer[language] },

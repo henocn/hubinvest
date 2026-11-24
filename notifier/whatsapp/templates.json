@@ -96,7 +96,7 @@
         "lieu"
       ],
       "fr": {
-        "text": "Bonjour {{1}}, petit rappel de votre {{2}} le {{3}}. Lieu : {{4}}. À bientôt à la Foire internationale de Lomé.",
+        "text": "Bonjour {{1}}, rappel de votre {{2}} le {{3}}. Lieu : {{4}}. Merci de vous présenter quelques minutes avant l'heure indiquée.",
         "example": [
           "Kossi Mensah",
           "rendez-vous avec l'API-ZF",
@@ -105,7 +105,7 @@
         ]
       },
       "en": {
-        "text": "Hello {{1}}, a quick reminder of your {{2}} on {{3}}. Location: {{4}}. See you soon at the Lomé International Fair.",
+        "text": "Hello {{1}}, reminder of your {{2}} on {{3}}. Location: {{4}}. Please arrive a few minutes before the scheduled time.",
         "example": [
           "Kossi Mensah",
           "meeting with API-ZF",
@@ -147,14 +147,14 @@
         "lien de la capsule"
       ],
       "fr": {
-        "text": "Bonjour {{1}}, merci pour votre passage au Studio du Hub de l'Investissement. Votre capsule est prête à partager : {{2}} Bonne diffusion sur vos réseaux.",
+        "text": "Bonjour {{1}}, votre capsule enregistrée au Studio du Hub de l'Investissement est disponible : {{2}} Merci pour votre participation.",
         "example": [
           "Afi Koudjo",
           "https://hub.investir.tg/capsules/exemple"
         ]
       },
       "en": {
-        "text": "Hello {{1}}, thank you for your session at the Investment Hub Studio. Your video is ready to share: {{2}} Enjoy sharing it on your networks.",
+        "text": "Hello {{1}}, your video recorded at the Investment Hub Studio is available: {{2}} Thank you for your participation.",
         "example": [
           "Afi Koudjo",
           "https://hub.investir.tg/capsules/example"
