@@ -1768,3 +1768,44 @@ test('WhatsApp entrant : vérification Meta, signature, une réponse automatique
   assert.equal(sent[0][1].to, '22890123456');
   assert.match(sent[0][1].text.body, /hub\.investir\.tg/);
 });
+
+test('un occupant ne voit et ne modifie que son propre stand, sans toucher au nom, à l’emplacement ni au statut', async (context) => {
+  const originalSecret = env.auth.secret;
+  env.auth.secret = 'hubinvest-own-stand-test-secret';
+  context.after(() => { env.auth.secret = originalSecret; });
+  const ownId = crypto.randomUUID();
+  const otherId = crypto.randomUUID();
+  context.mock.method(User, 'findOne', async ({ where }) => ({
+    occupantId: ownId,
+    occupant: { status: 'active' },
+    toJSON: () => ({ id: where.id, occupantId: ownId, role: 'occupant', firstName: 'Afi', lastName: 'Mensah' }),
+  }));
+  const stand = { id: ownId, name: 'Stand Afi', slug: 'stand-afi', status: 'active', standLabel: 'B12' };
+  context.mock.method(occupantRepository, 'findById', async (id) => (id === ownId ? stand : { ...stand, id }));
+  context.mock.method(auditLogService, 'recordRequest', () => null);
+  let updatedWith;
+  context.mock.method(occupantRepository, 'update', async (occupant, values) => {
+    updatedWith = values;
+    return { ...occupant, ...values };
+  });
+
+  const server = app.listen(0, '127.0.0.1');
+  context.after(() => server.close());
+  await new Promise((resolve) => server.once('listening', resolve));
+  const base = `http://127.0.0.1:${server.address().port}/api/occupants`;
+  const headers = { Authorization: `Bearer ${jwt.sign({}, env.auth.secret, { subject: crypto.randomUUID() })}`, 'Content-Type': 'application/json' };
+
+  assert.equal((await fetch(base, { headers })).status, 403);
+  assert.equal((await fetch(`${base}/${otherId}`, { headers })).status, 403);
+  assert.equal((await fetch(`${base}/${ownId}`, { headers })).status, 200);
+  assert.equal((await fetch(`${base}/${otherId}`, { method: 'PATCH', headers, body: JSON.stringify({ activity: 'Autre' }) })).status, 403);
+  assert.equal((await fetch(`${base}/${ownId}`, { method: 'DELETE', headers })).status, 403);
+
+  const response = await fetch(`${base}/${ownId}`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({ activity: 'Transformation du soja', name: 'Autre nom', standLabel: 'A1', status: 'inactive' }),
+  });
+  assert.equal(response.status, 200);
+  assert.deepEqual(updatedWith, { activity: 'Transformation du soja' });
+});

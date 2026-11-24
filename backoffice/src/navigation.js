@@ -64,9 +64,10 @@ const roleLinks = {
   // Utilisateurs, Journal puis Paramètres, en bas du menu.
   'super-admin': [dashboardLink, ...menuSections('super-admin'), { ...questionsLink, tab: false }, usersLink, auditLink, settingsLink],
   admin: [dashboardLink, ...menuSections('admin'), { ...questionsLink, tab: false }],
-  // L'occupant : son carnet et le scan des joueurs d'abord, puis ce qu'il administre pour son stand.
+  // L'occupant : son stand (sa fiche, jamais la liste des stands), son carnet et le scan des joueurs, puis ce qu'il administre.
   occupant: [
     dashboardLink,
+    { path: '/mon-stand', label: 'Mon stand', Icon: Building2 },
     { path: '/contacts', label: 'Contacts', Icon: Users, tab: true },
     { path: '/defis', label: 'Défis', Icon: ScanLine, tab: true },
     ...menuSections('occupant'),

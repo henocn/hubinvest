@@ -5,7 +5,8 @@ import { api, resolveAssetUrl } from '../../lib/api';
 const GALLERY_LIMIT = 5;
 const IMAGE_TYPES = '.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp';
 
-export default function OccupantDrawer({ occupant, onClose, onSaved, token }) {
+// « own » : l'occupant modifie sa propre fiche (contenu et images) ; nom, espace, emplacement et statut restent à l'API-ZF.
+export default function OccupantDrawer({ occupant, onClose, onSaved, token, own = false }) {
   const isEditing = Boolean(occupant);
   const [form, setForm] = useState(() => ({
     name: occupant?.name || '',
@@ -50,16 +51,13 @@ export default function OccupantDrawer({ occupant, onClose, onSaved, token }) {
     setError('');
 
     try {
-      const values = {
-        name: form.name,
-        standLabel: form.standLabel || null,
-        space: form.space,
+      const content = {
         website: form.website.trim() || null,
         activity: form.activity || null,
         products: form.products || null,
         services: form.services || null,
-        status: form.status,
       };
+      const values = own ? content : { ...content, name: form.name, standLabel: form.standLabel || null, space: form.space, status: form.status };
       let saved = isEditing
         ? await api.updateOccupant(token, occupant.id, values)
         : await api.createOccupant(token, values);
@@ -117,12 +115,16 @@ export default function OccupantDrawer({ occupant, onClose, onSaved, token }) {
           <button className="admin-icon-button" type="button" onClick={onClose} aria-label="Fermer"><X size={19} /></button>
         </header>
         <form onSubmit={submit} className="drawer-form">
-          <label>Nom de la structure<input value={form.name} onChange={field('name')} minLength={2} required autoFocus /></label>
-          <label>Espace<select value={form.space} onChange={field('space')}><option value="industry">Espace Industrie</option><option value="apizf">Stand API-ZF</option></select></label>
-          <div className="field-row">
-            <label>Emplacement du stand<input value={form.standLabel} onChange={field('standLabel')} /></label>
-            <label>Site web<input type="url" inputMode="url" value={form.website} onChange={field('website')} placeholder="https://" /></label>
-          </div>
+          {!own && <>
+            <label>Nom de la structure<input value={form.name} onChange={field('name')} minLength={2} required autoFocus /></label>
+            <label>Espace<select value={form.space} onChange={field('space')}><option value="industry">Espace Industrie</option><option value="apizf">Stand API-ZF</option></select></label>
+          </>}
+          {own ? <label>Site web<input type="url" inputMode="url" value={form.website} onChange={field('website')} placeholder="https://" /></label> : (
+            <div className="field-row">
+              <label>Emplacement du stand<input value={form.standLabel} onChange={field('standLabel')} /></label>
+              <label>Site web<input type="url" inputMode="url" value={form.website} onChange={field('website')} placeholder="https://" /></label>
+            </div>
+          )}
           <label>Logo de la structure — 1200 × 1200 px, 2 Mo max.<input type="file" accept={IMAGE_TYPES} onChange={chooseLogo} required={!occupant?.logoUrl} /></label>
           <label>Image de couverture<input type="file" accept={IMAGE_TYPES} onChange={(event) => setCoverFile(event.target.files?.[0] || null)} required={!occupant?.coverImageUrl} /></label>
           <label>Activités<textarea rows="5" value={form.activity} onChange={field('activity')} /></label>
@@ -156,7 +158,7 @@ export default function OccupantDrawer({ occupant, onClose, onSaved, token }) {
             </div>
           </fieldset>
 
-          <label>Statut du stand<select value={form.status} onChange={field('status')}><option value="active">Actif</option><option value="inactive">Inactif</option></select></label>
+          {!own && <label>Statut du stand<select value={form.status} onChange={field('status')}><option value="active">Actif</option><option value="inactive">Inactif</option></select></label>}
           {error && <p className="admin-form-error">{error}</p>}
           <footer className="drawer-actions">
             <button className="button button-secondary" type="button" onClick={onClose}>Annuler</button>

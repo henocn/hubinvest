@@ -15,6 +15,7 @@ import OccupantProfilePage from './pages/OccupantProfilePage';
 import LiveQuestionsPage from './pages/LiveQuestionsPage';
 import StudioPage from './admin/pages/StudioPage';
 import AuditLogPage from './admin/pages/AuditLogPage';
+import MyStandPage from './admin/pages/MyStandPage';
 import { api } from './lib/api';
 import { adminSectionForPath, homeForRole, isManagerRole } from './navigation';
 import { SessionProvider, useSession } from './session';
@@ -81,6 +82,8 @@ function AdminSection() {
   const location = useLocation();
   // Anciens liens de l'Investor Desk (e-mails déjà envoyés) : même fiche, sous Guichets.
   if (location.pathname.startsWith('/investor-desk')) return <Navigate to={location.pathname.replace('/investor-desk', '/guichets')} replace />;
+  // L'occupant ne voit pas la liste des stands : Stands le mène à son propre stand.
+  if (session.user.role === 'occupant' && /^\/stands(\/|$)/.test(location.pathname)) return <Navigate to="/mon-stand" replace />;
   const section = adminSectionForPath(location.pathname, session.user.role);
   if (!section) return <Navigate to={homeForRole(session.user.role)} replace />;
   if (section === 'studio') return <StudioPage session={session} onLogout={logout} />;
@@ -110,6 +113,7 @@ function TeamRoutes() {
             {/* Une seule route : le carnet reste chargé entre la liste, la fiche et le formulaire. */}
             <Route path="/contacts/*" element={<ContactsPage {...props} />} />
             <Route path="/defis" element={<OccupantChallengePage {...props} />} />
+            <Route path="/mon-stand" element={<MyStandPage {...props} />} />
           </>
         )}
         {role === 'animateur' && (

@@ -44,6 +44,7 @@ export const api = {
   realtimeTicket: (token) => request('/realtime/ticket', authorized(token, { method: 'POST' })),
   realtimeStreamUrl: (ticket) => `${API_URL}/realtime/stream?ticket=${encodeURIComponent(ticket)}`,
   occupants: (token) => request('/occupants', authorized(token)),
+  occupant: (token, id) => request(`/occupants/${id}`, authorized(token)),
   createOccupant: (token, values) =>
     request('/occupants', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   updateOccupant: (token, id, values) =>

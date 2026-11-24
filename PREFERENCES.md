@@ -58,6 +58,7 @@
 - Relances : Ajouter (date et heure, motif obligatoire, jamais prérempli) ; Marquer faite avec la prochaine étape (Terminée avec note facultative, Relancer avec date et motif, Autre avec texte) ; Supprimer.
 - Compte rendu B2B : bouton message du rendez-vous → Présent (vert) ou Absent (rouge), puis la prochaine étape (texte) et la note. Un visiteur absent se reprogramme en un clic (fenêtre de nouveau rendez-vous ouverte aussitôt, bouton « Reprogrammer » sur la ligne tant qu'aucun rendez-vous ne suit).
 - Fiche d'un stand (administration) : onglets Contacts (ouvert par défaut ; carnet du stand en lecture, recherche, export), Comptes, Programme, Besoins B2B, puis Fiche en dernier. Règle générale : l'onglet le plus sollicité vient en premier et s'ouvre par défaut.
+- Stands : seule l'équipe API-ZF voit la liste. L'occupant a « Mon stand », qui ouvre directement sa fiche (et /stands l'y mène) ; il en modifie le contenu et les images, pas le nom, l'espace, l'emplacement ni le statut.
 - Studio : l'invité choisit son créneau une seule fois (ou décline avant de choisir) ; ensuite, changer ou annuler passe uniquement par l'équipe dans le back office (« Fixer / Modifier le créneau », « Annuler le passage »).
 - Défis : QR du code participant puis le code lisible ; cinq pastilles d'étapes ; côté stand, compteur, bouton Scanner et saisie du code avec « OK » à côté.
 - Remises de l'animateur : Participant, Contact, Remise le, la plus récente d'abord ; ses propres remises sur fond vert léger.

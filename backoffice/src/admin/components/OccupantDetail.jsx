@@ -98,23 +98,62 @@ function StandContacts({ occupant, token }) {
   );
 }
 
+export const standPublicUrl = (occupant) => `${publicBaseUrl}/stands/${occupant.slug}`;
+
+// Fiche d'un stand (informations et images) : onglet Fiche de l'administration et page « Mon stand » de l'occupant.
+// Les champs passés en enfants s'ajoutent à la fin de la liste.
+export function StandSheet({ occupant, children }) {
+  const isActive = occupant.status === 'active';
+  const publicUrl = standPublicUrl(occupant);
+  const photos = [
+    occupant.logoUrl && { url: occupant.logoUrl, label: 'Logo', isLogo: true },
+    occupant.coverImageUrl && { url: occupant.coverImageUrl, label: 'Couverture' },
+    ...(occupant.gallery || []).map((url, index) => ({ url, label: `Photo ${index + 1}` })),
+  ].filter(Boolean);
+
+  return (
+    <>
+      <section className="data-panel stand-panel">
+        <dl className="stand-fields">
+          <Field label="Emplacement">{occupant.standLabel}</Field>
+          <Field label="Activités">{occupant.activity && <p className="stand-text">{occupant.activity}</p>}</Field>
+          <Field label="Produits">{lines(occupant.products).length > 0 && <ul>{lines(occupant.products).map((item) => <li key={item}>{item}</li>)}</ul>}</Field>
+          <Field label="Services">{lines(occupant.services).length > 0 && <ul>{lines(occupant.services).map((item) => <li key={item}>{item}</li>)}</ul>}</Field>
+          <Field label="Site web">{occupant.website && <a href={occupant.website} target="_blank" rel="noreferrer">{occupant.website.replace(/^https?:\/\//, '')}</a>}</Field>
+          <Field label="Fiche publique">{isActive ? <a href={publicUrl} target="_blank" rel="noreferrer">{publicUrl.replace(/^https?:\/\//, '')}</a> : 'Masquée tant que le stand est inactif'}</Field>
+          {children}
+        </dl>
+      </section>
+
+      <section className="data-panel stand-panel">
+        <h2>Images</h2>
+        {photos.length ? (
+          <div className="stand-photos">
+            {photos.map((photo) => (
+              <a key={photo.url} href={resolveAssetUrl(photo.url)} target="_blank" rel="noreferrer" className={photo.isLogo ? 'is-logo' : ''}>
+                <img src={resolveAssetUrl(photo.url)} alt={photo.label} loading="lazy" />
+                <span>{photo.label}</span>
+              </a>
+            ))}
+          </div>
+        ) : <p className="admin-empty-state">Aucune image.</p>}
+      </section>
+    </>
+  );
+}
+
 // Fiche complète d'un stand dans l'administration, en onglets : son carnet de contacts (ouvert d'abord), ses comptes,
 // son programme, ses besoins B2B, puis la fiche elle-même.
 export default function OccupantDetail({ occupant, token, users, contactCount, programEvents, b2bNeeds, challengePassports, onEdit, onDelete, onQrCode }) {
   const [tab, setTab] = useState('contacts');
   const isActive = occupant.status === 'active';
-  const publicUrl = `${publicBaseUrl}/stands/${occupant.slug}`;
+  const publicUrl = standPublicUrl(occupant);
   const own = belongsTo(occupant.id);
   const accounts = users.filter(own);
   const events = upcomingFirst(programEvents.filter(own), (item) => item.startsAt, (item) => new Date(item.endsAt || item.startsAt) >= new Date());
   const upcomingEvents = events.filter((item) => new Date(item.endsAt || item.startsAt) >= new Date()).length;
   const needs = b2bNeeds.filter(own);
   const players = challengePassports.filter((passport) => (passport.passages || []).some(own)).length;
-  const photos = [
-    occupant.logoUrl && { url: occupant.logoUrl, label: 'Logo', isLogo: true },
-    occupant.coverImageUrl && { url: occupant.coverImageUrl, label: 'Couverture' },
-    ...(occupant.gallery || []).map((url, index) => ({ url, label: `Photo ${index + 1}` })),
-  ].filter(Boolean);
   const tabs = [
     ['contacts', 'Contacts'],
     ['accounts', 'Comptes'],
@@ -144,35 +183,13 @@ export default function OccupantDetail({ occupant, token, users, contactCount, p
         ))}
       </nav>
 
-      {tab === 'details' && <>
-        <section className="data-panel stand-panel">
-          <dl className="stand-fields">
-            <Field label="Emplacement">{occupant.standLabel}</Field>
-            <Field label="Activités">{occupant.activity && <p className="stand-text">{occupant.activity}</p>}</Field>
-            <Field label="Produits">{lines(occupant.products).length > 0 && <ul>{lines(occupant.products).map((item) => <li key={item}>{item}</li>)}</ul>}</Field>
-            <Field label="Services">{lines(occupant.services).length > 0 && <ul>{lines(occupant.services).map((item) => <li key={item}>{item}</li>)}</ul>}</Field>
-            <Field label="Site web">{occupant.website && <a href={occupant.website} target="_blank" rel="noreferrer">{occupant.website.replace(/^https?:\/\//, '')}</a>}</Field>
-            <Field label="Fiche publique">{isActive ? <a href={publicUrl} target="_blank" rel="noreferrer">{publicUrl.replace(/^https?:\/\//, '')}</a> : 'Masquée tant que le stand est inactif'}</Field>
-            <Field label="Contacts enregistrés">{contactCount}</Field>
-            <Field label="Joueurs des Défis">{players}</Field>
-            <Field label="Créé le">{occupant.createdAt && day.format(new Date(occupant.createdAt))}</Field>
-          </dl>
-        </section>
-
-        <section className="data-panel stand-panel">
-          <h2>Images</h2>
-          {photos.length ? (
-            <div className="stand-photos">
-              {photos.map((photo) => (
-                <a key={photo.url} href={resolveAssetUrl(photo.url)} target="_blank" rel="noreferrer" className={photo.isLogo ? 'is-logo' : ''}>
-                  <img src={resolveAssetUrl(photo.url)} alt={photo.label} loading="lazy" />
-                  <span>{photo.label}</span>
-                </a>
-              ))}
-            </div>
-          ) : <p className="admin-empty-state">Aucune image.</p>}
-        </section>
-      </>}
+      {tab === 'details' && (
+        <StandSheet occupant={occupant}>
+          <Field label="Contacts enregistrés">{contactCount}</Field>
+          <Field label="Joueurs des Défis">{players}</Field>
+          <Field label="Créé le">{occupant.createdAt && day.format(new Date(occupant.createdAt))}</Field>
+        </StandSheet>
+      )}
 
       {tab === 'contacts' && <StandContacts occupant={occupant} token={token} />}
 
