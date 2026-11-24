@@ -20,7 +20,7 @@ export default function AnimatorRewardsPage({ session, onLogout }) {
       setRewards(await api.challengeRewards(session.token));
       setError('');
     } catch (requestError) {
-      if (requestError.status === 401 || requestError.status === 403) onLogout();
+      if (requestError.status === 401) onLogout();
       else setError(requestError.message);
     } finally {
       setLoading(false);

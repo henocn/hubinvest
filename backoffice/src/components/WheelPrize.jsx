@@ -16,7 +16,7 @@ export function useWheelPrize({ session, onLogout }) {
   const [claimed, setClaimed] = useState('');
 
   const handle = useCallback((requestError) => {
-    if (requestError.status === 401 || requestError.status === 403) onLogout();
+    if (requestError.status === 401) onLogout();
     else if (requestError.code === 'WHEEL_PRIZE_ALREADY_CLAIMED' && requestError.details) setPrize(requestError.details);
     else setPrizeError(requestError.message);
   }, [onLogout]);

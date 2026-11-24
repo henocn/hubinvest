@@ -31,7 +31,7 @@ export default function LiveQuestionsPage({ session, onLogout }) {
       setQuestions(data);
       setError('');
     } catch (requestError) {
-      if (requestError.status === 401 || requestError.status === 403) onLogout();
+      if (requestError.status === 401) onLogout();
       else setError(requestError.message);
     } finally {
       setLoading(false);
@@ -47,7 +47,7 @@ export default function LiveQuestionsPage({ session, onLogout }) {
     try {
       await api.updateLiveQuestion(session.token, id, status);
     } catch (requestError) {
-      if (requestError.status === 401 || requestError.status === 403) onLogout();
+      if (requestError.status === 401) onLogout();
       else setError(requestError.message);
       void load();
     } finally {

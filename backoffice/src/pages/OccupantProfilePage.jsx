@@ -24,7 +24,7 @@ export default function OccupantProfilePage({ session, onLogout }) {
       setNewPassword('');
       setSuccess('Mot de passe modifié.');
     } catch (requestError) {
-      if (requestError.status === 401 || requestError.status === 403) onLogout();
+      if (requestError.status === 401) onLogout();
       else setError(requestError.message);
     } finally {
       setLoading(false);

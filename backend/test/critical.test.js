@@ -227,7 +227,8 @@ test('un occupant desactive perd acces meme avec un jeton encore valide', async 
     result = error;
   });
 
-  assert.equal(result.status, 403);
+  // Session plus valable : 401, l'application ramène à la connexion (un 403 ne déconnecte plus).
+  assert.equal(result.status, 401);
   assert.equal(result.code, 'OCCUPANT_INACTIVE');
 });
 
@@ -1830,4 +1831,27 @@ test('guichets et roue : l’équipe API-ZF et les occupants du Stand API-ZF, pa
   assert.equal((await requestAs('ind', '/investor-requests')).status, 403);
   assert.equal((await requestAs('zf', '/wheel')).status, 200);
   assert.equal((await requestAs('zf', '/investor-requests')).status, 200);
+});
+
+test('la session se renouvelle tant que l’application est ouverte ; un jeton expiré est refusé', async (context) => {
+  const originalSecret = env.auth.secret;
+  env.auth.secret = 'hubinvest-refresh-test-secret';
+  context.after(() => { env.auth.secret = originalSecret; });
+  context.mock.method(User, 'findOne', async ({ where }) => ({
+    occupantId: null,
+    toJSON: () => ({ id: where.id, occupantId: null, role: 'admin' }),
+  }));
+  const server = app.listen(0, '127.0.0.1');
+  context.after(() => server.close());
+  await new Promise((resolve) => server.once('listening', resolve));
+  const url = `http://127.0.0.1:${server.address().port}/api/auth/refresh`;
+  const post = (token) => fetch(url, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+
+  const response = await post(jwt.sign({ role: 'admin' }, env.auth.secret, { subject: 'u-refresh', expiresIn: '1h' }));
+  assert.equal(response.status, 200);
+  const { data } = await response.json();
+  const renewed = jwt.verify(data.token, env.auth.secret);
+  assert.equal(renewed.sub, 'u-refresh');
+  assert.ok(renewed.exp * 1000 > Date.now() + 2 * 3600000);
+  assert.equal((await post(jwt.sign({}, env.auth.secret, { subject: 'u-refresh', expiresIn: -10 }))).status, 401);
 });

@@ -20,8 +20,12 @@ const resetPassword = async (request, response) => {
   response.json({ data: null, message: 'Mot de passe modifié.' });
 };
 
+const refresh = (request, response) => {
+  response.json({ data: authService.refresh(request.user) });
+};
+
 const me = (request, response) => {
   response.json({ data: request.user });
 };
 
-module.exports = { login, forgotPassword, resetPassword, me };
+module.exports = { refresh, login, forgotPassword, resetPassword, me };

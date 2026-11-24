@@ -21,7 +21,7 @@ export default function AuditLogPage({ session, onLogout }) {
       setTotal(data.total);
       setError('');
     } catch (requestError) {
-      if (requestError.status === 401 || requestError.status === 403) onLogout();
+      if (requestError.status === 401) onLogout();
       else setError(requestError.message);
     }
   }, [onLogout, session.token]);

@@ -79,7 +79,7 @@ const open = async () => {
     url = await connection.connect();
   } catch (error) {
     if (generation !== connection.generation) return;
-    if (error?.status === 401 || error?.status === 403) {
+    if (error?.status === 401) {
       connection.onUnauthorized?.();
       return;
     }

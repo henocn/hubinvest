@@ -19,7 +19,7 @@ export default function MyStandPage({ session, onLogout }) {
     try {
       setOccupant(await api.occupant(session.token, occupantId));
     } catch (requestError) {
-      if (requestError.status === 401 || requestError.status === 403) onLogout();
+      if (requestError.status === 401) onLogout();
       else setError(requestError.message);
     }
   }, [occupantId, onLogout, session.token]);

@@ -132,7 +132,7 @@ export default function BackofficePage({ session, onLogout, section }) {
         if (investorData) setInvestorRequests(investorData.items);
       }
     } catch (requestError) {
-      if (requestError.status === 401 || requestError.status === 403) onLogout();
+      if (requestError.status === 401) onLogout();
       else setError(requestError.message);
     } finally {
       setLoading(false);
@@ -180,7 +180,7 @@ export default function BackofficePage({ session, onLogout, section }) {
     try {
       await loader();
     } catch (requestError) {
-      if (requestError.status === 401 || requestError.status === 403) onLogout();
+      if (requestError.status === 401) onLogout();
     }
   }, [onLogout, silentLoaders]);
 

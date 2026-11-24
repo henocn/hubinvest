@@ -22,7 +22,7 @@ export default function WheelSettings({ session, onLogout, children }) {
     try {
       setSegments((await api.wheel(session.token)).segments);
     } catch (requestError) {
-      if (requestError.status === 401 || requestError.status === 403) onLogout();
+      if (requestError.status === 401) onLogout();
       else setError(requestError.message);
     }
   }, [onLogout, session.token]);

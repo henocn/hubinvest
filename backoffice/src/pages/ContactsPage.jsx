@@ -321,7 +321,7 @@ export default function ContactsPage({ session, onLogout }) {
       await readLocal();
       setApiOnline(true);
     } catch (requestError) {
-      if (requestError.status === 401 || requestError.status === 403) {
+      if (requestError.status === 401) {
         onLogout();
         return;
       }

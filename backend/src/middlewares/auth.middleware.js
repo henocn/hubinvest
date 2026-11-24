@@ -16,7 +16,8 @@ const findSessionUser = async (userId) => {
   }
 
   if (user.occupantId && user.occupant?.status !== 'active') {
-    throw new AppError(403, 'OCCUPANT_INACTIVE', "Le compte de l’occupant est inactif.");
+    // 401 : la session n'est plus valable (le 403 reste réservé aux actions non permises, sans déconnexion).
+    throw new AppError(401, 'OCCUPANT_INACTIVE', "Le compte de l’occupant est inactif.");
   }
 
   return user.toJSON();

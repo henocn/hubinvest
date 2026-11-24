@@ -37,7 +37,7 @@ export default function ScanListDialog({ session, onLogout, onClose }) {
       })
       .catch((requestError) => {
         if (!active) return;
-        if (requestError.status === 401 || requestError.status === 403) onLogout();
+        if (requestError.status === 401) onLogout();
         else setError(requestError.message);
       });
     return () => { active = false; };

@@ -26,7 +26,7 @@ export default function B2bNeedsSettings({ session, onLogout }) {
       setNeeds(needData);
       setOccupants(occupantData);
     } catch (requestError) {
-      if (requestError.status === 401 || requestError.status === 403) onLogout();
+      if (requestError.status === 401) onLogout();
       else setError(requestError.message);
     }
   }, [isSuperAdmin, onLogout, session.token]);

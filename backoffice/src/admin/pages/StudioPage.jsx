@@ -177,7 +177,7 @@ export default function StudioPage({ session, onLogout }) {
       setOccupants(occupantData);
       setError('');
     } catch (requestError) {
-      if (requestError.status === 401 || requestError.status === 403) onLogout();
+      if (requestError.status === 401) onLogout();
       else setError(requestError.message);
     }
   }, [isSuperAdmin, onLogout, session.token]);

@@ -30,7 +30,7 @@ export default function OccupantChallengePage({ session, onLogout }) {
       setScannedPlayers(stats.scannedPlayers);
       setStatsError('');
     } catch (requestError) {
-      if (requestError.status === 401 || requestError.status === 403) onLogout();
+      if (requestError.status === 401) onLogout();
       else setStatsError('Impossible de charger le nombre de joueurs scannés.');
     }
   }, [onLogout, session.token]);
@@ -67,7 +67,7 @@ export default function OccupantChallengePage({ session, onLogout }) {
       setScannedPlayers((current) => current === null ? current : current + 1);
       void refreshStats();
     } catch (requestError) {
-      if (requestError.status === 401 || requestError.status === 403) onLogout();
+      if (requestError.status === 401) onLogout();
       else setError(requestError.message);
     } finally {
       validatingRef.current = false;

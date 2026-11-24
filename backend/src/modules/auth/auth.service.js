@@ -11,6 +11,16 @@ const hashResetCode = (email, code) => crypto
   .update(`${email}:${code}`)
   .digest('hex');
 
+// Jeton de session : il expire après JWT_EXPIRES_IN sans activité, car l'application le renouvelle tant qu'elle est ouverte.
+const signToken = (user) => jwt.sign(
+  { role: user.role, occupantId: user.occupantId },
+  env.auth.secret,
+  { subject: user.id, expiresIn: env.auth.expiresIn },
+);
+
+// Renouvelle la session d'un compte encore valide (vérifié par le middleware d'authentification).
+const refresh = (user) => ({ token: signToken(user) });
+
 const login = async ({ email, password }) => {
   if (!env.auth.secret) {
     throw new AppError(500, 'AUTH_NOT_CONFIGURED', "L’authentification n’est pas configurée.");
@@ -27,11 +37,7 @@ const login = async ({ email, password }) => {
     throw new AppError(403, 'OCCUPANT_INACTIVE', "Le compte de l’occupant est inactif.");
   }
 
-  const token = jwt.sign(
-    { role: user.role, occupantId: user.occupantId },
-    env.auth.secret,
-    { subject: user.id, expiresIn: env.auth.expiresIn },
-  );
+  const token = signToken(user);
 
   // La connexion compte comme une présence, même avant l'ouverture du flux temps réel.
   await user.update({ lastSeenAt: new Date() });
@@ -84,4 +90,4 @@ const resetPassword = async ({ email, code, password }) => {
   }
 };
 
-module.exports = { login, forgotPassword, resetPassword };
+module.exports = { refresh, login, forgotPassword, resetPassword };

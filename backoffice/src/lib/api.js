@@ -43,6 +43,7 @@ export const api = {
   forgotPassword: (email) => request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
   resetPassword: (email, code, password) => request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ email, code, password }) }),
   profile: (token) => request('/users/me', authorized(token)),
+  refreshSession: (token) => request('/auth/refresh', authorized(token, { method: 'POST' })),
   changeOwnPassword: (token, values) =>
     request('/users/me/password', authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
   contacts: (token) => request('/contacts', authorized(token)),
