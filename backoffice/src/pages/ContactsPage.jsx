@@ -25,13 +25,6 @@ const qualificationHints = {
 const normalizeQualification = (value) => ({ hot: 'A', warm: 'B', cold: 'C' })[value] || value;
 const qualificationLabel = (value) => qualificationLabels[normalizeQualification(value)] || 'À qualifier';
 
-const toLocalDateTime = (value) => {
-  if (!value) return '';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
-  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-};
-
 function ContactForm({ onCancel, onCreated }) {
   const [form, setForm] = useState({
     fullName: '',
@@ -39,10 +32,6 @@ function ContactForm({ onCancel, onCreated }) {
     company: '',
     need: '',
     qualification: 'C',
-    nextAction: '',
-    nextActionAt: '',
-    consentOccupant: false,
-    consentApizf: false,
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -63,7 +52,8 @@ function ContactForm({ onCancel, onCreated }) {
         ...form,
         phone: toInternationalPhone(form.phone),
         id: crypto.randomUUID(),
-        nextActionAt: form.nextActionAt || null,
+        // Accord implicite : la personne donne ses coordonnées au stand pour être recontactée.
+        consentOccupant: true,
       });
     } catch (requestError) {
       setError(requestError.message);
@@ -80,7 +70,6 @@ function ContactForm({ onCancel, onCreated }) {
       </button>
       <div className="page-heading">
         <h1>Nouveau contact</h1>
-        <p>Les informations utiles pour assurer la prochaine action.</p>
       </div>
 
       <form className="form-stack" onSubmit={submit}>
@@ -114,36 +103,6 @@ function ContactForm({ onCancel, onCreated }) {
             ))}
           </div>
         </fieldset>
-        <label>
-          Prochaine action
-          <input value={form.nextAction} onChange={(event) => field('nextAction', event.target.value)} />
-        </label>
-        <label>
-          Date de la prochaine action
-          <input
-            type="datetime-local"
-            value={form.nextActionAt}
-            onChange={(event) => field('nextActionAt', event.target.value)}
-          />
-        </label>
-        <label className="check-row">
-          <input
-            type="checkbox"
-            checked={form.consentOccupant}
-            onChange={(event) => field('consentOccupant', event.target.checked)}
-            required
-          />
-          <span>La personne accepte d’être recontactée par cet occupant.</span>
-        </label>
-        <label className="check-row">
-          <input
-            type="checkbox"
-            checked={form.consentApizf}
-            onChange={(event) => field('consentApizf', event.target.checked)}
-          />
-          <span>La personne accepte de recevoir les informations de l'API-ZF.</span>
-        </label>
-
         {error && <p className="form-error">{error}</p>}
 
         <div className="form-actions">
@@ -163,18 +122,10 @@ function ContactDetail({ contact, onBack, onSave, apiOnline }) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editError, setEditError] = useState('');
-  const [form, setForm] = useState(() => ({
-    qualification: normalizeQualification(contact.qualification) || '',
-    nextAction: contact.nextAction || '',
-    nextActionAt: toLocalDateTime(contact.nextActionAt),
-  }));
+  const [form, setForm] = useState(() => ({ qualification: normalizeQualification(contact.qualification) || '' }));
   useEffect(() => {
-    setForm({
-      qualification: normalizeQualification(contact.qualification) || '',
-      nextAction: contact.nextAction || '',
-      nextActionAt: toLocalDateTime(contact.nextActionAt),
-    });
-  }, [contact.id, contact.qualification, contact.nextAction, contact.nextActionAt]);
+    setForm({ qualification: normalizeQualification(contact.qualification) || '' });
+  }, [contact.id, contact.qualification]);
 
   const save = async (event) => {
     event.preventDefault();
@@ -183,8 +134,6 @@ function ContactDetail({ contact, onBack, onSave, apiOnline }) {
     try {
       await onSave(contact.id, {
         ...(form.qualification ? { qualification: form.qualification } : {}),
-        nextAction: form.nextAction || null,
-        nextActionAt: form.nextActionAt ? new Date(form.nextActionAt).toISOString() : null,
       });
       setEditing(false);
     } catch (requestError) {
@@ -194,10 +143,6 @@ function ContactDetail({ contact, onBack, onSave, apiOnline }) {
     }
   };
   const dialNumber = contact.phone?.replace(/[^\d+]/g, '');
-  const nextActionDate = contact.nextActionAt ? new Date(contact.nextActionAt) : null;
-  const formattedDate = nextActionDate && !Number.isNaN(nextActionDate.getTime())
-    ? new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }).format(nextActionDate)
-    : null;
 
   return (
     <section className="workspace contact-detail-view">
@@ -228,12 +173,6 @@ function ContactDetail({ contact, onBack, onSave, apiOnline }) {
           <div><dt>Téléphone</dt><dd>{contact.phone}</dd></div>
           {contact.company && <div><dt>Entreprise</dt><dd>{contact.company}</dd></div>}
           {contact.need && <div><dt>Recherche</dt><dd>{contact.need}</dd></div>}
-          {(contact.nextAction || formattedDate) && (
-            <div>
-              <dt>Prochaine action</dt>
-              <dd>{contact.nextAction || 'Date planifiée'}{formattedDate && <small>{formattedDate}</small>}</dd>
-            </div>
-          )}
         </dl>
         <div className="detail-sync">
           {contact.syncStatus === 'pending' && <><Clock3 size={16} /> Enregistré sur ce téléphone · À synchroniser</>}
@@ -243,7 +182,7 @@ function ContactDetail({ contact, onBack, onSave, apiOnline }) {
         {contact.syncError && <p className="detail-error">Synchronisation impossible. Revenez à Mes contacts pour réessayer.</p>}
       </div>
       <div className="detail-follow-up">
-        {!editing && <button className="button button-secondary" type="button" onClick={() => setEditing(true)} disabled={!apiOnline || contact.syncStatus === 'pending' || contact.syncStatus === 'syncing'}><Pencil size={17} /> Modifier le suivi</button>}
+        {!editing && <button className="button button-secondary" type="button" onClick={() => setEditing(true)} disabled={!apiOnline || contact.syncStatus === 'pending' || contact.syncStatus === 'syncing'}><Pencil size={17} /> Modifier la classe</button>}
         {editing && (
           <form className="form-stack" onSubmit={save}>
             <label>Qualification
@@ -252,8 +191,6 @@ function ContactDetail({ contact, onBack, onSave, apiOnline }) {
                 {Object.entries(qualificationLabels).map(([value, label]) => <option key={value} value={value}>{label} ({qualificationHints[value].split(' : ')[1]})</option>)}
               </select>
             </label>
-            <label>Prochaine action<input value={form.nextAction} onChange={(event) => setForm({ ...form, nextAction: event.target.value })} maxLength={255} /></label>
-            <label>Date de la prochaine action<input type="datetime-local" value={form.nextActionAt} onChange={(event) => setForm({ ...form, nextActionAt: event.target.value })} /></label>
             {editError && <p className="form-error">{editError}</p>}
             <div className="form-actions">
               <button className="button button-secondary" type="button" onClick={() => { setEditing(false); setEditError(''); }}>Annuler</button>
@@ -427,8 +364,6 @@ export default function ContactsPage({ session, onLogout }) {
       { header: 'Entreprise', value: (item) => item.company, width: 26 },
       { header: 'Recherche', value: (item) => item.need, width: 45 },
       { header: 'Qualification', value: (item) => qualificationLabel(item.qualification), width: 14 },
-      { header: 'Prochaine action', value: (item) => item.nextAction, width: 32 },
-      { header: 'Date de l’action', value: (item) => formatDate(item.nextActionAt), width: 18 },
       { header: 'Origine', value: (item) => (item.source === 'public' ? 'Demande du site' : 'Saisi sur le stand'), width: 18 },
       { header: 'Accord API-ZF', value: (item) => Boolean(item.consentApizf), width: 14 },
       { header: 'Synchronisé', value: (item) => item.syncStatus === 'synced' || !item.syncStatus, width: 13 },
@@ -489,9 +424,6 @@ export default function ContactsPage({ session, onLogout }) {
                 <strong>{contact.fullName}</strong>
                 <span>{contact.company || contact.phone}</span>
                 {contact.source === 'public' && <span className="contact-origin">Demande du site</span>}
-                {contact.nextAction && (
-                  <span className="next-action">Prochaine action : {contact.nextAction}</span>
-                )}
                 <small className={`sync-status ${contact.syncStatus || 'synced'}`}>
                   {contact.syncStatus === 'pending' && <Clock3 size={13} />}
                   {contact.syncStatus === 'syncing' && <RefreshCw size={13} />}

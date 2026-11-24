@@ -77,10 +77,10 @@ const getPublic = async (token, language) => {
 
 const list = async (user) => {
   // Un occupant voit les joueurs passés par son stand ; l'API-ZF, dont son stand, voit tous les joueurs (remise des récompenses).
-  const occupantId = user.role === roles.OCCUPANT && !isApizfOccupant(user) ? user.occupantId : null;
-  if (user.role === roles.OCCUPANT && !occupantId) {
+  if (user.role === roles.OCCUPANT && !user.occupantId) {
     throw new AppError(403, 'STAND_REQUIRED', 'Ce compte n’est rattaché à aucun stand.');
   }
+  const occupantId = user.role === roles.OCCUPANT && !isApizfOccupant(user) ? user.occupantId : null;
   return (await challengePassportRepository.findAll(occupantId)).map(managerPayload);
 };
 

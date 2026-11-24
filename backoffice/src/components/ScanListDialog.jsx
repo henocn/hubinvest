@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
-import { api } from '../lib/api';
+import { api } from '../admin/lib/api';
 
 const dateTime = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Africa/Lome', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-const fullName = (user) => [user?.firstName, user?.lastName].filter(Boolean).join(' ');
 
-// Liste des joueurs scannés sur le stand : le plus récent d'abord, avec l'heure et la personne qui a scanné.
+// Liste des joueurs scannés sur le stand : le nom et l'heure du scan, le plus récent d'abord.
 export default function ScanListDialog({ session, onLogout, onClose }) {
   const closeButtonRef = useRef(null);
   const [scans, setScans] = useState(null);
@@ -31,7 +30,6 @@ export default function ScanListDialog({ session, onLogout, onClose }) {
           id: passage.id,
           player: passport.displayName,
           at: passage.createdAt,
-          by: fullName(passage.validatedBy),
         })));
         setScans(rows.sort((a, b) => new Date(b.at) - new Date(a.at)));
       })
@@ -58,7 +56,7 @@ export default function ScanListDialog({ session, onLogout, onClose }) {
             {scans.map((scan) => (
               <li key={scan.id}>
                 <strong>{scan.player}</strong>
-                <span>{dateTime.format(new Date(scan.at))}{scan.by && ` · ${scan.by}`}</span>
+                <span>{dateTime.format(new Date(scan.at))}</span>
               </li>
             ))}
           </ul>

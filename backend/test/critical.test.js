@@ -1098,6 +1098,8 @@ test('un lot épuisé ou désactivé disparaît de la roue, et une roue vide ne 
   assert.equal(plays.length, 0);
 
   const lose = { id: 'l1', kind: 'lose', label: 'Pas cette fois', quantity: null, awarded: 0, isActive: true };
+  // Les mêmes méthodes simulées deux fois dans un test laissaient la première simulation en place après le test.
+  context.mock.restoreAll();
   wheelSetup(context, { segments: [soldOut, inactive, lose], code });
   const outcome = await wheelService.spin({ code: 'QWER', player: PLAYER }, 'fr', (length) => { assert.equal(length, 1); return 0; });
   assert.deepEqual(outcome.segments.map((segment) => segment.id), ['l1']);
@@ -1334,6 +1336,8 @@ test('un stand ne peut pas avoir deux rendez-vous B2B en même temps, et une dem
   meetingSetup(context, { existing: [busyMeeting(`${day}T10:10:00Z`, 3, 'stand-a')] });
   await assert.rejects(b2bMeetingService.schedule({ id: 'u1' }, 'prop-1', { startsAt: `${day}T10:00:00Z`, tableNumber: 1 }), (error) => error.code === 'B2B_STAND_BUSY');
 
+  // Les mêmes méthodes simulées deux fois dans un test laissaient la première simulation en place après le test.
+  context.mock.restoreAll();
   meetingSetup(context, { status: 'pending' });
   await assert.rejects(b2bMeetingService.schedule({ id: 'u1' }, 'prop-1', { startsAt: `${day}T10:00:00Z`, tableNumber: 1 }), (error) => error.code === 'B2B_PROPOSAL_NOT_ACCEPTED');
 });
@@ -1854,4 +1858,90 @@ test('la session se renouvelle tant que l’application est ouverte ; un jeton e
   assert.equal(renewed.sub, 'u-refresh');
   assert.ok(renewed.exp * 1000 > Date.now() + 2 * 3600000);
   assert.equal((await post(jwt.sign({}, env.auth.secret, { subject: 'u-refresh', expiresIn: -10 }))).status, 401);
+});
+
+// Audit des droits : chaque rôle appelle les écrans de lecture du back office ; « oui » = permis (ni 401, ni 403, ni erreur
+// serveur), « non » = refusé en 403, « - » = non vérifié. Les comptes sont simulés, les données viennent de la base de test.
+test('audit des droits : chaque rôle n’ouvre que ses écrans, sans erreur serveur', async (context) => {
+  const originalSecret = env.auth.secret;
+  env.auth.secret = 'hubinvest-audit-test-secret';
+  context.after(() => { env.auth.secret = originalSecret; });
+  const industryStand = crypto.randomUUID();
+  const apizfStand = crypto.randomUUID();
+  const accounts = {
+    super: { role: 'super-admin', occupantId: null, occupant: null },
+    admin: { role: 'admin', occupantId: null, occupant: null },
+    ind: { role: 'occupant', occupantId: industryStand, occupant: { status: 'active', space: 'industry' } },
+    zf: { role: 'occupant', occupantId: apizfStand, occupant: { status: 'active', space: 'apizf' } },
+    anim: { role: 'animateur', occupantId: null, occupant: null },
+  };
+  context.mock.method(User, 'findOne', async ({ where }) => {
+    const account = accounts[where.id];
+    return { ...account, toJSON: () => ({ id: where.id, firstName: 'Audit', lastName: where.id, email: `${where.id}@example.test`, ...account }) };
+  });
+  context.mock.method(occupantRepository, 'findById', async (id) => ({ id, name: 'Stand', slug: 'stand', status: 'active', space: id === apizfStand ? 'apizf' : 'industry' }));
+
+  const Y = 'oui';
+  const N = 'non';
+  const S = '-';
+  //                                              super admin occInd occZf anim
+  const checks = [
+    ['GET', '/users/me', [Y, Y, Y, Y, Y]],
+    ['POST', '/auth/refresh', [Y, Y, Y, Y, Y]],
+    ['GET', '/dashboard', [Y, Y, Y, Y, Y]],
+    ['GET', '/b2b-needs', [Y, Y, Y, Y, N]],
+    ['GET', '/b2b-proposals', [Y, Y, Y, Y, N]],
+    ['GET', '/challenge-passports', [Y, Y, Y, Y, N]],
+    ['GET', '/challenge-passports/rewards', [Y, Y, N, Y, Y]],
+    ['GET', '/challenge-passports/search?q=ab', [Y, Y, Y, Y, Y]],
+    ['GET', '/challenge-passports/code/ABCDEF', [Y, Y, N, Y, Y]],
+    ['GET', '/challenge-passages/stats', [N, N, Y, Y, N]],
+    ['GET', '/wheel', [Y, Y, N, Y, N]],
+    ['GET', '/wheel/prizes/ZZZZ', [Y, Y, N, Y, Y]],
+    ['GET', '/investor-requests', [Y, Y, N, Y, N]],
+    ['GET', `/investor-requests/${crypto.randomUUID()}`, [Y, Y, N, Y, N]],
+    ['GET', '/occupants', [Y, Y, N, N, N]],
+    ['GET', `/occupants/${industryStand}`, [Y, Y, Y, N, N]],
+    ['GET', `/occupants/${apizfStand}`, [Y, Y, N, Y, N]],
+    ['GET', '/contacts', [S, S, Y, Y, N]],
+    ['GET', '/contacts/admin/stats', [Y, Y, N, N, N]],
+    ['GET', `/contacts/admin/stands/${industryStand}`, [Y, Y, N, N, N]],
+    ['GET', '/program-events', [Y, Y, N, N, N]],
+    ['GET', '/studio-invitations', [Y, Y, N, N, N]],
+    ['GET', '/live-questions', [Y, Y, N, N, Y]],
+    ['GET', '/users', [Y, N, N, N, N]],
+    ['GET', '/audit-logs', [Y, N, N, N, N]],
+    // Actions, sur des identifiants inexistants (rien n'est écrit) : permis = 404 ou 422, refusé = 403.
+    ['PATCH', `/challenge-passports/${crypto.randomUUID()}/redeem`, [Y, Y, N, Y, Y]],
+    ['POST', `/wheel/plays/${crypto.randomUUID()}/claim`, [Y, Y, N, Y, N]],
+    ['POST', '/wheel/prizes/ZZZZ/claim', [Y, Y, N, Y, Y]],
+    ['POST', `/investor-requests/${crypto.randomUUID()}/follow-ups`, [Y, Y, N, Y, N]],
+    ['PATCH', `/occupants/${industryStand}`, [Y, Y, Y, N, N]],
+    ['PATCH', `/live-questions/${crypto.randomUUID()}`, [Y, Y, N, N, Y]],
+  ];
+
+  const server = app.listen(0, '127.0.0.1');
+  context.after(() => server.close());
+  await new Promise((resolve) => server.once('listening', resolve));
+  const base = `http://127.0.0.1:${server.address().port}/api`;
+  const problems = [];
+  for (const [index, subject] of Object.keys(accounts).entries()) {
+    const token = jwt.sign({}, env.auth.secret, { subject, expiresIn: '1h' });
+    for (const [method, url, expected] of checks) {
+      const want = expected[index];
+      if (want === S) continue;
+      const response = await fetch(`${base}${url}`, {
+        method,
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        ...(method === 'GET' ? {} : { body: '{}' }),
+      });
+      const allowed = ![401, 403].includes(response.status) && response.status < 500;
+      const fine = want === Y ? allowed : response.status === 403;
+      if (!fine) {
+        const body = await response.json().catch(() => ({}));
+        problems.push(`${subject} ${method} ${url} → ${response.status} ${body.code || ''} (attendu : ${want === Y ? 'permis' : '403'})`);
+      }
+    }
+  }
+  assert.deepEqual(problems, []);
 });

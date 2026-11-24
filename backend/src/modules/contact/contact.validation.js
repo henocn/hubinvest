@@ -11,7 +11,8 @@ const create = Joi.object({
   qualification: Joi.string().trim().uppercase().valid('A', 'B', 'C').default('C'),
   nextAction: Joi.string().trim().max(255).allow('', null),
   nextActionAt: Joi.date().iso().allow(null),
-  consentOccupant: Joi.boolean().valid(true).required(),
+  // Plus de case à cocher sur le stand : l'accord pour être recontacté est implicite.
+  consentOccupant: Joi.boolean().valid(true).default(true),
   consentApizf: Joi.boolean().default(false),
 });
 
