@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Disc3, QrCode, Route } from 'lucide-react';
-import ChallengeProgress from '../components/ChallengeProgress';
+import { BookOpen, Disc3, QrCode } from 'lucide-react';
+import GameRulesDialog from '../components/GameRulesDialog';
 import PlayCard from '../components/PlayCard';
 import PlayCta from '../components/PlayCta';
 import PlayerIdentifyDialog from '../components/PlayerIdentifyDialog';
@@ -26,6 +26,7 @@ export default function ChallengePage({ token, openWheel = false }) {
   const [identifying, setIdentifying] = useState(false);
   const [wheelOpen, setWheelOpen] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
+  const [rulesOpen, setRulesOpen] = useState(false);
   const wantsWheel = useRef(openWheel);
   const settings = useSiteSettings();
   const navigate = useNavigate();
@@ -139,7 +140,9 @@ export default function ChallengePage({ token, openWheel = false }) {
     <main className="public-container challenge-page">
       <section className="play-intro">
         <h1>{hasPassport ? t('play.welcome', { name: passport.displayName }) : t('play.title')}</h1>
-        <p>{!settings.challengeOpen ? t('closed.challenge') : hasPassport ? t('play.readyIntro') : t('play.intro')}</p>
+        {!settings.challengeOpen && <p>{t('closed.challenge')}</p>}
+        {/* Les explications des deux jeux, à la demande : les pastilles restent visuelles. */}
+        <button className="button button-secondary play-rules-button" type="button" onClick={() => setRulesOpen(true)}><BookOpen size={18} />{t('rules.title')}</button>
       </section>
 
       {loading && <p className="public-message">{t('challenge.loading')}</p>}
@@ -148,24 +151,15 @@ export default function ChallengePage({ token, openWheel = false }) {
       {!loading && (
         <div className="play-games">
           <PlayCard
-            icon={Route}
             tone="route"
             title={t('play.routeTitle')}
-            text={t('play.routeText')}
-            steps={[t('play.routeStep1'), t('play.routeStep2'), t('play.routeStep3')]}
-            doneSteps={hasPassport ? 1 : 0}
-            badge={hasPassport && <span className="play-game-badge" aria-label={t('challenge.progress', { count: passport.passageCount, total: passport.requiredPassages })}><strong>{passport.passageCount} / {passport.requiredPassages}</strong><small>{t('challenge.validated')}</small></span>}
+            progress={hasPassport ? { done: passport.passageCount, total: passport.requiredPassages, shown: true } : { done: 0, total: 5, shown: false }}
+            progressLabel={hasPassport ? t('challenge.progress', { count: passport.passageCount, total: passport.requiredPassages }) : undefined}
             action={hasPassport && <button className="button button-secondary" type="button" onClick={() => setScanOpen(true)}><QrCode size={18} />{t('play.routeAction')}</button>}
-          >
-            {hasPassport && <ChallengeProgress passport={passport} />}
-          </PlayCard>
+          />
           <PlayCard
-            icon={Disc3}
             tone="wheel"
             title={t('wheel.title')}
-            text={t('play.wheelText')}
-            steps={[t('play.wheelStep1'), t('play.wheelStep2'), t('play.wheelStep3')]}
-            doneSteps={hasPassport ? 1 : 0}
             action={hasPassport && (settings.wheelOpen
               ? <button className="button button-primary" type="button" onClick={() => setWheelOpen(true)}><Disc3 size={18} />{t('play.wheelAction')}</button>
               : <p className="play-closed">{t('closed.wheel')}</p>)}
@@ -175,6 +169,7 @@ export default function ChallengePage({ token, openWheel = false }) {
 
       {!loading && !hasPassport && settings.challengeOpen && <PlayCta onClick={() => setIdentifying(true)} />}
       {identifying && <PlayerIdentifyDialog onClose={() => { setIdentifying(false); wantsWheel.current = false; }} onIdentified={identified} />}
+      {rulesOpen && <GameRulesDialog onClose={() => setRulesOpen(false)} />}
       {scanOpen && hasPassport && <ScanMeDialog passport={passport} onClose={() => setScanOpen(false)} />}
       {wheelOpen && hasPassport && <WheelDialog player={personalToken} onClose={closeWheel} onPlayerLost={playerLost} />}
     </main>

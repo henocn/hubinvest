@@ -2041,7 +2041,6 @@
   .studio-response-actions { align-items: stretch; flex-direction: column; }
   .studio-response-actions .button { width: 100%; min-height: 48px; }
   .challenge-page { min-height: calc(100vh - 64px); padding-block: 20px 32px; }
-  .play-games { grid-template-columns: 1fr; }
   .play-game .button { width: 100%; justify-content: center; }
 }
 
@@ -3519,4 +3518,175 @@ main h1:not(.sr-only)::before {
   .stand-card-content { padding: 9px 10px 11px; }
   .stand-card h2 { font-size: 0.88rem; line-height: 1.25; overflow-wrap: anywhere; }
   .stand-location { margin-top: 4px; font-size: 0.7rem; }
+}
+
+/* Jeux : deux pastilles chaleureuses, côte à côte même sur téléphone. Fond teinté doux, titre en affiche à gauche,
+   un visuel parlant (tampons du passeport, roue qui dépasse du coin), l'avancement du Défi et le bouton.
+   Comment jouer : la fenêtre « Règles du jeu ». */
+.play-games {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.play-game,
+.play-game.is-wheel {
+  position: relative;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 20px 16px 16px;
+  overflow: hidden;
+  border: 0;
+  text-align: left;
+  background: #e8f2ec;
+}
+
+.play-game.is-wheel {
+  background: #fff4cc;
+}
+
+.play-game h2 {
+  position: relative;
+  z-index: 1;
+  max-width: 100%;
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 3.5vw, 1.4rem);
+  hyphens: auto;
+  overflow-wrap: break-word;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.play-deco-wheel {
+  width: 46px;
+  height: 46px;
+  transform: rotate(-12deg);
+  filter: drop-shadow(0 6px 10px rgba(15, 24, 34, 0.18));
+}
+
+.play-progress {
+  color: var(--green);
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.play-stamps {
+  min-height: 46px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+.play-stamps i {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 2px dashed rgba(21, 108, 83, 0.55);
+  border-radius: 50%;
+  transform: rotate(-8deg);
+}
+
+.play-stamps i:nth-child(even) {
+  transform: rotate(10deg);
+}
+
+.play-stamps i.is-done {
+  border: 2px solid var(--green);
+  color: #fff;
+  background: var(--green);
+}
+
+.play-game .button {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  margin-top: auto;
+  padding-inline: 14px;
+  white-space: nowrap;
+}
+
+.play-rules-button {
+  justify-self: start;
+  margin-top: 4px;
+}
+
+/* Règles du jeu : un bloc par jeu, étapes numérotées dans la couleur du jeu. */
+.rules-game + .rules-game {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.rules-game h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 1.02rem;
+}
+
+.rules-game h3 span {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--green);
+}
+
+.rules-game.is-wheel h3 span {
+  color: var(--ink);
+  background: var(--yellow);
+}
+
+.rules-game ol {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: rule;
+}
+
+.rules-game li {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 10px;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  counter-increment: rule;
+}
+
+.rules-game li::before {
+  content: counter(rule);
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--green);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.rules-game.is-wheel li::before {
+  color: var(--ink);
+  background: var(--yellow);
+}
+
+.rules-note {
+  margin: 18px 0 0;
+  padding: 10px 12px;
+  border-left: 4px solid var(--green);
+  background: var(--tint);
+  font-size: 0.88rem;
 }
