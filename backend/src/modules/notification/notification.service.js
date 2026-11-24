@@ -177,10 +177,11 @@ const b2bMeetingCancelled = (meeting, proposal, { notifyVisitor = true } = {}) =
   }));
 });
 
-// Studio : l'auteur de l'invitation et l'équipe du stand (ou l'API-ZF) suivent les réponses de l'invité.
+// Studio : l'équipe API-ZF (seule à gérer le Studio), dont l'auteur de l'invitation, suit les réponses de l'invité.
 const studioTeam = async (invitation) => {
   const creator = invitation.createdByUserId ? await notificationRepository.findActiveUser(invitation.createdByUserId) : null;
-  return [...(creator ? [creator] : []), ...(await standTeam(invitation.occupantId))];
+  const team = await notificationRepository.findSuperAdmins();
+  return [...(creator ? [creator] : []), ...team.filter((user) => user.id !== creator?.id)];
 };
 const studioReminderKey = (invitation) => `studio-reminder:${invitation.id}`;
 const guest = (invitation) => ({ email: invitation.email, phone: invitation.phone });

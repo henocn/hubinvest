@@ -33,7 +33,7 @@ export default function DashboardPage({ session }) {
               {isSuperAdmin && <Stat value={data.investor.overdue ?? 0} label="Relances en retard" detail="heure de relance dépassée" to="/guichets" urgent />}
               {isSuperAdmin && <Stat value={data.investor.commitmentsOverdue ?? 0} label="Engagements en retard" detail="réponse promise non donnée" to="/guichets" urgent />}
               <Stat value={data.b2b.pendingProposals} label="Demandes B2B" detail="à traiter" to="/b2b" urgent />
-              <Stat value={data.studio.pending} label="Studio" detail="invités sans créneau" to="/studio" />
+              {isSuperAdmin && <Stat value={data.studio.pending} label="Studio" detail="invités sans créneau" to="/studio" />}
               <Stat value={data.challenges.rewardsToHand} label="Récompenses à remettre" detail="les 5 étapes trouvées" to="/participants" urgent />
               {data.challenges.rewardsLeft !== null && data.challenges.rewardsLeft !== undefined && <Stat value={data.challenges.rewardsLeft} label="Récompenses en stock" detail={`sur ${data.challenges.rewardStock}`} to="/parametres" urgent={data.challenges.rewardsLeft <= 5} />}
               <Stat value={data.wheel.prizesToHand} label="Lots de la roue" detail="gagnés, pas encore remis" to="/roue" urgent />
@@ -51,7 +51,7 @@ export default function DashboardPage({ session }) {
               {isSuperAdmin && <Stat value={data.investor.diagnosed ?? 0} label="Diagnostics réalisés" detail="fiches de diagnostic en 15 minutes" to="/guichets" />}
               {isSuperAdmin && <Stat value={data.investor.supportTaken ?? 0} label="Sollicitations d’accompagnement" detail="prises en charge avec un engagement de suivi" to="/guichets" />}
               <Stat value={data.b2b.openNeeds} label="Besoins B2B ouverts" to="/besoins-b2b" />
-              <Stat value={data.studio.confirmed} label="Passages au Studio" detail="réservés, à venir" to="/studio" />
+              {isSuperAdmin && <Stat value={data.studio.confirmed} label="Passages au Studio" detail="réservés, à venir" to="/studio" />}
             </div>
           </section>
         </>

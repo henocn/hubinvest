@@ -459,8 +459,8 @@ test('une invitation Studio utilise un lien personnel imprévisible et l’envoi
   context.mock.method(notificationService, 'studioInvited', (invitation) => { sent.push(invitation.email); });
 
   await studioInvitationService.create(
-    { id: 'campaign-user', role: 'occupant', occupantId: 'occupant-a' },
-    { guestName: 'Invité Test', email: 'Invite@Example.com', format: 'two_minutes' },
+    { id: 'campaign-user', role: 'admin' },
+    { guestName: 'Invité Test', email: 'Invite@Example.com', format: 'two_minutes', occupantId: 'occupant-a' },
   );
 
   assert.match(saved.token, /^[a-f0-9]{64}$/);
@@ -525,35 +525,29 @@ test('la capsule du Studio se livre après le passage et part à l’invité', a
   assert.deepEqual(delivered, ['https://videos.tg/afi']);
 });
 
-test('le planning Studio d’un occupant est filtré sur son stand', async (context) => {
+test('le Studio est réservé à l’équipe API-ZF : un occupant n’y a pas accès', async (context) => {
   const originalSecret = env.auth.secret;
   env.auth.secret = 'hubinvest-studio-test-secret';
   context.after(() => { env.auth.secret = originalSecret; });
   context.mock.method(User, 'findOne', async ({ where }) => ({
     occupantId: `occupant-${where.id}`,
     occupant: { status: 'active' },
-    toJSON: () => ({
-      id: where.id,
-      occupantId: `occupant-${where.id}`,
-      role: 'occupant',
-    }),
+    toJSON: () => ({ id: where.id, occupantId: `occupant-${where.id}`, role: where.id === 'apizf' ? 'admin' : 'occupant' }),
   }));
-  const requestedStands = [];
-  context.mock.method(studioInvitationRepository, 'findAll', async (occupantId) => {
-    requestedStands.push(occupantId);
-    return [];
-  });
+  context.mock.method(studioInvitationRepository, 'findAll', async () => []);
 
   const server = app.listen(0, '127.0.0.1');
   context.after(() => server.close());
   await new Promise((resolve) => server.once('listening', resolve));
   const url = `http://127.0.0.1:${server.address().port}/api/studio-invitations`;
-  const requestAs = (subject) => fetch(url, {
-    headers: { Authorization: `Bearer ${jwt.sign({}, env.auth.secret, { subject })}` },
+  const requestAs = (subject, options = {}) => fetch(url, {
+    ...options,
+    headers: { Authorization: `Bearer ${jwt.sign({}, env.auth.secret, { subject })}`, 'Content-Type': 'application/json' },
   });
 
-  assert.equal((await requestAs('pia')).status, 200);
-  assert.deepEqual(requestedStands, ['occupant-pia']);
+  assert.equal((await requestAs('pia')).status, 403);
+  assert.equal((await requestAs('pia', { method: 'POST', body: JSON.stringify({ guestName: 'Afi', email: 'afi@example.com', format: 'two_minutes' }) })).status, 403);
+  assert.equal((await requestAs('apizf')).status, 200);
 });
 
 test('l’identité d’un joueur est conservée sans être exposée sur son passeport public', async (context) => {

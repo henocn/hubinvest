@@ -1,7 +1,7 @@
 import { BriefcaseBusiness, Building2, CalendarDays, Clapperboard, Disc3, Gift, Handshake, LayoutDashboard, MessageCircleQuestion, ScanLine, ScrollText, SlidersHorizontal, Trophy, Users } from 'lucide-react';
 
 // Rôles : le super administrateur voit tout ; l'administrateur (l'API-ZF) tout sauf Utilisateurs et Paramètres ;
-// l'occupant administre son stand (B2B, Studio, Défis, son carnet de contacts) ; l'animateur scanne et remet.
+// l'occupant administre son stand (sa fiche, B2B, Défis, son carnet de contacts ; pas le Studio) ; l'animateur scanne et remet.
 export const isGlobalRole = (role) => role === 'super-admin' || role === 'admin';
 export const isManagerRole = (role) => isGlobalRole(role) || role === 'occupant';
 
@@ -14,8 +14,8 @@ export const adminSections = [
   // Journal des actions : qui a fait quoi et quand.
   { section: 'audit', path: '/journal', label: 'Journal', Icon: ScrollText, global: true, superOnly: true },
   { section: 'program', path: '/programme', label: 'Programme', Icon: CalendarDays, global: true },
-  // Studio : invitations personnelles, créneaux, livraison des capsules.
-  { section: 'studio', path: '/studio', label: 'Studio', Icon: Clapperboard },
+  // Studio : invitations personnelles, créneaux, livraison des capsules ; réservé à l'équipe API-ZF.
+  { section: 'studio', path: '/studio', label: 'Studio', Icon: Clapperboard, global: true },
   // Rencontres B2B : les demandes reçues, puis les besoins publiés.
   { section: 'b2b', path: '/b2b', label: 'Demandes', Icon: Handshake, group: 'b2b' },
   { section: 'b2b-needs', path: '/besoins-b2b', label: 'Besoins', Icon: Handshake, group: 'b2b' },
