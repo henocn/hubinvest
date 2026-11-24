@@ -5,6 +5,8 @@ module.exports = {
       name: 'hubinvest-notifier',
       script: 'src/index.js',
       cwd: __dirname,
+      // Un seul processus, en mode fork comme les autres applications (instances seul ferait passer PM2 en cluster).
+      exec_mode: 'fork',
       instances: 1,
       autorestart: true,
       max_memory_restart: '200M',
