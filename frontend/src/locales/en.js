@@ -250,7 +250,7 @@ export default {
     won: "Congratulations, you win",
     claim: "Give this code to a stand team or an animator to collect your prize.",
     lost: "Thanks for playing. Enjoy your visit to the Hub!",
-    playAgain: "Play with another code",
+    submitCode: "Confirm",
     spinAgain_one: "Spin again (1 spin left)",
     spinAgain_other: "Spin again ({{count}} spins left)",
     errors: {

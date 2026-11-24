@@ -54,15 +54,7 @@ const spin = async ({ code: rawCode, player }, language, randomIndex = crypto.ra
   const outcome = await wheelRepository.sequelize.transaction(async (transaction) => {
     const passport = await wheelRepository.findPlayerByToken(player, transaction);
     if (!passport) throw new AppError(422, 'WHEEL_PLAYER_REQUIRED', 'Identifiez-vous avant de jouer.');
-    // Limite de tours par joueur et par jour (heure de Lomé, UTC) : vérifiée avant d'utiliser le code, qui reste valable.
-    const perDay = settingsService.wheelPlaysPerDay();
-    if (perDay > 0) {
-      const today = new Date();
-      today.setUTCHours(0, 0, 0, 0);
-      if (await wheelRepository.countPlayerPlaysSince(passport.id, today, transaction) >= perDay) {
-        throw new AppError(429, 'WHEEL_DAILY_LIMIT', 'Vous avez déjà joué aujourd’hui. Revenez demain !');
-      }
-    }
+    // Pas de limite de parties : chaque code de jeu remis par l'API-ZF donne ses tours.
     const wheelCode = await wheelRepository.findCodeForUpdate(code, transaction);
     if (!wheelCode) throw new AppError(404, 'WHEEL_CODE_INVALID', 'Ce code n’existe pas. Vérifiez-le auprès de l’équipe du stand.');
     const plays = await wheelRepository.findCodePlays(wheelCode.id, transaction);

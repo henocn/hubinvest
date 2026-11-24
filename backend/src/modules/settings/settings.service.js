@@ -23,8 +23,6 @@ const defaults = () => ({
   screenVideoUrl: '',
   // Récompenses du parcours en stock (document v4 : « récompenses à stock suivi ») ; 0 = stock non suivi.
   challengeRewardStock: 0,
-  // Parties de roue par joueur et par jour ; 0 = sans limite.
-  wheelPlaysPerDay: 1,
   // Tours de roue donnés par un code de jeu (un code n'expire pas).
   wheelSpinsPerCode: 1,
   // Rencontre B2B : tables, durée d'un rendez-vous et horaires (heure de Lomé). Le document fixe 20 minutes ; le reste est à confirmer.
@@ -82,8 +80,6 @@ const current = () => ({ ...cache, requiredPassages: CHALLENGE_STEPS });
 // Le parcours « Trouvez les 5 étapes » compte toujours cinq étapes.
 const requiredPassages = () => CHALLENGE_STEPS;
 const challengeRewardStock = () => Math.max(0, Number(cache.challengeRewardStock) || 0);
-
-const wheelPlaysPerDay = () => Math.max(0, Number(cache.wheelPlaysPerDay) || 0);
 
 const wheelSpinsPerCode = () => Math.max(1, Number(cache.wheelSpinsPerCode) || 1);
 
@@ -156,4 +152,4 @@ const publicSettings = () => {
   return rest;
 };
 
-module.exports = { MODULES, load, current, requiredPassages, challengeRewardStock, wheelPlaysPerDay, wheelSpinsPerCode, b2bSchedule, studioSchedule, guichetSchedule, studioFormats, studioFormatLabel, investorFollowUpDelay, investorQualificationFields, assertOpen, update, publicSettings, _reset: () => { cache = defaults(); } };
+module.exports = { MODULES, load, current, requiredPassages, challengeRewardStock, wheelSpinsPerCode, b2bSchedule, studioSchedule, guichetSchedule, studioFormats, studioFormatLabel, investorFollowUpDelay, investorQualificationFields, assertOpen, update, publicSettings, _reset: () => { cache = defaults(); } };

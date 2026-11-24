@@ -16,6 +16,8 @@ const RELEASE_SPEED = 640;
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const mod = (value) => ((value % 360) + 360) % 360;
+// Erreurs qui viennent du code (inexistant, déjà servi, pris par un autre joueur…) : retour à la saisie du code.
+const CODE_ERRORS = new Set(['WHEEL_CODE_INVALID', 'WHEEL_CODE_USED', 'WHEEL_CODE_TAKEN', 'WHEEL_RATE_LIMITED']);
 
 // Distance à parcourir pour s'arrêter au centre (à peu près) de la case gagnante, avec un ralentissement d'au moins minDuration.
 const stopDistance = (angle, speed, target, minDuration) => {
@@ -24,6 +26,7 @@ const stopDistance = (angle, speed, target, minDuration) => {
   return aligned >= minimum ? aligned : aligned + 360 * Math.ceil((minimum - aligned) / 360);
 };
 
+// En deux temps : d'abord le code de jeu seul ; une fois validé, la roue, à faire tourner en appuyant dessus.
 export default function WheelDialog({ player, onClose, onPlayerLost }) {
   const { t, i18n } = useTranslation();
   const [segments, setSegments] = useState([]);
@@ -32,6 +35,7 @@ export default function WheelDialog({ player, onClose, onPlayerLost }) {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [outcome, setOutcome] = useState(null);
+  const [step, setStep] = useState('code');
   const discRef = useRef(null);
   const inputRef = useRef(null);
   const motion = useRef({ phase: 'idle', angle: 0, speed: 0, last: 0, frame: 0, stop: null, response: null });
@@ -61,6 +65,7 @@ export default function WheelDialog({ player, onClose, onPlayerLost }) {
       return;
     }
     if (response?.error?.code === 'WHEEL_PLAYER_REQUIRED') onPlayerLost();
+    if (CODE_ERRORS.has(response?.error?.code)) setStep('code');
     setError(publicErrorMessage(t, response?.error));
   }, [onPlayerLost, t]);
 
@@ -146,17 +151,21 @@ export default function WheelDialog({ player, onClose, onPlayerLost }) {
     release();
   };
 
-  // Un code peut donner plusieurs tours : « Tourner encore » garde le code, « Jouer avec un autre code » le vide.
+  // Un code peut donner plusieurs tours (réglage) : « Tourner encore » garde le code.
   const spinAgain = () => {
     setOutcome(null);
     setError('');
   };
 
-  const playAgain = () => {
-    setOutcome(null);
-    setCode('');
+  // Code validé : la roue s'affiche.
+  const submitCode = (event) => {
+    event.preventDefault();
+    if (code.length !== CODE_LENGTH) {
+      setError(t('wheel.codeRequired'));
+      return;
+    }
     setError('');
-    window.requestAnimationFrame(() => inputRef.current?.focus());
+    setStep('wheel');
   };
 
   const won = outcome?.result.kind === 'prize';
@@ -165,7 +174,7 @@ export default function WheelDialog({ player, onClose, onPlayerLost }) {
     <PublicDialog title={t('wheel.title')} onClose={onClose} locked={busy} className="wheel-dialog">
       {loading && <p className="public-message">{t('wheel.loading')}</p>}
       {!loading && !segments.length && <p className="public-message">{error || t('wheel.notReady')}</p>}
-      {segments.length > 0 && (
+      {segments.length > 0 && step === 'wheel' && (
         <div
           className={`wheel-stage${busy ? ' is-busy' : ''}`}
           role="button"
@@ -189,10 +198,13 @@ export default function WheelDialog({ player, onClose, onPlayerLost }) {
           <p>{won ? t('wheel.claim') : t('wheel.lost')}</p>
           {won && <code>{outcome.code}</code>}
           {outcome.spinsLeft > 0 && <button className="button button-primary" type="button" onClick={spinAgain}>{t('wheel.spinAgain', { count: outcome.spinsLeft })}</button>}
-          <button className="button button-secondary" type="button" onClick={playAgain}>{t('wheel.playAgain')}</button>
+        </div>
+      ) : segments.length > 0 && step === 'wheel' ? (
+        <div className="wheel-form">
+          {error ? <p className="form-error" role="alert">{error}</p> : <p className="wheel-hint">{busy ? t('wheel.spinning') : t('wheel.hint')}</p>}
         </div>
       ) : segments.length > 0 && (
-        <div className="wheel-form">
+        <form className="wheel-form" onSubmit={submitCode}>
           <label>
             {t('wheel.code')}
             <input
@@ -205,11 +217,12 @@ export default function WheelDialog({ player, onClose, onPlayerLost }) {
               inputMode="text"
               maxLength={CODE_LENGTH}
               placeholder="A7K2"
-              disabled={busy}
+              autoFocus
             />
           </label>
-          {error ? <p className="form-error" role="alert">{error}</p> : <p className="wheel-hint">{busy ? t('wheel.spinning') : t('wheel.hint')}</p>}
-        </div>
+          {error && <p className="form-error" role="alert">{error}</p>}
+          <button className="button button-primary" type="submit" disabled={code.length !== CODE_LENGTH}>{t('wheel.submitCode')}</button>
+        </form>
       )}
     </PublicDialog>
   );

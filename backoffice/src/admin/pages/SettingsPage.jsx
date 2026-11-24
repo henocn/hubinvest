@@ -46,14 +46,12 @@ export default function SettingsPage({ session, onLogout }) {
   const [error, setError] = useState('');
   const [savingKey, setSavingKey] = useState('');
   const [savedKey, setSavedKey] = useState('');
-  const [playsPerDay, setPlaysPerDay] = useState('');
   const [spinsPerCode, setSpinsPerCode] = useState('');
 
   const load = useCallback(async () => {
     try {
       const data = await api.settings(session.token);
       setSettings(data);
-      setPlaysPerDay(String(data.wheelPlaysPerDay));
       setSpinsPerCode(String(data.wheelSpinsPerCode));
     } catch (requestError) {
       if (requestError.status === 401) onLogout();
@@ -70,7 +68,6 @@ export default function SettingsPage({ session, onLogout }) {
     try {
       const data = await api.updateSettings(session.token, { [key]: value });
       setSettings(data);
-      setPlaysPerDay(String(data.wheelPlaysPerDay));
       setSpinsPerCode(String(data.wheelSpinsPerCode));
       setSavedKey(key);
       window.setTimeout(() => setSavedKey((current) => (current === key ? '' : current)), 1800);
@@ -79,12 +76,6 @@ export default function SettingsPage({ session, onLogout }) {
     } finally {
       setSavingKey('');
     }
-  };
-
-  const savePlaysPerDay = (event) => {
-    event.preventDefault();
-    const value = Number.parseInt(playsPerDay, 10);
-    if (Number.isInteger(value) && value >= 0 && value !== settings.wheelPlaysPerDay) void save('wheelPlaysPerDay', value);
   };
 
   const saveSpinsPerCode = (event) => {
@@ -170,19 +161,6 @@ export default function SettingsPage({ session, onLogout }) {
             <span className="settings-number">
               <input type="number" min="1" max="20" value={spinsPerCode} onChange={(event) => setSpinsPerCode(event.target.value)} aria-label="Tours par code" />
               <button className="button button-secondary" type="submit" disabled={savingKey === 'wheelSpinsPerCode' || Number(spinsPerCode) === settings.wheelSpinsPerCode}>Enregistrer</button>
-            </span>
-          </form>
-        )}
-        {settings && (
-          <form className="settings-row" onSubmit={savePlaysPerDay}>
-            <span>
-              <strong>Parties de roue par personne et par jour</strong>
-              <small>0 = sans limite</small>
-            </span>
-            {savedKey === 'wheelPlaysPerDay' && <Check className="settings-saved" size={18} aria-label="Enregistré" />}
-            <span className="settings-number">
-              <input type="number" min="0" max="20" value={playsPerDay} onChange={(event) => setPlaysPerDay(event.target.value)} aria-label="Parties par jour" />
-              <button className="button button-secondary" type="submit" disabled={savingKey === 'wheelPlaysPerDay' || Number(playsPerDay) === settings.wheelPlaysPerDay}>Enregistrer</button>
             </span>
           </form>
         )}
