@@ -1,6 +1,7 @@
 const crypto = require('node:crypto');
 const AppError = require('../../shared/app-error');
 const roles = require('../../shared/roles');
+const { isApizfOccupant } = require('../../shared/access');
 const { translatePublicContent } = require('../../shared/translation.service');
 const { sequelize } = require('../../models');
 const challengePassportRepository = require('./challenge-passport.repository');
@@ -75,7 +76,8 @@ const getPublic = async (token, language) => {
 };
 
 const list = async (user) => {
-  const occupantId = user.role === roles.OCCUPANT ? user.occupantId : null;
+  // Un occupant voit les joueurs passés par son stand ; l'API-ZF, dont son stand, voit tous les joueurs (remise des récompenses).
+  const occupantId = user.role === roles.OCCUPANT && !isApizfOccupant(user) ? user.occupantId : null;
   if (user.role === roles.OCCUPANT && !occupantId) {
     throw new AppError(403, 'STAND_REQUIRED', 'Ce compte n’est rattaché à aucun stand.');
   }

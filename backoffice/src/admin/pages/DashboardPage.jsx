@@ -75,7 +75,7 @@ export default function DashboardPage({ session }) {
     { value: data.b2b.pendingProposals, label: 'Demandes B2B', detail: 'à accepter ou refuser', to: '/b2b' },
     isApizf && { value: data.todo?.['live-questions'] ?? 0, label: 'Questions du public', detail: 'à poser ou écarter', to: '/questions' },
     isApizf && { value: data.studio.pending, label: 'Studio', detail: 'invités sans créneau', to: '/studio' },
-    isApizf && { value: data.challenges.rewardsToHand, label: 'Récompenses à remettre', detail: 'les 5 étapes trouvées', to: '/participants' },
+    hasGuichets && { value: data.challenges.rewardsToHand, label: 'Récompenses à remettre', detail: 'les 5 étapes trouvées', to: '/participants' },
     hasGuichets && { value: data.wheel.prizesToHand, label: 'Lots de la roue', detail: 'gagnés, pas encore remis', to: '/roue' },
     data.challenges.rewardsLeft !== null && data.challenges.rewardsLeft !== undefined && data.challenges.rewardsLeft <= 5
       && { value: data.challenges.rewardsLeft, label: 'Récompenses en stock', detail: `sur ${data.challenges.rewardStock}, à réapprovisionner`, to: isSuperAdmin ? '/parametres' : undefined },
@@ -110,7 +110,7 @@ export default function DashboardPage({ session }) {
             <div className="dashboard-grid">
               {isApizf && <Stat value={data.stands.active} label="Stands actifs" to="/stands" />}
               {isApizf && <Stat value={data.contacts.total} label="Contacts captés" detail={`dont ${data.contacts.today} aujourd’hui · ${data.contacts.fromSite} via le site`} />}
-              <Stat value={data.challenges.players} label={isApizf ? 'Joueurs des Défis' : 'Joueurs passés par le stand'} detail={`${data.challenges.rewardsHanded} récompense${data.challenges.rewardsHanded > 1 ? 's' : ''} remise${data.challenges.rewardsHanded > 1 ? 's' : ''}`} to={isApizf ? '/participants' : '/defis'} />
+              <Stat value={data.challenges.players} label={isApizf ? 'Joueurs des Défis' : 'Joueurs passés par le stand'} detail={`${data.challenges.rewardsHanded} récompense${data.challenges.rewardsHanded > 1 ? 's' : ''} remise${data.challenges.rewardsHanded > 1 ? 's' : ''}`} to={hasGuichets ? '/participants' : '/defis'} />
               {hasGuichets && <Stat value={data.wheel.played} label="Parties de roue" detail={`dont ${data.wheel.playedToday} aujourd’hui`} to="/roue" />}
               {hasGuichets && <Stat value={data.investor.total} label="Contacts aux guichets" detail={`${data.investor.inProgress} en suivi`} to="/guichets" />}
               {hasGuichets && <Stat value={data.investor.diagnosed ?? 0} label="Diagnostics réalisés" detail="fiches de diagnostic en 15 minutes" to="/guichets" />}

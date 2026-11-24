@@ -24,7 +24,10 @@ export default function ScanListDialog({ session, onLogout, onClose }) {
     api.challengePassports(session.token)
       .then((passports) => {
         if (!active) return;
-        const rows = passports.flatMap((passport) => (passport.passages || []).map((passage) => ({
+        // Le Stand API-ZF reçoit tous les joueurs (remise des récompenses) : on ne garde que les passages de ce stand.
+        const standId = session.user.occupant?.id || session.user.occupantId;
+        const own = (passage) => !standId || (passage.occupant?.id || passage.occupantId) === standId;
+        const rows = passports.flatMap((passport) => (passport.passages || []).filter(own).map((passage) => ({
           id: passage.id,
           player: passport.displayName,
           at: passage.createdAt,
@@ -38,7 +41,7 @@ export default function ScanListDialog({ session, onLogout, onClose }) {
         else setError(requestError.message);
       });
     return () => { active = false; };
-  }, [onLogout, session.token]);
+  }, [onLogout, session.token, session.user.occupant?.id, session.user.occupantId]);
 
   return (
     <div className="challenge-scan-backdrop" role="presentation" onMouseDown={onClose}>

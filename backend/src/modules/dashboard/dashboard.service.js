@@ -154,9 +154,9 @@ const overview = async (user) => {
   // Ce qui attend une action : affiché en pastille dans le menu, au nombre exact.
   result.todo = {
     // Guichets : contacts à traiter et relances à faire aujourd'hui (en retard comprises).
-    ...(apizf && { 'investor-requests': investorNew + investorOverdue + investorDueToday, wheel: wheelToHand }),
+    ...(apizf && { 'investor-requests': investorNew + investorOverdue + investorDueToday, wheel: wheelToHand, challenges: rewardsToHand }),
     b2b: b2bPending,
-    ...(isSuperAdmin && { challenges: rewardsToHand, 'live-questions': await liveQuestionRepository.countNew() }),
+    ...(isSuperAdmin && { 'live-questions': await liveQuestionRepository.countNew() }),
   };
   return result;
 };

@@ -26,8 +26,9 @@ export const adminSections = [
   { section: 'b2b-needs', path: '/besoins-b2b', label: 'Besoins', Icon: Handshake, group: 'b2b' },
   // Guichets du Stand API-ZF et registre unique des contacts : l'équipe API-ZF et les occupants du Stand API-ZF.
   { section: 'investor-requests', path: '/guichets', label: 'Guichets', Icon: BriefcaseBusiness, apizf: true },
-  // Défi de passage (tous les joueurs, remise des récompenses) : l'équipe API-ZF ; un occupant a sa « Liste des scans ».
-  { section: 'challenges', path: '/participants', label: 'Défi de passage', Icon: Trophy, group: 'games', global: true },
+  // Jeux et défis (tous les joueurs, remise des récompenses et des lots) : l'équipe API-ZF et les occupants du Stand API-ZF,
+  // qui remettent quand l'animateur n'est pas là ; un autre occupant a sa « Liste des scans ».
+  { section: 'challenges', path: '/participants', label: 'Défi de passage', Icon: Trophy, group: 'games', apizf: true },
   { section: 'wheel', path: '/roue', label: 'Roue des opportunités', Icon: Disc3, group: 'games', apizf: true },
 ];
 
