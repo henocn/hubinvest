@@ -3,6 +3,8 @@ const sequelize = require('../database/sequelize');
 const defineOccupant = require('./occupant.model');
 const defineUser = require('./user.model');
 const defineContact = require('./contact.model');
+const defineContactFollowUp = require('./contact-follow-up.model');
+const defineB2bFollowUp = require('./b2b-follow-up.model');
 const defineInvestorRequest = require('./investor-request.model');
 const defineInvestorFollowUp = require('./investor-follow-up.model');
 const defineInvestorMeeting = require('./investor-meeting.model');
@@ -25,6 +27,8 @@ const defineAuditLog = require('./audit-log.model');
 const Occupant = defineOccupant(sequelize, DataTypes);
 const User = defineUser(sequelize, DataTypes);
 const Contact = defineContact(sequelize, DataTypes);
+const ContactFollowUp = defineContactFollowUp(sequelize, DataTypes);
+const B2bFollowUp = defineB2bFollowUp(sequelize, DataTypes);
 const InvestorRequest = defineInvestorRequest(sequelize, DataTypes);
 const InvestorFollowUp = defineInvestorFollowUp(sequelize, DataTypes);
 const InvestorMeeting = defineInvestorMeeting(sequelize, DataTypes);
@@ -52,6 +56,9 @@ Contact.belongsTo(Occupant, { foreignKey: 'occupantId', as: 'occupant' });
 
 User.hasMany(Contact, { foreignKey: 'createdByUserId', as: 'createdContacts' });
 Contact.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
+Contact.hasMany(ContactFollowUp, { foreignKey: 'contactId', as: 'followUps' });
+ContactFollowUp.belongsTo(Contact, { foreignKey: 'contactId', as: 'contact' });
+ContactFollowUp.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
 
 
 Occupant.hasMany(B2bNeed, { foreignKey: 'occupantId', as: 'b2bNeeds' });
@@ -68,10 +75,14 @@ B2bProposal.belongsTo(User, { foreignKey: 'handledByUserId', as: 'handledBy' });
 InvestorRequest.belongsTo(User, { foreignKey: 'contactUserId', as: 'contactUser' });
 InvestorRequest.hasMany(InvestorFollowUp, { foreignKey: 'investorRequestId', as: 'followUps' });
 InvestorFollowUp.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
+InvestorFollowUp.belongsTo(InvestorRequest, { foreignKey: 'investorRequestId', as: 'request' });
 InvestorRequest.hasMany(InvestorMeeting, { foreignKey: 'investorRequestId', as: 'meetings' });
 InvestorMeeting.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
 B2bProposal.hasMany(B2bMeeting, { foreignKey: 'b2bProposalId', as: 'meetings' });
 B2bMeeting.belongsTo(B2bProposal, { foreignKey: 'b2bProposalId', as: 'proposal' });
+B2bProposal.hasMany(B2bFollowUp, { foreignKey: 'b2bProposalId', as: 'followUps' });
+B2bFollowUp.belongsTo(B2bProposal, { foreignKey: 'b2bProposalId', as: 'proposal' });
+B2bFollowUp.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
 B2bMeeting.belongsTo(User, { foreignKey: 'reportedByUserId', as: 'reportedBy' });
 
 User.hasMany(StudioInvitation, { foreignKey: 'createdByUserId', as: 'createdStudioInvitations' });
@@ -116,6 +127,8 @@ module.exports = {
   Occupant,
   User,
   Contact,
+  ContactFollowUp,
+  B2bFollowUp,
   InvestorRequest,
   InvestorFollowUp,
   InvestorMeeting,

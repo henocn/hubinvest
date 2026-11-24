@@ -1,4 +1,4 @@
-import { BriefcaseBusiness, Building2, CalendarDays, Clapperboard, Disc3, Gift, Handshake, LayoutDashboard, MessageCircleQuestion, ScanLine, ScrollText, SlidersHorizontal, Trophy, Users } from 'lucide-react';
+import { AlarmClock, BriefcaseBusiness, Building2, CalendarDays, Clapperboard, Disc3, Gift, Handshake, LayoutDashboard, MessageCircleQuestion, ScanLine, ScrollText, SlidersHorizontal, Trophy, Users } from 'lucide-react';
 
 // Rôles : le super administrateur voit tout ; l'administrateur (l'API-ZF) tout sauf Utilisateurs et Paramètres ;
 // l'occupant administre son stand (sa fiche, B2B, scan de passage, son carnet de contacts ; pas le Studio) ; l'animateur scanne et remet.
@@ -15,6 +15,8 @@ export const accessRole = (user) => (user?.role === 'occupant' && user.occupant?
 // « tab » place la rubrique dans la barre du bas sur téléphone (quatre au plus) ; les autres restent dans le menu.
 export const adminSections = [
   { section: 'occupants', path: '/stands', label: 'Stands', Icon: Building2, global: true, tab: true },
+  // Relances : une seule liste de travail, en onglets (Contacts des stands ; Guichets pour l'équipe API-ZF).
+  { section: 'follow-ups', path: '/relances', label: 'Relances', Icon: AlarmClock, tab: true },
   { section: 'users', path: '/utilisateurs', label: 'Utilisateurs', Icon: Users, global: true, superOnly: true },
   // Journal des actions : qui a fait quoi et quand.
   { section: 'audit', path: '/journal', label: 'Journal', Icon: ScrollText, global: true, superOnly: true },

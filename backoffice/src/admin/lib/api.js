@@ -88,6 +88,12 @@ export const api = {
   addInvestorFollowUp: (token, id, values) => request(`/investor-requests/${id}/follow-ups`, authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   completeInvestorFollowUp: (token, id, followUpId, values) => request(`/investor-requests/${id}/follow-ups/${followUpId}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
   deleteInvestorFollowUp: (token, id, followUpId) => request(`/investor-requests/${id}/follow-ups/${followUpId}`, authorized(token, { method: 'DELETE' })),
+  // Page Relances : relances des contacts des stands, et liste de celles des guichets.
+  contactFollowUps: (token) => request('/follow-ups/contacts', authorized(token)),
+  guichetFollowUps: (token) => request('/follow-ups/guichets', authorized(token)),
+  addContactFollowUp: (token, contactId, values) => request(`/follow-ups/contacts/${contactId}`, authorized(token, { method: 'POST', body: JSON.stringify(values) })),
+  completeContactFollowUp: (token, id, values) => request(`/follow-ups/contacts/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
+  deleteContactFollowUp: (token, id) => request(`/follow-ups/contacts/${id}`, authorized(token, { method: 'DELETE' })),
   addInvestorMeeting: (token, id, values) => request(`/investor-requests/${id}/meetings`, authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   updateInvestorMeeting: (token, id, meetingId, values) => request(`/investor-requests/${id}/meetings/${meetingId}`, authorized(token, { method: 'PUT', body: JSON.stringify(values) })),
   setInvestorMeetingStatus: (token, id, meetingId, status) => request(`/investor-requests/${id}/meetings/${meetingId}`, authorized(token, { method: 'PATCH', body: JSON.stringify({ status }) })),

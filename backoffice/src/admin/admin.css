@@ -433,12 +433,12 @@
 /* Onglets d'une rubrique regroupée (Rencontres) : sur leur propre ligne sous le titre, centrés. */
 .admin-app .section-heading { display: contents; }
 .admin-app .section-tabs { order: 3; width: 100%; display: flex; justify-content: center; }
-.admin-app .section-tabs a { display: inline-flex; align-items: center; gap: 6px; padding: 7px 18px; border: 1px solid var(--frame); color: var(--ink); background: #fff; font-size: 14px; font-weight: 600; text-decoration: none; white-space: nowrap; }
-.admin-app .section-tabs a:hover { color: var(--ink); background: #eceeee; }
-.admin-app .section-tabs a + a { border-left: 0; }
-.admin-app .section-tabs a.is-active { color: #fff; background: var(--green); }
-.admin-app .section-tabs a.is-active:hover { background: var(--green-dark); }
-.admin-app .section-tabs a.is-active b { color: var(--red); background: #fff; }
+.admin-app .section-tabs a, .admin-app .section-tabs button { font: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 7px 18px; border: 1px solid var(--frame); color: var(--ink); background: #fff; font-size: 14px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.admin-app .section-tabs a:hover, .admin-app .section-tabs button:hover { color: var(--ink); background: #eceeee; }
+.admin-app .section-tabs a + a, .admin-app .section-tabs button + button { border-left: 0; }
+.admin-app .section-tabs a.is-active, .admin-app .section-tabs button.is-active { color: #fff; background: var(--green); }
+.admin-app .section-tabs a.is-active:hover, .admin-app .section-tabs button.is-active:hover { background: var(--green-dark); }
+.admin-app .section-tabs a.is-active b, .admin-app .section-tabs button.is-active b { color: var(--red); background: #fff; }
 /* Onglets d'une fiche (boutons) : même apparence que les onglets de rubrique. */
 .admin-app .detail-tabs { justify-content: flex-start; margin: 22px 0 16px; }
 .admin-app .detail-tabs button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 18px; border: 1px solid var(--frame); color: var(--ink); background: #fff; font: inherit; font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer; }
@@ -478,3 +478,6 @@
 
 /* Adresse de la vidéo de repli du grand écran : un champ large, aligné à gauche. */
 .admin-app .settings-number input[type='url'] { width: min(320px, 50vw); text-align: left; }
+
+/* Relances : le téléphone de la personne, à appeler depuis la liste. */
+.admin-app .follow-up-call { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }

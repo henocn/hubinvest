@@ -735,3 +735,20 @@ a.contact-row {
 @media (max-width: 560px) {
   .contact-field-row { grid-template-columns: 1fr; }
 }
+
+/* Relances dans la fiche d'un contact du carnet : à faire d'abord (rouge en retard, jaune aujourd'hui), puis les faites. */
+.contact-follow-ups { display: grid; gap: 10px; margin-top: 22px; }
+.contact-follow-ups > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.contact-follow-ups h2 { margin: 0; font-size: 1rem; }
+.contact-follow-ups > p { margin: 0; color: var(--muted, #5d6670); }
+.contact-follow-ups ul { margin: 0; padding: 0; list-style: none; border: 1px solid var(--border); }
+.contact-follow-ups li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; }
+.contact-follow-ups li + li { border-top: 1px solid var(--border); }
+.contact-follow-ups li > div { display: grid; gap: 2px; min-width: 0; }
+.contact-follow-ups li span { overflow-wrap: anywhere; }
+.contact-follow-ups li small { color: var(--muted, #5d6670); }
+.contact-follow-ups li.is-late { background: rgba(211, 27, 52, 0.05); }
+.contact-follow-ups li.is-late strong { color: #b70f2c; }
+.contact-follow-ups li.is-today { background: rgba(255, 207, 21, 0.14); }
+.contact-follow-ups li.is-today strong { color: #7a5b00; }
+.contact-follow-ups li.is-done { color: var(--muted, #5d6670); }

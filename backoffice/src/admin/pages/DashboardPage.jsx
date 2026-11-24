@@ -50,8 +50,9 @@ export default function DashboardPage({ session }) {
   const followUps = (data?.agenda?.followUps || []).map((item) => {
     const state = dueState(item.dueAt) || 'today';
     return {
-      key: item.id,
-      to: `/guichets/${item.id}`,
+      key: `${item.kind}-${item.id}-${item.dueAt}`,
+      // Guichet : sa fiche ; contact : sa fiche dans le carnet pour l'occupant, la page Relances pour l'API-ZF.
+      to: item.kind === 'guichet' ? `/guichets/${item.id}` : isApizf ? '/relances' : `/contacts/${item.id}`,
       state,
       when: state === 'late' ? `En retard · ${dueLabel(item.dueAt)}` : time.format(new Date(item.dueAt)),
       name: item.fullName,
@@ -70,7 +71,7 @@ export default function DashboardPage({ session }) {
   // À traiter : seulement ce qui attend vraiment une action (rien à zéro).
   const todo = data ? [
     hasGuichets && { value: data.investor.new, label: 'Contacts des guichets', detail: 'à traiter', to: '/guichets' },
-    hasGuichets && { value: (data.investor.overdue ?? 0) + (data.investor.dueToday ?? 0), label: 'Relances du jour', detail: data.investor.overdue ? `dont ${data.investor.overdue} en retard` : 'à faire aujourd’hui', to: '/guichets?relances' },
+    { value: data.todo?.['follow-ups'] ?? 0, label: 'Relances du jour', detail: 'en retard ou à faire aujourd’hui', to: '/relances' },
     hasGuichets && { value: data.investor.commitmentsOverdue ?? 0, label: 'Engagements en retard', detail: 'réponse promise non donnée', to: '/guichets' },
     { value: data.b2b.pendingProposals, label: 'Demandes B2B', detail: 'à accepter ou refuser', to: '/b2b' },
     isApizf && { value: data.todo?.['live-questions'] ?? 0, label: 'Questions du public', detail: 'à poser ou écarter', to: '/questions' },
@@ -90,8 +91,8 @@ export default function DashboardPage({ session }) {
         <>
           <section className="dashboard-group" aria-labelledby="dashboard-today">
             <h2 id="dashboard-today">Aujourd’hui</h2>
-            <div className={`dashboard-agenda${hasGuichets ? '' : ' is-single'}`}>
-              {hasGuichets && <AgendaList title="Relances à faire" Icon={AlarmClock} empty="Aucune relance à faire aujourd’hui." items={followUps} />}
+            <div className="dashboard-agenda">
+              <AgendaList title="Relances à faire" Icon={AlarmClock} empty="Aucune relance à faire aujourd’hui." items={followUps} />
               <AgendaList title="Rendez-vous" Icon={CalendarClock} empty="Aucun rendez-vous aujourd’hui." items={meetings} />
             </div>
           </section>

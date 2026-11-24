@@ -6,6 +6,8 @@ const bcrypt = require('bcryptjs');
 const { UniqueConstraintError } = require('sequelize');
 const contactService = require('../src/modules/contact/contact.service');
 const contactRepository = require('../src/modules/contact/contact.repository');
+const followUpService = require('../src/modules/follow-up/follow-up.service');
+const followUpRepository = require('../src/modules/follow-up/follow-up.repository');
 const occupantService = require('../src/modules/occupant/occupant.service');
 const occupantRepository = require('../src/modules/occupant/occupant.repository');
 const userService = require('../src/modules/user/user.service');
@@ -171,6 +173,7 @@ test('les listes et les details restent limites a l’occupant authentifie', asy
 });
 
 test('une resynchronisation du meme contact ne cree pas de doublon', async (context) => {
+  context.mock.method(followUpService, 'applyClassFollowUp', async () => null);
   let saved = null;
   let inserts = 0;
   context.mock.method(contactRepository.sequelize, 'transaction', async (callback) => callback({}));
@@ -343,6 +346,7 @@ test('une demande publique sans accord est refusée avant toute écriture', asyn
 });
 
 test('une demande publique est rattachée au stand lu par le serveur ; sa classe vient de la réponse « quand », sans accord API-ZF forcé', async (context) => {
+  context.mock.method(followUpService, 'applyClassFollowUp', async () => null);
   let saved;
   context.mock.method(occupantRepository, 'findBySlug', async () => ({ id: 'stand-a' }));
   context.mock.method(contactRepository.sequelize, 'transaction', async (callback) => callback({}));
@@ -813,19 +817,17 @@ test('une relance modifiée remplace la précédente et une date passée n’est
   context.mock.method(notificationRepository, 'enqueue', async (jobs) => { queued.push(...jobs); });
 
   const dueAt = new Date(Date.now() + 3600000);
-  notificationService.contactReminderChanged({
-    id: 'contact-a', occupantId: 'occupant-a', createdByUserId: 'occupant-user', fullName: 'Ama', nextAction: 'Envoyer le devis', nextActionAt: dueAt,
-  });
+  const contact = { id: 'contact-a', occupantId: 'occupant-a', fullName: 'Ama' };
+  notificationService.contactFollowUpChanged({ id: 'follow-a', createdByUserId: 'occupant-user', reason: 'Envoyer le devis', dueAt }, contact);
   await flushNotifications();
-  notificationService.contactReminderChanged({
-    id: 'contact-a', occupantId: 'occupant-a', createdByUserId: 'occupant-user', fullName: 'Ama', nextAction: null, nextActionAt: new Date(Date.now() - 1000),
-  });
+  notificationService.contactFollowUpChanged({ id: 'follow-a', createdByUserId: 'occupant-user', reason: 'Envoyer le devis', dueAt: new Date(Date.now() - 1000) }, contact);
   await flushNotifications();
 
-  assert.deepEqual(cancelled, ['contact-reminder:contact-a', 'contact-reminder:contact-a']);
+  assert.deepEqual(cancelled, ['contact-follow-up:follow-a', 'contact-follow-up:follow-a']);
   assert.equal(queued.length, 1);
-  assert.equal(queued[0].dedupeKey, 'contact-reminder:contact-a');
+  assert.equal(queued[0].dedupeKey, 'contact-follow-up:follow-a');
   assert.equal(queued[0].availableAt.getTime(), dueAt.getTime());
+  assert.match(queued[0].payload.body, /Envoyer le devis/);
 });
 
 test('le stand à l’affiche couvre toute la journée et reste unique par jour', async (context) => {
@@ -1918,6 +1920,12 @@ test('audit des droits : chaque rôle n’ouvre que ses écrans, sans erreur ser
     ['POST', `/investor-requests/${crypto.randomUUID()}/follow-ups`, [Y, Y, N, Y, N]],
     ['PATCH', `/occupants/${industryStand}`, [Y, Y, Y, N, N]],
     ['PATCH', `/live-questions/${crypto.randomUUID()}`, [Y, Y, N, N, Y]],
+    // Page Relances : Contacts pour les stands et l'API-ZF, Guichets pour l'équipe API-ZF (dont le Stand API-ZF).
+    ['GET', '/follow-ups/contacts', [Y, Y, Y, Y, N]],
+    ['GET', '/follow-ups/guichets', [Y, Y, N, Y, N]],
+    ['POST', `/follow-ups/contacts/${crypto.randomUUID()}`, [Y, Y, Y, Y, N]],
+    ['PATCH', `/follow-ups/contacts/${crypto.randomUUID()}`, [Y, Y, Y, Y, N]],
+    ['DELETE', `/follow-ups/contacts/${crypto.randomUUID()}`, [Y, Y, Y, Y, N]],
   ];
 
   const server = app.listen(0, '127.0.0.1');
@@ -1966,6 +1974,7 @@ test('« Prendre contact » demande le téléphone et l’e-mail du visiteur, et
 });
 
 test('« Prendre contact » en deux temps : la réponse « quand » donne la classe, et « opportunités » vaut accord API-ZF', async (context) => {
+  context.mock.method(followUpService, 'applyClassFollowUp', async () => null);
   const contactValidation = require('../src/modules/contact/contact.validation');
   const base = { id: crypto.randomUUID(), fullName: 'Kodjo Ama', phone: '+22891000000', email: 'kodjo@example.com', consentOccupant: true };
   const saved = [];
@@ -1981,4 +1990,34 @@ test('« Prendre contact » en deux temps : la réponse « quand » donne la cla
     await contactService.createPublic('stand-a', value);
   }
   assert.deepEqual(saved.map((item) => [item.qualification, item.company, item.consentApizf]), [[null, null, false], ['A', 'Agro Togo', false], ['C', null, true]]);
+});
+
+test('relances des contacts : A crée une relance à 48 h, B à 7 jours, C aucune ; une nouvelle classe remplace l’ancienne', async (context) => {
+  enableNotifications(context);
+  const created = [];
+  const destroyed = [];
+  let pending = [];
+  context.mock.method(followUpRepository, 'findPendingContactFollowUps', async () => pending);
+  context.mock.method(followUpRepository, 'destroyContactFollowUp', async (item) => { destroyed.push(item.id); });
+  context.mock.method(followUpRepository, 'createContactFollowUp', async (values) => { const item = { id: `f${created.length + 1}`, ...values }; created.push(item); return item; });
+  context.mock.method(notificationService, 'contactFollowUpChanged', () => {});
+  context.mock.method(notificationService, 'contactFollowUpRemoved', () => {});
+  const contact = { id: 'contact-a', occupantId: 'stand-a', fullName: 'Ama' };
+
+  const now = Date.now();
+  await followUpService.applyClassFollowUp({ ...contact, qualification: 'A' });
+  assert.equal(created.length, 1);
+  assert.equal(created[0].autoSource, 'A');
+  assert.ok(Math.abs(new Date(created[0].dueAt).getTime() - (now + 48 * 3600000)) < 60000);
+
+  pending = [created[0]];
+  await followUpService.applyClassFollowUp({ ...contact, qualification: 'B' });
+  assert.deepEqual(destroyed, ['f1']);
+  assert.equal(created[1].autoSource, 'B');
+  assert.ok(Math.abs(new Date(created[1].dueAt).getTime() - (now + 7 * 24 * 3600000)) < 60000);
+
+  pending = [created[1]];
+  assert.equal(await followUpService.applyClassFollowUp({ ...contact, qualification: 'C' }), null);
+  assert.deepEqual(destroyed, ['f1', 'f2']);
+  assert.equal(created.length, 2);
 });

@@ -4,6 +4,7 @@ const { isApizfTeam, isGlobal } = require('../../shared/access');
 const settingsService = require('../settings/settings.service');
 const roles = require('../../shared/roles');
 const liveQuestionRepository = require('../live-question/live-question.repository');
+const followUpRepository = require('../follow-up/follow-up.repository');
 const {
   B2bMeeting, B2bNeed, B2bProposal, ChallengePassage, ChallengePassport, Contact, InvestorFollowUp, InvestorMeeting, InvestorRequest, Occupant,
   StudioInvitation, WheelPlay,
@@ -27,7 +28,7 @@ const endOfToday = () => {
 const agenda = async (isApizf, occupantId) => {
   const start = startOfToday();
   const end = endOfToday();
-  const [requests, investorMeetings, b2bMeetings] = await Promise.all([
+  const [requests, investorMeetings, b2bMeetings, contactFollowUps] = await Promise.all([
     isApizf ? InvestorRequest.findAll({
       where: { nextFollowUpAt: { [Op.lt]: end } },
       attributes: ['id', 'fullName', 'organization', 'nextFollowUpAt'],
@@ -47,11 +48,23 @@ const agenda = async (isApizf, occupantId) => {
         include: [{ model: B2bNeed, as: 'need', attributes: ['title'], where: occupantId ? { occupantId } : {}, required: true }],
       }],
     }),
+    // Relances des contacts du stand (ou de tous les stands pour l'équipe API-ZF) en retard ou du jour.
+    followUpRepository.findContactDue(end, occupantId),
   ]);
-  const followUps = requests.map((request) => {
-    const next = [...(request.followUps || [])].sort((a, b) => new Date(a.dueAt) - new Date(b.dueAt))[0];
-    return { id: request.id, fullName: request.fullName, organization: request.organization, dueAt: request.nextFollowUpAt, reason: next?.reason || null };
-  });
+  const followUps = [
+    ...requests.map((request) => {
+      const next = [...(request.followUps || [])].sort((a, b) => new Date(a.dueAt) - new Date(b.dueAt))[0];
+      return { kind: 'guichet', id: request.id, fullName: request.fullName, organization: request.organization, dueAt: request.nextFollowUpAt, reason: next?.reason || null };
+    }),
+    ...contactFollowUps.map((followUp) => ({
+      kind: 'contact',
+      id: followUp.contact.id,
+      fullName: followUp.contact.fullName,
+      organization: occupantId ? followUp.contact.company : followUp.contact.occupant?.name,
+      dueAt: followUp.dueAt,
+      reason: followUp.reason,
+    })),
+  ].sort((a, b) => new Date(a.dueAt) - new Date(b.dueAt));
   const meetings = [
     ...investorMeetings.flatMap((request) => request.meetings.map((meeting) => ({
       kind: 'guichet', id: request.id, fullName: request.fullName, startsAt: meeting.startsAt, place: meeting.location,
@@ -94,7 +107,7 @@ const overview = async (user) => {
   const today = startOfToday();
 
   const [
-    investorNew, investorInProgress, investorTotal, investorOverdue, investorDueToday,
+    investorNew, investorInProgress, investorTotal, investorOverdue, investorDueToday, contactDue,
     b2bPending, b2bOpenNeeds,
     studioPending, studioConfirmed,
     players, rewardsToHand, rewardsHanded,
@@ -108,6 +121,8 @@ const overview = async (user) => {
     apizf ? InvestorRequest.count({ where: { nextFollowUpAt: { [Op.lt]: new Date() } } }) : 0,
     // Relances encore à l'heure, mais à faire avant la fin de la journée.
     apizf ? InvestorRequest.count({ where: { nextFollowUpAt: { [Op.gte]: new Date(), [Op.lt]: endOfToday() } } }) : 0,
+    // Relances des contacts des stands, en retard ou du jour.
+    followUpRepository.countContactDue(endOfToday(), occupantId),
     B2bProposal.count({ where: { status: 'pending' }, include: [{ model: B2bNeed, as: 'need', attributes: [], where: byStand, required: true }] }),
     B2bNeed.count({ where: { ...byStand, status: 'open' } }),
     // Studio : invités qui n'ont pas encore choisi leur créneau, passages réservés à venir.
@@ -153,8 +168,9 @@ const overview = async (user) => {
 
   // Ce qui attend une action : affiché en pastille dans le menu, au nombre exact.
   result.todo = {
-    // Guichets : contacts à traiter et relances à faire aujourd'hui (en retard comprises).
-    ...(apizf && { 'investor-requests': investorNew + investorOverdue + investorDueToday, wheel: wheelToHand, challenges: rewardsToHand }),
+    // Guichets : les contacts à traiter ; Relances : tout ce qui est à faire aujourd'hui (en retard compris), contacts et guichets.
+    ...(apizf && { 'investor-requests': investorNew, wheel: wheelToHand, challenges: rewardsToHand }),
+    'follow-ups': contactDue + (apizf ? investorOverdue + investorDueToday : 0),
     b2b: b2bPending,
     ...(isSuperAdmin && { 'live-questions': await liveQuestionRepository.countNew() }),
   };

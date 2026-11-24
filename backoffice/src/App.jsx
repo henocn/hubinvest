@@ -16,6 +16,7 @@ import LiveQuestionsPage from './pages/LiveQuestionsPage';
 import StudioPage from './admin/pages/StudioPage';
 import AuditLogPage from './admin/pages/AuditLogPage';
 import MyStandPage from './admin/pages/MyStandPage';
+import FollowUpsPage from './admin/pages/FollowUpsPage';
 import { api } from './lib/api';
 import { accessRole, adminSectionForPath, homeForRole, isManagerRole } from './navigation';
 import { SessionProvider, useSession } from './session';
@@ -88,6 +89,7 @@ function AdminSection() {
   if (!section) return <Navigate to={homeForRole(accessRole(session.user))} replace />;
   if (section === 'studio') return <StudioPage session={session} onLogout={logout} />;
   if (section === 'audit') return <AuditLogPage session={session} onLogout={logout} />;
+  if (section === 'follow-ups') return <FollowUpsPage session={session} onLogout={logout} />;
   return <BackofficePage session={session} onLogout={logout} section={section} />;
 }
 
