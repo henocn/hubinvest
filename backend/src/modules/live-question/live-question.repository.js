@@ -22,6 +22,9 @@ const findSince = (since) => LiveQuestion.findAll({
 
 const findById = (id) => LiveQuestion.findByPk(id);
 
+// Questions pas encore traitées (ni posées ni écartées) : la pastille du menu Questions.
+const countNew = () => LiveQuestion.count({ where: { status: 'new' } });
+
 const update = (question, values) => question.update(values);
 
-module.exports = { findEvent, create, findSince, findById, update };
+module.exports = { findEvent, create, findSince, findById, update, countNew };

@@ -43,7 +43,8 @@ function NavItems({ links, className = '', short = false }) {
 export default function TeamShell() {
   const { session, logout } = useSession();
   const shell = <TeamShellLayout />;
-  return isManagerRole(session.user.role) ? <DashboardProvider session={session} onLogout={logout}>{shell}</DashboardProvider> : shell;
+  // Pastilles du menu : le tableau de bord pour l'équipe et les stands, le compteur des questions pour l'animateur.
+  return isManagerRole(session.user.role) || session.user.role === 'animateur' ? <DashboardProvider session={session} onLogout={logout}>{shell}</DashboardProvider> : shell;
 }
 
 function TeamShellLayout() {

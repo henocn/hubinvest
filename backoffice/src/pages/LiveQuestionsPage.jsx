@@ -78,7 +78,7 @@ export default function LiveQuestionsPage({ session, onLogout }) {
         {views.map((item) => (
           <button key={item.value} type="button" role="tab" aria-selected={view === item.value} className={view === item.value ? 'is-active' : ''} onClick={() => setView(item.value)}>
             {item.label}
-            <span>{counts[item.value] || 0}</span>
+            {counts[item.value] > 0 && <span>{counts[item.value]}</span>}
           </button>
         ))}
       </div>

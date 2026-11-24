@@ -2,6 +2,8 @@ const { Op } = require('sequelize');
 const AppError = require('../../shared/app-error');
 const { isApizfTeam, isGlobal } = require('../../shared/access');
 const settingsService = require('../settings/settings.service');
+const roles = require('../../shared/roles');
+const liveQuestionRepository = require('../live-question/live-question.repository');
 const {
   B2bMeeting, B2bNeed, B2bProposal, ChallengePassage, ChallengePassport, Contact, InvestorFollowUp, InvestorMeeting, InvestorRequest, Occupant,
   StudioInvitation, WheelPlay,
@@ -81,6 +83,8 @@ const rewardStock = async () => {
  * L'administrateur ne voit que son stand ; la roue est commune à tout le Hub.
  */
 const overview = async (user) => {
+  // Animateur : seulement la pastille des questions du public à traiter.
+  if (user.role === roles.ANIMATOR) return { todo: { 'live-questions': await liveQuestionRepository.countNew() } };
   const isSuperAdmin = isGlobal(user);
   if (!isSuperAdmin && !user.occupantId) throw new AppError(403, 'STAND_REQUIRED', 'Ce compte n’est rattaché à aucun stand.');
   const occupantId = isSuperAdmin ? null : user.occupantId;
@@ -152,7 +156,7 @@ const overview = async (user) => {
     // Guichets : contacts à traiter et relances à faire aujourd'hui (en retard comprises).
     ...(apizf && { 'investor-requests': investorNew + investorOverdue + investorDueToday, wheel: wheelToHand }),
     b2b: b2bPending,
-    ...(isSuperAdmin && { challenges: rewardsToHand }),
+    ...(isSuperAdmin && { challenges: rewardsToHand, 'live-questions': await liveQuestionRepository.countNew() }),
   };
   return result;
 };

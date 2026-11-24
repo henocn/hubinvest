@@ -73,6 +73,7 @@ export default function DashboardPage({ session }) {
     hasGuichets && { value: (data.investor.overdue ?? 0) + (data.investor.dueToday ?? 0), label: 'Relances du jour', detail: data.investor.overdue ? `dont ${data.investor.overdue} en retard` : 'à faire aujourd’hui', to: '/guichets?relances' },
     hasGuichets && { value: data.investor.commitmentsOverdue ?? 0, label: 'Engagements en retard', detail: 'réponse promise non donnée', to: '/guichets' },
     { value: data.b2b.pendingProposals, label: 'Demandes B2B', detail: 'à accepter ou refuser', to: '/b2b' },
+    isApizf && { value: data.todo?.['live-questions'] ?? 0, label: 'Questions du public', detail: 'à poser ou écarter', to: '/questions' },
     isApizf && { value: data.studio.pending, label: 'Studio', detail: 'invités sans créneau', to: '/studio' },
     isApizf && { value: data.challenges.rewardsToHand, label: 'Récompenses à remettre', detail: 'les 5 étapes trouvées', to: '/participants' },
     hasGuichets && { value: data.wheel.prizesToHand, label: 'Lots de la roue', detail: 'gagnés, pas encore remis', to: '/roue' },

@@ -229,7 +229,14 @@ const studioCapsuleDelivered = (invitation) => dispatch(async () => {
   if (jobs.length) await notificationRepository.enqueue(jobs);
 });
 
+// Question du public pendant un direct : l'API-ZF et les animateurs sont prévenus en push (pas d'e-mail).
+const liveQuestionReceived = (question, event) => dispatch(async () => {
+  const team = await notificationRepository.findQuestionTeam();
+  if (team.length) await notificationRepository.enqueue(forUsers(team, () => templates.liveQuestionReceived({ question, event })));
+});
+
 module.exports = {
+  liveQuestionReceived,
   contactRequested,
   contactReminderChanged,
   investorRequestReceived,

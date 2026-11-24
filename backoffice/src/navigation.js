@@ -64,7 +64,8 @@ const menuSections = (role) => {
 const dashboardLink = { path: '/tableau-de-bord', label: 'Tableau de bord', tabLabel: 'Accueil', Icon: LayoutDashboard, tab: true };
 const settingsLink = { path: '/parametres', label: 'Paramètres', Icon: SlidersHorizontal };
 // Questions du public pendant les directs.
-const questionsLink = { path: '/questions', label: 'Questions', Icon: MessageCircleQuestion, tab: true };
+// La pastille compte les questions pas encore traitées (ni posées ni écartées).
+const questionsLink = { path: '/questions', label: 'Questions', Icon: MessageCircleQuestion, tab: true, section: 'live-questions' };
 const usersLink = adminSections.find((item) => item.section === 'users');
 const auditLink = adminSections.find((item) => item.section === 'audit');
 

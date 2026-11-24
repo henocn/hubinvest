@@ -328,7 +328,19 @@ const studioCapsuleWhatsapp = ({ invitation }) => ({
   params: [invitation.guestName, invitation.capsuleUrl],
 });
 
+// Nouvelle question du public pendant un direct : notification push seulement (sans sujet, donc jamais d’e-mail).
+const liveQuestionReceived = ({ question, event }) => {
+  const text = question.question.length > 120 ? `${question.question.slice(0, 117)}…` : question.question;
+  return {
+    title: `Nouvelle question${event?.title ? ` · ${event.title}` : ''}`,
+    body: question.authorName ? `${question.authorName} : ${text}` : text,
+    url: teamUrl('/questions'),
+    tag: 'live-questions',
+  };
+};
+
 module.exports = {
+  liveQuestionReceived,
   investorMeetingWhatsapp,
   b2bMeetingWhatsapp,
   b2bMeetingReminder,

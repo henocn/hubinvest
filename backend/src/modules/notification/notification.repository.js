@@ -66,6 +66,12 @@ const findSuperAdmins = () => User.findAll({
 // Équipe des guichets : l'API-ZF et les occupants du Stand API-ZF.
 const findApizfTeam = () => User.findAll({ ...apizfTeamQuery(), attributes: ['id', 'firstName', 'email'] });
 
+// Personnes qui gèrent les questions du public : l'API-ZF et les animateurs.
+const findQuestionTeam = () => User.findAll({
+  where: { role: { [Op.in]: [...GLOBAL_ROLES, 'animateur'] }, isActive: true },
+  attributes: ['id', 'firstName', 'email'],
+});
+
 // Retrouve un compte actif par son identifiant.
 const findActiveUser = (id) => User.findOne({
   where: { id, isActive: true },
@@ -73,6 +79,7 @@ const findActiveUser = (id) => User.findOne({
 });
 
 module.exports = {
+  findQuestionTeam,
   findApizfTeam,
   enqueue,
   cancelPending,
