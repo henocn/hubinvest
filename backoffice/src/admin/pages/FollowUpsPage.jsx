@@ -47,7 +47,7 @@ function FollowUpRow({ item, person, detail, phone, to, extra, onComplete, onDel
   );
 }
 
-// Relances : une seule page de travail. Onglet Contacts (les contacts des stands), onglet Guichets (équipe API-ZF et
+// Relances : une seule page de travail. Onglets Contacts et B2B (les stands), onglet Guichets (équipe API-ZF et
 // occupants du Stand API-ZF). Chaque relance se marque faite ici, avec sa prochaine étape, comme dans les fiches.
 export default function FollowUpsPage({ session, onLogout }) {
   const role = accessRole(session.user);
@@ -56,6 +56,7 @@ export default function FollowUpsPage({ session, onLogout }) {
   const [tab, setTab] = useState('contacts');
   const [contacts, setContacts] = useState(null);
   const [guichets, setGuichets] = useState(null);
+  const [b2b, setB2b] = useState(null);
   const [error, setError] = useState('');
   const [dialog, setDialog] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -63,11 +64,13 @@ export default function FollowUpsPage({ session, onLogout }) {
 
   const load = useCallback(async () => {
     try {
-      const [contactData, guichetData] = await Promise.all([
+      const [contactData, b2bData, guichetData] = await Promise.all([
         api.contactFollowUps(session.token),
+        api.b2bFollowUps(session.token),
         withGuichets ? api.guichetFollowUps(session.token) : [],
       ]);
       setContacts(contactData);
+      setB2b(b2bData);
       setGuichets(guichetData);
       setError('');
     } catch (requestError) {
@@ -77,10 +80,11 @@ export default function FollowUpsPage({ session, onLogout }) {
   }, [onLogout, session.token, withGuichets]);
 
   useEffect(() => { void load(); }, [load]);
-  useRealtimeEvent(['contacts', 'investor-requests'], () => { void load(); });
+  useRealtimeEvent(['contacts', 'b2b', 'investor-requests'], () => { void load(); });
 
   const contactRows = useMemo(() => ordered(contacts || []), [contacts]);
   const guichetRows = useMemo(() => ordered(guichets || []), [guichets]);
+  const b2bRows = useMemo(() => ordered(b2b || []), [b2b]);
 
   const close = () => { setDialog(null); setActionError(''); };
   const run = async (work) => {
@@ -98,29 +102,35 @@ export default function FollowUpsPage({ session, onLogout }) {
     }
   };
 
-  const complete = (values) => run(() => (dialog.kind === 'contact'
-    ? api.completeContactFollowUp(session.token, dialog.item.id, values)
-    : api.completeInvestorFollowUp(session.token, dialog.item.investorRequestId, dialog.item.id, values)));
-  const remove = () => run(() => (dialog.kind === 'contact'
-    ? api.deleteContactFollowUp(session.token, dialog.item.id)
-    : api.deleteInvestorFollowUp(session.token, dialog.item.investorRequestId, dialog.item.id)));
+  const actions = {
+    contact: { complete: (item, values) => api.completeContactFollowUp(session.token, item.id, values), remove: (item) => api.deleteContactFollowUp(session.token, item.id) },
+    b2b: { complete: (item, values) => api.completeB2bFollowUp(session.token, item.id, values), remove: (item) => api.deleteB2bFollowUp(session.token, item.id) },
+    guichet: {
+      complete: (item, values) => api.completeInvestorFollowUp(session.token, item.investorRequestId, item.id, values),
+      remove: (item) => api.deleteInvestorFollowUp(session.token, item.investorRequestId, item.id),
+    },
+  };
+  const complete = (values) => run(() => actions[dialog.kind].complete(dialog.item, values));
+  const remove = () => run(() => actions[dialog.kind].remove(dialog.item));
 
-  const tabs = [['contacts', 'Contacts', dueNow(contacts || [])], ...(withGuichets ? [['guichets', 'Guichets', dueNow(guichets || [])]] : [])];
-  const loading = !error && (contacts === null || guichets === null);
-  const rows = tab === 'contacts' ? contactRows : guichetRows;
+  const tabs = [
+    ['contacts', 'Contacts', dueNow(contacts || [])],
+    ['b2b', 'B2B', dueNow(b2b || [])],
+    ...(withGuichets ? [['guichets', 'Guichets', dueNow(guichets || [])]] : []),
+  ];
+  const loading = !error && (contacts === null || b2b === null || guichets === null);
+  const rows = { contacts: contactRows, b2b: b2bRows, guichets: guichetRows }[tab];
 
   return (
     <main className="admin-workspace">
       <header className="workspace-header">
         <div className="section-heading">
           <h1>Relances</h1>
-          {tabs.length > 1 && (
-            <nav className="section-tabs" aria-label="Relances">
-              {tabs.map(([key, label, count]) => (
-                <button key={key} type="button" className={tab === key ? 'is-active' : ''} onClick={() => setTab(key)} aria-pressed={tab === key}>{label}{count > 0 && <b>{count}</b>}</button>
-              ))}
-            </nav>
-          )}
+          <nav className="section-tabs" aria-label="Relances">
+            {tabs.map(([key, label, count]) => (
+              <button key={key} type="button" className={tab === key ? 'is-active' : ''} onClick={() => setTab(key)} aria-pressed={tab === key}>{label}{count > 0 && <b>{count}</b>}</button>
+            ))}
+          </nav>
         </div>
       </header>
 
@@ -136,7 +146,7 @@ export default function FollowUpsPage({ session, onLogout }) {
               <thead><tr>
                 <th>Échéance</th>
                 <th>Contact</th>
-                {tab === 'contacts' && isGlobal && <th>Stand</th>}
+                {(tab === 'contacts' || tab === 'b2b') && isGlobal && <th>Stand</th>}
                 {tab === 'guichets' && <th>Guichet</th>}
                 <th>Motif</th>
                 <th>Suite</th>
@@ -154,6 +164,19 @@ export default function FollowUpsPage({ session, onLogout }) {
                     extra={isGlobal ? <td>{item.contact.occupant?.name || '—'}</td> : null}
                     onComplete={() => setDialog({ type: 'complete', kind: 'contact', item, person: item.contact.fullName })}
                     onDelete={() => setDialog({ type: 'delete', kind: 'contact', item, person: item.contact.fullName })}
+                  />
+                ))}
+                {tab === 'b2b' && b2bRows.map((item) => (
+                  <FollowUpRow
+                    key={item.id}
+                    item={item}
+                    person={item.proposal.fullName}
+                    detail={item.proposal.need.title}
+                    phone={item.proposal.phone}
+                    to={`/b2b/${item.proposal.id}`}
+                    extra={isGlobal ? <td>{item.proposal.need.occupant?.name || '—'}</td> : null}
+                    onComplete={() => setDialog({ type: 'complete', kind: 'b2b', item, person: item.proposal.fullName })}
+                    onDelete={() => setDialog({ type: 'delete', kind: 'b2b', item, person: item.proposal.fullName })}
                   />
                 ))}
                 {tab === 'guichets' && guichetRows.map((item) => (

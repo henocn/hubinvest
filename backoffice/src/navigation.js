@@ -23,9 +23,8 @@ export const adminSections = [
   { section: 'program', path: '/programme', label: 'Programme', Icon: CalendarDays, global: true },
   // Studio : invitations personnelles, créneaux, livraison des capsules ; réservé à l'équipe API-ZF.
   { section: 'studio', path: '/studio', label: 'Studio', Icon: Clapperboard, global: true },
-  // Rencontres B2B : les demandes reçues, puis les besoins publiés.
-  { section: 'b2b', path: '/b2b', label: 'Demandes', Icon: Handshake, group: 'b2b' },
-  { section: 'b2b-needs', path: '/besoins-b2b', label: 'Besoins', Icon: Handshake, group: 'b2b' },
+  // Rencontres B2B : les demandes reçues (les besoins publiés se gèrent dans Mon stand ou la fiche du stand).
+  { section: 'b2b', path: '/b2b', label: 'Rencontres B2B', Icon: Handshake, tab: true },
   // Guichets du Stand API-ZF et registre unique des contacts : l'équipe API-ZF et les occupants du Stand API-ZF.
   { section: 'investor-requests', path: '/guichets', label: 'Guichets', Icon: BriefcaseBusiness, apizf: true },
   // Jeux et défis (tous les joueurs, remise des récompenses et des lots) : l'équipe API-ZF et les occupants du Stand API-ZF,
@@ -36,7 +35,6 @@ export const adminSections = [
 
 // Rubriques réunies sous une seule entrée du menu, avec des onglets dans la page.
 export const sectionGroups = {
-  b2b: { label: 'Rencontres B2B', Icon: Handshake },
   games: { label: 'Jeux et défis', Icon: Trophy },
 };
 

@@ -29,7 +29,6 @@ import { guichetShortLabels } from '../constants/access';
 import { api } from '../lib/api';
 import { useRealtimeEvent } from '../../lib/realtime';
 import { accessRole, adminSections, groupTabs, isApizfTeamRole, isGlobalRole, sectionGroups } from '../../navigation';
-import B2bNeedsSettings from '../components/B2bNeedsSettings';
 import { useDashboard } from '../dashboard';
 
 const sectionMeta = {
@@ -37,8 +36,7 @@ const sectionMeta = {
   users: { title: 'Utilisateurs' },
   program: { title: 'Programme' },
   'investor-requests': { title: 'Guichets' },
-  b2b: { title: 'Demandes B2B' },
-  'b2b-needs': { title: 'Besoins B2B' },
+  b2b: { title: 'Rencontres B2B' },
   challenges: { title: 'Défi de passage' },
   wheel: { title: 'Roue des opportunités' },
 };
@@ -393,11 +391,12 @@ export default function BackofficePage({ session, onLogout, section }) {
           : occupants.find((item) => item.id === detailId) ? (
             <OccupantDetail
               occupant={occupants.find((item) => item.id === detailId)}
+              session={session}
+              onLogout={onLogout}
               token={session.token}
               users={users}
               contactCount={contactStats.byOccupant[detailId] || 0}
               programEvents={programEvents}
-              b2bNeeds={b2bNeeds}
               challengePassports={challengePassports}
               onEdit={() => setDrawer({ type: 'occupant', item: occupants.find((item) => item.id === detailId) })}
               onDelete={() => requestOccupantDelete(occupants.find((item) => item.id === detailId))}
@@ -428,7 +427,6 @@ export default function BackofficePage({ session, onLogout, section }) {
           </div>}
         </header>
 
-        {section === 'b2b-needs' ? <B2bNeedsSettings session={session} onLogout={onLogout} /> : (
         <section className="data-panel">
           <header className="data-toolbar">
             <div className="data-toolbar-controls">
@@ -464,7 +462,6 @@ export default function BackofficePage({ session, onLogout, section }) {
           {!loading && !error && section === 'challenges' && <ChallengePassportsTable selection={selection} passports={rows} query={query} allowReward={isApizfTeam} onRedeem={(passport) => { setRewardError(''); setPendingReward(passport); }} onDelete={isGlobal ? requestPassportDelete : undefined} />}
           {!loading && !error && section === 'wheel' && <WheelPlaysTable selection={selection} plays={rows} query={query} onClaim={(play) => { setRewardError(''); setPendingClaim(play); }} onDelete={isSuperAdmin ? requestWheelPlayDelete : undefined} />}
         </section>
-        )}
       </main>
       )}
 

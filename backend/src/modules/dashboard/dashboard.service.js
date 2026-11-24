@@ -28,7 +28,7 @@ const endOfToday = () => {
 const agenda = async (isApizf, occupantId) => {
   const start = startOfToday();
   const end = endOfToday();
-  const [requests, investorMeetings, b2bMeetings, contactFollowUps] = await Promise.all([
+  const [requests, investorMeetings, b2bMeetings, contactFollowUps, b2bFollowUps] = await Promise.all([
     isApizf ? InvestorRequest.findAll({
       where: { nextFollowUpAt: { [Op.lt]: end } },
       attributes: ['id', 'fullName', 'organization', 'nextFollowUpAt'],
@@ -50,6 +50,7 @@ const agenda = async (isApizf, occupantId) => {
     }),
     // Relances des contacts du stand (ou de tous les stands pour l'équipe API-ZF) en retard ou du jour.
     followUpRepository.findContactDue(end, occupantId),
+    followUpRepository.findB2bDue(end, occupantId),
   ]);
   const followUps = [
     ...requests.map((request) => {
@@ -61,6 +62,14 @@ const agenda = async (isApizf, occupantId) => {
       id: followUp.contact.id,
       fullName: followUp.contact.fullName,
       organization: occupantId ? followUp.contact.company : followUp.contact.occupant?.name,
+      dueAt: followUp.dueAt,
+      reason: followUp.reason,
+    })),
+    ...b2bFollowUps.map((followUp) => ({
+      kind: 'b2b',
+      id: followUp.proposal.id,
+      fullName: followUp.proposal.fullName,
+      organization: occupantId ? followUp.proposal.need.title : followUp.proposal.need.occupant?.name,
       dueAt: followUp.dueAt,
       reason: followUp.reason,
     })),
@@ -107,7 +116,7 @@ const overview = async (user) => {
   const today = startOfToday();
 
   const [
-    investorNew, investorInProgress, investorTotal, investorOverdue, investorDueToday, contactDue,
+    investorNew, investorInProgress, investorTotal, investorOverdue, investorDueToday, contactDue, b2bDue,
     b2bPending, b2bOpenNeeds,
     studioPending, studioConfirmed,
     players, rewardsToHand, rewardsHanded,
@@ -123,6 +132,7 @@ const overview = async (user) => {
     apizf ? InvestorRequest.count({ where: { nextFollowUpAt: { [Op.gte]: new Date(), [Op.lt]: endOfToday() } } }) : 0,
     // Relances des contacts des stands, en retard ou du jour.
     followUpRepository.countContactDue(endOfToday(), occupantId),
+    followUpRepository.countB2bDue(endOfToday(), occupantId),
     B2bProposal.count({ where: { status: 'pending' }, include: [{ model: B2bNeed, as: 'need', attributes: [], where: byStand, required: true }] }),
     B2bNeed.count({ where: { ...byStand, status: 'open' } }),
     // Studio : invités qui n'ont pas encore choisi leur créneau, passages réservés à venir.
@@ -170,7 +180,7 @@ const overview = async (user) => {
   result.todo = {
     // Guichets : les contacts à traiter ; Relances : tout ce qui est à faire aujourd'hui (en retard compris), contacts et guichets.
     ...(apizf && { 'investor-requests': investorNew, wheel: wheelToHand, challenges: rewardsToHand }),
-    'follow-ups': contactDue + (apizf ? investorOverdue + investorDueToday : 0),
+    'follow-ups': contactDue + b2bDue + (apizf ? investorOverdue + investorDueToday : 0),
     b2b: b2bPending,
     ...(isSuperAdmin && { 'live-questions': await liveQuestionRepository.countNew() }),
   };

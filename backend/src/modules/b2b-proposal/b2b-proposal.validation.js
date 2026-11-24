@@ -31,6 +31,8 @@ const schedule = Joi.object({
 const report = Joi.object({
   outcome: Joi.string().valid('present', 'absent').allow(null, ''),
   nextStep: Joi.string().trim().max(255).allow('', null),
+  // Date facultative de la prochaine étape : elle crée une relance B2B (motif = la prochaine étape).
+  nextStepAt: Joi.date().iso().allow(null, ''),
   note: Joi.string().trim().max(2000).allow('', null),
 }).min(1);
 

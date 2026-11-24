@@ -83,6 +83,8 @@ function AdminSection() {
   const location = useLocation();
   // Anciens liens de l'Investor Desk (e-mails déjà envoyés) : même fiche, sous Guichets.
   if (location.pathname.startsWith('/investor-desk')) return <Navigate to={location.pathname.replace('/investor-desk', '/guichets')} replace />;
+  // Les besoins B2B ont quitté le menu : ils se gèrent dans Mon stand (occupant) ou la fiche du stand (API-ZF).
+  if (location.pathname.startsWith('/besoins-b2b')) return <Navigate to={session.user.role === 'occupant' ? '/mon-stand' : '/stands'} replace />;
   // L'occupant ne voit pas la liste des stands : Stands le mène à son propre stand.
   if (session.user.role === 'occupant' && /^\/stands(\/|$)/.test(location.pathname)) return <Navigate to="/mon-stand" replace />;
   const section = adminSectionForPath(location.pathname, accessRole(session.user));

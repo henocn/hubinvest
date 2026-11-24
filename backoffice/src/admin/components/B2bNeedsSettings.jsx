@@ -7,10 +7,10 @@ import B2bNeedDrawer from './drawers/B2bNeedDrawer';
 import { useRowSelection } from './RowSelection';
 import B2bNeedsTable from './tables/B2bNeedsTable';
 
-// Besoins B2B publiés sur le site (Rencontres B2B › Besoins) : créés et modifiés ici ; les demandes reçues se traitent
-// dans l'onglet Demandes. Un occupant ne voit et ne crée que les besoins de son stand.
-export default function B2bNeedsSettings({ session, onLogout }) {
-  const isSuperAdmin = isGlobalRole(session.user.role);
+// Besoins B2B publiés sur le site, créés et modifiés ici ; les demandes reçues se traitent dans Rencontres B2B.
+// Dans « Mon stand », l'occupant gère ceux de son stand ; dans la fiche d'un stand, l'API-ZF gère ceux de ce stand (« occupant »).
+export default function B2bNeedsSettings({ session, onLogout, occupant = null }) {
+  const isSuperAdmin = isGlobalRole(session.user.role) && !occupant;
   const [needs, setNeeds] = useState(null);
   const [occupants, setOccupants] = useState([]);
   const [error, setError] = useState('');
@@ -23,13 +23,13 @@ export default function B2bNeedsSettings({ session, onLogout }) {
         api.b2bNeeds(session.token),
         isSuperAdmin ? api.occupants(session.token) : Promise.resolve([]),
       ]);
-      setNeeds(needData);
+      setNeeds(occupant ? needData.filter((need) => need.occupantId === occupant.id || need.occupant?.id === occupant.id) : needData);
       setOccupants(occupantData);
     } catch (requestError) {
       if (requestError.status === 401) onLogout();
       else setError(requestError.message);
     }
-  }, [isSuperAdmin, onLogout, session.token]);
+  }, [isSuperAdmin, occupant, onLogout, session.token]);
 
   useEffect(() => { void load(); }, [load]);
   useRealtimeEvent('b2b', () => { void load(); });
@@ -48,7 +48,7 @@ export default function B2bNeedsSettings({ session, onLogout }) {
       {error && <p className="panel-message is-error">{error}</p>}
       {!needs && !error && <p className="panel-message">Chargement…</p>}
       {needs && <B2bNeedsTable selection={selection} needs={needs} showStand={isSuperAdmin} onEdit={(item) => setDrawer({ item })} />}
-      {drawer && <B2bNeedDrawer need={drawer.item} occupants={occupants} fixedOccupant={isSuperAdmin ? null : session.user.occupant} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
+      {drawer && <B2bNeedDrawer need={drawer.item} occupants={occupants} fixedOccupant={isSuperAdmin ? null : occupant || session.user.occupant} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
     </section>
   );
 }

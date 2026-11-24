@@ -1926,6 +1926,9 @@ test('audit des droits : chaque rôle n’ouvre que ses écrans, sans erreur ser
     ['POST', `/follow-ups/contacts/${crypto.randomUUID()}`, [Y, Y, Y, Y, N]],
     ['PATCH', `/follow-ups/contacts/${crypto.randomUUID()}`, [Y, Y, Y, Y, N]],
     ['DELETE', `/follow-ups/contacts/${crypto.randomUUID()}`, [Y, Y, Y, Y, N]],
+    ['GET', '/follow-ups/b2b', [Y, Y, Y, Y, N]],
+    ['POST', `/follow-ups/b2b/${crypto.randomUUID()}`, [Y, Y, Y, Y, N]],
+    ['PATCH', `/follow-ups/b2b/${crypto.randomUUID()}`, [Y, Y, Y, Y, N]],
   ];
 
   const server = app.listen(0, '127.0.0.1');
@@ -2020,4 +2023,20 @@ test('relances des contacts : A crée une relance à 48 h, B à 7 jours, C aucun
   assert.equal(await followUpService.applyClassFollowUp({ ...contact, qualification: 'C' }), null);
   assert.deepEqual(destroyed, ['f1', 'f2']);
   assert.equal(created.length, 2);
+});
+
+test('compte rendu B2B : une prochaine étape datée crée une relance B2B, sans date aucune', async (context) => {
+  const proposal = { id: 'prop-9', need: { occupantId: 'stand-a' } };
+  const meeting = { id: 'm9', startsAt: new Date(Date.now() - 3600000), nextStep: null };
+  context.mock.method(b2bProposalService, 'getManaged', async () => proposal);
+  context.mock.method(b2bMeetingRepository, 'findById', async () => meeting);
+  context.mock.method(b2bMeetingRepository, 'update', async (item, values) => Object.assign(item, values));
+  const added = [];
+  context.mock.method(followUpService, 'addB2b', async (user, proposalId, values) => { added.push({ proposalId, ...values }); });
+
+  const dueAt = new Date(Date.now() + 2 * 24 * 3600000).toISOString();
+  await b2bMeetingService.report({ id: 'u1' }, 'prop-9', 'm9', { outcome: 'present', nextStep: 'Envoyer le devis' });
+  assert.equal(added.length, 0);
+  await b2bMeetingService.report({ id: 'u1' }, 'prop-9', 'm9', { outcome: 'present', nextStep: 'Envoyer le devis', nextStepAt: dueAt });
+  assert.deepEqual(added, [{ proposalId: 'prop-9', dueAt, reason: 'Envoyer le devis' }]);
 });

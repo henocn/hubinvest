@@ -3,16 +3,19 @@ import { Pencil, QrCode } from 'lucide-react';
 import { StandSheet, standPublicUrl } from '../components/OccupantDetail';
 import OccupantDrawer from '../components/drawers/OccupantDrawer';
 import QrCodeDialog from '../components/QrCodeDialog';
+import B2bNeedsSettings from '../components/B2bNeedsSettings';
 import { api } from '../lib/api';
 import { useRealtimeEvent } from '../../lib/realtime';
 
-// « Mon stand » : l'occupant arrive directement sur la fiche de son stand (jamais la liste des stands) et la modifie.
+// « Mon stand » : l'occupant arrive directement sur son stand (jamais la liste des stands), en onglets : ses besoins B2B
+// publiés sur le site (le plus sollicité, ouvert d'abord), puis la fiche du stand, qu'il modifie.
 export default function MyStandPage({ session, onLogout }) {
   const occupantId = session.user.occupant?.id;
   const [occupant, setOccupant] = useState(null);
   const [error, setError] = useState('');
   const [editing, setEditing] = useState(false);
   const [qrCode, setQrCode] = useState(null);
+  const [tab, setTab] = useState('needs');
 
   const load = useCallback(async () => {
     if (!occupantId) return;
@@ -46,7 +49,13 @@ export default function MyStandPage({ session, onLogout }) {
         </div>
       </header>
 
-      <StandSheet occupant={occupant} />
+      <nav className="section-tabs detail-tabs" aria-label="Mon stand">
+        <button type="button" className={tab === 'needs' ? 'is-active' : ''} onClick={() => setTab('needs')} aria-pressed={tab === 'needs'}>Besoins B2B</button>
+        <button type="button" className={tab === 'details' ? 'is-active' : ''} onClick={() => setTab('details')} aria-pressed={tab === 'details'}>Fiche</button>
+      </nav>
+
+      {tab === 'needs' && <B2bNeedsSettings session={session} onLogout={onLogout} />}
+      {tab === 'details' && <StandSheet occupant={occupant} />}
 
       {editing && <OccupantDrawer own occupant={occupant} token={session.token} onClose={() => setEditing(false)} onSaved={(saved) => { setOccupant(saved); setEditing(false); }} />}
       {qrCode && <QrCodeDialog {...qrCode} onClose={() => setQrCode(null)} />}

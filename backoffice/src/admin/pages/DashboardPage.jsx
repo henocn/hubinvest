@@ -116,7 +116,7 @@ export default function DashboardPage({ session }) {
               {hasGuichets && <Stat value={data.investor.total} label="Contacts aux guichets" detail={`${data.investor.inProgress} en suivi`} to="/guichets" />}
               {hasGuichets && <Stat value={data.investor.diagnosed ?? 0} label="Diagnostics réalisés" detail="fiches de diagnostic en 15 minutes" to="/guichets" />}
               {hasGuichets && <Stat value={data.investor.supportTaken ?? 0} label="Sollicitations d’accompagnement" detail="prises en charge avec un engagement de suivi" to="/guichets" />}
-              <Stat value={data.b2b.openNeeds} label="Besoins B2B ouverts" to="/besoins-b2b" />
+              <Stat value={data.b2b.openNeeds} label="Besoins B2B ouverts" to={isApizf ? '/stands' : '/mon-stand'} />
               {isApizf && <Stat value={data.studio.confirmed} label="Passages au Studio" detail="réservés, à venir" to="/studio" />}
               {data.challenges.rewardsLeft !== null && data.challenges.rewardsLeft !== undefined && data.challenges.rewardsLeft > 5 && <Stat value={data.challenges.rewardsLeft} label="Récompenses en stock" detail={`sur ${data.challenges.rewardStock}`} to={isSuperAdmin ? '/parametres' : undefined} />}
             </div>

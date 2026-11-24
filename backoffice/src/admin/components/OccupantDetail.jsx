@@ -5,7 +5,7 @@ import { programTypeLabels, publicBaseUrl, roleLabels } from '../constants/acces
 import { api, resolveAssetUrl } from '../lib/api';
 import { exportToExcel, formatDate } from '../../lib/excel';
 import { upcomingFirst } from '../lib/order';
-import { ProposalCount } from './tables/B2bNeedsTable';
+import B2bNeedsSettings from './B2bNeedsSettings';
 
 const dateTime = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Africa/Lome', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 const day = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Africa/Lome', day: 'numeric', month: 'long', year: 'numeric' });
@@ -145,7 +145,7 @@ export function StandSheet({ occupant, children }) {
 
 // Fiche complète d'un stand dans l'administration, en onglets : son carnet de contacts (ouvert d'abord), ses comptes,
 // son programme, ses besoins B2B, puis la fiche elle-même.
-export default function OccupantDetail({ occupant, token, users, contactCount, programEvents, b2bNeeds, challengePassports, onEdit, onDelete, onQrCode }) {
+export default function OccupantDetail({ occupant, session, onLogout, token, users, contactCount, programEvents, challengePassports, onEdit, onDelete, onQrCode }) {
   const [tab, setTab] = useState('contacts');
   const isActive = occupant.status === 'active';
   const publicUrl = standPublicUrl(occupant);
@@ -153,7 +153,6 @@ export default function OccupantDetail({ occupant, token, users, contactCount, p
   const accounts = users.filter(own);
   const events = upcomingFirst(programEvents.filter(own), (item) => item.startsAt, (item) => new Date(item.endsAt || item.startsAt) >= new Date());
   const upcomingEvents = events.filter((item) => new Date(item.endsAt || item.startsAt) >= new Date()).length;
-  const needs = b2bNeeds.filter(own);
   const players = challengePassports.filter((passport) => (passport.passages || []).some(own)).length;
   const tabs = [
     ['contacts', 'Contacts'],
@@ -208,13 +207,8 @@ export default function OccupantDetail({ occupant, token, users, contactCount, p
           rows={events.map((event) => <tr key={event.id}><td className="stand-nowrap">{dateTime.format(new Date(event.startsAt))}</td><td>{programTypeLabels[event.type] || event.type}</td><td>{event.title || '—'}</td><td>{event.location || occupant.standLabel || '—'}</td></tr>)}
         />
       )}
-      {tab === 'needs' && (
-        <Related
-          empty="Aucun besoin B2B publié par ce stand."
-          head={['Besoin', 'Demandes', 'Statut', 'Publié le']}
-          rows={needs.map((need) => <tr key={need.id}><td>{need.title}</td><td><ProposalCount need={need} /></td><td>{need.status === 'open' ? 'Ouvert' : 'Fermé'}</td><td className="stand-nowrap">{day.format(new Date(need.createdAt))}</td></tr>)}
-        />
-      )}
+      {/* Besoins B2B de ce stand : l'API-ZF les crée et les modifie ici, comme l'occupant dans Mon stand. */}
+      {tab === 'needs' && <B2bNeedsSettings session={session} onLogout={onLogout} occupant={occupant} />}
     </main>
   );
 }
