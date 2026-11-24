@@ -35,6 +35,8 @@
 .admin-app .form-stack, .admin-app .drawer-form { display: flex; flex-direction: column; gap: 19px; }
 .admin-app label { display: flex; flex-direction: column; gap: 8px; color: #43464a; font-size: 13px; font-weight: 650; }
 .admin-app input, .admin-app select, .admin-app textarea { width: 100%; border: 1px solid #c9cccf; border-radius: 0; padding: 8px 10px; color: var(--ink); background: #fff; outline: none; transition: border-color .15s, box-shadow .15s; }
+/* Listes déroulantes : un peu arrondies, sur un fond teinté (pas blanc). */
+.admin-app select { border-radius: 8px; background-color: #f1f5f3; cursor: pointer; }
 .admin-app input:focus, .admin-app select:focus, .admin-app textarea:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(21, 108, 83, .1); }
 .admin-app textarea { resize: vertical; }
 .admin-app input[type='file'] { padding: 7px; }

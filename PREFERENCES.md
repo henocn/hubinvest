@@ -4,7 +4,7 @@
 
 ## Direction visuelle
 
-- Design system de référence : « API-ZF · Hub de l'investissement » (https://claude.ai/artifact/UBNnyJ9R72xJx9zxbu1r4a), thème Clair : fond blanc, angles droits partout (seules les pastilles rondes restent rondes), proportion 60/30/10 (vert dominant, jaune et rouge en accents), filet jaune au-dessus du titre de page, Sen pour les titres, Arial pour le texte, un seul mot d'accroche en Aleo italique extra-gras (« Investir » sur l'accueil), mosaïque de la charte en bandeau de pied de page, jamais de texte dessus.
+- Design system de référence : « API-ZF · Hub de l'investissement » (https://claude.ai/artifact/UBNnyJ9R72xJx9zxbu1r4a), thème Clair : fond blanc, angles droits partout (seules les pastilles rondes restent rondes, et les listes déroulantes : rayon 8 px sur fond teinté #f1f5f3, jamais blanc), proportion 60/30/10 (vert dominant, jaune et rouge en accents), filet jaune au-dessus du titre de page, Sen pour les titres, Arial pour le texte, un seul mot d'accroche en Aleo italique extra-gras (« Investir » sur l'accueil), mosaïque de la charte en bandeau de pied de page, jamais de texte dessus.
 - Couleurs : vert `#156c53`, vert foncé `#005b3f`, jaune `#ffcf15`, rouge `#d31b34`, encre `#0f1822`. Action principale rouge.
 - Interface sobre, propre et directement compréhensible. Pas de signes de design généré par IA : textes de remplissage, cartes imbriquées, badges ou pastilles décoratifs, majuscules espacées, détails gratuits, grands espaces sans fonction.
 - Le logo du Hub signe toutes les interfaces ; l'API-ZF apparaît seulement en pied de page (« Une initiative de » + logo). Le symbole seul sert au favicon, aux icônes et en filigrane léger. Icônes Lucide, aucun emoji.

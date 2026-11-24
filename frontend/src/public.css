@@ -214,9 +214,9 @@
   padding: 0 54px 0 12px;
   appearance: none;
   border: 1px solid rgba(0, 0, 0, 0.18);
-  border-radius: 0;
+  border-radius: 8px;
   color: #0f1822;
-  background: #fff;
+  background: #f1f5f3;
   font-size: 0.78rem;
   font-weight: 700;
   cursor: pointer;

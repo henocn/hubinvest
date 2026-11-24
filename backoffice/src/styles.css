@@ -195,6 +195,13 @@ select:focus {
   outline: 0;
 }
 
+/* Listes déroulantes : un peu arrondies, sur un fond teinté (pas blanc). */
+select {
+  border-radius: 8px;
+  background-color: #f1f5f3;
+  cursor: pointer;
+}
+
 .password-field {
   position: relative;
   width: 100%;
