@@ -70,6 +70,12 @@ module.exports = {
   // WhatsApp : l'API met les messages dans la file ; le service notifier (notifier/) les envoie, avec l'e-mail en repli.
   whatsapp: {
     enabled: process.env.WHATSAPP_ENABLED === 'true',
+    // Réponse automatique aux messages reçus (webhook Meta) : jeton d'envoi, mot secret de vérification, clé secrète de
+    // l'application Meta (signature des notifications, facultative).
+    token: process.env.WHATSAPP_TOKEN || '',
+    verifyToken: process.env.WHATSAPP_VERIFY_TOKEN || '',
+    appSecret: process.env.WHATSAPP_APP_SECRET || '',
+    apiVersion: process.env.WHATSAPP_API_VERSION || 'v21.0',
   },
   realtime: {
     enabled: process.env.REALTIME_ENABLED !== 'false',

@@ -1740,3 +1740,31 @@ test('WhatsApp : désactivé, tout reste en e-mail ; activé, la confirmation pa
   await settle();
   assert.deepEqual(queued.map((job) => job.channel), ['email', 'email', 'email']);
 });
+
+const whatsappService = require('../src/modules/whatsapp/whatsapp.service');
+
+test('WhatsApp entrant : vérification Meta, signature, une réponse automatique par personne et par jour', async (context) => {
+  const previous = { ...env.whatsapp };
+  context.after(() => { Object.assign(env.whatsapp, previous); whatsappService._reset(); });
+  Object.assign(env.whatsapp, { token: 'jeton-test', verifyToken: 'secret-test', appSecret: 'cle-app' });
+  whatsappService._reset();
+
+  assert.equal(whatsappService.verify({ mode: 'subscribe', token: 'secret-test', challenge: '12345' }), '12345');
+  assert.equal(whatsappService.verify({ mode: 'subscribe', token: 'mauvais', challenge: '12345' }), null);
+
+  const raw = Buffer.from('{"entry":[]}');
+  const signature = `sha256=${crypto.createHmac('sha256', 'cle-app').update(raw).digest('hex')}`;
+  assert.equal(whatsappService.validSignature(raw, signature), true);
+  assert.equal(whatsappService.validSignature(raw, 'sha256=faux'), false);
+
+  const sent = [];
+  context.mock.method(global, 'fetch', async (url, options) => { sent.push([url, JSON.parse(options.body)]); return { ok: true, json: async () => ({}) }; });
+  const message = { entry: [{ changes: [{ value: { metadata: { phone_number_id: '1454431384412339' }, messages: [{ from: '22890123456', type: 'text' }] } }] }] };
+  await whatsappService.handleIncoming(message);
+  await whatsappService.handleIncoming(message);
+  await whatsappService.handleIncoming({ entry: [{ changes: [{ value: { metadata: { phone_number_id: '1454431384412339' }, statuses: [{ status: 'read' }] } }] }] });
+  assert.equal(sent.length, 1);
+  assert.match(sent[0][0], /\/1454431384412339\/messages$/);
+  assert.equal(sent[0][1].to, '22890123456');
+  assert.match(sent[0][1].text.body, /hub\.investir\.tg/);
+});
