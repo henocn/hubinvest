@@ -23,6 +23,7 @@
 ## Formulaires
 
 - Partir de l'intention de l'utilisateur, révéler la suite seulement quand elle devient nécessaire.
+- « Prendre contact » (site) et « Nouveau contact » (stand) demandent les mêmes champs. Sur le site, en deux temps sans indicateur d'étapes : nom, téléphone et e-mail sur une ligne, demande facultative, « Continuer » ; puis « Quand souhaitez-vous être recontacté ? » (Rapidement = A, Plus tard = B, Juste m'informer des opportunités de l'API-ZF = C) et l'entreprise, facultatifs.
 - Ne demander aucun champ qui ne change pas le traitement. Pas de case de consentement : l'accord est implicite à l'envoi.
 - Téléphone : champ de la Semaine de l'Industrie partout (drapeau, Togo par défaut, indicatif verrouillé, numéro mis en forme et refusé s'il n'existe pas pour le pays).
 - Choix de créneau par listes déroulantes (Jour, puis Heure), sans afficher le nombre de créneaux libres.

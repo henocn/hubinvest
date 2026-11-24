@@ -54,7 +54,7 @@ function StandContacts({ occupant, token }) {
   if (!contacts) return <section className="data-panel stand-panel"><p className="panel-message">Chargement…</p></section>;
 
   const term = search.trim().toLowerCase();
-  const rows = contacts.filter((item) => !term || [item.fullName, item.phone, item.company].filter(Boolean).some((value) => value.toLowerCase().includes(term)));
+  const rows = contacts.filter((item) => !term || [item.fullName, item.phone, item.email, item.company].filter(Boolean).some((value) => value.toLowerCase().includes(term)));
   const exportRows = () => exportToExcel({
     name: `contacts-${occupant.slug}`,
     sheetName: 'Contacts',
@@ -63,6 +63,7 @@ function StandContacts({ occupant, token }) {
       { header: 'Enregistré le', value: (item) => formatDate(item.createdAt), width: 18 },
       { header: 'Nom', value: (item) => item.fullName, width: 28 },
       { header: 'Téléphone', value: (item) => item.phone, width: 18 },
+      { header: 'E-mail', value: (item) => item.email, width: 28 },
       { header: 'Entreprise', value: (item) => item.company, width: 26 },
       { header: 'Recherche', value: (item) => item.need, width: 45 },
       { header: 'Classe', value: (item) => contactClass(item.qualification), width: 10 },
@@ -84,7 +85,7 @@ function StandContacts({ occupant, token }) {
             <tbody>{rows.map((item) => (
               <tr key={item.id}>
                 <td><strong>{item.fullName}</strong>{item.need && <small>{item.need}</small>}</td>
-                <td className="stand-nowrap"><a href={`tel:${item.phone}`}>{item.phone}</a></td>
+                <td className="stand-nowrap"><a href={`tel:${item.phone}`}>{item.phone}</a>{item.email && <small><a href={`mailto:${item.email}`}>{item.email}</a></small>}</td>
                 <td>{item.company || '—'}</td>
                 <td>{contactClass(item.qualification) || '—'}</td>
                 <td>{item.source === 'public' ? 'Site' : 'Stand'}</td>

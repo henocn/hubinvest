@@ -104,6 +104,11 @@ export default {
     phone: "Téléphone",
     request: "Votre demande",
     submit: "Envoyer ma demande",
+    when: "Quand souhaitez-vous être recontacté ?",
+    whenSoon: "Rapidement",
+    whenLater: "Plus tard",
+    whenInfo: "Juste m’informer des opportunités de l’API-ZF",
+    company: "Entreprise",
   },
   meetings: {
     title: "Rencontres",

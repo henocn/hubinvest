@@ -8,17 +8,18 @@ import { useRealtimeEvent } from '../lib/realtime';
 import { listStoredContacts, mergeServerContacts, queueContact, syncPendingContacts } from '../lib/contact-store';
 import PhoneInputField from '../components/PhoneInputField';
 
-// Qualification des contacts du stand, sur le modèle de l'Investor Desk (document : A sous 48 h, B sous 7 jours, C à nourrir).
+// Classe d'un contact : la même question que « Prendre contact » sur le site (quand être recontacté).
+// A sous 48 h, B sous 7 jours, C informé des opportunités de l'API-ZF.
 const qualificationLabels = {
-  A: 'A · Prioritaire',
-  B: 'B · À suivre',
-  C: 'C · À nourrir',
+  A: 'A · Rapidement',
+  B: 'B · Plus tard',
+  C: 'C · Opportunités API-ZF',
 };
 
 const qualificationHints = {
-  A: 'Besoin concret : recontacter sous 48 h',
-  B: 'Intérêt réel : recontacter sous 7 jours',
-  C: 'Simple curiosité : garder pour les informations futures',
+  A: 'À recontacter : sous 48 h',
+  B: 'À recontacter : sous 7 jours',
+  C: 'Juste informé : opportunités de l’API-ZF',
 };
 
 // Contacts encore stockés hors ligne avec l'ancienne qualification (chaud, tiède, froid).
@@ -29,6 +30,7 @@ function ContactForm({ onCancel, onCreated }) {
   const [form, setForm] = useState({
     fullName: '',
     phone: '',
+    email: '',
     company: '',
     need: '',
     qualification: 'C',
@@ -51,6 +53,7 @@ function ContactForm({ onCancel, onCreated }) {
       await onCreated({
         ...form,
         phone: toInternationalPhone(form.phone),
+        email: form.email.trim() || null,
         id: crypto.randomUUID(),
         // Accord implicite : la personne donne ses coordonnées au stand pour être recontactée.
         consentOccupant: true,
@@ -77,17 +80,20 @@ function ContactForm({ onCancel, onCreated }) {
           Nom complet
           <input value={form.fullName} onChange={(event) => field('fullName', event.target.value)} required />
         </label>
-        <PhoneInputField label="Numéro de téléphone" value={form.phone} onChange={(phone) => field('phone', phone)} required />
-        <label>
-          Entreprise
-          <input value={form.company} onChange={(event) => field('company', event.target.value)} />
-        </label>
+        {/* Mêmes champs que « Prendre contact » sur le site : téléphone et e-mail sur une ligne. */}
+        <div className="contact-field-row">
+          <PhoneInputField label="Téléphone" value={form.phone} onChange={(phone) => field('phone', phone)} required />
+          <label>
+            E-mail
+            <input type="email" value={form.email} onChange={(event) => field('email', event.target.value)} maxLength={180} autoComplete="off" />
+          </label>
+        </div>
         <label>
           Ce que la personne recherche
           <textarea value={form.need} onChange={(event) => field('need', event.target.value)} rows={3} />
         </label>
         <fieldset>
-          <legend>Qualification</legend>
+          <legend>Quand la recontacter ?</legend>
           <div className="qualification-options">
             {Object.entries(qualificationLabels).map(([value, label]) => (
               <label key={value} className={`qualification-option ${value}`}>
@@ -103,6 +109,10 @@ function ContactForm({ onCancel, onCreated }) {
             ))}
           </div>
         </fieldset>
+        <label>
+          Entreprise
+          <input value={form.company} onChange={(event) => field('company', event.target.value)} maxLength={160} />
+        </label>
         {error && <p className="form-error">{error}</p>}
 
         <div className="form-actions">
@@ -171,6 +181,7 @@ function ContactDetail({ contact, onBack, onSave, apiOnline }) {
         <dl className="detail-fields">
           {contact.source === 'public' && <div><dt>Origine</dt><dd>Demande envoyée depuis la fiche du stand</dd></div>}
           <div><dt>Téléphone</dt><dd>{contact.phone}</dd></div>
+          {contact.email && <div><dt>E-mail</dt><dd><a href={`mailto:${contact.email}`}>{contact.email}</a></dd></div>}
           {contact.company && <div><dt>Entreprise</dt><dd>{contact.company}</dd></div>}
           {contact.need && <div><dt>Recherche</dt><dd>{contact.need}</dd></div>}
         </dl>
@@ -188,7 +199,7 @@ function ContactDetail({ contact, onBack, onSave, apiOnline }) {
             <label>Qualification
               <select value={form.qualification} onChange={(event) => setForm({ ...form, qualification: event.target.value })}>
                 <option value="">À qualifier</option>
-                {Object.entries(qualificationLabels).map(([value, label]) => <option key={value} value={value}>{label} ({qualificationHints[value].split(' : ')[1]})</option>)}
+                {Object.entries(qualificationLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
             </label>
             {editError && <p className="form-error">{editError}</p>}
@@ -361,6 +372,7 @@ export default function ContactsPage({ session, onLogout }) {
       { header: 'Enregistré le', value: (item) => formatDate(item.createdAt), width: 18 },
       { header: 'Nom', value: (item) => item.fullName, width: 28 },
       { header: 'Téléphone', value: (item) => item.phone, width: 18 },
+      { header: 'E-mail', value: (item) => item.email, width: 28 },
       { header: 'Entreprise', value: (item) => item.company, width: 26 },
       { header: 'Recherche', value: (item) => item.need, width: 45 },
       { header: 'Qualification', value: (item) => qualificationLabel(item.qualification), width: 14 },

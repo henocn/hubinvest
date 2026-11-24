@@ -342,7 +342,7 @@ test('une demande publique sans accord est refusée avant toute écriture', asyn
   );
 });
 
-test('une demande publique est rattachée au stand lu par le serveur, sans qualification ni compte visiteur', async (context) => {
+test('une demande publique est rattachée au stand lu par le serveur ; sa classe vient de la réponse « quand », sans accord API-ZF forcé', async (context) => {
   let saved;
   context.mock.method(occupantRepository, 'findBySlug', async () => ({ id: 'stand-a' }));
   context.mock.method(contactRepository.sequelize, 'transaction', async (callback) => callback({}));
@@ -356,7 +356,7 @@ test('une demande publique est rattachée au stand lu par le serveur, sans quali
   assert.equal(result.created, true);
   assert.equal(saved.occupantId, 'stand-a');
   assert.equal(saved.createdByUserId, null);
-  assert.equal(saved.qualification, null);
+  assert.equal(saved.qualification, 'A');
   assert.equal(saved.consentApizf, false);
   assert.equal(saved.source, 'public');
   assert.ok(saved.consentCapturedAt instanceof Date);
@@ -1944,4 +1944,41 @@ test('audit des droits : chaque rôle n’ouvre que ses écrans, sans erreur ser
     }
   }
   assert.deepEqual(problems, []);
+});
+
+test('« Prendre contact » demande le téléphone et l’e-mail du visiteur, et les garde sur le contact', async (context) => {
+  const contactValidation = require('../src/modules/contact/contact.validation');
+  const base = { id: crypto.randomUUID(), fullName: 'Afi Mensah', phone: '+22890000000', consentOccupant: true };
+  assert.ok(contactValidation.createPublic.validate(base).error, 'l’e-mail est obligatoire');
+  const { value, error } = contactValidation.createPublic.validate({ ...base, email: ' Afi@Example.com ' });
+  assert.equal(error, undefined);
+  assert.equal(value.email, 'afi@example.com');
+
+  let saved;
+  context.mock.method(occupantRepository, 'findBySlug', async () => ({ id: 'stand-a', status: 'active' }));
+  context.mock.method(contactRepository.sequelize, 'transaction', async (callback) => callback({}));
+  context.mock.method(contactRepository, 'findExisting', async () => null);
+  context.mock.method(contactRepository, 'create', async (values) => { saved = values; return values; });
+  context.mock.method(notificationService, 'contactRequested', () => {});
+  await contactService.createPublic('stand-a', value);
+  assert.equal(saved.email, 'afi@example.com');
+  assert.equal(saved.phone, '+22890000000');
+});
+
+test('« Prendre contact » en deux temps : la réponse « quand » donne la classe, et « opportunités » vaut accord API-ZF', async (context) => {
+  const contactValidation = require('../src/modules/contact/contact.validation');
+  const base = { id: crypto.randomUUID(), fullName: 'Kodjo Ama', phone: '+22891000000', email: 'kodjo@example.com', consentOccupant: true };
+  const saved = [];
+  context.mock.method(occupantRepository, 'findBySlug', async () => ({ id: 'stand-a', status: 'active' }));
+  context.mock.method(contactRepository.sequelize, 'transaction', async (callback) => callback({}));
+  context.mock.method(contactRepository, 'findExisting', async () => null);
+  context.mock.method(contactRepository, 'create', async (values) => { saved.push(values); return values; });
+  context.mock.method(notificationService, 'contactRequested', () => {});
+
+  for (const extra of [{}, { qualification: 'a', company: 'Agro Togo' }, { qualification: 'C' }]) {
+    const { value, error } = contactValidation.createPublic.validate({ ...base, ...extra });
+    assert.equal(error, undefined);
+    await contactService.createPublic('stand-a', value);
+  }
+  assert.deepEqual(saved.map((item) => [item.qualification, item.company, item.consentApizf]), [[null, null, false], ['A', 'Agro Togo', false], ['C', null, true]]);
 });

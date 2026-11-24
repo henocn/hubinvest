@@ -51,6 +51,9 @@ const create = async (user, values) => {
       const contact = await contactRepository.create(
         {
           ...values,
+          email: values.email || null,
+          // Classe C (« informer des opportunités de l'API-ZF ») : la personne accepte les informations de l'API-ZF.
+          consentApizf: values.consentApizf || values.qualification === 'C',
           occupantId,
           createdByUserId: user.id,
           source: 'stand',
@@ -98,10 +101,13 @@ const createPublic = async (slug, values) => {
         createdByUserId: null,
         fullName: values.fullName,
         phone: values.phone,
+        email: values.email,
+        company: values.company || null,
         need: values.need || null,
-        qualification: null,
+        qualification: values.qualification || null,
         consentOccupant: true,
-        consentApizf: false,
+        // « Juste m'informer des opportunités de l'API-ZF » vaut accord pour les informations de l'API-ZF.
+        consentApizf: values.qualification === 'C',
         consentCapturedAt: new Date(),
         source: 'public',
       }, transaction);

@@ -104,6 +104,11 @@ export default {
     phone: "Phone",
     request: "Your request",
     submit: "Send my request",
+    when: "When would you like to be contacted?",
+    whenSoon: "Soon",
+    whenLater: "Later",
+    whenInfo: "Just keep me informed of API-ZF opportunities",
+    company: "Company",
   },
   meetings: {
     title: "Meetings",

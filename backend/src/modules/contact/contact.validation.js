@@ -6,6 +6,7 @@ const create = Joi.object({
   id: uuid,
   fullName: Joi.string().trim().min(2).max(160).required(),
   phone: Joi.string().trim().min(6).max(32).required(),
+  email: Joi.string().trim().lowercase().email().max(180).allow('', null),
   company: Joi.string().trim().max(160).allow('', null),
   need: Joi.string().trim().max(4000).allow('', null),
   qualification: Joi.string().trim().uppercase().valid('A', 'B', 'C').default('C'),
@@ -20,7 +21,11 @@ const createPublic = Joi.object({
   id: uuid.required(),
   fullName: Joi.string().trim().min(2).max(160).required(),
   phone: Joi.string().trim().min(6).max(32).required(),
+  email: Joi.string().trim().lowercase().email().max(180).required(),
   need: Joi.string().trim().max(4000).allow('', null),
+  // Deuxième temps du formulaire, facultatif : quand recontacter (A rapidement, B plus tard, C opportunités API-ZF) et l'entreprise.
+  qualification: Joi.string().trim().uppercase().valid('A', 'B', 'C').allow('', null),
+  company: Joi.string().trim().max(160).allow('', null),
   consentOccupant: Joi.boolean().valid(true).required(),
 });
 
