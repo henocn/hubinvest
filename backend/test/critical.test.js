@@ -1729,7 +1729,8 @@ test('WhatsApp : désactivé, tout reste en e-mail ; activé, la confirmation pa
   await settle();
   assert.deepEqual(queued.map((job) => job.channel), ['email', 'whatsapp', 'whatsapp', 'whatsapp']);
   assert.equal(queued[1].payload.template, 'hub26_rdv_confirme');
-  assert.equal(queued[1].payload.params[1], 'avec l’API-ZF au guichet « Mon projet d’investissement »');
+  assert.equal(queued[1].payload.params[1], 'rendez-vous avec l’API-ZF');
+  assert.equal(queued[1].payload.params[3], 'Stand API-ZF · guichet « Mon projet d’investissement »');
   assert.equal(queued[2].payload.template, 'hub26_rdv_rappel');
   assert.equal(queued[2].payload.fallback.recipient, 'k@exemple.tg');
 

@@ -277,7 +277,8 @@ const studioCapsule = ({ invitation }) => {
 };
 
 // WhatsApp : nom du modèle approuvé par Meta et ses variables, dans la langue du visiteur (textes dans
-// notifier/whatsapp/templates.json). Un rendez-vous (guichet, B2B, Studio) se décrit par son objet, sa date et son lieu.
+// notifier/whatsapp/templates.json). Un rendez-vous (guichet, B2B, Studio) se décrit par son nom (« rendez-vous avec
+// l’API-ZF », « rendez-vous B2B avec … », « passage au Studio… »), sa date et son lieu.
 const MEETING_TEMPLATES = { scheduled: 'hub26_rdv_confirme', moved: 'hub26_rdv_modifie', cancelled: 'hub26_rdv_annule', reminder: 'hub26_rdv_rappel' };
 const waLanguage = (language) => (language === 'en' ? 'en' : 'fr');
 const meetingWhatsapp = (kind, { name, language, subject, when, place }) => ({
@@ -288,10 +289,8 @@ const meetingWhatsapp = (kind, { name, language, subject, when, place }) => ({
 
 const investorMeetingWhatsapp = ({ kind, meeting, request }) => {
   const en = request.language === 'en';
-  const label = guichetLabel(request.guichet, request.language);
-  const subject = meeting.guichet
-    ? (en ? `with API-ZF at the “${label}” desk` : `avec l’API-ZF au guichet « ${label} »`)
-    : (en ? 'with the API-ZF team' : 'avec l’équipe de l’API-ZF');
+  // Le guichet figure déjà dans le lieu du rendez-vous.
+  const subject = en ? 'meeting with API-ZF' : 'rendez-vous avec l’API-ZF';
   return meetingWhatsapp(kind, { name: request.fullName, language: request.language, subject, when: meetingWhen(meeting, request.language), place: meeting.location });
 };
 
@@ -300,7 +299,7 @@ const b2bMeetingWhatsapp = ({ kind, meeting, proposal, occupant }) => {
   return meetingWhatsapp(kind, {
     name: proposal.fullName,
     language: proposal.language,
-    subject: en ? `B2B with ${occupant.name}` : `B2B avec ${occupant.name}`,
+    subject: en ? `B2B meeting with ${occupant.name}` : `rendez-vous B2B avec ${occupant.name}`,
     when: meetingWhen(meeting, proposal.language),
     place: en ? `table ${meeting.tableNumber} in the Hub’s B2B area` : `table ${meeting.tableNumber} de l’espace B2B du Hub`,
   });
@@ -311,7 +310,7 @@ const studioMeetingWhatsapp = ({ kind, invitation }) => {
   return meetingWhatsapp(kind, {
     name: invitation.guestName,
     language: invitation.language,
-    subject: en ? 'at the Investment Hub Studio' : 'au Studio du Hub de l’Investissement',
+    subject: en ? 'session at the Investment Hub Studio' : 'passage au Studio du Hub de l’Investissement',
     when: studioWhen(invitation),
     place: en ? 'Studio, API-ZF Stand' : 'Studio, Stand API-ZF',
   });
