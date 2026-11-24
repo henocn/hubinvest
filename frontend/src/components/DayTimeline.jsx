@@ -100,14 +100,8 @@ export default function DayTimeline({ events, formats, now }) {
     </button>
   );
 
-  if (!sorted.length) {
-    return (
-      <>
-        {toggle}
-        <p className="home-schedule-empty">{t('home.dayOver')}</p>
-      </>
-    );
-  }
+  // Journée finie : seulement le bouton pour revoir ce qui s'est passé, sans message.
+  if (!sorted.length) return toggle || null;
 
   // Si rien n'est en cours, la grille commence un peu avant maintenant pour placer la ligne de l'heure.
   const first = Math.min(...sorted.map((item) => item.start), showPast ? Infinity : now);

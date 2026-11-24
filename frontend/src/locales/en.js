@@ -48,7 +48,7 @@ export default {
     play: "Play",
     loading: "Loading the programme…",
     spotlight: "In the spotlight today",
-    today: "Today’s programme",
+    today: "Today at the Hub",
     upcoming: "Coming up",
     noToday: "Nothing is scheduled today.",
     empty: "The Hub programme will be published soon. In the meantime, discover the stands.",
@@ -60,7 +60,6 @@ export default {
     hidePast: "Hide past sessions",
     clock: "It’s {{time}}",
     break: "Break",
-    dayOver: "Today is over. See you tomorrow!",
   },
   services: {
     title: "API-ZF services",

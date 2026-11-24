@@ -48,7 +48,7 @@ export default {
     play: "Jouer",
     loading: "Chargement du programme…",
     spotlight: "À l’affiche aujourd’hui",
-    today: "Programme du jour",
+    today: "Aujourd’hui au Hub",
     upcoming: "À venir",
     noToday: "Aucun rendez-vous n’est programmé aujourd’hui.",
     empty: "Le programme du Hub sera bientôt publié. En attendant, découvrez les stands présents.",
@@ -60,7 +60,6 @@ export default {
     hidePast: "Masquer les rendez-vous passés",
     clock: "Il est {{time}}",
     break: "Pause",
-    dayOver: "La journée est terminée. À demain !",
   },
   services: {
     title: "Les services de l’API-ZF",
