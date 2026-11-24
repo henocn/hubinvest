@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Download, Plus, QrCode, Search, Ticket } from 'lucide-react';
+import { AlarmClock, Download, Plus, QrCode, Search, Ticket } from 'lucide-react';
 import ConfirmDelete from '../components/ConfirmDelete';
 import OccupantDetail from '../components/OccupantDetail';
 import B2bProposalDetail from '../components/B2bProposalDetail';
@@ -14,7 +14,7 @@ import B2bProposalDrawer from '../components/drawers/B2bProposalDrawer';
 import OccupantDrawer from '../components/drawers/OccupantDrawer';
 import ProgramEventDrawer from '../components/drawers/ProgramEventDrawer';
 import UserDrawer from '../components/drawers/UserDrawer';
-import InvestorRequestsTable from '../components/tables/InvestorRequestsTable';
+import InvestorRequestsTable, { dueOf, dueStateOf } from '../components/tables/InvestorRequestsTable';
 import B2bProposalsTable from '../components/tables/B2bProposalsTable';
 import ChallengePassportsTable from '../components/tables/ChallengePassportsTable';
 import OccupantsTable from '../components/tables/OccupantsTable';
@@ -190,7 +190,11 @@ export default function BackofficePage({ session, onLogout, section }) {
   const visibleOccupants = useMemo(() => occupants.filter((occupant) => !query || [occupant.name, occupant.activity, occupant.standLabel].some((value) => String(value || '').toLowerCase().includes(query))), [occupants, query]);
   const visibleUsers = useMemo(() => users.filter((user) => !query || [user.firstName, user.lastName, user.email, user.role, user.occupant?.name].some((value) => String(value || '').toLowerCase().includes(query))), [users, query]);
   const [guichetFilter, setGuichetFilter] = useState('');
-  const visibleInvestorRequests = useMemo(() => investorRequests.filter((item) => (!guichetFilter || item.guichet === guichetFilter) && (!query || [item.fullName, item.email, item.organization, item.projectSummary, item.nextAction].some((value) => String(value || '').toLowerCase().includes(query)))), [investorRequests, query, guichetFilter]);
+  // Relances du jour : seulement les contacts dont la relance est en retard ou à faire aujourd'hui (lien du tableau de bord : ?relances).
+  const [dueOnly, setDueOnly] = useState(() => new URLSearchParams(location.search).has('relances'));
+  const dueRequests = useMemo(() => investorRequests.filter((item) => dueStateOf(item)), [investorRequests]);
+  const lateCount = dueRequests.filter((item) => dueStateOf(item) === 'late').length;
+  const visibleInvestorRequests = useMemo(() => investorRequests.filter((item) => (!dueOnly || dueStateOf(item)) && (!guichetFilter || item.guichet === guichetFilter) && (!query || [item.fullName, item.email, item.organization, item.projectSummary, item.nextAction].some((value) => String(value || '').toLowerCase().includes(query)))), [investorRequests, query, guichetFilter, dueOnly]);
   const visibleB2bProposals = useMemo(() => b2bProposals.filter((item) => !query || [item.fullName, item.email, item.phone, item.message, item.need?.title, item.need?.occupant?.name].some((value) => String(value || '').toLowerCase().includes(query))), [b2bProposals, query]);
   const visibleProgramEvents = useMemo(() => programEvents.filter((item) => !query || [item.title, item.location, item.description, item.occupant?.name].some((value) => String(value || '').toLowerCase().includes(query))), [programEvents, query]);
   const visibleChallengePassports = useMemo(() => challengePassports.filter((item) => !query || [item.displayName, item.email, item.phone, item.contact, item.code, ...(item.passages || []).flatMap((passage) => [passage.occupant?.name, passage.validatedBy?.firstName, passage.validatedBy?.lastName])].some((value) => String(value || '').toLowerCase().includes(query))), [challengePassports, query]);
@@ -203,6 +207,10 @@ export default function BackofficePage({ session, onLogout, section }) {
     setSortValue('');
     setExportError('');
   }, [section]);
+  // Le filtre « Relances du jour » suit l'adresse (?relances depuis le tableau de bord).
+  useEffect(() => {
+    setDueOnly(section === 'investor-requests' && new URLSearchParams(location.search).has('relances'));
+  }, [section, location.search]);
 
   // Tri du tableau affiché : le premier tri proposé est celui par défaut.
   const settings = tableSettings[section];
@@ -220,7 +228,10 @@ export default function BackofficePage({ session, onLogout, section }) {
     challenges: visibleChallengePassports,
     wheel: visibleWheelPlays,
   };
-  const rows = arrange(sectionRows[section] || []);
+  // Relances du jour : de la plus en retard à la plus tardive, quel que soit le tri choisi.
+  const rows = section === 'investor-requests' && dueOnly
+    ? [...visibleInvestorRequests].sort((a, b) => new Date(dueOf(a).at) - new Date(dueOf(b).at))
+    : arrange(sectionRows[section] || []);
   // Lignes cochées : l'export ne prend qu'elles quand il y en a.
   const selection = useRowSelection(rows);
   const checkedCount = selection.selected.length;
@@ -415,6 +426,11 @@ export default function BackofficePage({ session, onLogout, section }) {
             <div className="data-toolbar-controls">
               <label className="admin-search-field"><Search size={15} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Rechercher" aria-label={section === 'occupants' ? 'Rechercher un occupant' : section === 'users' ? 'Rechercher un utilisateur' : section === 'program' ? 'Rechercher dans le programme' : section === 'b2b' ? 'Rechercher une demande B2B' : section === 'challenges' ? 'Rechercher un participant' : section === 'wheel' ? 'Rechercher une partie' : 'Rechercher une demande'} /></label>
               {toolbarNote && <span className="data-note">{toolbarNote}</span>}
+              {section === 'investor-requests' && (dueRequests.length > 0 || dueOnly) && (
+                <button className={`button button-secondary due-filter${lateCount ? ' has-late' : ''}`} type="button" aria-pressed={dueOnly} onClick={() => setDueOnly((value) => !value)} title={lateCount ? `${lateCount} en retard` : 'À faire aujourd’hui'}>
+                  <AlarmClock size={15} /> Relances du jour{dueRequests.length > 0 && <b>{dueRequests.length}</b>}
+                </button>
+              )}
               {section === 'investor-requests' && (
                 <select value={guichetFilter} onChange={(event) => setGuichetFilter(event.target.value)} aria-label="Guichet">
                   <option value="">Tous les guichets</option>

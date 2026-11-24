@@ -3,7 +3,8 @@ const AppError = require('../../shared/app-error');
 const { isGlobal } = require('../../shared/access');
 const settingsService = require('../settings/settings.service');
 const {
-  B2bNeed, B2bProposal, ChallengePassage, ChallengePassport, Contact, InvestorRequest, Occupant, StudioInvitation, WheelPlay,
+  B2bMeeting, B2bNeed, B2bProposal, ChallengePassage, ChallengePassport, Contact, InvestorFollowUp, InvestorMeeting, InvestorRequest, Occupant,
+  StudioInvitation, WheelPlay,
 } = require('../../models');
 
 // Début de la journée à Lomé (UTC, sans heure d'été).
@@ -11,6 +12,53 @@ const startOfToday = () => {
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
   return today;
+};
+
+// Fin de la journée à Lomé : une relance due avant cette heure est à faire aujourd'hui.
+const endOfToday = () => {
+  const end = startOfToday();
+  end.setUTCDate(end.getUTCDate() + 1);
+  return end;
+};
+
+// Agenda du jour : relances en retard ou du jour (l'équipe API-ZF), rendez-vous des guichets et rencontres B2B du jour.
+const agenda = async (isApizf, occupantId) => {
+  const start = startOfToday();
+  const end = endOfToday();
+  const [requests, investorMeetings, b2bMeetings] = await Promise.all([
+    isApizf ? InvestorRequest.findAll({
+      where: { nextFollowUpAt: { [Op.lt]: end } },
+      attributes: ['id', 'fullName', 'organization', 'nextFollowUpAt'],
+      include: [{ model: InvestorFollowUp, as: 'followUps', attributes: ['dueAt', 'reason'], where: { doneAt: null }, required: false }],
+      order: [['nextFollowUpAt', 'ASC']],
+      limit: 12,
+    }) : [],
+    isApizf ? InvestorRequest.findAll({
+      attributes: ['id', 'fullName', 'organization'],
+      include: [{ model: InvestorMeeting, as: 'meetings', attributes: ['startsAt', 'location'], where: { status: 'scheduled', startsAt: { [Op.gte]: start, [Op.lt]: end } }, required: true }],
+    }) : [],
+    B2bMeeting.findAll({
+      where: { outcome: null, startsAt: { [Op.gte]: start, [Op.lt]: end } },
+      attributes: ['startsAt', 'tableNumber'],
+      include: [{
+        model: B2bProposal, as: 'proposal', attributes: ['id', 'fullName'], required: true,
+        include: [{ model: B2bNeed, as: 'need', attributes: ['title'], where: occupantId ? { occupantId } : {}, required: true }],
+      }],
+    }),
+  ]);
+  const followUps = requests.map((request) => {
+    const next = [...(request.followUps || [])].sort((a, b) => new Date(a.dueAt) - new Date(b.dueAt))[0];
+    return { id: request.id, fullName: request.fullName, organization: request.organization, dueAt: request.nextFollowUpAt, reason: next?.reason || null };
+  });
+  const meetings = [
+    ...investorMeetings.flatMap((request) => request.meetings.map((meeting) => ({
+      kind: 'guichet', id: request.id, fullName: request.fullName, startsAt: meeting.startsAt, place: meeting.location,
+    }))),
+    ...b2bMeetings.map((meeting) => ({
+      kind: 'b2b', id: meeting.proposal.id, fullName: meeting.proposal.fullName, startsAt: meeting.startsAt, place: `Table ${meeting.tableNumber} · ${meeting.proposal.need.title}`,
+    })),
+  ].sort((a, b) => new Date(a.startsAt) - new Date(b.startsAt));
+  return { followUps, meetings };
 };
 
 // Joueurs passés par un stand (ou tous pour le super administrateur), avec un statut éventuel.
@@ -40,7 +88,7 @@ const overview = async (user) => {
   const today = startOfToday();
 
   const [
-    investorNew, investorInProgress, investorTotal, investorOverdue,
+    investorNew, investorInProgress, investorTotal, investorOverdue, investorDueToday,
     b2bPending, b2bOpenNeeds,
     studioPending, studioConfirmed,
     players, rewardsToHand, rewardsHanded,
@@ -52,6 +100,8 @@ const overview = async (user) => {
     isSuperAdmin ? InvestorRequest.count() : 0,
     // Contacts dont une relance à faire a dépassé son heure (relance de classe, d'engagement ou ajoutée à la main).
     isSuperAdmin ? InvestorRequest.count({ where: { nextFollowUpAt: { [Op.lt]: new Date() } } }) : 0,
+    // Relances encore à l'heure, mais à faire avant la fin de la journée.
+    isSuperAdmin ? InvestorRequest.count({ where: { nextFollowUpAt: { [Op.gte]: new Date(), [Op.lt]: endOfToday() } } }) : 0,
     B2bProposal.count({ where: { status: 'pending' }, include: [{ model: B2bNeed, as: 'need', attributes: [], where: byStand, required: true }] }),
     B2bNeed.count({ where: { ...byStand, status: 'open' } }),
     // Studio : invités qui n'ont pas encore choisi leur créneau, passages réservés à venir.
@@ -70,6 +120,7 @@ const overview = async (user) => {
     studio: { pending: studioPending, confirmed: studioConfirmed },
     challenges: { players, rewardsToHand, rewardsHanded, ...(await rewardStock()) },
     wheel: { played: wheelPlayed, playedToday: wheelPlayedToday, prizesToHand: wheelToHand },
+    agenda: await agenda(isSuperAdmin, occupantId),
   };
 
   if (isSuperAdmin) {
@@ -80,7 +131,7 @@ const overview = async (user) => {
       InvestorRequest.count({ where: { classification: 'support', commitmentDueAt: { [Op.ne]: null } } }),
       InvestorRequest.count({ where: { classification: 'support', resolvedAt: null, commitmentDueAt: { [Op.lt]: new Date() } } }),
     ]);
-    result.investor = { new: investorNew, inProgress: investorInProgress, total: investorTotal, overdue: investorOverdue, diagnosed, supportTaken, commitmentsOverdue };
+    result.investor = { new: investorNew, inProgress: investorInProgress, total: investorTotal, overdue: investorOverdue, dueToday: investorDueToday, diagnosed, supportTaken, commitmentsOverdue };
     const [activeStands, contacts, contactsToday, siteRequests] = await Promise.all([
       Occupant.count({ where: { status: 'active' } }),
       Contact.count(),
@@ -93,7 +144,8 @@ const overview = async (user) => {
 
   // Ce qui attend une action : affiché en pastille dans le menu, au nombre exact.
   result.todo = {
-    ...(isSuperAdmin && { 'investor-requests': investorNew + investorOverdue }),
+    // Guichets : contacts à traiter et relances à faire aujourd'hui (en retard comprises).
+    ...(isSuperAdmin && { 'investor-requests': investorNew + investorOverdue + investorDueToday }),
     b2b: b2bPending,
     challenges: rewardsToHand,
     wheel: wheelToHand,

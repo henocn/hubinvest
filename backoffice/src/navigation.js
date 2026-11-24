@@ -68,8 +68,8 @@ const roleLinks = {
   occupant: [
     dashboardLink,
     { path: '/mon-stand', label: 'Mon stand', Icon: Building2 },
-    { path: '/contacts', label: 'Contacts', Icon: Users, tab: true },
-    { path: '/defis', label: 'Défis', Icon: ScanLine, tab: true },
+    { path: '/contacts', label: 'Mes contacts', Icon: Users, tab: true },
+    { path: '/defis', label: 'Scan de passage', tabLabel: 'Scan', Icon: ScanLine, tab: true },
     ...menuSections('occupant'),
   ],
   animateur: [

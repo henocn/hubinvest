@@ -49,6 +49,9 @@
 - Listes datées (rendez-vous, relances) : ce qui est à venir ou à faire d'abord, puis le reste ; toujours du plus proche au plus lointain.
 - Pastille ou nombre (menu, onglets) : seulement à partir de 1, jamais « 0 » ni « 99+ » ; il ne compte que ce qui reste à venir, à faire ou à traiter, jamais le terminé.
 - Statut d'une ligne signalé par un fond très léger (vert ou rouge), pas par une colonne de plus.
+- Une échéance qui approche se voit dans la liste, sans ouvrir la fiche : ligne sur fond rouge léger si elle est en retard, jaune léger si elle est pour aujourd'hui, avec une horloge et « En retard · … » ou « Aujourd'hui, 19:28 » ; un bouton « Relances du jour » (avec son nombre) filtre ces lignes.
+- Tableau de bord : d'abord « Aujourd'hui » (relances à faire et rendez-vous du jour, chaque ligne ouvre la fiche), puis « À traiter » sans les lignes à zéro, puis les chiffres.
+- Menu de l'occupant : Mon stand, Mes contacts, Scan de passage (« Scan » dans la barre du bas).
 
 ## Écrans particuliers
 
