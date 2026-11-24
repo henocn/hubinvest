@@ -32,6 +32,7 @@ export default function StandListPage() {
       <section className="public-intro">
         <div className="public-container">
           <h1>{t('stands.title')}</h1>
+          <p>{t('stands.place')}</p>
         </div>
       </section>
       <main className="public-container public-main">

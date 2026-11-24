@@ -287,20 +287,23 @@ body {
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  gap: 4px;
-  padding: 0;
+  gap: 2px;
+  margin-inline: 3px;
+  padding: 5px 4px 6px;
   border: 0;
+  border-radius: 14px;
   color: rgba(255, 255, 255, 0.78);
   background: transparent;
   text-decoration: none;
+  transition: background-color 0.18s ease, color 0.18s ease;
   -webkit-tap-highlight-color: transparent;
 }
 
 .team-tabs svg {
   width: 56px;
-  height: 30px;
-  padding: 5px 0;
-  border-radius: 0;
+  height: 26px;
+  padding: 3px 0;
+  border-radius: 999px;
   transition: background-color 0.18s ease, color 0.18s ease;
 }
 
@@ -314,14 +317,14 @@ body {
 }
 
 .team-tabs a:hover,
-.team-tabs button:hover,
-.team-tabs a.is-active {
+.team-tabs button:hover {
   color: #fff;
 }
 
-.team-tabs a.is-active svg {
-  color: var(--green);
-  background: #fff;
+/* Onglet actif : tout l'onglet (icône et libellé) sur une pastille arrondie jaune, texte en encre (pas un carré blanc). */
+.team-tabs a.is-active {
+  color: var(--ink, #0f1822);
+  background: var(--yellow, #ffcf15);
 }
 
 .team-tabs a:active svg,

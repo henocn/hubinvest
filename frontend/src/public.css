@@ -279,17 +279,21 @@
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
+  margin-inline: 3px;
+  padding: 5px 4px 6px;
+  border-radius: 14px;
   color: rgba(255, 255, 255, 0.78);
   text-decoration: none;
+  transition: background-color 0.18s ease, color 0.18s ease;
   -webkit-tap-highlight-color: transparent;
 }
 
 .public-bottom-nav a svg {
   width: 56px;
-  height: 30px;
-  padding: 5px 0;
-  border-radius: 0;
+  height: 26px;
+  padding: 3px 0;
+  border-radius: 999px;
   transition: background-color 0.18s ease, color 0.18s ease;
 }
 
@@ -304,11 +308,10 @@
 
 .public-bottom-nav a:hover { color: #fff; }
 
-.public-bottom-nav a.is-active { color: #fff; }
-
-.public-bottom-nav a.is-active svg {
-  color: var(--green);
-  background: #fff;
+/* Onglet actif : tout l'onglet (icône et libellé) sur une pastille arrondie jaune, texte en encre (pas un carré blanc). */
+.public-bottom-nav a.is-active {
+  color: var(--ink, #0f1822);
+  background: var(--yellow, #ffcf15);
 }
 
 .public-bottom-nav a:active svg { transform: scale(0.94); }
@@ -833,8 +836,8 @@
 
 .stand-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 16px;
 }
 
 .stand-card {
@@ -842,7 +845,8 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid rgba(0, 0, 0, 0.16);
+  /* Un contour net sur chaque carte, vert au survol. */
+  border: 1px solid #c4cac7;
   border-radius: 0;
   color: inherit;
   background: #fff;
@@ -2028,7 +2032,6 @@
   .meetings-page { padding-block: 26px 40px; }
   .meetings-page > header { margin-bottom: 20px; }
   .meeting-choices > a { grid-template-columns: 32px minmax(0, 1fr); padding: 19px 18px; }
-  .stand-grid { grid-template-columns: 1fr; }
   .home-columns { grid-template-columns: 1fr; }
   .public-section-heading { align-items: start; }
   .stand-count { text-align: right; }
@@ -2042,7 +2045,6 @@
   .studio-response-actions { align-items: stretch; flex-direction: column; }
   .studio-response-actions .button { width: 100%; min-height: 48px; }
   .challenge-page { min-height: calc(100vh - 64px); padding-block: 20px 32px; }
-  .play-games { grid-template-columns: 1fr; }
   .play-game .button { width: 100%; justify-content: center; }
 }
 
@@ -2599,11 +2601,11 @@
   background: #f2f4f3;
 }
 
-/* « Nos services » : le parcours en 5 étapes, une ligne par étape, ses services à droite du numéro. */
+/* « Les services de l'API-ZF » : six cartes bien délimitées (icône, titre, promesse, où les trouver au stand). */
 .home-services,
 .home-procedures {
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 .home-services > h2,
@@ -2613,81 +2615,138 @@
   letter-spacing: -0.02em;
 }
 
-.service-stages {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid rgba(0, 0, 0, 0.12);
-}
-
-.service-stage {
+.service-cards {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 14px;
-  padding: 14px 0;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
 }
 
-.service-stage-number {
+.service-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 18px 18px 16px;
+  border: 1px solid #c4cac7;
+  border-top: 4px solid var(--green);
+  background: #fff;
+}
+
+.service-card-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Étape du parcours, en grand, devant l'icône. */
+.service-card-stage {
+  min-width: 1ch;
   color: var(--green);
   font-family: var(--font-display);
-  font-size: 2rem;
+  font-size: 2.1rem;
   font-weight: 800;
   line-height: 1;
 }
 
-.service-stage-body {
+.service-card-icon {
+  width: 42px;
+  height: 42px;
   display: grid;
-  gap: 10px;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--green);
+  background: var(--tint);
 }
 
-.service-stage-body h3 {
-  margin: 0;
+.service-card h3 {
+  margin: 2px 0 0;
   font-size: 1.05rem;
+  line-height: 1.3;
 }
 
-.service-item {
-  display: grid;
-  gap: 3px;
-}
-
-.service-item p {
+.service-card p {
   margin: 0;
   color: var(--muted);
-  line-height: 1.45;
+  font-size: 0.92rem;
+  line-height: 1.5;
 }
 
-.service-item-place {
-  display: inline-flex;
-  align-items: center;
+/* Où trouver le service : en bas de la carte, séparé par un filet. */
+.service-card-place {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
   flex-wrap: wrap;
   gap: 6px;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
   color: var(--green-dark);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 700;
+  line-height: 1.4;
 }
 
-.service-item-place em {
+.service-card-place svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+.service-card-place span {
+  flex: 1;
+  min-width: 0;
+}
+
+.service-card-place em {
+  flex-basis: 100%;
+  padding-left: 21px;
   color: #8a5a00;
   font-style: normal;
 }
 
-/* Les démarches en ligne, groupées par domaine ; chaque ligne mène à la plateforme officielle. */
+/* Les démarches en ligne : un bloc encadré par domaine ; chaque ligne mène à la plateforme officielle. */
+.home-procedures-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+}
+
+.home-procedures-head .button {
+  gap: 8px;
+  text-decoration: none;
+}
+
+.procedure-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.procedure-group {
+  border: 1px solid #c4cac7;
+  background: #fff;
+}
+
 .procedure-group h3 {
-  margin: 4px 0 6px;
-  color: var(--muted);
-  font-size: 0.9rem;
+  margin: 0;
+  padding: 11px 16px;
+  border-bottom: 1px solid #c4cac7;
+  color: var(--green-dark);
+  background: var(--tint);
+  font-size: 0.95rem;
 }
 
 .procedure-group ul {
   margin: 0;
   padding: 0;
   list-style: none;
-  border-top: 1px solid rgba(0, 0, 0, 0.12);
 }
 
-.procedure-group li {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+.procedure-group li + li {
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .procedure-group li > a,
@@ -2696,8 +2755,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 11px 0;
+  padding: 10px 16px;
   color: inherit;
+  font-size: 0.92rem;
   text-decoration: none;
 }
 
@@ -2708,6 +2768,7 @@
 
 .procedure-group li > a:hover {
   color: var(--green-dark);
+  background: #f6f8f7;
 }
 
 /* Guichets : rendez-vous ou rappel, puis la question qui amène la personne. */
@@ -3512,4 +3573,183 @@ main h1:not(.sr-only)::before {
 @media (max-width: 420px) {
   .contact-step-actions { flex-direction: column-reverse; }
   .contact-step-actions .button { width: 100%; }
+}
+
+/* Stands sur téléphone : deux cartes par ligne, plus compactes (photo, puis le nom et le numéro du stand). */
+@media (max-width: 640px) {
+  .stand-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .stand-card-content { padding: 9px 10px 11px; }
+  .stand-card h2 { font-size: 0.88rem; line-height: 1.25; overflow-wrap: anywhere; }
+  .stand-location { margin-top: 4px; font-size: 0.7rem; }
+}
+
+/* Jeux : deux pastilles chaleureuses, côte à côte même sur téléphone. Fond teinté doux, titre en affiche à gauche,
+   un visuel parlant (tampons du passeport, roue qui dépasse du coin), l'avancement du Défi et le bouton.
+   Comment jouer : la fenêtre « Règles du jeu ». */
+.play-games {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.play-game,
+.play-game.is-wheel {
+  position: relative;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 20px 16px 16px;
+  overflow: hidden;
+  border: 0;
+  text-align: left;
+  background: #e8f2ec;
+}
+
+.play-game.is-wheel {
+  background: #fff4cc;
+}
+
+.play-game h2 {
+  position: relative;
+  z-index: 1;
+  max-width: 100%;
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 3.5vw, 1.4rem);
+  hyphens: auto;
+  overflow-wrap: break-word;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.play-deco-wheel {
+  width: 46px;
+  height: 46px;
+  transform: rotate(-12deg);
+  filter: drop-shadow(0 6px 10px rgba(15, 24, 34, 0.18));
+}
+
+.play-progress {
+  color: var(--green);
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.play-stamps {
+  min-height: 46px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+.play-stamps i {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 2px dashed rgba(21, 108, 83, 0.55);
+  border-radius: 50%;
+  transform: rotate(-8deg);
+}
+
+.play-stamps i:nth-child(even) {
+  transform: rotate(10deg);
+}
+
+.play-stamps i.is-done {
+  border: 2px solid var(--green);
+  color: #fff;
+  background: var(--green);
+}
+
+.play-game .button {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  margin-top: auto;
+  padding-inline: 14px;
+  white-space: nowrap;
+}
+
+.play-rules-button {
+  justify-self: start;
+  margin-top: 4px;
+}
+
+/* Règles du jeu : un bloc par jeu, étapes numérotées dans la couleur du jeu. */
+.rules-game + .rules-game {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.rules-game h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 1.02rem;
+}
+
+.rules-game h3 span {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--green);
+}
+
+.rules-game.is-wheel h3 span {
+  color: var(--ink);
+  background: var(--yellow);
+}
+
+.rules-game ol {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: rule;
+}
+
+.rules-game li {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 10px;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  counter-increment: rule;
+}
+
+.rules-game li::before {
+  content: counter(rule);
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--green);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.rules-game.is-wheel li::before {
+  color: var(--ink);
+  background: var(--yellow);
+}
+
+.rules-note {
+  margin: 18px 0 0;
+  padding: 10px 12px;
+  border-left: 4px solid var(--green);
+  background: var(--tint);
+  font-size: 0.88rem;
 }

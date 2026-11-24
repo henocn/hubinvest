@@ -1,6 +1,7 @@
 // Les six services de l'API-ZF et les douze démarches en ligne (document v4, § 02), écrits dans le code :
 // une mise à jour se fait ici. `stage` = étape du parcours « Investir au Togo en 5 étapes » (1 à 5).
-// `url` d'une démarche : le lien vers la plateforme officielle, à compléter quand l'API-ZF le donne.
+// Les démarches se font sur la plateforme officielle de l'API-ZF (PROCEDURES_URL).
+export const PROCEDURES_URL = 'https://services.apizf.tg/';
 export const services = [
   {
     key: 'orientation',
@@ -54,4 +55,4 @@ export const procedures = [
   { domain: 'investment_code', fr: 'Modification du nom sur un agrément au Code des investissements', en: 'Name change on an Investment Code approval' },
   { domain: 'blue_book', fr: 'Demande de Carnet Bleu', en: 'Blue Book application' },
   { domain: 'blue_book', fr: 'Renouvellement de Carnet Bleu', en: 'Blue Book renewal' },
-].map((procedure, index) => ({ id: index + 1, url: null, ...procedure }));
+].map((procedure, index) => ({ id: index + 1, url: PROCEDURES_URL, ...procedure }));

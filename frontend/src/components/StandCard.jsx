@@ -13,7 +13,6 @@ export default function StandCard({ stand }) {
       <div className="stand-card-content">
         <h2>{stand.name}</h2>
         {stand.standLabel && <span className="stand-location"><MapPin size={14} /> {stand.standLabel}</span>}
-        {stand.activity && <p>{stand.activity}</p>}
       </div>
     </Link>
   );
