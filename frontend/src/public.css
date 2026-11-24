@@ -214,9 +214,9 @@
   padding: 0 54px 0 12px;
   appearance: none;
   border: 1px solid rgba(0, 0, 0, 0.18);
-  border-radius: 8px;
+  border-radius: 0;
   color: #0f1822;
-  background: #f1f5f3;
+  background: #fff;
   font-size: 0.78rem;
   font-weight: 700;
   cursor: pointer;
@@ -279,17 +279,21 @@
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
+  margin-inline: 3px;
+  padding: 5px 4px 6px;
+  border-radius: 14px;
   color: rgba(255, 255, 255, 0.78);
   text-decoration: none;
+  transition: background-color 0.18s ease, color 0.18s ease;
   -webkit-tap-highlight-color: transparent;
 }
 
 .public-bottom-nav a svg {
   width: 56px;
-  height: 30px;
-  padding: 5px 0;
-  border-radius: 0;
+  height: 26px;
+  padding: 3px 0;
+  border-radius: 999px;
   transition: background-color 0.18s ease, color 0.18s ease;
 }
 
@@ -304,11 +308,10 @@
 
 .public-bottom-nav a:hover { color: #fff; }
 
-.public-bottom-nav a.is-active { color: #fff; }
-
-.public-bottom-nav a.is-active svg {
-  color: var(--green);
-  background: #fff;
+/* Onglet actif : tout l'onglet (icône et libellé) sur une pastille arrondie jaune, texte en encre (pas un carré blanc). */
+.public-bottom-nav a.is-active {
+  color: var(--ink, #0f1822);
+  background: var(--yellow, #ffcf15);
 }
 
 .public-bottom-nav a:active svg { transform: scale(0.94); }
@@ -842,7 +845,8 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid rgba(0, 0, 0, 0.16);
+  /* Un contour net sur chaque carte, vert au survol. */
+  border: 1px solid #c4cac7;
   border-radius: 0;
   color: inherit;
   background: #fff;
@@ -2597,11 +2601,11 @@
   background: #f2f4f3;
 }
 
-/* « Nos services » : le parcours en 5 étapes, une ligne par étape, ses services à droite du numéro. */
+/* « Les services de l'API-ZF » : six cartes bien délimitées (icône, titre, promesse, où les trouver au stand). */
 .home-services,
 .home-procedures {
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 .home-services > h2,
@@ -2611,81 +2615,138 @@
   letter-spacing: -0.02em;
 }
 
-.service-stages {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid rgba(0, 0, 0, 0.12);
-}
-
-.service-stage {
+.service-cards {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 14px;
-  padding: 14px 0;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
 }
 
-.service-stage-number {
+.service-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 18px 18px 16px;
+  border: 1px solid #c4cac7;
+  border-top: 4px solid var(--green);
+  background: #fff;
+}
+
+.service-card-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Étape du parcours, en grand, devant l'icône. */
+.service-card-stage {
+  min-width: 1ch;
   color: var(--green);
   font-family: var(--font-display);
-  font-size: 2rem;
+  font-size: 2.1rem;
   font-weight: 800;
   line-height: 1;
 }
 
-.service-stage-body {
+.service-card-icon {
+  width: 42px;
+  height: 42px;
   display: grid;
-  gap: 10px;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--green);
+  background: var(--tint);
 }
 
-.service-stage-body h3 {
-  margin: 0;
+.service-card h3 {
+  margin: 2px 0 0;
   font-size: 1.05rem;
+  line-height: 1.3;
 }
 
-.service-item {
-  display: grid;
-  gap: 3px;
-}
-
-.service-item p {
+.service-card p {
   margin: 0;
   color: var(--muted);
-  line-height: 1.45;
+  font-size: 0.92rem;
+  line-height: 1.5;
 }
 
-.service-item-place {
-  display: inline-flex;
-  align-items: center;
+/* Où trouver le service : en bas de la carte, séparé par un filet. */
+.service-card-place {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
   flex-wrap: wrap;
   gap: 6px;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
   color: var(--green-dark);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 700;
+  line-height: 1.4;
 }
 
-.service-item-place em {
+.service-card-place svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+.service-card-place span {
+  flex: 1;
+  min-width: 0;
+}
+
+.service-card-place em {
+  flex-basis: 100%;
+  padding-left: 21px;
   color: #8a5a00;
   font-style: normal;
 }
 
-/* Les démarches en ligne, groupées par domaine ; chaque ligne mène à la plateforme officielle. */
+/* Les démarches en ligne : un bloc encadré par domaine ; chaque ligne mène à la plateforme officielle. */
+.home-procedures-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+}
+
+.home-procedures-head .button {
+  gap: 8px;
+  text-decoration: none;
+}
+
+.procedure-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.procedure-group {
+  border: 1px solid #c4cac7;
+  background: #fff;
+}
+
 .procedure-group h3 {
-  margin: 4px 0 6px;
-  color: var(--muted);
-  font-size: 0.9rem;
+  margin: 0;
+  padding: 11px 16px;
+  border-bottom: 1px solid #c4cac7;
+  color: var(--green-dark);
+  background: var(--tint);
+  font-size: 0.95rem;
 }
 
 .procedure-group ul {
   margin: 0;
   padding: 0;
   list-style: none;
-  border-top: 1px solid rgba(0, 0, 0, 0.12);
 }
 
-.procedure-group li {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+.procedure-group li + li {
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .procedure-group li > a,
@@ -2694,8 +2755,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 11px 0;
+  padding: 10px 16px;
   color: inherit;
+  font-size: 0.92rem;
   text-decoration: none;
 }
 
@@ -2706,6 +2768,7 @@
 
 .procedure-group li > a:hover {
   color: var(--green-dark);
+  background: #f6f8f7;
 }
 
 /* Guichets : rendez-vous ou rappel, puis la question qui amène la personne. */

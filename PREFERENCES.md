@@ -4,7 +4,7 @@
 
 ## Direction visuelle
 
-- Design system de référence : « API-ZF · Hub de l'investissement » (https://claude.ai/artifact/UBNnyJ9R72xJx9zxbu1r4a), thème Clair : fond blanc, angles droits partout (seules les pastilles rondes restent rondes, et les listes déroulantes : rayon 8 px sur fond teinté #f1f5f3, jamais blanc), proportion 60/30/10 (vert dominant, jaune et rouge en accents), filet jaune au-dessus du titre de page, Sen pour les titres, Arial pour le texte, un seul mot d'accroche en Aleo italique extra-gras (« Investir » sur l'accueil), mosaïque de la charte en bandeau de pied de page, jamais de texte dessus.
+- Design system de référence : « API-ZF · Hub de l'investissement » (https://claude.ai/artifact/UBNnyJ9R72xJx9zxbu1r4a), thème Clair : fond blanc, angles droits partout (seules les pastilles rondes restent rondes ; l'onglet actif de la barre du bas est entièrement (icône et libellé) sur une pastille arrondie jaune, texte en encre, jamais un carré blanc), proportion 60/30/10 (vert dominant, jaune et rouge en accents), filet jaune au-dessus du titre de page, Sen pour les titres, Arial pour le texte, un seul mot d'accroche en Aleo italique extra-gras (« Investir » sur l'accueil), mosaïque de la charte en bandeau de pied de page, jamais de texte dessus.
 - Couleurs : vert `#156c53`, vert foncé `#005b3f`, jaune `#ffcf15`, rouge `#d31b34`, encre `#0f1822`. Action principale rouge.
 - Interface sobre, propre et directement compréhensible. Pas de signes de design généré par IA : textes de remplissage, cartes imbriquées, badges ou pastilles décoratifs, majuscules espacées, détails gratuits, grands espaces sans fonction.
 - Le logo du Hub signe toutes les interfaces ; l'API-ZF apparaît seulement en pied de page (« Une initiative de » + logo). Le symbole seul sert au favicon, aux icônes et en filigrane léger. Icônes Lucide, aucun emoji.
@@ -36,9 +36,9 @@
 
 - Façon application mobile : en-tête vert fixe (menu à gauche, logo blanc à droite), panneau latéral pour les rubriques, la langue et l'espace équipe, barre d'onglets verte en bas qui ne disparaît pas au défilement.
 - FR/EN pour toutes les chaînes ; sélecteur compact (nom de la langue puis drapeau).
-- Accueil : bandeau vert (signature, Prendre rendez-vous en rouge, Être recontacté), « En ce moment », « Nos services », démarches, programme.
+- Accueil : bandeau vert (signature, bouton rouge « Guichet API-ZF » vers la page des guichets), « En ce moment », le programme (à l'affiche, du jour, à venir), puis « Les services de l'API-ZF » (six cartes encadrées : le chiffre de l'étape du parcours puis l'icône, titre, promesse, où les trouver au stand), les démarches en ligne (un bloc encadré par domaine, bouton « Faire une démarche en ligne » vers services.apizf.tg dans un nouvel onglet).
 - Rencontres : deux tuiles cliquables (titre et une phrase), centrées dans la page, côte à côte sur grand écran.
-- Carte de stand : image et informations séparées, rien posé sur la photo ; seulement le nom et le numéro du stand, sans description. Cartes compactes : deux stands par ligne sur téléphone. Sous « Les stands du Hub » : « Pavillon de l’Oti ». Fiche : carrousel (défilement toutes les 2 s, arrêt au survol), « Prendre contact » en haut et en fin de fiche.
+- Carte de stand : image et informations séparées, rien posé sur la photo ; seulement le nom et le numéro du stand, sans description. Cartes compactes : deux stands par ligne sur téléphone. Chaque carte a un contour net ; le Stand API-ZF est toujours le premier de la liste. Sous « Les stands du Hub » : « Pavillon de l’Oti ». Fiche : carrousel (défilement toutes les 2 s, arrêt au survol), « Prendre contact » en haut et en fin de fiche.
 
 ## Back office
 

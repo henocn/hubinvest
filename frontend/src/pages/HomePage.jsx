@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { ArrowRight, CalendarCheck, MessageCircleQuestion, PhoneCall } from 'lucide-react';
+import { ArrowRight, BriefcaseBusiness, MessageCircleQuestion } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { api, resolveAssetUrl } from '../lib/api';
 import { publicErrorMessage } from '../lib/public-error';
@@ -81,8 +81,8 @@ function HomeHero({ data, formats, now }) {
           <h1><em className="accroche">{t('home.signatureLead')}</em> {t('home.signatureRest')}</h1>
         </div>
         <nav className="home-hero-actions" aria-label={t('home.actions')}>
-          <Link className="button button-primary" to="/guichets"><CalendarCheck size={18} aria-hidden="true" />{t('home.book')}</Link>
-          <Link className="button home-hero-action" to="/guichets/rappel"><PhoneCall size={18} aria-hidden="true" />{t('home.callBack')}</Link>
+          {/* Un seul bouton : la page des guichets propose le rendez-vous ou le rappel. */}
+          <Link className="button button-primary" to="/guichets"><BriefcaseBusiness size={18} aria-hidden="true" />{t('home.guichet')}</Link>
         </nav>
         {featured && (
           <div className={`home-hero-now${live ? ' is-live' : ''}`}>
@@ -229,7 +229,6 @@ export default function HomePage() {
     <>
       <HomeHero data={data} formats={formats} now={now} />
       <main className="public-container home-main">
-        <HomeServices />
         {loading && <p className="public-message">{t('home.loading')}</p>}
         {error && <div className="public-message is-error"><p>{error}</p></div>}
         {!loading && !error && isEmpty && (
@@ -247,6 +246,7 @@ export default function HomePage() {
             </div>
           </>
         )}
+        <HomeServices />
       </main>
     </>
   );
