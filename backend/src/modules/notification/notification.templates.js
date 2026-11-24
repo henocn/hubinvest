@@ -26,15 +26,27 @@ const contactRequested = ({ user, occupant }) => ({
   text: teamText(user, [`Une personne a demandé à être recontactée par ${occupant.name}.`, 'Retrouvez sa demande dans vos contacts :'], occupantSpaceUrl()),
 });
 
-// Rappelle à l'équipe du stand la prochaine action prévue sur un contact.
-const contactReminder = ({ user, contact }) => {
-  const action = contact.nextAction || 'Relance prévue';
+// Relance d'une rencontre B2B à faire maintenant, avec son motif.
+const b2bFollowUpDue = ({ user, proposal, followUp }) => {
+  const url = teamUrl(`/b2b/${proposal.id}`);
   return {
-    title: 'Relance à faire',
-    body: `${contact.fullName} : ${action}`,
-    url: occupantSpaceUrl(),
+    title: `Relance B2B : ${proposal.fullName}`,
+    body: `Relancer ${proposal.fullName} : ${followUp.reason}`,
+    url,
+    subject: `Relance B2B à faire : ${proposal.fullName}`,
+    text: teamText(user, [`C’est l’heure de relancer ${proposal.fullName} : ${followUp.reason}.`, 'Une fois la relance faite, marquez-la faite dans Relances :'], teamUrl('/relances')),
+  };
+};
+
+// Relance d'un contact de stand à faire maintenant, avec son motif.
+const contactFollowUpDue = ({ user, contact, followUp }) => {
+  const url = teamUrl('/relances');
+  return {
+    title: `Relance à faire : ${contact.fullName}`,
+    body: `Relancer ${contact.fullName} : ${followUp.reason}`,
+    url,
     subject: `Relance à faire : ${contact.fullName}`,
-    text: teamText(user, [`Une action est prévue maintenant pour ${contact.fullName} :`, action], occupantSpaceUrl()),
+    text: teamText(user, [`C’est l’heure de relancer ${contact.fullName} : ${followUp.reason}.`, 'Une fois la relance faite, marquez-la faite dans Relances :'], url),
   };
 };
 
@@ -328,7 +340,21 @@ const studioCapsuleWhatsapp = ({ invitation }) => ({
   params: [invitation.guestName, invitation.capsuleUrl],
 });
 
+// Nouvelle question du public pendant un direct : notification push seulement (sans sujet, donc jamais d’e-mail).
+const liveQuestionReceived = ({ question, event }) => {
+  const text = question.question.length > 120 ? `${question.question.slice(0, 117)}…` : question.question;
+  return {
+    title: `Nouvelle question${event?.title ? ` · ${event.title}` : ''}`,
+    body: question.authorName ? `${question.authorName} : ${text}` : text,
+    url: teamUrl('/questions'),
+    tag: 'live-questions',
+  };
+};
+
 module.exports = {
+  b2bFollowUpDue,
+  contactFollowUpDue,
+  liveQuestionReceived,
   investorMeetingWhatsapp,
   b2bMeetingWhatsapp,
   b2bMeetingReminder,
@@ -347,7 +373,6 @@ module.exports = {
   b2bMeetingMoved,
   b2bMeetingCancelled,
   contactRequested,
-  contactReminder,
   investorRequestReceived,
   b2bProposalReceived,
   b2bProposalConfirmation,

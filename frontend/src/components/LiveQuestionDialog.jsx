@@ -19,7 +19,7 @@ export default function LiveQuestionDialog({ event, onClose }) {
     setLoading(true);
     setError('');
     try {
-      await api.askLiveQuestion(event.id, { question: question.trim(), authorName: authorName.trim() });
+      await api.askLiveQuestion(event.id, { authorName: authorName.trim(), question: question.trim() });
       setSent(true);
     } catch (requestError) {
       setError(publicErrorMessage(t, requestError));
@@ -29,7 +29,7 @@ export default function LiveQuestionDialog({ event, onClose }) {
   };
 
   return (
-    <PublicDialog title={t('live.title')} intro={event.title} onClose={onClose} locked={loading} className="live-question-dialog">
+    <PublicDialog title={t('live.ask')} onClose={onClose} locked={loading} className="live-question-dialog">
       {sent ? (
         <div className="live-question-sent" role="status">
           <CheckCircle2 size={28} aria-hidden="true" />
@@ -43,11 +43,11 @@ export default function LiveQuestionDialog({ event, onClose }) {
             <textarea value={question} onChange={(changeEvent) => setQuestion(changeEvent.target.value)} rows={4} minLength={5} maxLength={500} required autoFocus />
           </label>
           <label>
-            <span className="public-field-label">{t('live.name')} <small>{t('common.optional')}</small></span>
-            <input value={authorName} onChange={(changeEvent) => setAuthorName(changeEvent.target.value)} maxLength={80} autoComplete="name" />
+            {t('live.name')}
+            <input value={authorName} onChange={(changeEvent) => setAuthorName(changeEvent.target.value)} minLength={2} maxLength={80} autoComplete="name" required />
           </label>
           {error && <p className="request-error" role="alert">{error}</p>}
-          <button className="button button-primary button-large" type="submit" disabled={loading || question.trim().length < 5}>
+          <button className="button button-primary button-large" type="submit" disabled={loading || question.trim().length < 5 || authorName.trim().length < 2}>
             {loading ? t('common.sending') : t('live.send')}
             <Send size={18} />
           </button>

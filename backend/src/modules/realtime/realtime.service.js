@@ -2,7 +2,7 @@ const crypto = require('node:crypto');
 const env = require('../../config/env');
 const AppError = require('../../shared/app-error');
 const roles = require('../../shared/roles');
-const { isGlobal } = require('../../shared/access');
+const { isApizfTeam, isGlobal } = require('../../shared/access');
 const { findSessionUser } = require('../../middlewares/auth.middleware');
 const hub = require('./realtime.hub');
 const { User } = require('../../models');
@@ -12,6 +12,8 @@ const tickets = new Map();
 
 const channels = Object.freeze({
   superAdmins: 'super-admin',
+  // Équipe des guichets et de la roue : l'API-ZF et les occupants du Stand API-ZF.
+  apizfTeam: 'apizf-team',
   admins: 'admins',
   animators: 'animateur',
   user: (id) => `user:${id}`,
@@ -24,6 +26,7 @@ const channels = Object.freeze({
 const channelsFor = (user) => {
   const list = [channels.user(user.id)];
   if (isGlobal(user)) list.push(channels.superAdmins);
+  if (isApizfTeam(user)) list.push(channels.apizfTeam);
   if (user.role === roles.OCCUPANT && user.occupantId) list.push(channels.admins, channels.occupant(user.occupantId), channels.admin(user.occupantId));
   if (user.role === roles.ANIMATOR) list.push(channels.animators);
   return list;
@@ -124,7 +127,7 @@ const events = {
     channels.animators,
     passportId && channels.passport(passportId),
   ], 'challenge'),
-  investorRequestsChanged: () => safePublish([channels.superAdmins], 'investor-requests'),
+  investorRequestsChanged: () => safePublish([channels.apizfTeam], 'investor-requests'),
   b2bChanged: (occupantIds) => safePublish([...unique([].concat(occupantIds)).map(channels.admin), channels.superAdmins], 'b2b'),
   studioChanged: (occupantIds) => safePublish([...unique([].concat(occupantIds)).map(channels.admin), channels.superAdmins], 'studio'),
   // Fiche de stand modifiée : backoffice et en-tête de l'espace occupant (logo, nom).

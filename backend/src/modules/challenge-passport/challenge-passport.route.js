@@ -3,13 +3,18 @@ const asyncHandler = require('../../shared/async-handler');
 const validate = require('../../middlewares/validate.middleware');
 const { authenticate, requireRoles } = require('../../middlewares/auth.middleware');
 const roles = require('../../shared/roles');
+const AppError = require('../../shared/app-error');
+const { isApizfTeam } = require('../../shared/access');
 const challengePassportValidation = require('./challenge-passport.validation');
 const challengePassportController = require('./challenge-passport.controller');
 const rateLimit = require('../../middlewares/rate-limit.middleware');
 
 const router = express.Router();
 const challengeManagers = requireRoles(roles.SUPER_ADMIN, roles.ADMIN, roles.OCCUPANT);
-const rewardTeamOnly = requireRoles(roles.SUPER_ADMIN, roles.ADMIN, roles.ANIMATOR);
+// Remise des récompenses : l'API-ZF (dont les occupants du Stand API-ZF, quand l'animateur n'est pas là) et les animateurs.
+const rewardTeamOnly = (request, response, next) => next(isApizfTeam(request.user) || request.user?.role === roles.ANIMATOR
+  ? undefined
+  : new AppError(403, 'FORBIDDEN', "Vous n’avez pas accès à cette action."));
 
 router.post('/public', rateLimit.publicForm('challenge'), validate(challengePassportValidation.createPublic), asyncHandler(challengePassportController.createPublic));
 router.get('/public/:token', validate(challengePassportValidation.tokenParams, 'params'), asyncHandler(challengePassportController.getPublic));

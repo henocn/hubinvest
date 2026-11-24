@@ -20,6 +20,7 @@ const SECTIONS = {
   wheel: 'Roue',
   settings: 'Paramètres',
   'live-questions': 'Questions',
+  'follow-ups': 'Relances',
 };
 
 // Actions nommées par le dernier mot de l'adresse.

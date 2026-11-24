@@ -1861,6 +1861,7 @@
   padding: clamp(20px, 5vw, 28px);
   border-top: 4px solid var(--green);
   border-radius: 0;
+  color: var(--ink);
   background: #fff;
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
 }
@@ -3445,4 +3446,70 @@ main h1:not(.sr-only)::before {
 .contact-dialog .request-form {
   display: grid;
   gap: 14px;
+}
+
+/* Téléphone et e-mail côte à côte : la fenêtre « Prendre contact » est un peu plus large. */
+.player-dialog.contact-dialog {
+  width: min(100%, 560px);
+}
+
+.contact-dialog .public-field-row > * {
+  min-width: 0;
+}
+
+/* « Prendre contact », 2e temps : quand être recontacté (une réponse au choix, facultative), puis Retour / Envoyer. */
+.contact-when {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.contact-when legend {
+  margin-bottom: 8px;
+  padding: 0;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.contact-when label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 0;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.contact-when label:hover {
+  border-color: var(--green);
+}
+
+.contact-when label.is-selected {
+  border-color: var(--green);
+  background: rgba(21, 108, 83, 0.06);
+}
+
+.contact-when input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--green);
+}
+
+.contact-step-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+@media (max-width: 420px) {
+  .contact-step-actions { flex-direction: column-reverse; }
+  .contact-step-actions .button { width: 100%; }
 }

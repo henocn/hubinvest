@@ -57,23 +57,24 @@ function FollowUpFields({ form, set }) {
   );
 }
 
-function FollowUpForm({ request, loading, error, onClose, onSave }) {
+// Réutilisée par la page Relances (contacts des stands), avec son propre texte d'aide.
+export function FollowUpForm({ request, loading, error, onClose, onSave, hint = 'À cette heure, le responsable du contact (ou l’équipe API-ZF) reçoit un rappel.' }) {
   const [form, setForm] = useState({ dueAt: '', reason: '' });
   const set = (key) => (event) => setForm({ ...form, [key]: event.target.value });
   return (
     <Modal eyebrow={request.fullName} title="Ajouter une relance" error={error} loading={loading} submitLabel="Ajouter" onClose={onClose}
       onSubmit={() => onSave({ dueAt: fromInput(form.dueAt), reason: form.reason })}>
       <FollowUpFields form={form} set={set} />
-      <span className="field-hint">À cette heure, le responsable du contact (ou l’équipe API-ZF) reçoit un rappel.</span>
+      <span className="field-hint">{hint}</span>
     </Modal>
   );
 }
 
 // Relance faite : la prochaine étape. « Relancer » programme la relance suivante ; « Autre » se décrit en quelques mots.
-const outcomeLabels = { closed: 'Terminée', again: 'Relancer', other: 'Autre' };
+export const outcomeLabels = { closed: 'Terminée', again: 'Relancer', other: 'Autre' };
 // Origine d'une relance automatique, affichée sous sa date.
-const autoLabel = (item) => ({ A: 'Automatique (classe A)', B: 'Automatique (classe B)', commitment: 'Automatique (engagement)' })[item.autoSource];
-function CompleteFollowUpForm({ request, followUp, loading, error, onClose, onSave }) {
+export const autoLabel = (item) => ({ A: 'Automatique (classe A)', B: 'Automatique (classe B)', commitment: 'Automatique (engagement)' })[item.autoSource];
+export function CompleteFollowUpForm({ request, followUp, loading, error, onClose, onSave }) {
   const [outcome, setOutcome] = useState('closed');
   const [note, setNote] = useState('');
   const [next, setNext] = useState({ dueAt: '', reason: '' });

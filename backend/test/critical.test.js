@@ -6,6 +6,8 @@ const bcrypt = require('bcryptjs');
 const { UniqueConstraintError } = require('sequelize');
 const contactService = require('../src/modules/contact/contact.service');
 const contactRepository = require('../src/modules/contact/contact.repository');
+const followUpService = require('../src/modules/follow-up/follow-up.service');
+const followUpRepository = require('../src/modules/follow-up/follow-up.repository');
 const occupantService = require('../src/modules/occupant/occupant.service');
 const occupantRepository = require('../src/modules/occupant/occupant.repository');
 const userService = require('../src/modules/user/user.service');
@@ -171,6 +173,7 @@ test('les listes et les details restent limites a l’occupant authentifie', asy
 });
 
 test('une resynchronisation du meme contact ne cree pas de doublon', async (context) => {
+  context.mock.method(followUpService, 'applyClassFollowUp', async () => null);
   let saved = null;
   let inserts = 0;
   context.mock.method(contactRepository.sequelize, 'transaction', async (callback) => callback({}));
@@ -227,7 +230,8 @@ test('un occupant desactive perd acces meme avec un jeton encore valide', async 
     result = error;
   });
 
-  assert.equal(result.status, 403);
+  // Session plus valable : 401, l'application ramène à la connexion (un 403 ne déconnecte plus).
+  assert.equal(result.status, 401);
   assert.equal(result.code, 'OCCUPANT_INACTIVE');
 });
 
@@ -341,7 +345,8 @@ test('une demande publique sans accord est refusée avant toute écriture', asyn
   );
 });
 
-test('une demande publique est rattachée au stand lu par le serveur, sans qualification ni compte visiteur', async (context) => {
+test('une demande publique est rattachée au stand lu par le serveur ; sa classe vient de la réponse « quand », sans accord API-ZF forcé', async (context) => {
+  context.mock.method(followUpService, 'applyClassFollowUp', async () => null);
   let saved;
   context.mock.method(occupantRepository, 'findBySlug', async () => ({ id: 'stand-a' }));
   context.mock.method(contactRepository.sequelize, 'transaction', async (callback) => callback({}));
@@ -355,7 +360,7 @@ test('une demande publique est rattachée au stand lu par le serveur, sans quali
   assert.equal(result.created, true);
   assert.equal(saved.occupantId, 'stand-a');
   assert.equal(saved.createdByUserId, null);
-  assert.equal(saved.qualification, null);
+  assert.equal(saved.qualification, 'A');
   assert.equal(saved.consentApizf, false);
   assert.equal(saved.source, 'public');
   assert.ok(saved.consentCapturedAt instanceof Date);
@@ -459,8 +464,8 @@ test('une invitation Studio utilise un lien personnel imprévisible et l’envoi
   context.mock.method(notificationService, 'studioInvited', (invitation) => { sent.push(invitation.email); });
 
   await studioInvitationService.create(
-    { id: 'campaign-user', role: 'occupant', occupantId: 'occupant-a' },
-    { guestName: 'Invité Test', email: 'Invite@Example.com', format: 'two_minutes' },
+    { id: 'campaign-user', role: 'admin' },
+    { guestName: 'Invité Test', email: 'Invite@Example.com', format: 'two_minutes', occupantId: 'occupant-a' },
   );
 
   assert.match(saved.token, /^[a-f0-9]{64}$/);
@@ -525,35 +530,29 @@ test('la capsule du Studio se livre après le passage et part à l’invité', a
   assert.deepEqual(delivered, ['https://videos.tg/afi']);
 });
 
-test('le planning Studio d’un occupant est filtré sur son stand', async (context) => {
+test('le Studio est réservé à l’équipe API-ZF : un occupant n’y a pas accès', async (context) => {
   const originalSecret = env.auth.secret;
   env.auth.secret = 'hubinvest-studio-test-secret';
   context.after(() => { env.auth.secret = originalSecret; });
   context.mock.method(User, 'findOne', async ({ where }) => ({
     occupantId: `occupant-${where.id}`,
     occupant: { status: 'active' },
-    toJSON: () => ({
-      id: where.id,
-      occupantId: `occupant-${where.id}`,
-      role: 'occupant',
-    }),
+    toJSON: () => ({ id: where.id, occupantId: `occupant-${where.id}`, role: where.id === 'apizf' ? 'admin' : 'occupant' }),
   }));
-  const requestedStands = [];
-  context.mock.method(studioInvitationRepository, 'findAll', async (occupantId) => {
-    requestedStands.push(occupantId);
-    return [];
-  });
+  context.mock.method(studioInvitationRepository, 'findAll', async () => []);
 
   const server = app.listen(0, '127.0.0.1');
   context.after(() => server.close());
   await new Promise((resolve) => server.once('listening', resolve));
   const url = `http://127.0.0.1:${server.address().port}/api/studio-invitations`;
-  const requestAs = (subject) => fetch(url, {
-    headers: { Authorization: `Bearer ${jwt.sign({}, env.auth.secret, { subject })}` },
+  const requestAs = (subject, options = {}) => fetch(url, {
+    ...options,
+    headers: { Authorization: `Bearer ${jwt.sign({}, env.auth.secret, { subject })}`, 'Content-Type': 'application/json' },
   });
 
-  assert.equal((await requestAs('pia')).status, 200);
-  assert.deepEqual(requestedStands, ['occupant-pia']);
+  assert.equal((await requestAs('pia')).status, 403);
+  assert.equal((await requestAs('pia', { method: 'POST', body: JSON.stringify({ guestName: 'Afi', email: 'afi@example.com', format: 'two_minutes' }) })).status, 403);
+  assert.equal((await requestAs('apizf')).status, 200);
 });
 
 test('l’identité d’un joueur est conservée sans être exposée sur son passeport public', async (context) => {
@@ -818,19 +817,17 @@ test('une relance modifiée remplace la précédente et une date passée n’est
   context.mock.method(notificationRepository, 'enqueue', async (jobs) => { queued.push(...jobs); });
 
   const dueAt = new Date(Date.now() + 3600000);
-  notificationService.contactReminderChanged({
-    id: 'contact-a', occupantId: 'occupant-a', createdByUserId: 'occupant-user', fullName: 'Ama', nextAction: 'Envoyer le devis', nextActionAt: dueAt,
-  });
+  const contact = { id: 'contact-a', occupantId: 'occupant-a', fullName: 'Ama' };
+  notificationService.contactFollowUpChanged({ id: 'follow-a', createdByUserId: 'occupant-user', reason: 'Envoyer le devis', dueAt }, contact);
   await flushNotifications();
-  notificationService.contactReminderChanged({
-    id: 'contact-a', occupantId: 'occupant-a', createdByUserId: 'occupant-user', fullName: 'Ama', nextAction: null, nextActionAt: new Date(Date.now() - 1000),
-  });
+  notificationService.contactFollowUpChanged({ id: 'follow-a', createdByUserId: 'occupant-user', reason: 'Envoyer le devis', dueAt: new Date(Date.now() - 1000) }, contact);
   await flushNotifications();
 
-  assert.deepEqual(cancelled, ['contact-reminder:contact-a', 'contact-reminder:contact-a']);
+  assert.deepEqual(cancelled, ['contact-follow-up:follow-a', 'contact-follow-up:follow-a']);
   assert.equal(queued.length, 1);
-  assert.equal(queued[0].dedupeKey, 'contact-reminder:contact-a');
+  assert.equal(queued[0].dedupeKey, 'contact-follow-up:follow-a');
   assert.equal(queued[0].availableAt.getTime(), dueAt.getTime());
+  assert.match(queued[0].payload.body, /Envoyer le devis/);
 });
 
 test('le stand à l’affiche couvre toute la journée et reste unique par jour', async (context) => {
@@ -927,11 +924,13 @@ const readSseEvents = async (response, count, timeout = 2000) => {
 };
 
 test('chaque rôle n’écoute que les canaux de son stand ou de son rôle', () => {
-  assert.deepEqual(realtimeService.channelsFor({ id: 'u1', role: 'super-admin', occupantId: null }), ['user:u1', 'super-admin']);
-  assert.deepEqual(realtimeService.channelsFor({ id: 'u2', role: 'admin', occupantId: 'stand-a' }), ['user:u2', 'super-admin']);
+  assert.deepEqual(realtimeService.channelsFor({ id: 'u1', role: 'super-admin', occupantId: null }), ['user:u1', 'super-admin', 'apizf-team']);
+  assert.deepEqual(realtimeService.channelsFor({ id: 'u2', role: 'admin', occupantId: 'stand-a' }), ['user:u2', 'super-admin', 'apizf-team']);
   assert.deepEqual(realtimeService.channelsFor({ id: 'u3', role: 'occupant', occupantId: 'stand-a' }), ['user:u3', 'admins', 'occupant:stand-a', 'admin:stand-a']);
   assert.deepEqual(realtimeService.channelsFor({ id: 'u4', role: 'animateur', occupantId: null }), ['user:u4', 'animateur']);
-  assert.deepEqual(realtimeService.channelsFor({ id: 'u5', role: 'admin', occupantId: null }), ['user:u5', 'super-admin']);
+  assert.deepEqual(realtimeService.channelsFor({ id: 'u5', role: 'admin', occupantId: null }), ['user:u5', 'super-admin', 'apizf-team']);
+  // Occupant du Stand API-ZF : son stand, plus les guichets et la roue de l'équipe API-ZF.
+  assert.deepEqual(realtimeService.channelsFor({ id: 'u6', role: 'occupant', occupantId: 'stand-z', occupant: { space: 'apizf' } }), ['user:u6', 'apizf-team', 'admins', 'occupant:stand-z', 'admin:stand-z']);
 });
 
 test('un jeton de flux ne sert qu’une fois et expire', (context) => {
@@ -1014,7 +1013,7 @@ test('un passage validé prévient le stand, ses administrateurs, les animateurs
 
   published.length = 0;
   realtimeService.events.investorRequestsChanged();
-  assert.deepEqual(published[0], { channels: ['super-admin'], topic: 'investor-requests' });
+  assert.deepEqual(published[0], { channels: ['apizf-team'], topic: 'investor-requests' });
 });
 
 test('une diffusion en échec ne fait jamais échouer l’action métier', (context) => {
@@ -1101,6 +1100,8 @@ test('un lot épuisé ou désactivé disparaît de la roue, et une roue vide ne 
   assert.equal(plays.length, 0);
 
   const lose = { id: 'l1', kind: 'lose', label: 'Pas cette fois', quantity: null, awarded: 0, isActive: true };
+  // Les mêmes méthodes simulées deux fois dans un test laissaient la première simulation en place après le test.
+  context.mock.restoreAll();
   wheelSetup(context, { segments: [soldOut, inactive, lose], code });
   const outcome = await wheelService.spin({ code: 'QWER', player: PLAYER }, 'fr', (length) => { assert.equal(length, 1); return 0; });
   assert.deepEqual(outcome.segments.map((segment) => segment.id), ['l1']);
@@ -1337,6 +1338,8 @@ test('un stand ne peut pas avoir deux rendez-vous B2B en même temps, et une dem
   meetingSetup(context, { existing: [busyMeeting(`${day}T10:10:00Z`, 3, 'stand-a')] });
   await assert.rejects(b2bMeetingService.schedule({ id: 'u1' }, 'prop-1', { startsAt: `${day}T10:00:00Z`, tableNumber: 1 }), (error) => error.code === 'B2B_STAND_BUSY');
 
+  // Les mêmes méthodes simulées deux fois dans un test laissaient la première simulation en place après le test.
+  context.mock.restoreAll();
   meetingSetup(context, { status: 'pending' });
   await assert.rejects(b2bMeetingService.schedule({ id: 'u1' }, 'prop-1', { startsAt: `${day}T10:00:00Z`, tableNumber: 1 }), (error) => error.code === 'B2B_PROPOSAL_NOT_ACCEPTED');
 });
@@ -1767,4 +1770,273 @@ test('WhatsApp entrant : vérification Meta, signature, une réponse automatique
   assert.match(sent[0][0], /\/1454431384412339\/messages$/);
   assert.equal(sent[0][1].to, '22890123456');
   assert.match(sent[0][1].text.body, /hub\.investir\.tg/);
+});
+
+test('un occupant ne voit et ne modifie que son propre stand, sans toucher au nom, à l’emplacement ni au statut', async (context) => {
+  const originalSecret = env.auth.secret;
+  env.auth.secret = 'hubinvest-own-stand-test-secret';
+  context.after(() => { env.auth.secret = originalSecret; });
+  const ownId = crypto.randomUUID();
+  const otherId = crypto.randomUUID();
+  context.mock.method(User, 'findOne', async ({ where }) => ({
+    occupantId: ownId,
+    occupant: { status: 'active' },
+    toJSON: () => ({ id: where.id, occupantId: ownId, role: 'occupant', firstName: 'Afi', lastName: 'Mensah' }),
+  }));
+  const stand = { id: ownId, name: 'Stand Afi', slug: 'stand-afi', status: 'active', standLabel: 'B12' };
+  context.mock.method(occupantRepository, 'findById', async (id) => (id === ownId ? stand : { ...stand, id }));
+  context.mock.method(auditLogService, 'recordRequest', () => null);
+  let updatedWith;
+  context.mock.method(occupantRepository, 'update', async (occupant, values) => {
+    updatedWith = values;
+    return { ...occupant, ...values };
+  });
+
+  const server = app.listen(0, '127.0.0.1');
+  context.after(() => server.close());
+  await new Promise((resolve) => server.once('listening', resolve));
+  const base = `http://127.0.0.1:${server.address().port}/api/occupants`;
+  const headers = { Authorization: `Bearer ${jwt.sign({}, env.auth.secret, { subject: crypto.randomUUID() })}`, 'Content-Type': 'application/json' };
+
+  assert.equal((await fetch(base, { headers })).status, 403);
+  assert.equal((await fetch(`${base}/${otherId}`, { headers })).status, 403);
+  assert.equal((await fetch(`${base}/${ownId}`, { headers })).status, 200);
+  assert.equal((await fetch(`${base}/${otherId}`, { method: 'PATCH', headers, body: JSON.stringify({ activity: 'Autre' }) })).status, 403);
+  assert.equal((await fetch(`${base}/${ownId}`, { method: 'DELETE', headers })).status, 403);
+
+  const response = await fetch(`${base}/${ownId}`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({ activity: 'Transformation du soja', name: 'Autre nom', standLabel: 'A1', status: 'inactive' }),
+  });
+  assert.equal(response.status, 200);
+  assert.deepEqual(updatedWith, { activity: 'Transformation du soja' });
+});
+
+test('guichets et roue : l’équipe API-ZF et les occupants du Stand API-ZF, pas les autres stands', async (context) => {
+  const originalSecret = env.auth.secret;
+  env.auth.secret = 'hubinvest-apizf-team-test-secret';
+  context.after(() => { env.auth.secret = originalSecret; });
+  const spaces = { zf: 'apizf', ind: 'industry' };
+  context.mock.method(User, 'findOne', async ({ where }) => ({
+    occupantId: `stand-${where.id}`,
+    occupant: { status: 'active', space: spaces[where.id] },
+    toJSON: () => ({ id: where.id, occupantId: `stand-${where.id}`, role: 'occupant', occupant: { status: 'active', space: spaces[where.id] } }),
+  }));
+  const wheelService = require('../src/modules/wheel/wheel.service');
+  context.mock.method(wheelService, 'overview', async () => ({ segments: [], codes: [], plays: [], stats: {} }));
+  context.mock.method(investorRequestRepository, 'findAll', async () => ({ rows: [], count: 0 }));
+
+  const server = app.listen(0, '127.0.0.1');
+  context.after(() => server.close());
+  await new Promise((resolve) => server.once('listening', resolve));
+  const base = `http://127.0.0.1:${server.address().port}/api`;
+  const requestAs = (subject, path) => fetch(`${base}${path}`, { headers: { Authorization: `Bearer ${jwt.sign({}, env.auth.secret, { subject })}` } });
+
+  assert.equal((await requestAs('ind', '/wheel')).status, 403);
+  assert.equal((await requestAs('ind', '/investor-requests')).status, 403);
+  assert.equal((await requestAs('zf', '/wheel')).status, 200);
+  assert.equal((await requestAs('zf', '/investor-requests')).status, 200);
+});
+
+test('la session se renouvelle tant que l’application est ouverte ; un jeton expiré est refusé', async (context) => {
+  const originalSecret = env.auth.secret;
+  env.auth.secret = 'hubinvest-refresh-test-secret';
+  context.after(() => { env.auth.secret = originalSecret; });
+  context.mock.method(User, 'findOne', async ({ where }) => ({
+    occupantId: null,
+    toJSON: () => ({ id: where.id, occupantId: null, role: 'admin' }),
+  }));
+  const server = app.listen(0, '127.0.0.1');
+  context.after(() => server.close());
+  await new Promise((resolve) => server.once('listening', resolve));
+  const url = `http://127.0.0.1:${server.address().port}/api/auth/refresh`;
+  const post = (token) => fetch(url, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+
+  const response = await post(jwt.sign({ role: 'admin' }, env.auth.secret, { subject: 'u-refresh', expiresIn: '1h' }));
+  assert.equal(response.status, 200);
+  const { data } = await response.json();
+  const renewed = jwt.verify(data.token, env.auth.secret);
+  assert.equal(renewed.sub, 'u-refresh');
+  assert.ok(renewed.exp * 1000 > Date.now() + 2 * 3600000);
+  assert.equal((await post(jwt.sign({}, env.auth.secret, { subject: 'u-refresh', expiresIn: -10 }))).status, 401);
+});
+
+// Audit des droits : chaque rôle appelle les écrans de lecture du back office ; « oui » = permis (ni 401, ni 403, ni erreur
+// serveur), « non » = refusé en 403, « - » = non vérifié. Les comptes sont simulés, les données viennent de la base de test.
+test('audit des droits : chaque rôle n’ouvre que ses écrans, sans erreur serveur', async (context) => {
+  const originalSecret = env.auth.secret;
+  env.auth.secret = 'hubinvest-audit-test-secret';
+  context.after(() => { env.auth.secret = originalSecret; });
+  const industryStand = crypto.randomUUID();
+  const apizfStand = crypto.randomUUID();
+  const accounts = {
+    super: { role: 'super-admin', occupantId: null, occupant: null },
+    admin: { role: 'admin', occupantId: null, occupant: null },
+    ind: { role: 'occupant', occupantId: industryStand, occupant: { status: 'active', space: 'industry' } },
+    zf: { role: 'occupant', occupantId: apizfStand, occupant: { status: 'active', space: 'apizf' } },
+    anim: { role: 'animateur', occupantId: null, occupant: null },
+  };
+  context.mock.method(User, 'findOne', async ({ where }) => {
+    const account = accounts[where.id];
+    return { ...account, toJSON: () => ({ id: where.id, firstName: 'Audit', lastName: where.id, email: `${where.id}@example.test`, ...account }) };
+  });
+  context.mock.method(occupantRepository, 'findById', async (id) => ({ id, name: 'Stand', slug: 'stand', status: 'active', space: id === apizfStand ? 'apizf' : 'industry' }));
+
+  const Y = 'oui';
+  const N = 'non';
+  const S = '-';
+  //                                              super admin occInd occZf anim
+  const checks = [
+    ['GET', '/users/me', [Y, Y, Y, Y, Y]],
+    ['POST', '/auth/refresh', [Y, Y, Y, Y, Y]],
+    ['GET', '/dashboard', [Y, Y, Y, Y, Y]],
+    ['GET', '/b2b-needs', [Y, Y, Y, Y, N]],
+    ['GET', '/b2b-proposals', [Y, Y, Y, Y, N]],
+    ['GET', '/challenge-passports', [Y, Y, Y, Y, N]],
+    ['GET', '/challenge-passports/rewards', [Y, Y, N, Y, Y]],
+    ['GET', '/challenge-passports/search?q=ab', [Y, Y, Y, Y, Y]],
+    ['GET', '/challenge-passports/code/ABCDEF', [Y, Y, N, Y, Y]],
+    ['GET', '/challenge-passages/stats', [N, N, Y, Y, N]],
+    ['GET', '/wheel', [Y, Y, N, Y, N]],
+    ['GET', '/wheel/prizes/ZZZZ', [Y, Y, N, Y, Y]],
+    ['GET', '/investor-requests', [Y, Y, N, Y, N]],
+    ['GET', `/investor-requests/${crypto.randomUUID()}`, [Y, Y, N, Y, N]],
+    ['GET', '/occupants', [Y, Y, N, N, N]],
+    ['GET', `/occupants/${industryStand}`, [Y, Y, Y, N, N]],
+    ['GET', `/occupants/${apizfStand}`, [Y, Y, N, Y, N]],
+    ['GET', '/contacts', [S, S, Y, Y, N]],
+    ['GET', '/contacts/admin/stats', [Y, Y, N, N, N]],
+    ['GET', `/contacts/admin/stands/${industryStand}`, [Y, Y, N, N, N]],
+    ['GET', '/program-events', [Y, Y, N, N, N]],
+    ['GET', '/studio-invitations', [Y, Y, N, N, N]],
+    ['GET', '/live-questions', [Y, Y, N, N, Y]],
+    ['GET', '/users', [Y, N, N, N, N]],
+    ['GET', '/audit-logs', [Y, N, N, N, N]],
+    // Actions, sur des identifiants inexistants (rien n'est écrit) : permis = 404 ou 422, refusé = 403.
+    ['PATCH', `/challenge-passports/${crypto.randomUUID()}/redeem`, [Y, Y, N, Y, Y]],
+    ['POST', `/wheel/plays/${crypto.randomUUID()}/claim`, [Y, Y, N, Y, N]],
+    ['POST', '/wheel/prizes/ZZZZ/claim', [Y, Y, N, Y, Y]],
+    ['POST', `/investor-requests/${crypto.randomUUID()}/follow-ups`, [Y, Y, N, Y, N]],
+    ['PATCH', `/occupants/${industryStand}`, [Y, Y, Y, N, N]],
+    ['PATCH', `/live-questions/${crypto.randomUUID()}`, [Y, Y, N, N, Y]],
+    // Page Relances : Contacts pour les stands et l'API-ZF, Guichets pour l'équipe API-ZF (dont le Stand API-ZF).
+    ['GET', '/follow-ups/contacts', [Y, Y, Y, Y, N]],
+    ['GET', '/follow-ups/guichets', [Y, Y, N, Y, N]],
+    ['POST', `/follow-ups/contacts/${crypto.randomUUID()}`, [Y, Y, Y, Y, N]],
+    ['PATCH', `/follow-ups/contacts/${crypto.randomUUID()}`, [Y, Y, Y, Y, N]],
+    ['DELETE', `/follow-ups/contacts/${crypto.randomUUID()}`, [Y, Y, Y, Y, N]],
+    ['GET', '/follow-ups/b2b', [Y, Y, Y, Y, N]],
+    ['POST', `/follow-ups/b2b/${crypto.randomUUID()}`, [Y, Y, Y, Y, N]],
+    ['PATCH', `/follow-ups/b2b/${crypto.randomUUID()}`, [Y, Y, Y, Y, N]],
+  ];
+
+  const server = app.listen(0, '127.0.0.1');
+  context.after(() => server.close());
+  await new Promise((resolve) => server.once('listening', resolve));
+  const base = `http://127.0.0.1:${server.address().port}/api`;
+  const problems = [];
+  for (const [index, subject] of Object.keys(accounts).entries()) {
+    const token = jwt.sign({}, env.auth.secret, { subject, expiresIn: '1h' });
+    for (const [method, url, expected] of checks) {
+      const want = expected[index];
+      if (want === S) continue;
+      const response = await fetch(`${base}${url}`, {
+        method,
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        ...(method === 'GET' ? {} : { body: '{}' }),
+      });
+      const allowed = ![401, 403].includes(response.status) && response.status < 500;
+      const fine = want === Y ? allowed : response.status === 403;
+      if (!fine) {
+        const body = await response.json().catch(() => ({}));
+        problems.push(`${subject} ${method} ${url} → ${response.status} ${body.code || ''} (attendu : ${want === Y ? 'permis' : '403'})`);
+      }
+    }
+  }
+  assert.deepEqual(problems, []);
+});
+
+test('« Prendre contact » demande le téléphone et l’e-mail du visiteur, et les garde sur le contact', async (context) => {
+  const contactValidation = require('../src/modules/contact/contact.validation');
+  const base = { id: crypto.randomUUID(), fullName: 'Afi Mensah', phone: '+22890000000', consentOccupant: true };
+  assert.ok(contactValidation.createPublic.validate(base).error, 'l’e-mail est obligatoire');
+  const { value, error } = contactValidation.createPublic.validate({ ...base, email: ' Afi@Example.com ' });
+  assert.equal(error, undefined);
+  assert.equal(value.email, 'afi@example.com');
+
+  let saved;
+  context.mock.method(occupantRepository, 'findBySlug', async () => ({ id: 'stand-a', status: 'active' }));
+  context.mock.method(contactRepository.sequelize, 'transaction', async (callback) => callback({}));
+  context.mock.method(contactRepository, 'findExisting', async () => null);
+  context.mock.method(contactRepository, 'create', async (values) => { saved = values; return values; });
+  context.mock.method(notificationService, 'contactRequested', () => {});
+  await contactService.createPublic('stand-a', value);
+  assert.equal(saved.email, 'afi@example.com');
+  assert.equal(saved.phone, '+22890000000');
+});
+
+test('« Prendre contact » en deux temps : la réponse « quand » donne la classe, et « opportunités » vaut accord API-ZF', async (context) => {
+  context.mock.method(followUpService, 'applyClassFollowUp', async () => null);
+  const contactValidation = require('../src/modules/contact/contact.validation');
+  const base = { id: crypto.randomUUID(), fullName: 'Kodjo Ama', phone: '+22891000000', email: 'kodjo@example.com', consentOccupant: true };
+  const saved = [];
+  context.mock.method(occupantRepository, 'findBySlug', async () => ({ id: 'stand-a', status: 'active' }));
+  context.mock.method(contactRepository.sequelize, 'transaction', async (callback) => callback({}));
+  context.mock.method(contactRepository, 'findExisting', async () => null);
+  context.mock.method(contactRepository, 'create', async (values) => { saved.push(values); return values; });
+  context.mock.method(notificationService, 'contactRequested', () => {});
+
+  for (const extra of [{}, { qualification: 'a', company: 'Agro Togo' }, { qualification: 'C' }]) {
+    const { value, error } = contactValidation.createPublic.validate({ ...base, ...extra });
+    assert.equal(error, undefined);
+    await contactService.createPublic('stand-a', value);
+  }
+  assert.deepEqual(saved.map((item) => [item.qualification, item.company, item.consentApizf]), [[null, null, false], ['A', 'Agro Togo', false], ['C', null, true]]);
+});
+
+test('relances des contacts : A crée une relance à 48 h, B à 7 jours, C aucune ; une nouvelle classe remplace l’ancienne', async (context) => {
+  enableNotifications(context);
+  const created = [];
+  const destroyed = [];
+  let pending = [];
+  context.mock.method(followUpRepository, 'findPendingContactFollowUps', async () => pending);
+  context.mock.method(followUpRepository, 'destroyContactFollowUp', async (item) => { destroyed.push(item.id); });
+  context.mock.method(followUpRepository, 'createContactFollowUp', async (values) => { const item = { id: `f${created.length + 1}`, ...values }; created.push(item); return item; });
+  context.mock.method(notificationService, 'contactFollowUpChanged', () => {});
+  context.mock.method(notificationService, 'contactFollowUpRemoved', () => {});
+  const contact = { id: 'contact-a', occupantId: 'stand-a', fullName: 'Ama' };
+
+  const now = Date.now();
+  await followUpService.applyClassFollowUp({ ...contact, qualification: 'A' });
+  assert.equal(created.length, 1);
+  assert.equal(created[0].autoSource, 'A');
+  assert.ok(Math.abs(new Date(created[0].dueAt).getTime() - (now + 48 * 3600000)) < 60000);
+
+  pending = [created[0]];
+  await followUpService.applyClassFollowUp({ ...contact, qualification: 'B' });
+  assert.deepEqual(destroyed, ['f1']);
+  assert.equal(created[1].autoSource, 'B');
+  assert.ok(Math.abs(new Date(created[1].dueAt).getTime() - (now + 7 * 24 * 3600000)) < 60000);
+
+  pending = [created[1]];
+  assert.equal(await followUpService.applyClassFollowUp({ ...contact, qualification: 'C' }), null);
+  assert.deepEqual(destroyed, ['f1', 'f2']);
+  assert.equal(created.length, 2);
+});
+
+test('compte rendu B2B : une prochaine étape datée crée une relance B2B, sans date aucune', async (context) => {
+  const proposal = { id: 'prop-9', need: { occupantId: 'stand-a' } };
+  const meeting = { id: 'm9', startsAt: new Date(Date.now() - 3600000), nextStep: null };
+  context.mock.method(b2bProposalService, 'getManaged', async () => proposal);
+  context.mock.method(b2bMeetingRepository, 'findById', async () => meeting);
+  context.mock.method(b2bMeetingRepository, 'update', async (item, values) => Object.assign(item, values));
+  const added = [];
+  context.mock.method(followUpService, 'addB2b', async (user, proposalId, values) => { added.push({ proposalId, ...values }); });
+
+  const dueAt = new Date(Date.now() + 2 * 24 * 3600000).toISOString();
+  await b2bMeetingService.report({ id: 'u1' }, 'prop-9', 'm9', { outcome: 'present', nextStep: 'Envoyer le devis' });
+  assert.equal(added.length, 0);
+  await b2bMeetingService.report({ id: 'u1' }, 'prop-9', 'm9', { outcome: 'present', nextStep: 'Envoyer le devis', nextStepAt: dueAt });
+  assert.deepEqual(added, [{ proposalId: 'prop-9', dueAt, reason: 'Envoyer le devis' }]);
 });

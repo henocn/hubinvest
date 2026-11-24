@@ -26,6 +26,11 @@ module.exports = (sequelize, DataTypes) =>
         type: DataTypes.STRING(32),
         allowNull: false,
       },
+      // Renseigné par le visiteur dans « Prendre contact » (les contacts saisis sur le stand n'en ont pas).
+      email: {
+        type: DataTypes.STRING(180),
+        allowNull: true,
+      },
       company: {
         type: DataTypes.STRING(160),
         allowNull: true,

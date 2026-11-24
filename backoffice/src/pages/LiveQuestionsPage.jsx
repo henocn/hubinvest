@@ -31,7 +31,7 @@ export default function LiveQuestionsPage({ session, onLogout }) {
       setQuestions(data);
       setError('');
     } catch (requestError) {
-      if (requestError.status === 401 || requestError.status === 403) onLogout();
+      if (requestError.status === 401) onLogout();
       else setError(requestError.message);
     } finally {
       setLoading(false);
@@ -47,7 +47,7 @@ export default function LiveQuestionsPage({ session, onLogout }) {
     try {
       await api.updateLiveQuestion(session.token, id, status);
     } catch (requestError) {
-      if (requestError.status === 401 || requestError.status === 403) onLogout();
+      if (requestError.status === 401) onLogout();
       else setError(requestError.message);
       void load();
     } finally {
@@ -78,7 +78,7 @@ export default function LiveQuestionsPage({ session, onLogout }) {
         {views.map((item) => (
           <button key={item.value} type="button" role="tab" aria-selected={view === item.value} className={view === item.value ? 'is-active' : ''} onClick={() => setView(item.value)}>
             {item.label}
-            <span>{counts[item.value] || 0}</span>
+            {counts[item.value] > 0 && <span>{counts[item.value]}</span>}
           </button>
         ))}
       </div>

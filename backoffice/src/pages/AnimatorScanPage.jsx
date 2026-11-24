@@ -47,7 +47,7 @@ export default function AnimatorScanPage({ session, onLogout }) {
       setParticipant(await api.challengeRewardByCode(session.token, normalized));
       setCode('');
     } catch (requestError) {
-      if (requestError.status === 401 || requestError.status === 403) onLogout();
+      if (requestError.status === 401) onLogout();
       // Anciens codes de jeu de 6 caractères : inconnus comme participant, on cherche un lot de la roue.
       else if (requestError.status === 404) {
         setCode('');
@@ -66,7 +66,7 @@ export default function AnimatorScanPage({ session, onLogout }) {
     api.challengeRewardByCode(session.token, shownCode)
       .then((updated) => setParticipant((current) => (current?.code === shownCode ? updated : current)))
       .catch((requestError) => {
-        if (requestError.status === 401 || requestError.status === 403) onLogout();
+        if (requestError.status === 401) onLogout();
       });
   });
 
@@ -79,7 +79,7 @@ export default function AnimatorScanPage({ session, onLogout }) {
       setParticipant(null);
       setResult(`Récompense remise à ${passport.displayName}`);
     } catch (requestError) {
-      if (requestError.status === 401 || requestError.status === 403) onLogout();
+      if (requestError.status === 401) onLogout();
       else setError(requestError.message);
     } finally {
       setLoading(false);

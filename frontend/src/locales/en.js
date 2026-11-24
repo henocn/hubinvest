@@ -104,6 +104,11 @@ export default {
     phone: "Phone",
     request: "Your request",
     submit: "Send my request",
+    when: "When would you like to be contacted?",
+    whenSoon: "Soon",
+    whenLater: "Later",
+    whenInfo: "Just keep me informed of API-ZF opportunities",
+    company: "Company",
   },
   meetings: {
     title: "Meetings",
@@ -267,8 +272,8 @@ export default {
   live: {
     ask: "Ask a question",
     title: "Your question",
-    question: "Your question",
-    name: "Your name",
+    question: "Question",
+    name: "Name",
     send: "Send to the host",
     sent: "Question sent! The host sees it live.",
     another: "Ask another question",

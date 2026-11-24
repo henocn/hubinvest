@@ -14,13 +14,13 @@ export function DashboardProvider({ session, onLogout, children }) {
       setData(await api.dashboard(session.token));
       setError('');
     } catch (requestError) {
-      if (requestError.status === 401 || requestError.status === 403) onLogout();
+      if (requestError.status === 401) onLogout();
       else setError(requestError.message);
     }
   }, [onLogout, session.token]);
 
   useEffect(() => { void refresh(); }, [refresh]);
-  useRealtimeEvent(['investor-requests', 'b2b', 'challenge', 'wheel', 'occupants', 'contacts'], () => { void refresh(); });
+  useRealtimeEvent(['investor-requests', 'b2b', 'challenge', 'wheel', 'occupants', 'contacts', 'live-questions'], () => { void refresh(); });
 
   return <DashboardContext.Provider value={{ data, error, refresh }}>{children}</DashboardContext.Provider>;
 }

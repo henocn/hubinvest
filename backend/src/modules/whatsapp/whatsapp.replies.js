@@ -9,8 +9,6 @@ const AUTO_REPLY = [
   'https://hub.investir.tg',
   '',
   'Ce numéro envoie les confirmations et rappels de vos rendez-vous.',
-  '',
-  'EN · Investment Hub (API-ZF), Lomé International Fair, 27 Nov – 13 Dec 2026, Togo 2000 Centre, Oti pavilion. App: https://hub.investir.tg',
 ].join('\n');
 
 module.exports = { AUTO_REPLY };

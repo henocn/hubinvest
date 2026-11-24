@@ -23,6 +23,7 @@
 ## Formulaires
 
 - Partir de l'intention de l'utilisateur, révéler la suite seulement quand elle devient nécessaire.
+- « Prendre contact » (site) et « Nouveau contact » (stand) demandent les mêmes champs. Sur le site, en deux temps sans indicateur d'étapes : nom, téléphone et e-mail sur une ligne, demande facultative, « Continuer » ; puis « Quand souhaitez-vous être recontacté ? » (Rapidement = A, Plus tard = B, Juste m'informer des opportunités de l'API-ZF = C) et l'entreprise, facultatifs.
 - Ne demander aucun champ qui ne change pas le traitement. Pas de case de consentement : l'accord est implicite à l'envoi.
 - Téléphone : champ de la Semaine de l'Industrie partout (drapeau, Togo par défaut, indicatif verrouillé, numéro mis en forme et refusé s'il n'existe pas pour le pays).
 - Choix de créneau par listes déroulantes (Jour, puis Heure), sans afficher le nombre de créneaux libres.
@@ -49,15 +50,21 @@
 - Listes datées (rendez-vous, relances) : ce qui est à venir ou à faire d'abord, puis le reste ; toujours du plus proche au plus lointain.
 - Pastille ou nombre (menu, onglets) : seulement à partir de 1, jamais « 0 » ni « 99+ » ; il ne compte que ce qui reste à venir, à faire ou à traiter, jamais le terminé.
 - Statut d'une ligne signalé par un fond très léger (vert ou rouge), pas par une colonne de plus.
+- Une échéance qui approche se voit dans la liste, sans ouvrir la fiche : ligne sur fond rouge léger si elle est en retard, jaune léger si elle est pour aujourd'hui, avec une horloge et « En retard · … » ou « Aujourd'hui, 19:28 » ; un bouton « Relances du jour » (avec son nombre) filtre ces lignes.
+- Tableau de bord : d'abord « Aujourd'hui » (relances à faire et rendez-vous du jour, chaque ligne ouvre la fiche), puis « À traiter » sans les lignes à zéro, puis les chiffres.
+- Menu de l'occupant : Mon stand, Mes contacts, Scan de passage (« Scan » dans la barre du bas), Rencontres B2B. La page Scan de passage a « Liste des scans » (fenêtre avec les joueurs scannés, le plus récent d'abord), pas de code de jeu. Les occupants du Stand API-ZF ont en plus Guichets et « Jeux et défis » (onglets Défi de passage et Roue des opportunités) : ils remettent récompenses et lots quand l'animateur n'est pas là.
 
 ## Écrans particuliers
 
 - Guichets : fiche en onglets Détails, Diagnostic, Rendez-vous, Relances. L'onglet s'appelle toujours Diagnostic ; pour une entreprise installée (guichet 3 ou Accompagnement), il contient la fiche des difficultés et l'engagement de suivi, dont la date de réponse crée une relance automatique. « Réponse donnée » passe par une fenêtre de confirmation, puis l'engagement est verrouillé (cadenas) jusqu'à « Rouvrir ».
 - Diagnostic d'un projet : structure, projet, informations de qualification, service, étape suivante ; PDF une fois enregistré.
 - Fiche PDF du diagnostic : une page, format administratif (cases à cocher, lignes pointillées) ; classes A, B, C et Accompagnement sans explication, ni responsable, ni signatures.
+- Relances : une page « Relances » (menu, pastille = en retard ou du jour) en onglets Contacts, B2B (stands) et Guichets (équipe API-ZF et Stand API-ZF) ; à faire d'abord, couleur selon l'échéance, Marquer faite et Supprimer sur chaque ligne. Un contact classé A ou B reçoit sa relance automatique (48 h, 7 jours) ; la prochaine étape d'un compte rendu B2B, avec « À relancer le », crée la sienne ; une autre s'ajoute depuis l'onglet ou la section Relances de la fiche (contact, demande B2B).
 - Relances : Ajouter (date et heure, motif obligatoire, jamais prérempli) ; Marquer faite avec la prochaine étape (Terminée avec note facultative, Relancer avec date et motif, Autre avec texte) ; Supprimer.
 - Compte rendu B2B : bouton message du rendez-vous → Présent (vert) ou Absent (rouge), puis la prochaine étape (texte) et la note. Un visiteur absent se reprogramme en un clic (fenêtre de nouveau rendez-vous ouverte aussitôt, bouton « Reprogrammer » sur la ligne tant qu'aucun rendez-vous ne suit).
+- Rencontres B2B : une seule page (les demandes) ; les besoins publiés se gèrent dans Mon stand et dans l'onglet Besoins B2B de la fiche du stand.
 - Fiche d'un stand (administration) : onglets Contacts (ouvert par défaut ; carnet du stand en lecture, recherche, export), Comptes, Programme, Besoins B2B, puis Fiche en dernier. Règle générale : l'onglet le plus sollicité vient en premier et s'ouvre par défaut.
-- Studio : l'invité choisit son créneau une seule fois (ou décline avant de choisir) ; ensuite, changer ou annuler passe uniquement par l'équipe dans le back office (« Fixer / Modifier le créneau », « Annuler le passage »).
+- Stands : seule l'équipe API-ZF voit la liste. L'occupant a « Mon stand » (onglets Besoins B2B puis Fiche), qui ouvre directement son stand (et /stands l'y mène) ; il en modifie le contenu et les images, pas le nom, l'espace, l'emplacement ni le statut.
+- Studio : réservé à l'équipe API-ZF (super administrateur, administrateur), jamais aux occupants. L'invité choisit son créneau une seule fois (ou décline avant de choisir) ; ensuite, changer ou annuler passe uniquement par l'équipe dans le back office (« Fixer / Modifier le créneau », « Annuler le passage »).
 - Défis : QR du code participant puis le code lisible ; cinq pastilles d'étapes ; côté stand, compteur, bouton Scanner et saisie du code avec « OK » à côté.
 - Remises de l'animateur : Participant, Contact, Remise le, la plus récente d'abord ; ses propres remises sur fond vert léger.

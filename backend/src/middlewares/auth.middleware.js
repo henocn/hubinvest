@@ -8,7 +8,7 @@ const findSessionUser = async (userId) => {
   const user = await User.findOne({
     where: { id: userId, isActive: true },
     attributes: ['id', 'occupantId', 'email', 'firstName', 'lastName', 'role'],
-    include: [{ model: Occupant, as: 'occupant', attributes: ['status'], required: false }],
+    include: [{ model: Occupant, as: 'occupant', attributes: ['status', 'space'], required: false }],
   });
 
   if (!user) {
@@ -16,7 +16,8 @@ const findSessionUser = async (userId) => {
   }
 
   if (user.occupantId && user.occupant?.status !== 'active') {
-    throw new AppError(403, 'OCCUPANT_INACTIVE', "Le compte de l’occupant est inactif.");
+    // 401 : la session n'est plus valable (le 403 reste réservé aux actions non permises, sans déconnexion).
+    throw new AppError(401, 'OCCUPANT_INACTIVE', "Le compte de l’occupant est inactif.");
   }
 
   return user.toJSON();

@@ -33,13 +33,23 @@ export function SessionProvider({ children }) {
     });
   }, []);
 
+  // Session renouvelée : nouveau jeton, même compte.
+  const updateToken = useCallback((token) => {
+    setSession((current) => {
+      if (!current || !token) return current;
+      const next = { ...current, token };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
   // Un rechargement complet repart d'un état propre (flux temps réel, caches des pages).
   const logout = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY);
     window.location.assign('/connexion');
   }, []);
 
-  const value = useMemo(() => ({ session, signIn, updateUser, logout }), [session, signIn, updateUser, logout]);
+  const value = useMemo(() => ({ session, signIn, updateUser, updateToken, logout }), [session, signIn, updateUser, updateToken, logout]);
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }
 

@@ -37,27 +37,10 @@ const contactRequested = (occupant) => dispatch(async () => {
   await notificationRepository.enqueue(forUsers(users, (user) => templates.contactRequested({ user, occupant })));
 });
 
-// Planifie, remplace ou annule le rappel de la prochaine action d'un contact.
-const contactReminderChanged = (contact) => dispatch(async () => {
-  const dedupeKey = `contact-reminder:${contact.id}`;
-  await notificationRepository.cancelPending(dedupeKey);
-  const dueAt = contact.nextActionAt ? new Date(contact.nextActionAt) : null;
-  if (!dueAt || Number.isNaN(dueAt.getTime()) || dueAt <= new Date()) return;
-
-  const creator = contact.createdByUserId ? await notificationRepository.findActiveUser(contact.createdByUserId) : null;
-  const users = creator ? [creator] : await notificationRepository.findStandUsers(contact.occupantId, [roles.OCCUPANT]);
-  if (users.length === 0) return;
-  await notificationRepository.enqueue(forUsers(
-    users,
-    (user) => ({ ...templates.contactReminder({ user, contact }), tag: dedupeKey }),
-    { dedupeKey, availableAt: dueAt },
-  ));
-});
-
-// Nouveau contact aux guichets : l'équipe de l'API-ZF (super administrateurs) est prévenue. Une demande de rappel
+// Nouveau contact aux guichets : l'équipe de l'API-ZF (dont les occupants du Stand API-ZF) est prévenue. Une demande de rappel
 // n'envoie rien à la personne : l'équipe la rappelle (un rendez-vous réservé reçoit son propre e-mail, avec ses rappels).
 const investorRequestReceived = (request) => dispatch(async () => {
-  const team = await notificationRepository.findSuperAdmins();
+  const team = await notificationRepository.findApizfTeam();
   if (team.length) await notificationRepository.enqueue(forUsers(team, (user) => templates.investorRequestReceived({ user, request })));
 });
 
@@ -70,7 +53,7 @@ const investorFollowUpChanged = (followUp, request) => dispatch(async () => {
   const dueAt = new Date(followUp.dueAt);
   if (followUp.doneAt || Number.isNaN(dueAt.getTime()) || dueAt <= new Date()) return;
   const contact = request.contactUserId ? await notificationRepository.findActiveUser(request.contactUserId) : null;
-  const users = contact ? [contact] : await notificationRepository.findSuperAdmins();
+  const users = contact ? [contact] : await notificationRepository.findApizfTeam();
   if (users.length === 0) return;
   await notificationRepository.enqueue(forUsers(
     users,
@@ -78,6 +61,42 @@ const investorFollowUpChanged = (followUp, request) => dispatch(async () => {
     { dedupeKey, availableAt: dueAt },
   ));
 });
+
+// Relance d'un contact de stand : à son heure, l'auteur de la relance (ou l'équipe du stand) est rappelé, avec le motif.
+const contactFollowUpKey = (followUp) => `contact-follow-up:${followUp.id}`;
+const contactFollowUpChanged = (followUp, contact) => dispatch(async () => {
+  const dedupeKey = contactFollowUpKey(followUp);
+  await notificationRepository.cancelPending(dedupeKey);
+  const dueAt = new Date(followUp.dueAt);
+  if (followUp.doneAt || Number.isNaN(dueAt.getTime()) || dueAt <= new Date()) return;
+  const author = followUp.createdByUserId ? await notificationRepository.findActiveUser(followUp.createdByUserId) : null;
+  const users = author ? [author] : await notificationRepository.findStandUsers(contact.occupantId, [roles.OCCUPANT]);
+  if (users.length === 0) return;
+  await notificationRepository.enqueue(forUsers(
+    users,
+    (user) => ({ ...templates.contactFollowUpDue({ user, contact, followUp }), tag: dedupeKey }),
+    { dedupeKey, availableAt: dueAt },
+  ));
+});
+const contactFollowUpRemoved = (followUp) => dispatch(() => notificationRepository.cancelPending(contactFollowUpKey(followUp)));
+
+// Relance d'une rencontre B2B : à son heure, son auteur (ou l'équipe du stand) est rappelé, avec le motif.
+const b2bFollowUpKey = (followUp) => `b2b-follow-up:${followUp.id}`;
+const b2bFollowUpChanged = (followUp, proposal) => dispatch(async () => {
+  const dedupeKey = b2bFollowUpKey(followUp);
+  await notificationRepository.cancelPending(dedupeKey);
+  const dueAt = new Date(followUp.dueAt);
+  if (followUp.doneAt || Number.isNaN(dueAt.getTime()) || dueAt <= new Date()) return;
+  const author = followUp.createdByUserId ? await notificationRepository.findActiveUser(followUp.createdByUserId) : null;
+  const users = author ? [author] : await standTeam(proposal.need?.occupantId);
+  if (users.length === 0) return;
+  await notificationRepository.enqueue(forUsers(
+    users,
+    (user) => ({ ...templates.b2bFollowUpDue({ user, proposal, followUp }), tag: dedupeKey }),
+    { dedupeKey, availableAt: dueAt },
+  ));
+});
+const b2bFollowUpRemoved = (followUp) => dispatch(() => notificationRepository.cancelPending(b2bFollowUpKey(followUp)));
 
 // Relance faite ou supprimée : son alerte disparaît.
 const investorFollowUpRemoved = (followUp) => dispatch(() => notificationRepository.cancelPending(followUpKey(followUp)));
@@ -177,10 +196,11 @@ const b2bMeetingCancelled = (meeting, proposal, { notifyVisitor = true } = {}) =
   }));
 });
 
-// Studio : l'auteur de l'invitation et l'équipe du stand (ou l'API-ZF) suivent les réponses de l'invité.
+// Studio : l'équipe API-ZF (seule à gérer le Studio), dont l'auteur de l'invitation, suit les réponses de l'invité.
 const studioTeam = async (invitation) => {
   const creator = invitation.createdByUserId ? await notificationRepository.findActiveUser(invitation.createdByUserId) : null;
-  return [...(creator ? [creator] : []), ...(await standTeam(invitation.occupantId))];
+  const team = await notificationRepository.findSuperAdmins();
+  return [...(creator ? [creator] : []), ...team.filter((user) => user.id !== creator?.id)];
 };
 const studioReminderKey = (invitation) => `studio-reminder:${invitation.id}`;
 const guest = (invitation) => ({ email: invitation.email, phone: invitation.phone });
@@ -228,9 +248,19 @@ const studioCapsuleDelivered = (invitation) => dispatch(async () => {
   if (jobs.length) await notificationRepository.enqueue(jobs);
 });
 
+// Question du public pendant un direct : l'API-ZF et les animateurs sont prévenus en push (pas d'e-mail).
+const liveQuestionReceived = (question, event) => dispatch(async () => {
+  const team = await notificationRepository.findQuestionTeam();
+  if (team.length) await notificationRepository.enqueue(forUsers(team, () => templates.liveQuestionReceived({ question, event })));
+});
+
 module.exports = {
+  b2bFollowUpChanged,
+  b2bFollowUpRemoved,
+  contactFollowUpChanged,
+  contactFollowUpRemoved,
+  liveQuestionReceived,
   contactRequested,
-  contactReminderChanged,
   investorRequestReceived,
   investorFollowUpChanged,
   investorFollowUpRemoved,

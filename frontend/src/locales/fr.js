@@ -104,6 +104,11 @@ export default {
     phone: "Téléphone",
     request: "Votre demande",
     submit: "Envoyer ma demande",
+    when: "Quand souhaitez-vous être recontacté ?",
+    whenSoon: "Rapidement",
+    whenLater: "Plus tard",
+    whenInfo: "Juste m’informer des opportunités de l’API-ZF",
+    company: "Entreprise",
   },
   meetings: {
     title: "Rencontres",
@@ -267,8 +272,8 @@ export default {
   live: {
     ask: "Poser une question",
     title: "Votre question",
-    question: "Votre question",
-    name: "Votre nom",
+    question: "Question",
+    name: "Nom",
     send: "Envoyer à l’animateur",
     sent: "Question envoyée ! L’animateur la voit en direct.",
     another: "Poser une autre question",

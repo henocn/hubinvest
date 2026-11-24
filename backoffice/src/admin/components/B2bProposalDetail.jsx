@@ -10,6 +10,7 @@ import B2bMeetingDialog from './B2bMeetingDialog';
 import B2bProposalDrawer from './drawers/B2bProposalDrawer';
 import ConfirmDecision from './ConfirmDecision';
 import ConfirmDelete from './ConfirmDelete';
+import RelatedFollowUps from './RelatedFollowUps';
 
 const dateTime = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Africa/Lome', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 const received = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Africa/Lome', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
@@ -29,9 +30,16 @@ function ReportDialog({ meeting, loading, error, onCancel, onSave }) {
   const [outcome, setOutcome] = useState(meeting.outcome || null);
   const [nextStep, setNextStep] = useState(meeting.nextStep || '');
   const [note, setNote] = useState(meeting.note || '');
+  // Date facultative de la prochaine étape : elle crée une relance B2B (page Relances). Heure de Lomé = UTC.
+  const [nextStepAt, setNextStepAt] = useState('');
   const submit = (event) => {
     event.preventDefault();
-    onSave({ nextStep, note, ...(outcome !== (meeting.outcome || null) && { outcome }) });
+    onSave({
+      nextStep,
+      note,
+      ...(outcome !== (meeting.outcome || null) && { outcome }),
+      ...(nextStep.trim() && nextStepAt && { nextStepAt: new Date(`${nextStepAt}:00Z`).toISOString() }),
+    });
   };
   return (
     <div className="drawer-backdrop" role="presentation" onMouseDown={onCancel}>
@@ -49,7 +57,10 @@ function ReportDialog({ meeting, loading, error, onCancel, onSave }) {
             ))}
             {!started && <span className="field-hint">La présence se note une fois le rendez-vous commencé.</span>}
           </fieldset>
-          <label>Prochaine étape<input value={nextStep} onChange={(event) => setNextStep(event.target.value)} maxLength={255} /></label>
+          <div className={nextStep.trim() ? 'field-row' : undefined}>
+            <label>Prochaine étape<input value={nextStep} onChange={(event) => setNextStep(event.target.value)} maxLength={255} /></label>
+            {nextStep.trim() && <label>À relancer le<input type="datetime-local" value={nextStepAt} onChange={(event) => setNextStepAt(event.target.value)} /></label>}
+          </div>
           <label>Note<textarea rows="6" value={note} onChange={(event) => setNote(event.target.value)} maxLength={2000} /></label>
           {error && <p className="admin-form-error">{error}</p>}
           <footer className="drawer-actions">
@@ -91,6 +102,11 @@ export default function B2bProposalDetail({ id, session, onLogout }) {
   const [dialog, setDialog] = useState(null);
   const [busy, setBusy] = useState(false);
   const [tab, setTab] = useState('details');
+  // Relances de la demande (onglet Relances) : chargées depuis la liste du stand, filtrées sur cette demande.
+  const loadFollowUps = useCallback(() => api.b2bFollowUps(session.token), [session.token]);
+  const ownFollowUp = useCallback((item) => item.b2bProposalId === id, [id]);
+  const addFollowUp = useCallback((values) => api.addB2bFollowUp(session.token, id, values), [id, session.token]);
+  const completeFollowUp = useCallback((item, values) => api.completeB2bFollowUp(session.token, item.id, values), [session.token]);
   const [actionError, setActionError] = useState('');
 
   const load = useCallback(async () => {
@@ -167,7 +183,15 @@ export default function B2bProposalDetail({ id, session, onLogout }) {
       <nav className="section-tabs detail-tabs" aria-label="Fiche de la demande">
         <button type="button" className={tab === 'details' ? 'is-active' : ''} onClick={() => setTab('details')} aria-pressed={tab === 'details'}>Demande</button>
         <button type="button" className={tab === 'meetings' ? 'is-active' : ''} onClick={() => setTab('meetings')} aria-pressed={tab === 'meetings'}>Rendez-vous{upcomingMeetings > 0 && <b>{upcomingMeetings}</b>}</button>
+        <button type="button" className={tab === 'follow-ups' ? 'is-active' : ''} onClick={() => setTab('follow-ups')} aria-pressed={tab === 'follow-ups'}>Relances</button>
       </nav>
+
+      {tab === 'follow-ups' && (
+        <section className="data-panel stand-panel">
+          <RelatedFollowUps person={proposal.fullName} topic="b2b" load={loadFollowUps} belongs={ownFollowUp} add={addFollowUp} complete={completeFollowUp}
+            hint="À cette heure, vous recevez un rappel." onLogout={onLogout} />
+        </section>
+      )}
 
       {tab === 'details' && (
       <section className="data-panel stand-panel">

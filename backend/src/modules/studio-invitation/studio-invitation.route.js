@@ -8,8 +8,8 @@ const c = require('./studio-invitation.controller');
 const rateLimit = require('../../middlewares/rate-limit.middleware');
 
 const router = express.Router();
-// Studio : l'API-ZF invite tout le monde ; un administrateur de stand invite pour son stand.
-const studioTeamOnly = requireRoles(roles.SUPER_ADMIN, roles.ADMIN, roles.OCCUPANT);
+// Studio : seule l'équipe API-ZF (super administrateur, administrateur) invite et gère les passages ; pas les occupants.
+const studioTeamOnly = requireRoles(roles.SUPER_ADMIN, roles.ADMIN);
 const tokenLimit = rateLimit.rateLimit({ windowMs: 15 * 60 * 1000, max: 30, key: (request) => `studio:${request.ip}:${request.params.token}` });
 
 // Page personnelle de l'invité (lien reçu par e-mail).

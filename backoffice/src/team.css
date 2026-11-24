@@ -713,3 +713,42 @@ a.contact-row {
   min-height: 44px;
   flex: 1;
 }
+
+/* Liste des scans du stand (fenêtre ouverte depuis « Scan de passage »). */
+.scan-list-dialog { width: min(100%, 520px); }
+.scan-list-dialog h2 span { color: var(--muted, #5d6670); font-weight: 600; }
+.scan-list { margin: 0; padding: 0; list-style: none; border: 1px solid var(--border); }
+.scan-list li { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; padding: 10px 12px; }
+.scan-list li + li { border-top: 1px solid var(--border); }
+.scan-list strong { min-width: 0; overflow-wrap: anywhere; }
+.scan-list span { color: var(--muted, #5d6670); font-size: 0.875rem; font-variant-numeric: tabular-nums; }
+.scan-list-empty { margin: 0; color: var(--muted, #5d6670); }
+.scan-list-open { display: flex; justify-content: center; margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--border); }
+
+/* Nouveau contact : téléphone et e-mail côte à côte, l'un sous l'autre sur petit écran. */
+.contact-field-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 560px) {
+  .contact-field-row { grid-template-columns: 1fr; }
+}
+
+/* Relances dans la fiche d'un contact du carnet : à faire d'abord (rouge en retard, jaune aujourd'hui), puis les faites. */
+.related-follow-ups { display: grid; gap: 10px; margin-top: 22px; }
+.related-follow-ups > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.related-follow-ups h2 { margin: 0; font-size: 1rem; }
+.related-follow-ups > p { margin: 0; color: var(--muted, #5d6670); }
+.related-follow-ups ul { margin: 0; padding: 0; list-style: none; border: 1px solid var(--border); }
+.related-follow-ups li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; }
+.related-follow-ups li + li { border-top: 1px solid var(--border); }
+.related-follow-ups li > div { display: grid; gap: 2px; min-width: 0; }
+.related-follow-ups li span { overflow-wrap: anywhere; }
+.related-follow-ups li small { color: var(--muted, #5d6670); }
+.related-follow-ups li.is-late { background: rgba(211, 27, 52, 0.05); }
+.related-follow-ups li.is-late strong { color: #b70f2c; }
+.related-follow-ups li.is-today { background: rgba(255, 207, 21, 0.14); }
+.related-follow-ups li.is-today strong { color: #7a5b00; }
+.related-follow-ups li.is-done { color: var(--muted, #5d6670); }

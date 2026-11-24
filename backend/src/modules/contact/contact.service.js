@@ -6,6 +6,7 @@ const occupantRepository = require('../occupant/occupant.repository');
 const notificationService = require('../notification/notification.service');
 const { events: realtime } = require('../realtime/realtime.service');
 const settingsService = require('../settings/settings.service');
+const followUpService = require('../follow-up/follow-up.service');
 
 const requireOccupant = (user) => {
   if (!user.occupantId) {
@@ -51,6 +52,9 @@ const create = async (user, values) => {
       const contact = await contactRepository.create(
         {
           ...values,
+          email: values.email || null,
+          // Classe C (« informer des opportunités de l'API-ZF ») : la personne accepte les informations de l'API-ZF.
+          consentApizf: values.consentApizf || values.qualification === 'C',
           occupantId,
           createdByUserId: user.id,
           source: 'stand',
@@ -62,7 +66,8 @@ const create = async (user, values) => {
       return { contact, created: true };
     });
     if (result.created) {
-      notificationService.contactReminderChanged(result.contact);
+      // Classe A ou B : sa relance automatique, visible dans Relances.
+      await followUpService.applyClassFollowUp(result.contact, user.id);
       realtime.contactsChanged(occupantId);
     }
     return result;
@@ -92,26 +97,31 @@ const createPublic = async (slug, values) => {
       const existing = await contactRepository.findExisting(occupant.id, values.id, transaction);
       if (existing) return { created: false };
 
-      await contactRepository.create({
+      const contact = await contactRepository.create({
         id: values.id,
         occupantId: occupant.id,
         createdByUserId: null,
         fullName: values.fullName,
         phone: values.phone,
+        email: values.email,
+        company: values.company || null,
         need: values.need || null,
-        qualification: null,
+        qualification: values.qualification || null,
         consentOccupant: true,
-        consentApizf: false,
+        // « Juste m'informer des opportunités de l'API-ZF » vaut accord pour les informations de l'API-ZF.
+        consentApizf: values.qualification === 'C',
         consentCapturedAt: new Date(),
         source: 'public',
       }, transaction);
-      return { created: true };
+      return { created: true, contact };
     });
     if (result.created) {
+      // « Rapidement » (A) ou « Plus tard » (B) : la relance automatique de l'équipe du stand.
+      await followUpService.applyClassFollowUp(result.contact);
       notificationService.contactRequested(occupant);
       realtime.contactsChanged(occupant.id);
     }
-    return result;
+    return { created: result.created };
   } catch (error) {
     if (error instanceof UniqueConstraintError) {
       const existing = await contactRepository.findExisting(occupant.id, values.id);
@@ -123,8 +133,10 @@ const createPublic = async (slug, values) => {
 
 const update = async (user, id, values) => {
   const contact = await get(user, id);
+  const classChanged = 'qualification' in values && values.qualification !== contact.qualification;
   const updated = await contactRepository.update(contact, values);
-  if ('nextActionAt' in values || 'nextAction' in values) notificationService.contactReminderChanged(updated);
+  // Nouvelle classe : sa relance automatique remplace celle de l'ancienne classe.
+  if (classChanged) await followUpService.applyClassFollowUp(updated, user.id);
   realtime.contactsChanged(user.occupantId);
   return updated;
 };

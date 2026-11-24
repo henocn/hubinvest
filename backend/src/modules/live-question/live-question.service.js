@@ -2,6 +2,7 @@ const AppError = require('../../shared/app-error');
 const liveQuestionRepository = require('./live-question.repository');
 const settingsService = require('../settings/settings.service');
 const { events: realtime } = require('../realtime/realtime.service');
+const notificationService = require('../notification/notification.service');
 
 // Directs ouverts aux questions : émission du Studio, prise de parole, temps fort.
 const LIVE_TYPES = new Set(['studio', 'talk', 'highlight']);
@@ -29,6 +30,7 @@ const createPublic = async (eventId, values, now = new Date()) => {
     status: 'new',
   });
   realtime.liveQuestionsChanged();
+  notificationService.liveQuestionReceived(created, event);
   return { id: created.id };
 };
 

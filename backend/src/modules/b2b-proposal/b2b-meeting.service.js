@@ -2,6 +2,7 @@ const AppError = require('../../shared/app-error');
 const b2bProposalService = require('./b2b-proposal.service');
 const b2bMeetingRepository = require('./b2b-meeting.repository');
 const notificationService = require('../notification/notification.service');
+const followUpService = require('../follow-up/follow-up.service');
 const { events: realtime } = require('../realtime/realtime.service');
 const settingsService = require('../settings/settings.service');
 
@@ -135,6 +136,10 @@ const report = async (user, id, meetingId, values) => {
   if ('nextStep' in values) next.nextStep = values.nextStep || null;
   if ('note' in values) next.note = values.note || null;
   await b2bMeetingRepository.update(meeting, next);
+  // Prochaine étape datée : une relance B2B, visible dans Relances, avec la prochaine étape pour motif.
+  if (values.nextStepAt && (values.nextStep || meeting.nextStep)) {
+    await followUpService.addB2b(user, proposal.id, { dueAt: values.nextStepAt, reason: (values.nextStep || meeting.nextStep).slice(0, 255) });
+  }
   realtime.b2bChanged(proposal.need.occupantId);
   return plain(await b2bMeetingRepository.findById(meeting.id, proposal.id));
 };

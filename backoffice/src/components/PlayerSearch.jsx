@@ -27,7 +27,7 @@ export default function PlayerSearch({ session, onLogout, onPick }) {
         .then((data) => { if (active) { setPlayers(data); setError(''); } })
         .catch((requestError) => {
           if (!active) return;
-          if (requestError.status === 401 || requestError.status === 403) onLogout();
+          if (requestError.status === 401) onLogout();
           else setError(requestError.message);
         })
         .finally(() => { if (active) setSearching(false); });

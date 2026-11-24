@@ -20,6 +20,7 @@ const findAll = ({ occupantId, qualification, search, limit, offset }) => {
     where[Op.or] = [
       { fullName: { [Op.iLike]: `%${search}%` } },
       { phone: { [Op.iLike]: `%${search}%` } },
+      { email: { [Op.iLike]: `%${search}%` } },
       { company: { [Op.iLike]: `%${search}%` } },
     ];
   }

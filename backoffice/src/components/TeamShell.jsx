@@ -9,7 +9,7 @@ import { DashboardProvider, useDashboard } from '../admin/dashboard';
 import { api, resolveAssetUrl } from '../lib/api';
 import { disablePush } from '../lib/push';
 import { useRealtimeConnection, useRealtimeEvent } from '../lib/realtime';
-import { isManagerRole, linksForRole, roleLabels, tabsForRole } from '../navigation';
+import { accessRole, isManagerRole, linksForRole, roleLabels, tabsForRole } from '../navigation';
 import { useSession } from '../session';
 
 const adminTopics = ['occupants', 'users', 'program', 'contacts', 'investor-requests', 'b2b', 'studio', 'challenge', 'wheel', 'settings', 'live-questions', 'account'];
@@ -40,14 +40,26 @@ function NavItems({ links, className = '', short = false }) {
 
 // Cadre commun de l'espace équipe : façon application sur téléphone (barre verte en haut, onglets en bas,
 // menu latéral), barre latérale fixe sur ordinateur.
+// Date d'émission du jeton (champ iat du JWT) ; 0 si illisible, ce qui déclenche un renouvellement.
+const RENEW_AFTER = 2 * 60 * 60 * 1000;
+const tokenIssuedAt = (token) => {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    return (payload.iat || 0) * 1000;
+  } catch {
+    return 0;
+  }
+};
+
 export default function TeamShell() {
   const { session, logout } = useSession();
   const shell = <TeamShellLayout />;
-  return isManagerRole(session.user.role) ? <DashboardProvider session={session} onLogout={logout}>{shell}</DashboardProvider> : shell;
+  // Pastilles du menu : le tableau de bord pour l'équipe et les stands, le compteur des questions pour l'animateur.
+  return isManagerRole(session.user.role) || session.user.role === 'animateur' ? <DashboardProvider session={session} onLogout={logout}>{shell}</DashboardProvider> : shell;
 }
 
 function TeamShellLayout() {
-  const { session, updateUser, logout } = useSession();
+  const { session, updateUser, updateToken, logout } = useSession();
   const { user, token } = session;
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -55,16 +67,37 @@ function TeamShellLayout() {
   const isAdmin = isManagerRole(user.role);
   // Pages propres à l'occupant (carnet, scan des Défis, profil) : elles gardent leur présentation d'espace de stand.
   const standPage = user.role === 'occupant' && ['/contacts', '/defis', '/profil'].some((path) => location.pathname === path || location.pathname.startsWith(`${path}/`));
-  const links = linksForRole(user.role);
-  const tabs = tabsForRole(user.role);
+  const links = linksForRole(accessRole(user));
+  const tabs = tabsForRole(accessRole(user));
   const occupant = user.occupant;
 
   // Le profil (nom, stand, logo) modifié depuis l'administration s'affiche aussitôt.
   const refreshProfile = useCallback(() => api.profile(token)
     .then(updateUser)
-    .catch((error) => { if (error.status === 401 || error.status === 403) logout(); }), [logout, token, updateUser]);
+    .catch((error) => { if (error.status === 401) logout(); }), [logout, token, updateUser]);
 
   useEffect(() => { void refreshProfile(); }, [refreshProfile]);
+
+  // Session prolongée tant que l'application est ouverte : le jeton (valable 8 h) est renouvelé dès qu'il a plus de 2 h
+  // (au retour sur l'application et toutes les 10 minutes). Seul un refus 401 déconnecte ; une coupure réseau attend le prochain essai.
+  useEffect(() => {
+    const issuedAt = tokenIssuedAt(token);
+    const renew = () => {
+      if (document.hidden || Date.now() - issuedAt < RENEW_AFTER) return;
+      api.refreshSession(token)
+        .then((result) => updateToken(result.token))
+        .catch((error) => { if (error.status === 401) logout(); });
+    };
+    renew();
+    const interval = window.setInterval(renew, 10 * 60 * 1000);
+    document.addEventListener('visibilitychange', renew);
+    window.addEventListener('focus', renew);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', renew);
+      window.removeEventListener('focus', renew);
+    };
+  }, [logout, token, updateToken]);
 
   useRealtimeConnection(`team:${user.id}:${token.slice(-16)}`, async () => {
     const { ticket } = await api.realtimeTicket(token);

@@ -56,7 +56,7 @@ export default function SettingsPage({ session, onLogout }) {
       setPlaysPerDay(String(data.wheelPlaysPerDay));
       setSpinsPerCode(String(data.wheelSpinsPerCode));
     } catch (requestError) {
-      if (requestError.status === 401 || requestError.status === 403) onLogout();
+      if (requestError.status === 401) onLogout();
       else setError(requestError.message);
     }
   }, [onLogout, session.token]);

@@ -256,7 +256,14 @@
 .admin-app .investor-class.is-A { background: var(--red); }
 .admin-app .investor-class.is-B { background: #b58400; }
 .admin-app .investor-class.is-C { color: #4d4d4d; background: #e4e6e8; }
-.admin-app .investor-late { color: #b70f2c; font-weight: 700; }
+/* Échéance des guichets : en retard (rouge) ou à faire aujourd'hui (jaune), sur la ligne et dans la cellule. */
+.admin-app tr.is-due-late { background: rgba(211, 27, 52, .05); }
+.admin-app tr.is-due-today { background: rgba(255, 207, 21, .14); }
+.admin-app tr.is-due-late:hover { background: rgba(211, 27, 52, .09); }
+.admin-app tr.is-due-today:hover { background: rgba(255, 207, 21, .22); }
+.admin-app .investor-due svg { margin-right: 5px; vertical-align: -2px; }
+.admin-app .investor-due.is-late { color: #b70f2c; font-weight: 700; }
+.admin-app .investor-due.is-today { color: #7a5b00; font-weight: 700; }
 .admin-app .investor-overdue { margin: 0 0 14px; border: 1px solid #efc6ce; background: #fff3f5; }
 .admin-app .investor-saved { color: var(--green); font-size: 12px; font-weight: 700; }
 .admin-app .investor-follow, .admin-app .investor-qualification { display: grid; gap: 16px; padding: 14px; }
@@ -291,7 +298,15 @@
 .admin-app .data-toolbar { flex-wrap: wrap; }
 .admin-app .data-toolbar-controls { flex: 1; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 .admin-app .data-toolbar-controls .data-note { margin-right: auto; }
-.admin-app .data-toolbar-controls .admin-search-field:has(+ select) { margin-right: auto; }
+.admin-app .data-toolbar-controls .admin-search-field:has(+ select), .admin-app .data-toolbar-controls .admin-search-field:has(+ .due-filter) { margin-right: auto; }
+/* Relances du jour : jaune tant que rien n'est en retard, rouge sinon ; plein quand le filtre est actif. */
+.admin-app .due-filter { gap: 6px; border-color: #e0b400; background: rgba(255, 207, 21, .14); color: #5c4500; }
+.admin-app .due-filter b { min-width: 18px; padding: 0 5px; border-radius: 999px; color: #fff; background: #b58f00; font-size: 11px; line-height: 18px; text-align: center; }
+.admin-app .due-filter.has-late { border-color: var(--red); background: rgba(211, 27, 52, .06); color: #8f0d24; }
+.admin-app .due-filter.has-late b { background: var(--red); }
+.admin-app .due-filter[aria-pressed="true"] { background: #5c4500; border-color: #5c4500; color: #fff; }
+.admin-app .due-filter.has-late[aria-pressed="true"] { background: var(--red); border-color: var(--red); }
+.admin-app .due-filter[aria-pressed="true"] b { color: inherit; background: rgba(255, 255, 255, .25); }
 .admin-app .data-toolbar-controls select { width: auto; min-width: 0; padding: 6px 26px 6px 8px; font-size: 13px; }
 .admin-app .data-note { color: var(--muted); font-size: 12px; white-space: nowrap; }
 .admin-app .data-export { padding: 6px 10px; }
@@ -335,8 +350,32 @@
 .admin-app .dashboard-stat small { color: var(--muted); font-size: 12px; font-weight: 400; }
 .admin-app .dashboard-stat.is-urgent { background: #fff7f8; }
 .admin-app .dashboard-stat.is-urgent strong { color: var(--red); }
+.admin-app .dashboard-empty { margin: 0; padding: 10px 12px; color: var(--muted); font-size: 13px; }
+/* Agenda du jour : relances à faire et rendez-vous, côte à côte sur ordinateur. */
+.admin-app .dashboard-agenda { display: grid; grid-template-columns: 1fr 1fr; }
+.admin-app .dashboard-agenda.is-single { grid-template-columns: 1fr; }
+.admin-app .dashboard-agenda-list { min-width: 0; border-right: 1px solid var(--grid); }
+.admin-app .dashboard-agenda-list:last-child { border-right: 0; }
+.admin-app .dashboard-agenda-list h3 { display: flex; align-items: center; gap: 6px; margin: 0; padding: 8px 12px; border-bottom: 1px solid var(--grid); font-size: 13px; }
+.admin-app .dashboard-agenda-list h3 b { min-width: 18px; padding: 0 5px; border-radius: 999px; color: #fff; background: var(--red); font-size: 11px; line-height: 18px; text-align: center; }
+.admin-app .dashboard-agenda-list ul { margin: 0; padding: 0; list-style: none; }
+.admin-app .dashboard-agenda-list li + li { border-top: 1px solid var(--grid); }
+.admin-app .dashboard-agenda-list a { display: flex; align-items: baseline; gap: 12px; padding: 8px 12px; color: var(--ink); text-decoration: none; }
+.admin-app .dashboard-agenda-list a:hover { background: #f6f7f7; }
+.admin-app .dashboard-agenda-list time { flex: none; min-width: 48px; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.admin-app .dashboard-agenda-list span { display: flex; flex-direction: column; min-width: 0; font-size: 13px; }
+.admin-app .dashboard-agenda-list small { overflow: hidden; color: var(--muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.admin-app .dashboard-agenda-list a.is-late { background: rgba(211, 27, 52, .05); }
+.admin-app .dashboard-agenda-list a.is-late time { color: #b70f2c; }
+.admin-app .dashboard-agenda-list a.is-today { background: rgba(255, 207, 21, .14); }
+.admin-app .dashboard-agenda-list a.is-today time { color: #7a5b00; }
+.admin-app .dashboard-agenda-list a.is-past { color: var(--muted); }
+.admin-app .dashboard-agenda-list p { margin: 0; padding: 10px 12px; color: var(--muted); font-size: 13px; }
 @media (max-width: 620px) {
   .admin-app .dashboard-grid { grid-template-columns: 1fr; }
+  .admin-app .dashboard-agenda { grid-template-columns: 1fr; }
+  .admin-app .dashboard-agenda-list { border-right: 0; }
+  .admin-app .dashboard-agenda-list + .dashboard-agenda-list { border-top: 1px solid var(--frame); }
 }
 
 /* Galerie d'un stand : vignettes carrées, retrait d'un clic, case d'ajout tant qu'il reste de la place. */
@@ -394,12 +433,12 @@
 /* Onglets d'une rubrique regroupée (Rencontres) : sur leur propre ligne sous le titre, centrés. */
 .admin-app .section-heading { display: contents; }
 .admin-app .section-tabs { order: 3; width: 100%; display: flex; justify-content: center; }
-.admin-app .section-tabs a { display: inline-flex; align-items: center; gap: 6px; padding: 7px 18px; border: 1px solid var(--frame); color: var(--ink); background: #fff; font-size: 14px; font-weight: 600; text-decoration: none; white-space: nowrap; }
-.admin-app .section-tabs a:hover { color: var(--ink); background: #eceeee; }
-.admin-app .section-tabs a + a { border-left: 0; }
-.admin-app .section-tabs a.is-active { color: #fff; background: var(--green); }
-.admin-app .section-tabs a.is-active:hover { background: var(--green-dark); }
-.admin-app .section-tabs a.is-active b { color: var(--red); background: #fff; }
+.admin-app .section-tabs a, .admin-app .section-tabs button { font: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 7px 18px; border: 1px solid var(--frame); color: var(--ink); background: #fff; font-size: 14px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.admin-app .section-tabs a:hover, .admin-app .section-tabs button:hover { color: var(--ink); background: #eceeee; }
+.admin-app .section-tabs a + a, .admin-app .section-tabs button + button { border-left: 0; }
+.admin-app .section-tabs a.is-active, .admin-app .section-tabs button.is-active { color: #fff; background: var(--green); }
+.admin-app .section-tabs a.is-active:hover, .admin-app .section-tabs button.is-active:hover { background: var(--green-dark); }
+.admin-app .section-tabs a.is-active b, .admin-app .section-tabs button.is-active b { color: var(--red); background: #fff; }
 /* Onglets d'une fiche (boutons) : même apparence que les onglets de rubrique. */
 .admin-app .detail-tabs { justify-content: flex-start; margin: 22px 0 16px; }
 .admin-app .detail-tabs button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 18px; border: 1px solid var(--frame); color: var(--ink); background: #fff; font: inherit; font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer; }
@@ -439,3 +478,6 @@
 
 /* Adresse de la vidéo de repli du grand écran : un champ large, aligné à gauche. */
 .admin-app .settings-number input[type='url'] { width: min(320px, 50vw); text-align: left; }
+
+/* Relances : le téléphone de la personne, à appeler depuis la liste. */
+.admin-app .follow-up-call { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }

@@ -147,6 +147,7 @@ h1 {
 }
 
 .form-stack > label:not(.check-row),
+.form-stack .contact-field-row > label,
 .form-stack fieldset {
   display: grid;
   gap: 8px;

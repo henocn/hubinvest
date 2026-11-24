@@ -13,5 +13,7 @@ router.post('/login', rateLimit.login, validate(authValidation.login), asyncHand
 router.post('/forgot-password', passwordResetRateLimit.forgotPassword, validate(authValidation.forgotPassword), asyncHandler(authController.forgotPassword));
 router.post('/reset-password', passwordResetRateLimit.resetPassword, validate(authValidation.resetPassword), asyncHandler(authController.resetPassword));
 router.get('/me', asyncHandler(authenticate), authController.me);
+// Session prolongée tant que l'application est ouverte.
+router.post('/refresh', asyncHandler(authenticate), authController.refresh);
 
 module.exports = router;
