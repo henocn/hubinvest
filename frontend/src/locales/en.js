@@ -87,6 +87,7 @@ export default {
     previousImage: "Previous image",
     nextImage: "Next image",
     title: "The Hub stands",
+    place: "Oti Pavilion",
     searchLabel: "Search for a stand",
     searchPlaceholder: "Search for an organisation or activity",
     loading: "Loading stands…",

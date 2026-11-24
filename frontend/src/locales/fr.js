@@ -87,6 +87,7 @@ export default {
     previousImage: "Image précédente",
     nextImage: "Image suivante",
     title: "Les stands du Hub",
+    place: "Pavillon de l’Oti",
     searchLabel: "Rechercher un stand",
     searchPlaceholder: "Rechercher une structure ou une activité",
     loading: "Chargement des stands…",

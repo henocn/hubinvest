@@ -38,7 +38,7 @@
 - FR/EN pour toutes les chaînes ; sélecteur compact (nom de la langue puis drapeau).
 - Accueil : bandeau vert (signature, Prendre rendez-vous en rouge, Être recontacté), « En ce moment », « Nos services », démarches, programme.
 - Rencontres : deux tuiles cliquables (titre et une phrase), centrées dans la page, côte à côte sur grand écran.
-- Carte de stand : image et informations séparées, rien posé sur la photo, la carte s'arrête à la description. Fiche : carrousel (défilement toutes les 2 s, arrêt au survol), « Prendre contact » en haut et en fin de fiche.
+- Carte de stand : image et informations séparées, rien posé sur la photo ; seulement le nom et le numéro du stand, sans description. Cartes compactes : deux stands par ligne sur téléphone. Sous « Les stands du Hub » : « Pavillon de l’Oti ». Fiche : carrousel (défilement toutes les 2 s, arrêt au survol), « Prendre contact » en haut et en fin de fiche.
 
 ## Back office
 

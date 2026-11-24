@@ -833,8 +833,8 @@
 
 .stand-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 16px;
 }
 
 .stand-card {
@@ -2028,7 +2028,6 @@
   .meetings-page { padding-block: 26px 40px; }
   .meetings-page > header { margin-bottom: 20px; }
   .meeting-choices > a { grid-template-columns: 32px minmax(0, 1fr); padding: 19px 18px; }
-  .stand-grid { grid-template-columns: 1fr; }
   .home-columns { grid-template-columns: 1fr; }
   .public-section-heading { align-items: start; }
   .stand-count { text-align: right; }
@@ -3512,4 +3511,12 @@ main h1:not(.sr-only)::before {
 @media (max-width: 420px) {
   .contact-step-actions { flex-direction: column-reverse; }
   .contact-step-actions .button { width: 100%; }
+}
+
+/* Stands sur téléphone : deux cartes par ligne, plus compactes (photo, puis le nom et le numéro du stand). */
+@media (max-width: 640px) {
+  .stand-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .stand-card-content { padding: 9px 10px 11px; }
+  .stand-card h2 { font-size: 0.88rem; line-height: 1.25; overflow-wrap: anywhere; }
+  .stand-location { margin-top: 4px; font-size: 0.7rem; }
 }
