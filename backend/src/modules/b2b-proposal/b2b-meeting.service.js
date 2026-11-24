@@ -143,7 +143,7 @@ const report = async (user, id, meetingId, values) => {
 const cancel = async (user, id, meetingId) => {
   const { proposal, meeting } = await getMeeting(user, id, meetingId);
   await b2bMeetingRepository.destroy(meeting);
-  if (new Date(meeting.startsAt).getTime() > Date.now()) notificationService.b2bMeetingCancelled(meeting, proposal);
+  notificationService.b2bMeetingCancelled(meeting, proposal, { notifyVisitor: new Date(meeting.startsAt).getTime() > Date.now() });
   realtime.b2bChanged(proposal.need.occupantId);
 };
 

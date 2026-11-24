@@ -1,0 +1,22 @@
+{
+  "name": "hubinvest-notifier",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Envoi des notifications HubInvest (e-mail, push, WhatsApp) depuis la file notification_jobs",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test test/notifier.test.js",
+    "whatsapp:templates": "node scripts/sync-whatsapp-templates.js",
+    "whatsapp:templates:apply": "node scripts/sync-whatsapp-templates.js --apply"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "nodemailer": "^10.0.10",
+    "pg": "^8.23.0",
+    "web-push": "^3.6.7"
+  }
+}

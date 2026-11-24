@@ -51,6 +51,8 @@ jobs:
               cd "$DEPLOY_PATH/$app"
               npm ci --include=dev --no-audit --no-fund
             done
+            cd "$DEPLOY_PATH/notifier"
+            npm ci --omit=dev --no-audit --no-fund
 
             # 3. Builds du site public et de l'espace équipe.
             for app in frontend backoffice; do
@@ -65,4 +67,11 @@ jobs:
 
             # 5. Redémarrage de l'API sans coupure.
             pm2 reload "$PM2_APP_NAME" --update-env
+
+            # 6. Service des notifications (e-mail, push, WhatsApp), seulement s'il est activé dans backend/.env
+            #    (NOTIFIER_ENABLED=true). Il partage la file de l'API sans doublon.
+            if grep -q '^NOTIFIER_ENABLED=true' "$DEPLOY_PATH/backend/.env"; then
+              cd "$DEPLOY_PATH/notifier"
+              pm2 startOrReload ecosystem.config.cjs --update-env
+            fi
             pm2 save

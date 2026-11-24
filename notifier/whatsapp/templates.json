@@ -1,0 +1,87 @@
+{
+  "_comment": "Modèles WhatsApp de HubInvest (catégorie UTILITY). Un nom ne change jamais une fois soumis : pour corriger un texte, créer un nouveau nom (suffixe _v2) et l'utiliser dans l'API. Les variables {{n}} ne sont jamais en début ni en fin de texte. Pied de page commun.",
+  "footer": {
+    "fr": "HubInvest · API-ZF · FIL 2026",
+    "en": "HubInvest · API-ZF · FIL 2026"
+  },
+  "templates": [
+    {
+      "name": "hub26_rdv_confirme",
+      "usage": "Rendez-vous fixé : guichets (réservation ou fixé par l'équipe), B2B, Studio",
+      "params": ["nom", "objet du rendez-vous", "date et heure", "lieu"],
+      "fr": {
+        "text": "Bonjour {{1}}, votre rendez-vous {{2}} est confirmé le {{3}}. Lieu : {{4}}. Nous vous attendons, sauf message de modification ou d'annulation.",
+        "example": ["Kossi Mensah", "avec l'API-ZF au guichet « Mon projet d'investissement »", "jeudi 27 novembre à 10:15", "Stand API-ZF, Foire internationale de Lomé"]
+      },
+      "en": {
+        "text": "Hello {{1}}, your meeting {{2}} is confirmed for {{3}}. Location: {{4}}. We look forward to seeing you, unless you receive a message changing or cancelling it.",
+        "example": ["Kossi Mensah", "with API-ZF at the “My investment project” desk", "Thursday 27 November at 10:15", "API-ZF Stand, Lomé International Fair"]
+      }
+    },
+    {
+      "name": "hub26_rdv_modifie",
+      "usage": "Rendez-vous déplacé par l'équipe : guichets, B2B, Studio",
+      "params": ["nom", "objet du rendez-vous", "nouvelle date et heure", "lieu"],
+      "fr": {
+        "text": "Bonjour {{1}}, votre rendez-vous {{2}} est déplacé au {{3}}. Lieu : {{4}}. Merci d'en prendre note.",
+        "example": ["Kossi Mensah", "B2B avec BRMN", "vendredi 28 novembre à 11:00", "table 2 de l'espace B2B du Hub"]
+      },
+      "en": {
+        "text": "Hello {{1}}, your meeting {{2}} has been moved to {{3}}. Location: {{4}}. Thank you for taking note.",
+        "example": ["Kossi Mensah", "B2B with BRMN", "Friday 28 November at 11:00", "table 2 in the Hub's B2B area"]
+      }
+    },
+    {
+      "name": "hub26_rdv_annule",
+      "usage": "Rendez-vous annulé par l'équipe : guichets, B2B, Studio",
+      "params": ["nom", "objet du rendez-vous", "date et heure prévues"],
+      "fr": {
+        "text": "Bonjour {{1}}, votre rendez-vous {{2}} prévu le {{3}} est annulé. Notre équipe reviendra vers vous si une autre date est proposée.",
+        "example": ["Kossi Mensah", "au Studio du Hub de l'Investissement", "samedi 29 novembre à 15:20"]
+      },
+      "en": {
+        "text": "Hello {{1}}, your meeting {{2}} planned for {{3}} is cancelled. Our team will get back to you if another date is offered.",
+        "example": ["Kossi Mensah", "at the Investment Hub Studio", "Saturday 29 November at 15:20"]
+      }
+    },
+    {
+      "name": "hub26_rdv_rappel",
+      "usage": "Rappel la veille et une heure avant : guichets, B2B, Studio",
+      "params": ["nom", "objet du rendez-vous", "date et heure", "lieu"],
+      "fr": {
+        "text": "Bonjour {{1}}, petit rappel de votre rendez-vous {{2}} le {{3}}. Lieu : {{4}}. À bientôt à la Foire internationale de Lomé.",
+        "example": ["Kossi Mensah", "avec l'API-ZF au guichet « Quel régime pour mon investissement ? »", "jeudi 27 novembre à 10:15", "Stand API-ZF, Foire internationale de Lomé"]
+      },
+      "en": {
+        "text": "Hello {{1}}, a quick reminder of your meeting {{2}} on {{3}}. Location: {{4}}. See you soon at the Lomé International Fair.",
+        "example": ["Kossi Mensah", "with API-ZF at the “Which regime for my investment?” desk", "Thursday 27 November at 10:15", "API-ZF Stand, Lomé International Fair"]
+      }
+    },
+    {
+      "name": "hub26_studio_invitation",
+      "usage": "Invitation personnelle au Studio, avec le lien pour choisir son créneau",
+      "params": ["nom", "format", "lien personnel"],
+      "fr": {
+        "text": "Bonjour {{1}}, vous êtes invité(e) à enregistrer « {{2}} » au Studio du Hub de l'Investissement (FIL 2026). Choisissez votre créneau sur votre page personnelle : {{3}} Ce lien vous est réservé.",
+        "example": ["Afi Koudjo", "2 min avec…", "https://hub.investir.tg/studio/exemple"]
+      },
+      "en": {
+        "text": "Hello {{1}}, you are invited to record “{{2}}” at the Investment Hub Studio (FIL 2026). Choose your time slot on your personal page: {{3}} This link is for you only.",
+        "example": ["Afi Koudjo", "2 min with…", "https://hub.investir.tg/studio/example"]
+      }
+    },
+    {
+      "name": "hub26_capsule_prete",
+      "usage": "Capsule du Studio livrée",
+      "params": ["nom", "lien de la capsule"],
+      "fr": {
+        "text": "Bonjour {{1}}, merci pour votre passage au Studio du Hub de l'Investissement. Votre capsule est prête à partager : {{2}} Bonne diffusion sur vos réseaux.",
+        "example": ["Afi Koudjo", "https://hub.investir.tg/capsules/exemple"]
+      },
+      "en": {
+        "text": "Hello {{1}}, thank you for your session at the Investment Hub Studio. Your video is ready to share: {{2}} Enjoy sharing it on your networks.",
+        "example": ["Afi Koudjo", "https://hub.investir.tg/capsules/example"]
+      }
+    }
+  ]
+}

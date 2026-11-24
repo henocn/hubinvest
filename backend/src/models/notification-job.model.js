@@ -10,7 +10,8 @@ module.exports = (sequelize, DataTypes) =>
       channel: {
         type: DataTypes.STRING(16),
         allowNull: false,
-        validate: { isIn: [['email', 'user']] },
+        // whatsapp : envoyé par le service notifier ; l'API ne traite que email et user.
+        validate: { isIn: [['email', 'user', 'whatsapp']] },
       },
       recipient: {
         type: DataTypes.STRING(180),

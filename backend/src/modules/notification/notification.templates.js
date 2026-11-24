@@ -152,6 +152,8 @@ const meetingCopy = {
     movedSubject: 'Votre rendez-vous B2B est déplacé',
     cancelledSubject: 'Votre rendez-vous B2B est annulé',
     cancelledBody: (when, need, occupant) => `Le rendez-vous avec ${occupant} pour le besoin « ${need} », prévu le ${when}, est annulé. L’équipe du stand reviendra vers vous si une autre date est proposée.`,
+    reminderSubject: 'Rappel : votre rendez-vous B2B',
+    reminderBody: (when, table, need, occupant) => `Nous vous attendons le ${when}, à la table ${table} de l’espace B2B du Hub, pour votre rendez-vous avec ${occupant} (besoin « ${need} »).`,
   },
   en: {
     scheduledSubject: 'Your B2B meeting is confirmed',
@@ -159,6 +161,8 @@ const meetingCopy = {
     movedSubject: 'Your B2B meeting has been moved',
     cancelledSubject: 'Your B2B meeting is cancelled',
     cancelledBody: (when, need, occupant) => `The meeting with ${occupant} about the need “${need}”, planned for ${when}, is cancelled. The stand team will get back to you if another date is offered.`,
+    reminderSubject: 'Reminder: your B2B meeting',
+    reminderBody: (when, table, need, occupant) => `We look forward to seeing you on ${when}, at table ${table} in the Hub’s B2B area, for your meeting with ${occupant} (need “${need}”).`,
   },
 };
 
@@ -181,6 +185,13 @@ const b2bMeetingCancelled = ({ meeting, proposal, need, occupant }) => {
   const copy = copyFor(proposal.language);
   const text = meetingCopy[proposal.language] || meetingCopy.fr;
   return publicEmail(copy, proposal.fullName, text.cancelledSubject, text.cancelledBody(meetingWhen(meeting, proposal.language), need.title, occupant.name));
+};
+
+// Rappel du rendez-vous B2B au visiteur, la veille et une heure avant.
+const b2bMeetingReminder = ({ meeting, proposal, need, occupant }) => {
+  const copy = copyFor(proposal.language);
+  const text = meetingCopy[proposal.language] || meetingCopy.fr;
+  return publicEmail(copy, proposal.fullName, text.reminderSubject, text.reminderBody(meetingWhen(meeting, proposal.language), meeting.tableNumber, need.title, occupant.name));
 };
 
 const investorMeetingCopy = {
@@ -265,7 +276,66 @@ const studioCapsule = ({ invitation }) => {
   return publicEmail(copyFor(invitation.language), invitation.guestName, text.capsuleSubject, text.capsule(invitation.capsuleUrl));
 };
 
+// WhatsApp : nom du modèle approuvé par Meta et ses variables, dans la langue du visiteur (textes dans
+// notifier/whatsapp/templates.json). Un rendez-vous (guichet, B2B, Studio) se décrit par son objet, sa date et son lieu.
+const MEETING_TEMPLATES = { scheduled: 'hub26_rdv_confirme', moved: 'hub26_rdv_modifie', cancelled: 'hub26_rdv_annule', reminder: 'hub26_rdv_rappel' };
+const waLanguage = (language) => (language === 'en' ? 'en' : 'fr');
+const meetingWhatsapp = (kind, { name, language, subject, when, place }) => ({
+  template: MEETING_TEMPLATES[kind],
+  language: waLanguage(language),
+  params: kind === 'cancelled' ? [name, subject, when] : [name, subject, when, place],
+});
+
+const investorMeetingWhatsapp = ({ kind, meeting, request }) => {
+  const en = request.language === 'en';
+  const label = guichetLabel(request.guichet, request.language);
+  const subject = meeting.guichet
+    ? (en ? `with API-ZF at the “${label}” desk` : `avec l’API-ZF au guichet « ${label} »`)
+    : (en ? 'with the API-ZF team' : 'avec l’équipe de l’API-ZF');
+  return meetingWhatsapp(kind, { name: request.fullName, language: request.language, subject, when: meetingWhen(meeting, request.language), place: meeting.location });
+};
+
+const b2bMeetingWhatsapp = ({ kind, meeting, proposal, occupant }) => {
+  const en = proposal.language === 'en';
+  return meetingWhatsapp(kind, {
+    name: proposal.fullName,
+    language: proposal.language,
+    subject: en ? `B2B with ${occupant.name}` : `B2B avec ${occupant.name}`,
+    when: meetingWhen(meeting, proposal.language),
+    place: en ? `table ${meeting.tableNumber} in the Hub’s B2B area` : `table ${meeting.tableNumber} de l’espace B2B du Hub`,
+  });
+};
+
+const studioMeetingWhatsapp = ({ kind, invitation }) => {
+  const en = invitation.language === 'en';
+  return meetingWhatsapp(kind, {
+    name: invitation.guestName,
+    language: invitation.language,
+    subject: en ? 'at the Investment Hub Studio' : 'au Studio du Hub de l’Investissement',
+    when: studioWhen(invitation),
+    place: en ? 'Studio, API-ZF Stand' : 'Studio, Stand API-ZF',
+  });
+};
+
+const studioInvitationWhatsapp = ({ invitation }) => ({
+  template: 'hub26_studio_invitation',
+  language: waLanguage(invitation.language),
+  params: [invitation.guestName, settingsService.studioFormatLabel(invitation.format, invitation.language) || 'Studio', studioLink(invitation)],
+});
+
+const studioCapsuleWhatsapp = ({ invitation }) => ({
+  template: 'hub26_capsule_prete',
+  language: waLanguage(invitation.language),
+  params: [invitation.guestName, invitation.capsuleUrl],
+});
+
 module.exports = {
+  investorMeetingWhatsapp,
+  b2bMeetingWhatsapp,
+  b2bMeetingReminder,
+  studioMeetingWhatsapp,
+  studioInvitationWhatsapp,
+  studioCapsuleWhatsapp,
   studioGuestAnswered,
   studioInvitation,
   studioBookingConfirmation,

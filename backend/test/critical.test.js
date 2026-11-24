@@ -1704,3 +1704,38 @@ test('le journal des actions décrit chaque modification de l’espace équipe s
   assert.equal(auditLogService.targetOf({ firstName: 'Afi', lastName: 'Koudjo', passwordHash: 'x' }), 'Afi Koudjo');
   assert.equal(auditLogService.targetOf([{ name: 'liste' }]), null);
 });
+
+test('WhatsApp : désactivé, tout reste en e-mail ; activé, la confirmation part aussi par WhatsApp et les rappels par WhatsApp avec l’e-mail en repli', async (context) => {
+  const queued = [];
+  context.mock.method(notificationRepository, 'cancelPending', async () => {});
+  context.mock.method(notificationRepository, 'enqueue', async (jobs) => { queued.push(...jobs); });
+  const previous = env.whatsapp.enabled;
+  const previousNotifications = env.notifications.enabled;
+  env.notifications.enabled = true;
+  context.after(() => { env.notifications.enabled = previousNotifications; });
+  context.after(() => { env.whatsapp.enabled = previous; });
+  const settle = () => new Promise((resolve) => { setTimeout(resolve, 20); });
+  const meeting = { id: 'm-1', startsAt: new Date(Date.now() + 3 * 24 * 3600000), guichet: 'project', location: 'Stand API-ZF · guichet « Mon projet d’investissement »' };
+  const request = { fullName: 'Kossi Mensah', email: 'k@exemple.tg', phone: '+22890123456', guichet: 'project', language: 'fr' };
+
+  env.whatsapp.enabled = false;
+  notificationService.investorMeetingChanged('scheduled', meeting, request);
+  await settle();
+  assert.deepEqual(queued.map((job) => job.channel), ['email', 'email', 'email']);
+
+  queued.length = 0;
+  env.whatsapp.enabled = true;
+  notificationService.investorMeetingChanged('scheduled', meeting, request);
+  await settle();
+  assert.deepEqual(queued.map((job) => job.channel), ['email', 'whatsapp', 'whatsapp', 'whatsapp']);
+  assert.equal(queued[1].payload.template, 'hub26_rdv_confirme');
+  assert.equal(queued[1].payload.params[1], 'avec l’API-ZF au guichet « Mon projet d’investissement »');
+  assert.equal(queued[2].payload.template, 'hub26_rdv_rappel');
+  assert.equal(queued[2].payload.fallback.recipient, 'k@exemple.tg');
+
+  // Sans téléphone, la personne garde les e-mails.
+  queued.length = 0;
+  notificationService.investorMeetingChanged('scheduled', meeting, { ...request, phone: null });
+  await settle();
+  assert.deepEqual(queued.map((job) => job.channel), ['email', 'email', 'email']);
+});
