@@ -75,12 +75,6 @@ const playIncludes = [
 // Historique : les tours joués, du plus récent au plus ancien.
 const findPlays = () => WheelPlay.findAll({ include: playIncludes, order: [['playedAt', 'DESC']] });
 
-// Compte les tours joués par un joueur depuis une date (limite quotidienne).
-const countPlayerPlaysSince = (passportId, since, transaction) => WheelPlay.count({
-  where: { passportId, playedAt: { [Op.gte]: since } },
-  transaction,
-});
-
 // Lots gagnés avec un code, le plus ancien d'abord ; verrouillés le temps de la remise.
 const findCodePrizes = (code, transaction) => WheelPlay.findAll({
   where: { resultKind: 'prize' },
@@ -125,7 +119,6 @@ module.exports = {
   updatePlay,
   findCodes,
   findPlays,
-  countPlayerPlaysSince,
   findCodePrizes,
   findPlayForClaim,
   findCodeByValue,

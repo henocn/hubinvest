@@ -1037,8 +1037,7 @@ test('la liste des remises signale seulement celles de l’animateur connecté, 
 
 const PLAYER = 'a'.repeat(64);
 const OTHER_PLAYER = 'c'.repeat(64);
-const wheelSetup = (context, { segments, code, plays = [], playsToday = 0 }) => {
-  context.mock.method(wheelRepository, 'countPlayerPlaysSince', async () => playsToday);
+const wheelSetup = (context, { segments, code, plays = [] }) => {
   context.mock.method(wheelRepository.sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));
   context.mock.method(wheelRepository, 'findPlayerByToken', async (token) => (token === PLAYER ? { id: 'passport-a' } : token === OTHER_PLAYER ? { id: 'passport-b' } : null));
   context.mock.method(wheelRepository, 'findCodeForUpdate', async (value) => (code && code.code === value ? code : null));
@@ -1212,13 +1211,13 @@ test('les réglages refusent un stock négatif, le nombre d’étapes (fixe) et 
   assert.equal(settingsValidation.update.validate({ wheelOpen: false, challengeRewardStock: 200 }).error, undefined);
 });
 
-test('un joueur ne tourne la roue qu’une fois par jour et le code reste valable', async (context) => {
+test('pas de limite de parties : un joueur qui a déjà joué aujourd’hui rejoue avec un nouveau code', async (context) => {
   const prize = { id: 'p1', kind: 'prize', label: 'T-shirt', quantity: 2, awarded: 0, isActive: true };
   const code = { code: 'AB23', usedAt: null, expiresAt: new Date(Date.now() + 60000) };
-  wheelSetup(context, { segments: [prize], code, playsToday: 1 });
-  await assert.rejects(wheelService.spin({ code: 'AB23', player: PLAYER }, 'fr', () => 0), (error) => error.status === 429 && error.code === 'WHEEL_DAILY_LIMIT');
-  assert.equal(code.usedAt, null);
-  assert.equal(prize.awarded, 0);
+  // Aucun comptage des parties du jour : le tirage se fait sans vérifier combien le joueur en a déjà joué.
+  wheelSetup(context, { segments: [prize], code });
+  const result = await wheelService.spin({ code: 'AB23', player: PLAYER }, 'fr', () => 0);
+  assert.equal(result.result.label, 'T-shirt');
 });
 
 test('un lot gagné ne se remet qu’une fois, et seulement s’il a été gagné', async (context) => {

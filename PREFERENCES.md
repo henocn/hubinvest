@@ -67,4 +67,5 @@
 - Stands : seule l'équipe API-ZF voit la liste. L'occupant a « Mon stand » (onglets Besoins B2B puis Fiche), qui ouvre directement son stand (et /stands l'y mène) ; il en modifie le contenu et les images, pas le nom, l'espace, l'emplacement ni le statut.
 - Studio : réservé à l'équipe API-ZF (super administrateur, administrateur), jamais aux occupants. L'invité choisit son créneau une seule fois (ou décline avant de choisir) ; ensuite, changer ou annuler passe uniquement par l'équipe dans le back office (« Fixer / Modifier le créneau », « Annuler le passage »).
 - Défis : QR du code participant puis le code lisible ; cinq pastilles d'étapes ; côté stand, compteur, bouton Scanner et saisie du code avec « OK » à côté.
+- Roue (site) : la fenêtre montre d'abord le seul champ du code de jeu (« Valider ») ; ensuite la roue, avec en dessous « Appuyez sur la roue… ». Pas de « Jouer avec un autre code », pas de limite de parties par jour.
 - Remises de l'animateur : Participant, Contact, Remise le, la plus récente d'abord ; ses propres remises sur fond vert léger.

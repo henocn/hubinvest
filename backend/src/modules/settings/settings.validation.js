@@ -17,7 +17,6 @@ const update = Joi.object({
   screenService: Joi.string().valid('', ...SERVICE_KEYS),
   screenVideoUrl: Joi.string().trim().uri({ scheme: ['http', 'https'] }).max(500).allow(''),
   challengeRewardStock: Joi.number().integer().min(0).max(100000),
-  wheelPlaysPerDay: Joi.number().integer().min(0).max(20),
   wheelSpinsPerCode: Joi.number().integer().min(1).max(20),
   b2bTables: Joi.number().integer().min(1).max(50),
   b2bMeetingMinutes: Joi.number().integer().min(5).max(120),

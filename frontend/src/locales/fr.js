@@ -250,7 +250,7 @@ export default {
     won: "Bravo, vous gagnez",
     claim: "Donnez ce code à l’équipe d’un stand ou à un animateur pour recevoir votre lot.",
     lost: "Merci d’avoir joué. Bonne visite au Hub !",
-    playAgain: "Jouer avec un autre code",
+    submitCode: "Valider",
     spinAgain_one: "Tourner encore (1 tour restant)",
     spinAgain_other: "Tourner encore ({{count}} tours restants)",
     errors: {
