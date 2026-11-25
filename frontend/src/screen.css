@@ -1,0 +1,1177 @@
+/* Grand écran du Stand API-ZF : une scène fixe de 1920 × 1080 mise à l'échelle de l'écran (65 pouces, 16:9).
+   Film de marque en boucle : typographie sur le vert, filets fins, aucun cadre, mouvements lents et doux.
+   Un seul trait jaune (.s-thread) traverse toutes les scènes ; les titres montent derrière une ligne de masque. */
+
+.screen {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #00291d;
+  color: #ffffff;
+  cursor: none;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.screen.is-video video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.screen h1::before,
+.screen h2::before {
+  content: none !important;
+}
+
+.screen h1,
+.screen h2,
+.screen h3,
+.screen p {
+  margin: 0;
+  letter-spacing: normal;
+}
+
+.s-stage {
+  --soft: rgba(255, 255, 255, 0.7);
+  --hair: rgba(255, 255, 255, 0.16);
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --glide: cubic-bezier(0.65, 0, 0.35, 1);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  transform-origin: center;
+  font-family: var(--font-body);
+}
+
+/* ——— Décor permanent : deux lumières lentes qui se déplacent à chaque scène, le symbole du Hub,
+       des bords assombris et un grain qui change sans cesse, comme sur une pellicule ——— */
+
+.s-backdrop {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: linear-gradient(155deg, #00583e 0%, #004c36 55%, #003e2c 100%);
+}
+
+.s-aura {
+  position: absolute;
+  transition: transform 5s cubic-bezier(0.45, 0, 0.2, 1);
+}
+
+.s-aura i {
+  display: block;
+  border-radius: 50%;
+  will-change: transform;
+}
+
+.s-aura.is-a {
+  top: -760px;
+  left: -520px;
+}
+
+.s-aura.is-a i {
+  width: 1700px;
+  height: 1700px;
+  background: radial-gradient(circle, rgba(44, 152, 116, 0.55) 0%, rgba(44, 152, 116, 0) 62%);
+  animation: s-drift-a 34s ease-in-out infinite alternate;
+}
+
+.s-aura.is-b {
+  right: -620px;
+  bottom: -760px;
+}
+
+.s-aura.is-b i {
+  width: 1500px;
+  height: 1500px;
+  background: radial-gradient(circle, rgba(255, 207, 21, 0.14) 0%, rgba(255, 207, 21, 0) 60%);
+  animation: s-drift-b 40s ease-in-out infinite alternate;
+}
+
+.s-stage[data-tone='1'] .s-aura.is-a { transform: translate(720px, 140px); }
+.s-stage[data-tone='2'] .s-aura.is-a { transform: translate(280px, 420px); }
+.s-stage[data-tone='1'] .s-aura.is-b { transform: translate(-520px, -140px); }
+.s-stage[data-tone='2'] .s-aura.is-b { transform: translate(-940px, -40px); }
+
+.s-watermark {
+  position: absolute;
+  right: -230px;
+  top: 40px;
+  width: 1080px;
+  opacity: 0.04;
+  transition: opacity 1.4s ease;
+  animation: s-float 30s ease-in-out infinite alternate;
+}
+
+/* Le service du jour a déjà son grand chiffre, la fin a son logo : le symbole s'efface pour ne pas s'y mêler. */
+.s-stage[data-scene='service'] .s-watermark,
+.s-stage[data-scene='closing'] .s-watermark {
+  opacity: 0;
+}
+
+.s-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(0, 22, 15, 0) 55%, rgba(0, 22, 15, 0.42) 100%);
+}
+
+.s-grain {
+  position: absolute;
+  inset: -120px;
+  opacity: 0.08;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  animation: s-grain 0.8s steps(1) infinite;
+}
+
+@keyframes s-drift-a { to { transform: translate(220px, 160px) scale(1.1); } }
+@keyframes s-drift-b { to { transform: translate(-260px, -120px) scale(1.15); } }
+@keyframes s-float { to { transform: translate(-70px, 50px) rotate(-5deg) scale(1.05); } }
+
+@keyframes s-grain {
+  0% { transform: translate(0, 0); }
+  12% { transform: translate(-64px, 38px); }
+  25% { transform: translate(42px, -70px); }
+  37% { transform: translate(-90px, -22px); }
+  50% { transform: translate(70px, 64px); }
+  62% { transform: translate(-30px, 90px); }
+  75% { transform: translate(96px, -40px); }
+  87% { transform: translate(-56px, -84px); }
+}
+
+/* ——— Habillage fixe : logo, date et heure en haut ; chapitre et adresse du site en bas ; mosaïque de la charte ——— */
+
+.s-top {
+  position: absolute;
+  z-index: 5;
+  top: 54px;
+  left: 110px;
+  right: 110px;
+  display: flex;
+  align-items: center;
+}
+
+.s-top img {
+  height: 78px;
+  width: auto;
+}
+
+.s-top-date {
+  margin-left: auto;
+  padding-right: 28px;
+  border-right: 1px solid var(--hair);
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--soft);
+}
+
+.s-top-date::first-letter {
+  text-transform: uppercase;
+}
+
+.s-top-clock {
+  padding-left: 28px;
+  font-family: var(--font-display);
+  font-size: 44px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.s-top-clock i {
+  font-style: normal;
+  animation: s-blink 2s ease-in-out infinite;
+}
+
+@keyframes s-blink { 50% { opacity: 0.25; } }
+
+/* Repère de chapitre : numéro de la scène, un filet qui se remplit pendant qu'elle joue, son nom. */
+.s-chapter {
+  position: absolute;
+  z-index: 5;
+  left: 110px;
+  bottom: 84px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--soft);
+  animation: s-fade 1.4s ease 0.3s backwards;
+}
+
+.s-chapter b {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #ffffff;
+}
+
+.s-chapter-line {
+  position: relative;
+  width: 72px;
+  height: 2px;
+  overflow: hidden;
+  background: var(--hair);
+}
+
+.s-chapter-line i {
+  position: absolute;
+  inset: 0;
+  background: #ffffff;
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: s-fill linear forwards;
+}
+
+@keyframes s-fill { to { transform: scaleX(1); } }
+
+.s-site {
+  position: absolute;
+  z-index: 5;
+  right: 110px;
+  bottom: 62px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  transition: opacity 0.9s ease;
+}
+
+.s-site.is-hidden {
+  opacity: 0;
+}
+
+.s-site b {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.s-band {
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 22px;
+  background: url('./assets/brand/pattern-bandeau.png') left center / auto 100% repeat-x;
+  animation: s-band 120s linear infinite;
+}
+
+@keyframes s-band { to { background-position: -1000px center; } }
+
+.s-qr {
+  display: block;
+  flex: none;
+  padding: 8px;
+  background: #ffffff;
+}
+
+.s-qr img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ——— Caméra : l'image respire sans jamais s'arrêter ; le contenu et le trait jaune bougent ensemble ——— */
+
+.s-camera {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  animation: s-breathe 26s ease-in-out infinite alternate;
+}
+
+@keyframes s-breathe {
+  from { transform: scale(1); }
+  to { transform: scale(1.018); }
+}
+
+.s-frame {
+  position: absolute;
+  top: 190px;
+  left: 120px;
+  right: 120px;
+  bottom: 150px;
+  transition: opacity 0.9s ease, transform 0.9s cubic-bezier(0.4, 0, 0.6, 1), filter 0.9s ease;
+}
+
+.s-frame.is-leaving {
+  opacity: 0;
+  transform: translateY(-22px);
+  filter: blur(10px);
+}
+
+.s-scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Le trait jaune : un seul élément pour tout le film. Il glisse jusqu'à l'emplacement que la scène lui donne ;
+   sa taille suit un peu plus lentement que sa position, ce qui l'étire dans le sens du déplacement. */
+.s-thread {
+  position: absolute;
+  z-index: 3;
+  background: #ffcf15;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    left 1.05s var(--glide),
+    top 1.05s var(--glide),
+    width 1.3s var(--glide),
+    height 1.3s var(--glide),
+    opacity 1.2s ease;
+}
+
+.s-thread.is-on {
+  opacity: 1;
+}
+
+/* Emplacements invisibles que le trait vient occuper. */
+.s-anchor {
+  display: block;
+  visibility: hidden;
+}
+
+.s-anchor.is-rule {
+  width: 96px;
+  height: 6px;
+}
+
+.s-anchor.is-rule.is-center {
+  width: 140px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.s-anchor.is-rule.is-spaced {
+  margin-top: 36px;
+  margin-bottom: 36px;
+}
+
+.s-anchor.is-line {
+  width: 100%;
+  height: 3px;
+}
+
+/* ——— Grammaire de mouvement ——— */
+
+/* Fondu doux. Seul le départ est décrit : l'élément rejoint son propre style (opacité d'une ligne atténuée comprise). */
+.m-in {
+  display: block;
+  animation: s-in 1.4s var(--ease) var(--d, 0s) backwards;
+}
+
+@keyframes s-in {
+  from { opacity: 0; transform: translateY(32px); filter: blur(12px); }
+}
+
+/* Titres : chaque mot monte derrière sa ligne de masque. */
+.m-words {
+  display: block;
+}
+
+.m-word {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding-bottom: 0.14em;
+  margin-bottom: -0.14em;
+}
+
+.m-word > span {
+  display: inline-block;
+  animation: s-rise 1.25s var(--ease) var(--d, 0s) backwards;
+}
+
+@keyframes s-rise {
+  from { transform: translateY(112%); }
+}
+
+@keyframes s-fade {
+  from { opacity: 0; }
+}
+
+/* ——— Éléments communs ——— */
+
+.s-head {
+  margin-bottom: 44px;
+}
+
+.s-head .s-anchor {
+  margin-bottom: 24px;
+}
+
+.s-head h2 {
+  font-size: 68px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.s-head-sub {
+  margin-top: 8px !important;
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 500;
+  color: var(--soft);
+}
+
+.s-kicker {
+  margin-bottom: 18px;
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 600;
+  color: #ffcf15;
+}
+
+.s-display {
+  font-size: 104px;
+  font-weight: 700;
+  line-height: 1.04;
+}
+
+.s-lead {
+  font-size: 40px;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.s-place {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 34px !important;
+  font-size: 30px;
+  line-height: 1.3;
+  color: var(--soft);
+}
+
+.s-place svg {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  color: #ffcf15;
+}
+
+/* Liste dont une ligne est mise en avant à tour de rôle : le trait jaune devient son repère. */
+.s-list {
+  --row: 108px;
+  position: relative;
+}
+
+.s-list ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.s-list li {
+  display: grid;
+  align-items: center;
+  column-gap: 40px;
+  height: var(--row);
+  padding-left: 44px;
+  border-top: 1px solid var(--hair);
+  opacity: 0.42;
+  transition: opacity 0.9s ease;
+}
+
+.s-list li:last-child {
+  border-bottom: 1px solid var(--hair);
+}
+
+.s-list li.is-focus {
+  opacity: 1;
+}
+
+.s-anchor.is-marker {
+  position: absolute;
+  left: 0;
+  top: calc((var(--row) - 48px) / 2 + var(--i) * var(--row));
+  width: 6px;
+  height: 48px;
+}
+
+/* ——— Ouverture ——— */
+
+.s-opener {
+  align-items: center;
+  text-align: center;
+}
+
+.s-opener-symbol {
+  width: 132px;
+  margin-bottom: 6px;
+}
+
+.s-opener-word {
+  overflow: hidden;
+  padding: 0 0.16em 0.04em;
+  font-family: var(--font-accroche) !important;
+  font-size: 280px !important;
+  font-style: italic;
+  font-weight: 800 !important;
+  line-height: 1.12 !important;
+}
+
+.s-opener-word span {
+  display: inline-block;
+  animation: s-rise 1.4s var(--ease) var(--d, 0s) backwards;
+}
+
+.s-opener .s-anchor {
+  margin-top: 14px;
+  margin-bottom: 44px;
+}
+
+.s-opener-sub {
+  font-family: var(--font-display);
+  font-size: 60px;
+  font-weight: 700;
+}
+
+.s-opener-meta {
+  margin-top: 14px !important;
+  font-size: 32px;
+  color: var(--soft);
+}
+
+/* ——— Programme du jour ——— */
+
+.s-program .s-list li {
+  grid-template-columns: 190px 1fr;
+}
+
+.s-row-time {
+  font-family: var(--font-display);
+  font-size: 50px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.9s ease;
+}
+
+.s-list li.is-focus .s-row-time,
+.s-list li.is-focus .s-row-stage {
+  color: #ffcf15;
+}
+
+.s-row-text {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.s-row-text b {
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: 40px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.s-row-text small {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 25px;
+  color: var(--soft);
+}
+
+.s-row-text small.is-live {
+  color: #ffcf15;
+}
+
+.s-live-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ffcf15;
+  animation: s-pulse 2s ease-out infinite;
+}
+
+@keyframes s-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(255, 207, 21, 0.55); }
+  100% { box-shadow: 0 0 0 16px rgba(255, 207, 21, 0); }
+}
+
+/* ——— Service du jour : un très grand chiffre d'étape, à peine visible, dérive lentement derrière le texte ——— */
+
+.s-service-stage {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  margin-top: -372px;
+  font-family: var(--font-display);
+  font-size: 930px;
+  font-weight: 800;
+  line-height: 0.8;
+  color: rgba(255, 255, 255, 0.07);
+}
+
+.s-service-stage span {
+  display: block;
+  animation: s-slide 12s linear both;
+}
+
+@keyframes s-slide {
+  from { transform: translateX(40px); }
+  to { transform: translateX(-40px); }
+}
+
+.s-service-body {
+  position: relative;
+  max-width: 1180px;
+}
+
+/* ——— Les six services : le détail du service en cours à gauche, la liste à droite ——— */
+
+.s-services {
+  display: grid;
+  grid-template-columns: 1fr 780px;
+  align-items: center;
+  column-gap: 90px;
+}
+
+.s-services-focus {
+  min-height: 330px;
+}
+
+.s-services-title {
+  margin-bottom: 22px !important;
+  font-size: 62px;
+  font-weight: 700;
+  line-height: 1.08;
+}
+
+.s-services .s-lead {
+  font-size: 34px;
+}
+
+.s-list.is-index {
+  --row: 88px;
+}
+
+.s-list.is-index li {
+  grid-template-columns: 40px 1fr;
+  column-gap: 24px;
+}
+
+.s-row-stage {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 700;
+  transition: color 0.9s ease;
+}
+
+.s-list.is-index b {
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: 33px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ——— Chiffres : le trait jaune s'étire en ligne de base, les chiffres se comptent en dessous ——— */
+
+.s-counters-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  column-gap: 60px;
+  margin: 36px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.s-counters-grid li {
+  display: grid;
+  gap: 14px;
+}
+
+.s-counters-grid strong {
+  font-family: var(--font-display);
+  font-size: 170px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.s-counters-grid span {
+  font-size: 34px;
+  line-height: 1.25;
+  color: var(--soft);
+}
+
+/* ——— Entreprise à la une ——— */
+
+.s-spotlight {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 100px;
+}
+
+.s-spotlight-card {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 500px;
+  height: 500px;
+  padding: 60px;
+  background: #ffffff;
+}
+
+.s-spotlight-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* ——— Prochaine interview ——— */
+
+.s-interview {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 80px;
+}
+
+.s-interview-time {
+  font-family: var(--font-display);
+  font-size: 250px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.s-interview .s-lead {
+  max-width: 1000px;
+  font-size: 46px;
+}
+
+.s-interview-mic {
+  position: relative;
+  display: grid !important;
+  place-items: center;
+  flex: none;
+  width: 250px;
+  height: 250px;
+  margin-right: 110px;
+  border-radius: 50%;
+  background: #ffcf15;
+  color: #0f1822;
+}
+
+.s-interview-mic svg {
+  width: 104px;
+  height: 104px;
+}
+
+.s-interview-mic i {
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgba(255, 207, 21, 0.7);
+  border-radius: 50%;
+  animation: s-ring 4.5s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
+}
+
+.s-interview-mic i:nth-of-type(2) { animation-delay: 1.5s; }
+.s-interview-mic i:nth-of-type(3) { animation-delay: 3s; }
+
+@keyframes s-ring {
+  from { opacity: 0.7; transform: scale(1); }
+  to { opacity: 0; transform: scale(1.9); }
+}
+
+/* ——— Stands : les logos glissent sur une bande blanche qui traverse tout l'écran ——— */
+
+.s-stands-band {
+  position: relative;
+  display: grid;
+  gap: 26px;
+  margin: 0 -120px;
+  padding: 34px 0 30px;
+  overflow: hidden;
+  background: #ffffff;
+  animation: s-band-open 1.5s var(--ease) var(--d, 0s) backwards;
+}
+
+/* Les bords de la bande s'estompent : un logo entre et sort en douceur. */
+.s-stands-band::before,
+.s-stands-band::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  bottom: 0;
+  width: 150px;
+  pointer-events: none;
+}
+
+.s-stands-band::before {
+  left: 0;
+  background: linear-gradient(90deg, #ffffff 20%, rgba(255, 255, 255, 0));
+}
+
+.s-stands-band::after {
+  right: 0;
+  background: linear-gradient(270deg, #ffffff 20%, rgba(255, 255, 255, 0));
+}
+
+@keyframes s-band-open {
+  from { opacity: 0; clip-path: inset(50% 0 50% 0); }
+  to { opacity: 1; clip-path: inset(0 0 0 0); }
+}
+
+.s-stands-track {
+  --from: 520px;
+  display: flex;
+  width: max-content;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  animation: s-marquee linear infinite;
+}
+
+.s-stands-track.is-reverse {
+  --from: -520px;
+  animation-direction: reverse;
+}
+
+.s-stands-track.is-static {
+  width: 100%;
+  justify-content: center;
+  animation: none;
+}
+
+@keyframes s-marquee { to { transform: translateX(-50%); } }
+
+.s-stands-track li {
+  flex: none;
+  width: 330px;
+  padding: 0 30px;
+}
+
+/* Chaque logo vient de plus loin, plus petit et flou, et rattrape sa place dans la rangée. */
+.s-stands-item {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 12px;
+  height: 176px;
+  animation: s-join 1.7s var(--ease) var(--d, 0s) backwards;
+}
+
+@keyframes s-join {
+  from { opacity: 0; transform: translateX(var(--from)) scale(0.55); filter: blur(10px); }
+  55% { opacity: 1; }
+}
+
+.s-stands-logo {
+  position: relative;
+  width: 100%;
+  height: 132px;
+}
+
+.s-stands-logo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Stand sans logo : son nom seul, une seule fois. */
+.s-stands-word {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  color: #156c53;
+}
+
+.s-stands-name {
+  max-width: 100%;
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: #0f1822;
+}
+
+/* ——— Jeux ——— */
+
+.s-games-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 420px;
+}
+
+.s-games-row section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 60px;
+  border-left: 1px solid var(--hair);
+}
+
+.s-games-row section:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.s-games-visual {
+  display: flex;
+  align-items: center;
+  height: 300px;
+  margin-bottom: 24px;
+}
+
+.s-games-row strong {
+  font-family: var(--font-display);
+  font-size: 44px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.s-games-row section > span:last-child {
+  font-size: 28px;
+  color: var(--soft);
+}
+
+.s-stamps {
+  display: flex;
+  gap: 18px;
+}
+
+.s-stamps i {
+  display: grid;
+  place-items: center;
+  width: 92px;
+  height: 92px;
+  border: 3px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  color: transparent;
+  animation: s-stamp 11s ease var(--d, 0s) infinite;
+}
+
+.s-stamps svg {
+  width: 48px;
+  height: 48px;
+}
+
+@keyframes s-stamp {
+  0% { background: transparent; border-color: rgba(255, 255, 255, 0.4); color: transparent; transform: scale(1.18); }
+  6%, 84% { background: #ffcf15; border-color: #ffcf15; color: #0f1822; transform: none; }
+  94%, 100% { background: transparent; border-color: rgba(255, 255, 255, 0.4); color: transparent; transform: none; }
+}
+
+.s-wheel {
+  position: relative;
+  width: 280px;
+  height: 280px;
+}
+
+.s-wheel svg {
+  width: 100%;
+  height: 100%;
+}
+
+.s-wheel-spin {
+  transform-origin: 100px 100px;
+  animation: s-spin 7s cubic-bezier(0.2, 0.75, 0.2, 1) infinite;
+}
+
+@keyframes s-spin {
+  0% { transform: rotate(0deg); }
+  75%, 100% { transform: rotate(1098deg); }
+}
+
+.s-wheel-pin {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-left: 15px solid transparent;
+  border-right: 15px solid transparent;
+  border-top: 30px solid #ffcf15;
+  transform: translateX(-50%);
+}
+
+.s-games-row .s-games-qr {
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  padding-right: 0;
+}
+
+.s-games-row .s-games-qr strong {
+  font-size: 30px;
+  font-weight: 600;
+}
+
+/* ——— Capsules ——— */
+
+.s-capsules-row {
+  display: flex;
+  gap: 70px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.s-capsules-row li {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  width: 320px;
+}
+
+.s-capsules-row strong {
+  margin-top: 22px;
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 600;
+}
+
+.s-capsules-row li > span:last-child {
+  font-size: 25px;
+  color: var(--soft);
+}
+
+/* ——— Démarches en ligne ——— */
+
+.s-procedures {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 100px;
+}
+
+.s-procedures-count {
+  font-family: var(--font-display);
+  font-size: 290px;
+  font-weight: 800;
+  line-height: 0.92;
+  font-variant-numeric: tabular-nums;
+}
+
+.s-procedures-title {
+  font-size: 64px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.s-procedures ul {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.s-procedures li {
+  display: flex !important;
+  align-items: baseline;
+  gap: 14px;
+  padding: 0 38px;
+  border-left: 1px solid var(--hair);
+  font-size: 30px;
+  color: var(--soft);
+}
+
+.s-procedures li:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.s-procedures li b {
+  font-family: var(--font-display);
+  font-size: 40px;
+  color: #ffcf15;
+}
+
+.s-procedures-qr {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  gap: 26px;
+  margin-right: 60px;
+}
+
+.s-procedures-qr strong {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 600;
+}
+
+/* ——— Fin de boucle : le logo de l'API-ZF ——— */
+
+.s-closing-kicker {
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 500;
+  color: var(--soft);
+}
+
+.s-closing .s-anchor {
+  margin-top: 22px;
+  margin-bottom: 40px;
+}
+
+.s-closing-band {
+  display: grid;
+  place-items: center;
+  height: 400px;
+  margin: 0 -120px;
+  background: #ffffff;
+  animation: s-band-open 1.5s var(--ease) var(--d, 0s) backwards;
+}
+
+.s-closing-logo {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  animation: s-logo-reveal 2s var(--glide) var(--d, 0s) backwards;
+}
+
+.s-closing-logo img {
+  display: block;
+  width: 520px;
+  height: auto;
+  animation: s-logo-settle 3.2s var(--ease) var(--d, 0s) backwards;
+}
+
+.s-closing-logo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, rgba(255, 255, 255, 0) 38%, rgba(255, 255, 255, 0.85) 50%, rgba(255, 255, 255, 0) 62%);
+  transform: translateX(-120%);
+  animation: s-sheen 1.8s ease-in-out calc(var(--d, 0s) + 2.6s) both;
+}
+
+@keyframes s-logo-reveal {
+  from { opacity: 0; clip-path: inset(0 100% 0 0); }
+  20% { opacity: 1; }
+  to { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes s-logo-settle {
+  from { transform: scale(1.08); filter: blur(8px); }
+}
+
+@keyframes s-sheen {
+  to { transform: translateX(120%); }
+}
