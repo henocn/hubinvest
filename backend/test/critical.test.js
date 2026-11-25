@@ -2039,3 +2039,30 @@ test('compte rendu B2B : une prochaine étape datée crée une relance B2B, sans
   await b2bMeetingService.report({ id: 'u1' }, 'prop-9', 'm9', { outcome: 'present', nextStep: 'Envoyer le devis', nextStepAt: dueAt });
   assert.deepEqual(added, [{ proposalId: 'prop-9', dueAt, reason: 'Envoyer le devis' }]);
 });
+
+test('roue : toutes les cases perdantes et 4 lots tirés au hasard ; le tirage se fait sur la roue affichée', async (context) => {
+  const lose = Array.from({ length: 5 }, (_, index) => ({ id: crypto.randomUUID(), kind: 'lose', label: `Perdu ${index + 1}`, quantity: null, awarded: 0, isActive: true }));
+  const prizes = Array.from({ length: 12 }, (_, index) => ({ id: crypto.randomUUID(), kind: 'prize', label: `Lot ${index + 1}`, quantity: 5, awarded: 0, isActive: true }));
+  const segments = [...lose, ...prizes];
+  context.mock.method(wheelRepository, 'findActiveSegments', async () => segments);
+
+  // Roue publique : 9 cases, toutes les perdantes, 4 lots distincts.
+  const shown = (await wheelService.listPublic('fr')).segments;
+  assert.equal(shown.length, 9);
+  assert.equal(shown.filter((segment) => segment.kind === 'lose').length, 5);
+  assert.equal(new Set(shown.filter((segment) => segment.kind === 'prize').map((segment) => segment.id)).size, 4);
+
+  // Le tirage reprend exactement la roue affichée (même ordre) et tombe sur l'une de ses cases.
+  const code = { id: 'code-9', code: 'W9N4', spinsAllowed: 1 };
+  wheelSetup(context, { segments, code });
+  const outcome = await wheelService.spin({ code: 'W9N4', player: PLAYER, wheel: shown.map((segment) => segment.id) }, 'fr', () => 0);
+  assert.deepEqual(outcome.segments.map((segment) => segment.id), shown.map((segment) => segment.id));
+  assert.equal(outcome.result.id, shown[0].id);
+
+  // Une roue envoyée invalide (lot inconnu, perdantes manquantes) est remplacée par une nouvelle roue valable.
+  const code2 = { id: 'code-10', code: 'X3M7', spinsAllowed: 1 };
+  wheelSetup(context, { segments, code: code2 });
+  const fallback = await wheelService.spin({ code: 'X3M7', player: PLAYER, wheel: [prizes[0].id, crypto.randomUUID()] }, 'fr', () => 0);
+  assert.equal(fallback.segments.length, 9);
+  assert.equal(fallback.segments.filter((segment) => segment.kind === 'lose').length, 5);
+});

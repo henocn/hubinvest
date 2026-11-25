@@ -1,10 +1,13 @@
-import { X } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronDown, X } from 'lucide-react';
 
 const spinsLabel = (count) => `${count} tour${count > 1 ? 's' : ''}`;
 
-// Fenêtre « Code de jeu » : le dernier code créé en grand, à dicter ou montrer au joueur, puis tous les codes délivrés.
+// Fenêtre « Code de jeu » : le dernier code créé en grand, à dicter ou montrer au joueur. Les codes déjà délivrés restent
+// repliés (« Codes délivrés ») pour que le joueur devant l'écran ne les voie pas.
 // Fond vert : le code a gagné un lot ; rouge : joué sans lot ; sans fond : pas encore joué. Un code n'expire pas.
 export default function WheelCodeDialog({ codes, created, loading, error, onNew, onClose }) {
+  const [showCodes, setShowCodes] = useState(false);
   return (
     <div className="dialog-backdrop" role="presentation" onMouseDown={onClose}>
       <section className="qr-dialog wheel-code-dialog" role="dialog" aria-modal="true" aria-labelledby="wheel-code-title" onMouseDown={(event) => event.stopPropagation()}>
@@ -17,6 +20,11 @@ export default function WheelCodeDialog({ codes, created, loading, error, onNew,
         {error && <p className="admin-form-error">{error}</p>}
         <button className="button button-primary wheel-code-new" type="button" onClick={onNew} disabled={loading}>{loading ? 'Création…' : 'Nouveau code'}</button>
         {codes.length > 0 && (
+          <button className={`wheel-code-toggle${showCodes ? ' is-open' : ''}`} type="button" onClick={() => setShowCodes((value) => !value)} aria-expanded={showCodes}>
+            Codes délivrés ({codes.length})<ChevronDown size={16} aria-hidden="true" />
+          </button>
+        )}
+        {codes.length > 0 && showCodes && (
           <>
             <ul className="wheel-code-grid" aria-label="Codes délivrés">
               {codes.map((item) => (

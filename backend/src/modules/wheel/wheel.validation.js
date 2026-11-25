@@ -8,6 +8,8 @@ const idParams = Joi.object({
 const spin = Joi.object({
   code: Joi.string().trim().min(4).max(16).required(),
   player: Joi.string().hex().length(64).required(),
+  // La roue affichée au joueur (identifiants des cases, dans l'ordre), reprise pour le tirage.
+  wheel: Joi.array().items(Joi.string().guid()).max(40),
 });
 
 const fields = {

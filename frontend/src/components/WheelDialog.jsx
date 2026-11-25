@@ -131,7 +131,7 @@ export default function WheelDialog({ player, onClose, onPlayerLost }) {
     setError('');
     setBusy(true);
     Object.assign(state, { phase: 'holding', speed: START_SPEED, response: null, last: performance.now() });
-    api.spinWheel(code, player)
+    api.spinWheel(code, player, segments.map((segment) => segment.id))
       .then((data) => { state.response = { data }; })
       .catch((requestError) => { state.response = { error: requestError }; });
     state.frame = window.requestAnimationFrame(tick);

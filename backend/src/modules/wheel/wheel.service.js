@@ -30,6 +30,40 @@ const arrange = (segments) => {
 
 const publicSegment = (segment) => ({ id: segment.id, kind: segment.kind, label: segment.label });
 
+// Une partie : toutes les cases perdantes actives et 4 lots tirés au hasard parmi ceux qui restent (on peut en régler
+// jusqu'à une vingtaine ; seuls 4 apparaissent sur la roue, différents d'une partie à l'autre).
+const PRIZES_PER_WHEEL = 4;
+
+const shuffle = (items, randomIndex) => {
+  const list = [...items];
+  for (let index = list.length - 1; index > 0; index -= 1) {
+    const other = randomIndex(index + 1);
+    [list[index], list[other]] = [list[other], list[index]];
+  }
+  return list;
+};
+
+const pickWheel = (segments, randomIndex = crypto.randomInt) => {
+  const drawable = segments.filter(isDrawable);
+  const prizes = shuffle(drawable.filter((segment) => segment.kind === 'prize'), randomIndex).slice(0, PRIZES_PER_WHEEL);
+  return arrange([...drawable.filter((segment) => segment.kind === 'lose'), ...prizes]);
+};
+
+// La roue affichée au joueur (identifiants dans l'ordre) est reprise pour le tirage si elle est encore valable : toutes
+// les cases perdantes actives et au plus 4 lots disponibles. Sinon, une nouvelle roue est tirée.
+const wheelFrom = (segments, shownIds, randomIndex) => {
+  const drawable = segments.filter(isDrawable);
+  const byId = new Map(drawable.map((segment) => [segment.id, segment]));
+  const shown = (Array.isArray(shownIds) ? shownIds : []).map((id) => byId.get(id)).filter(Boolean);
+  const losing = drawable.filter((segment) => segment.kind === 'lose');
+  const shownPrizes = shown.filter((segment) => segment.kind === 'prize');
+  const expectedPrizes = Math.min(PRIZES_PER_WHEEL, drawable.length - losing.length);
+  const valid = new Set(shown.map((segment) => segment.id)).size === shown.length
+    && losing.every((segment) => shown.includes(segment))
+    && shownPrizes.length === expectedPrizes;
+  return valid ? shown : pickWheel(segments, randomIndex);
+};
+
 const adminSegment = (segment) => {
   const values = plain(segment);
   return { ...values, remaining: remainingOf(values), drawable: isDrawable(values) };
@@ -39,7 +73,7 @@ const translateSegments = (segments, language) => translatePublicContent(segment
 
 // Renvoie les cases visibles sur la roue publique.
 const listPublic = async (language) => {
-  const segments = arrange((await wheelRepository.findActiveSegments()).map(plain).filter(isDrawable));
+  const segments = pickWheel((await wheelRepository.findActiveSegments()).map(plain));
   return { segments: await translateSegments(segments.map(publicSegment), language) };
 };
 
@@ -48,7 +82,7 @@ const normalizeCode = (value) => String(value || '').trim().toUpperCase().replac
 // Tire une case au hasard parmi celles visibles : le tour est enregistré et le stock décompté dans la même transaction.
 // Seul un joueur identifié peut jouer. Un code n'expire pas : il donne le nombre de tours fixé à sa création
 // et appartient au premier joueur qui l'utilise.
-const spin = async ({ code: rawCode, player }, language, randomIndex = crypto.randomInt) => {
+const spin = async ({ code: rawCode, player, wheel }, language, randomIndex = crypto.randomInt) => {
   settingsService.assertOpen('wheelOpen');
   const code = normalizeCode(rawCode);
   const outcome = await wheelRepository.sequelize.transaction(async (transaction) => {
@@ -63,7 +97,7 @@ const spin = async ({ code: rawCode, player }, language, randomIndex = crypto.ra
       throw new AppError(409, 'WHEEL_CODE_TAKEN', 'Ce code a déjà été utilisé par un autre joueur. Demandez-en un nouveau à l’équipe du stand.');
     }
 
-    const segments = arrange((await wheelRepository.findActiveSegmentsForUpdate(transaction)).filter(isDrawable));
+    const segments = wheelFrom(await wheelRepository.findActiveSegmentsForUpdate(transaction), wheel, randomIndex);
     if (!segments.length) throw new AppError(409, 'WHEEL_EMPTY', 'La roue n’est pas encore prête. Revenez dans un instant.');
 
     const chosen = segments[randomIndex(segments.length)];
