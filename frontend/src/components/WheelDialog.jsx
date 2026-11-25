@@ -131,7 +131,7 @@ export default function WheelDialog({ player, onClose, onPlayerLost }) {
     setError('');
     setBusy(true);
     Object.assign(state, { phase: 'holding', speed: START_SPEED, response: null, last: performance.now() });
-    api.spinWheel(code, player)
+    api.spinWheel(code, player, segments.map((segment) => segment.id))
       .then((data) => { state.response = { data }; })
       .catch((requestError) => { state.response = { error: requestError }; });
     state.frame = window.requestAnimationFrame(tick);
@@ -157,15 +157,25 @@ export default function WheelDialog({ player, onClose, onPlayerLost }) {
     setError('');
   };
 
-  // Code validé : la roue s'affiche.
-  const submitCode = (event) => {
+  // Le code est vérifié par le serveur d'abord : la roue ne s'affiche que pour un code valable.
+  const [checking, setChecking] = useState(false);
+  const submitCode = async (event) => {
     event.preventDefault();
     if (code.length !== CODE_LENGTH) {
       setError(t('wheel.codeRequired'));
       return;
     }
     setError('');
-    setStep('wheel');
+    setChecking(true);
+    try {
+      await api.checkWheelCode(code, player);
+      setStep('wheel');
+    } catch (requestError) {
+      if (requestError.code === 'WHEEL_PLAYER_REQUIRED') onPlayerLost();
+      setError(publicErrorMessage(t, requestError));
+    } finally {
+      setChecking(false);
+    }
   };
 
   const won = outcome?.result.kind === 'prize';
@@ -221,7 +231,7 @@ export default function WheelDialog({ player, onClose, onPlayerLost }) {
             />
           </label>
           {error && <p className="form-error" role="alert">{error}</p>}
-          <button className="button button-primary" type="submit" disabled={code.length !== CODE_LENGTH}>{t('wheel.submitCode')}</button>
+          <button className="button button-primary" type="submit" disabled={code.length !== CODE_LENGTH || checking}>{checking ? t('wheel.checking') : t('wheel.submitCode')}</button>
         </form>
       )}
     </PublicDialog>

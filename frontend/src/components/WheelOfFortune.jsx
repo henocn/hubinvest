@@ -15,11 +15,8 @@ const slicePath = (start, end) => {
   return `M${CENTER},${CENTER} L${x0},${y0} A${RADIUS},${RADIUS} 0 ${end - start > 180 ? 1 : 0} 1 ${x1},${y1} Z`;
 };
 
-// Deux couleurs en alternance ; une troisième évite deux cases vertes côte à côte quand leur nombre est impair.
-const sliceTheme = (index, count) => {
-  if (count % 2 === 1 && index === count - 1 && count > 1) return { fill: '#ffcf15', text: '#0f1822' };
-  return index % 2 === 0 ? { fill: '#156c53', text: '#ffffff' } : { fill: '#ffffff', text: '#156c53' };
-};
+// Couleur selon la case : un lot sur fond vert (texte blanc), une case perdante sur fond blanc (texte vert).
+const sliceTheme = (segment) => (segment.kind === 'prize' ? { fill: '#156c53', text: '#ffffff' } : { fill: '#ffffff', text: '#156c53' });
 
 const MAX_LINE = 14;
 
@@ -52,7 +49,7 @@ export default function WheelOfFortune({ segments, discRef }) {
         <circle cx={CENTER} cy={CENTER} r={RADIUS + 3} fill="#0f1822" />
         {count === 1 && <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="#156c53" />}
         {segments.map((segment, index) => {
-          const theme = sliceTheme(index, count);
+          const theme = sliceTheme(segment);
           const middle = (index + 0.5) * slice;
           const lines = toLines(segment.label);
           const longest = Math.max(...lines.map((line) => line.length));

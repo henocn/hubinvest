@@ -35,7 +35,10 @@ export const api = {
   publicToday: () => request('/program-events/public/today'),
   screen: () => request('/screen/public'),
   publicWheel: () => request('/wheel/public'),
-  spinWheel: (code, player) => request('/wheel/public/spin', { method: 'POST', body: JSON.stringify({ code, player }) }),
+  // wheel : les cases affichées (dans l'ordre), pour que le tirage se fasse sur cette roue-là.
+  // Vérifie le code de jeu avant d'afficher la roue (rien n'est joué).
+  checkWheelCode: (code, player) => request('/wheel/public/check', { method: 'POST', body: JSON.stringify({ code, player }) }),
+  spinWheel: (code, player, wheel) => request('/wheel/public/spin', { method: 'POST', body: JSON.stringify({ code, player, wheel }) }),
   publicOccupants: () => request('/occupants/public'),
   publicOccupant: (slug) => request(`/occupants/public/${encodeURIComponent(slug)}`),
   requestContact: (slug, values) => request(`/contacts/public/${encodeURIComponent(slug)}`, { method: 'POST', body: JSON.stringify(values) }),

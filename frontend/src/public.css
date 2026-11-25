@@ -3761,3 +3761,10 @@ main h1:not(.sr-only)::before {
   color: var(--muted);
   font-size: 0.72rem;
 }
+
+/* Roue : message d'erreur court, centré et en gras, sans filet à gauche. */
+.wheel-form .form-error {
+  border-left: 0;
+  text-align: center;
+  font-weight: 700;
+}

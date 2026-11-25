@@ -30,6 +30,40 @@ const arrange = (segments) => {
 
 const publicSegment = (segment) => ({ id: segment.id, kind: segment.kind, label: segment.label });
 
+// Une partie : toutes les cases perdantes actives et 4 lots tirés au hasard parmi ceux qui restent (on peut en régler
+// jusqu'à une vingtaine ; seuls 4 apparaissent sur la roue, différents d'une partie à l'autre).
+const PRIZES_PER_WHEEL = 4;
+
+const shuffle = (items, randomIndex) => {
+  const list = [...items];
+  for (let index = list.length - 1; index > 0; index -= 1) {
+    const other = randomIndex(index + 1);
+    [list[index], list[other]] = [list[other], list[index]];
+  }
+  return list;
+};
+
+const pickWheel = (segments, randomIndex = crypto.randomInt) => {
+  const drawable = segments.filter(isDrawable);
+  const prizes = shuffle(drawable.filter((segment) => segment.kind === 'prize'), randomIndex).slice(0, PRIZES_PER_WHEEL);
+  return arrange([...drawable.filter((segment) => segment.kind === 'lose'), ...prizes]);
+};
+
+// La roue affichée au joueur (identifiants dans l'ordre) est reprise pour le tirage si elle est encore valable : toutes
+// les cases perdantes actives et au plus 4 lots disponibles. Sinon, une nouvelle roue est tirée.
+const wheelFrom = (segments, shownIds, randomIndex) => {
+  const drawable = segments.filter(isDrawable);
+  const byId = new Map(drawable.map((segment) => [segment.id, segment]));
+  const shown = (Array.isArray(shownIds) ? shownIds : []).map((id) => byId.get(id)).filter(Boolean);
+  const losing = drawable.filter((segment) => segment.kind === 'lose');
+  const shownPrizes = shown.filter((segment) => segment.kind === 'prize');
+  const expectedPrizes = Math.min(PRIZES_PER_WHEEL, drawable.length - losing.length);
+  const valid = new Set(shown.map((segment) => segment.id)).size === shown.length
+    && losing.every((segment) => shown.includes(segment))
+    && shownPrizes.length === expectedPrizes;
+  return valid ? shown : pickWheel(segments, randomIndex);
+};
+
 const adminSegment = (segment) => {
   const values = plain(segment);
   return { ...values, remaining: remainingOf(values), drawable: isDrawable(values) };
@@ -39,31 +73,46 @@ const translateSegments = (segments, language) => translatePublicContent(segment
 
 // Renvoie les cases visibles sur la roue publique.
 const listPublic = async (language) => {
-  const segments = arrange((await wheelRepository.findActiveSegments()).map(plain).filter(isDrawable));
+  const segments = pickWheel((await wheelRepository.findActiveSegments()).map(plain));
   return { segments: await translateSegments(segments.map(publicSegment), language) };
 };
 
 const normalizeCode = (value) => String(value || '').trim().toUpperCase().replace(/[\s-]/g, '');
 
+// Un code peut-il jouer pour ce joueur ? (existe, tours restants, pas pris par un autre joueur). Partagé par la
+// vérification du code, faite avant d'afficher la roue, et par le tirage.
+const playableCode = async (code, player, transaction) => {
+  const passport = await wheelRepository.findPlayerByToken(player, transaction);
+  if (!passport) throw new AppError(422, 'WHEEL_PLAYER_REQUIRED', 'Identifiez-vous avant de jouer.');
+  const wheelCode = await wheelRepository.findCodeForUpdate(code, transaction);
+  if (!wheelCode) throw new AppError(404, 'WHEEL_CODE_INVALID', 'Code invalide.');
+  const plays = await wheelRepository.findCodePlays(wheelCode.id, transaction);
+  if (plays.length >= wheelCode.spinsAllowed) throw new AppError(409, 'WHEEL_CODE_USED', 'Code déjà utilisé.');
+  if (plays.some((play) => play.passportId && play.passportId !== passport.id)) {
+    throw new AppError(409, 'WHEEL_CODE_TAKEN', 'Code déjà utilisé.');
+  }
+  return { passport, wheelCode, plays };
+};
+
+// Vérifie le code avant d'afficher la roue : rien n'est joué ni enregistré.
+const checkCode = async ({ code: rawCode, player }) => {
+  settingsService.assertOpen('wheelOpen');
+  const code = normalizeCode(rawCode);
+  const { wheelCode, plays } = await wheelRepository.sequelize.transaction((transaction) => playableCode(code, player, transaction));
+  return { code, spinsLeft: Math.max(wheelCode.spinsAllowed - plays.length, 0) };
+};
+
 // Tire une case au hasard parmi celles visibles : le tour est enregistré et le stock décompté dans la même transaction.
 // Seul un joueur identifié peut jouer. Un code n'expire pas : il donne le nombre de tours fixé à sa création
 // et appartient au premier joueur qui l'utilise.
-const spin = async ({ code: rawCode, player }, language, randomIndex = crypto.randomInt) => {
+const spin = async ({ code: rawCode, player, wheel }, language, randomIndex = crypto.randomInt) => {
   settingsService.assertOpen('wheelOpen');
   const code = normalizeCode(rawCode);
   const outcome = await wheelRepository.sequelize.transaction(async (transaction) => {
-    const passport = await wheelRepository.findPlayerByToken(player, transaction);
-    if (!passport) throw new AppError(422, 'WHEEL_PLAYER_REQUIRED', 'Identifiez-vous avant de jouer.');
     // Pas de limite de parties : chaque code de jeu remis par l'API-ZF donne ses tours.
-    const wheelCode = await wheelRepository.findCodeForUpdate(code, transaction);
-    if (!wheelCode) throw new AppError(404, 'WHEEL_CODE_INVALID', 'Ce code n’existe pas. Vérifiez-le auprès de l’équipe du stand.');
-    const plays = await wheelRepository.findCodePlays(wheelCode.id, transaction);
-    if (plays.length >= wheelCode.spinsAllowed) throw new AppError(409, 'WHEEL_CODE_USED', 'Ce code a déjà servi. Demandez-en un nouveau à l’équipe du stand.');
-    if (plays.some((play) => play.passportId && play.passportId !== passport.id)) {
-      throw new AppError(409, 'WHEEL_CODE_TAKEN', 'Ce code a déjà été utilisé par un autre joueur. Demandez-en un nouveau à l’équipe du stand.');
-    }
+    const { passport, wheelCode, plays } = await playableCode(code, player, transaction);
 
-    const segments = arrange((await wheelRepository.findActiveSegmentsForUpdate(transaction)).filter(isDrawable));
+    const segments = wheelFrom(await wheelRepository.findActiveSegmentsForUpdate(transaction), wheel, randomIndex);
     if (!segments.length) throw new AppError(409, 'WHEEL_EMPTY', 'La roue n’est pas encore prête. Revenez dans un instant.');
 
     const chosen = segments[randomIndex(segments.length)];
@@ -271,6 +320,7 @@ const removePlay = async (id) => {
 
 module.exports = {
   listPublic,
+  checkCode,
   spin,
   generateCode,
   overview,
