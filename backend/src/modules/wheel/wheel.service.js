@@ -79,6 +79,29 @@ const listPublic = async (language) => {
 
 const normalizeCode = (value) => String(value || '').trim().toUpperCase().replace(/[\s-]/g, '');
 
+// Un code peut-il jouer pour ce joueur ? (existe, tours restants, pas pris par un autre joueur). Partagé par la
+// vérification du code, faite avant d'afficher la roue, et par le tirage.
+const playableCode = async (code, player, transaction) => {
+  const passport = await wheelRepository.findPlayerByToken(player, transaction);
+  if (!passport) throw new AppError(422, 'WHEEL_PLAYER_REQUIRED', 'Identifiez-vous avant de jouer.');
+  const wheelCode = await wheelRepository.findCodeForUpdate(code, transaction);
+  if (!wheelCode) throw new AppError(404, 'WHEEL_CODE_INVALID', 'Code invalide.');
+  const plays = await wheelRepository.findCodePlays(wheelCode.id, transaction);
+  if (plays.length >= wheelCode.spinsAllowed) throw new AppError(409, 'WHEEL_CODE_USED', 'Code déjà utilisé.');
+  if (plays.some((play) => play.passportId && play.passportId !== passport.id)) {
+    throw new AppError(409, 'WHEEL_CODE_TAKEN', 'Code déjà utilisé.');
+  }
+  return { passport, wheelCode, plays };
+};
+
+// Vérifie le code avant d'afficher la roue : rien n'est joué ni enregistré.
+const checkCode = async ({ code: rawCode, player }) => {
+  settingsService.assertOpen('wheelOpen');
+  const code = normalizeCode(rawCode);
+  const { wheelCode, plays } = await wheelRepository.sequelize.transaction((transaction) => playableCode(code, player, transaction));
+  return { code, spinsLeft: Math.max(wheelCode.spinsAllowed - plays.length, 0) };
+};
+
 // Tire une case au hasard parmi celles visibles : le tour est enregistré et le stock décompté dans la même transaction.
 // Seul un joueur identifié peut jouer. Un code n'expire pas : il donne le nombre de tours fixé à sa création
 // et appartient au premier joueur qui l'utilise.
@@ -86,16 +109,8 @@ const spin = async ({ code: rawCode, player, wheel }, language, randomIndex = cr
   settingsService.assertOpen('wheelOpen');
   const code = normalizeCode(rawCode);
   const outcome = await wheelRepository.sequelize.transaction(async (transaction) => {
-    const passport = await wheelRepository.findPlayerByToken(player, transaction);
-    if (!passport) throw new AppError(422, 'WHEEL_PLAYER_REQUIRED', 'Identifiez-vous avant de jouer.');
     // Pas de limite de parties : chaque code de jeu remis par l'API-ZF donne ses tours.
-    const wheelCode = await wheelRepository.findCodeForUpdate(code, transaction);
-    if (!wheelCode) throw new AppError(404, 'WHEEL_CODE_INVALID', 'Ce code n’existe pas. Vérifiez-le auprès de l’équipe du stand.');
-    const plays = await wheelRepository.findCodePlays(wheelCode.id, transaction);
-    if (plays.length >= wheelCode.spinsAllowed) throw new AppError(409, 'WHEEL_CODE_USED', 'Ce code a déjà servi. Demandez-en un nouveau à l’équipe du stand.');
-    if (plays.some((play) => play.passportId && play.passportId !== passport.id)) {
-      throw new AppError(409, 'WHEEL_CODE_TAKEN', 'Ce code a déjà été utilisé par un autre joueur. Demandez-en un nouveau à l’équipe du stand.');
-    }
+    const { passport, wheelCode, plays } = await playableCode(code, player, transaction);
 
     const segments = wheelFrom(await wheelRepository.findActiveSegmentsForUpdate(transaction), wheel, randomIndex);
     if (!segments.length) throw new AppError(409, 'WHEEL_EMPTY', 'La roue n’est pas encore prête. Revenez dans un instant.');
@@ -305,6 +320,7 @@ const removePlay = async (id) => {
 
 module.exports = {
   listPublic,
+  checkCode,
   spin,
   generateCode,
   overview,

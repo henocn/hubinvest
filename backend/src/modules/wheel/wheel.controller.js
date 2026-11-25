@@ -7,6 +7,8 @@ const getPublic = async (request, response) => response.json({
 });
 
 // Fait tourner la roue avec un code à usage unique.
+const checkCode = async (request, response) => response.json({ data: await wheelService.checkCode(request.body) });
+
 const spin = async (request, response) => response.json({
   data: await wheelService.spin(request.body, publicLanguage(request)),
 });
@@ -53,4 +55,4 @@ const removeSegment = async (request, response) => {
   response.json({ message: 'Case retirée de la roue.' });
 };
 
-module.exports = { getPublic, spin, overview, findPrize, claimPrize, claimPlay, removePlay, generateCode, createSegment, updateSegment, removeSegment };
+module.exports = { getPublic, checkCode, spin, overview, findPrize, claimPrize, claimPlay, removePlay, generateCode, createSegment, updateSegment, removeSegment };

@@ -2066,3 +2066,15 @@ test('roue : toutes les cases perdantes et 4 lots tirés au hasard ; le tirage s
   assert.equal(fallback.segments.length, 9);
   assert.equal(fallback.segments.filter((segment) => segment.kind === 'lose').length, 5);
 });
+
+test('roue : le code est vérifié avant d’afficher la roue, sans rien jouer ni enregistrer', async (context) => {
+  const code = { id: 'code-c', code: 'Q8R2', spinsAllowed: 1 };
+  const plays = wheelSetup(context, { segments: [], code });
+  const ok = await wheelService.checkCode({ code: ' q8-r2 ', player: PLAYER });
+  assert.deepEqual(ok, { code: 'Q8R2', spinsLeft: 1 });
+  assert.equal(plays.length, 0);
+
+  await assert.rejects(wheelService.checkCode({ code: 'ZZZZ', player: PLAYER }), (error) => error.code === 'WHEEL_CODE_INVALID' && error.message === 'Code invalide.');
+  plays.push({ id: 'p', wheelCodeId: 'code-c', passportId: 'passport-b' });
+  await assert.rejects(wheelService.checkCode({ code: 'Q8R2', player: PLAYER }), (error) => error.code === 'WHEEL_CODE_USED');
+});

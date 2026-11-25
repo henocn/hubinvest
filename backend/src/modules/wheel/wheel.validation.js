@@ -12,6 +12,12 @@ const spin = Joi.object({
   wheel: Joi.array().items(Joi.string().guid()).max(40),
 });
 
+// Vérification du code avant d'afficher la roue.
+const checkCode = Joi.object({
+  code: Joi.string().trim().min(4).max(16).required(),
+  player: Joi.string().hex().length(64).required(),
+});
+
 const fields = {
   kind: Joi.string().valid(...WHEEL_SEGMENT_KINDS),
   label: Joi.string().trim().min(1).max(60),
@@ -29,4 +35,4 @@ const updateSegment = Joi.object(fields).min(1);
 
 const codeParams = Joi.object({ code: Joi.string().trim().pattern(/^[A-Za-z0-9-]{3,16}$/).required() });
 
-module.exports = { idParams, codeParams, spin, createSegment, updateSegment };
+module.exports = { idParams, codeParams, checkCode, spin, createSegment, updateSegment };

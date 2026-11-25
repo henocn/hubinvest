@@ -32,6 +32,8 @@ const limitFailedSpins = (request, response, next) => {
 };
 
 router.get('/public', asyncHandler(wheelController.getPublic));
+// Vérifie le code avant d'afficher la roue ; les codes erronés comptent dans la même limite que le tirage.
+router.post('/public/check', limitFailedSpins, validate(wheelValidation.checkCode), asyncHandler(wheelController.checkCode));
 router.post('/public/spin', limitFailedSpins, validate(wheelValidation.spin), asyncHandler(wheelController.spin));
 
 router.use(asyncHandler(authenticate));
