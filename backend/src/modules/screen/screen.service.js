@@ -1,6 +1,7 @@
 const { Op } = require('sequelize');
 const { B2bMeeting, ChallengePassport, InvestorMeeting, StudioInvitation, Occupant } = require('../../models');
 const programEventService = require('../program-event/program-event.service');
+const occupantRepository = require('../occupant/occupant.repository');
 const settingsService = require('../settings/settings.service');
 const { SERVICE_KEYS } = require('../../shared/services');
 
@@ -43,11 +44,16 @@ const latestCapsules = async () => (await StudioInvitation.findAll({
   url: item.capsuleUrl,
 }));
 
+// Les stands actifs du Hub (API-ZF d'abord) : nom, numéro et logo.
+const stands = async () => (await occupantRepository.findPublic()).map((item) => ({
+  id: item.id, name: item.name, standLabel: item.standLabel, logoUrl: item.logoUrl,
+}));
+
 // Tout ce que le grand écran du Stand affiche (document v4, M7). En mode vidéo, seulement la boucle de repli.
 const getPublic = async (now = new Date()) => {
   const settings = settingsService.current();
   if (settings.screenMode === 'video' && settings.screenVideoUrl) return { mode: 'video', videoUrl: settings.screenVideoUrl };
-  const [today, numbers, capsules] = await Promise.all([programEventService.getToday('fr', now), counters(), latestCapsules()]);
+  const [today, numbers, capsules, standList] = await Promise.all([programEventService.getToday('fr', now), counters(), latestCapsules(), stands()]);
   const nextInterview = today.today.find((event) => event.type === 'studio' && new Date(event.endsAt || event.startsAt) > now)
     || today.upcoming.find((event) => event.type === 'studio')
     || null;
@@ -59,6 +65,7 @@ const getPublic = async (now = new Date()) => {
     nextInterview,
     counters: numbers,
     capsules,
+    stands: standList,
   };
 };
 
