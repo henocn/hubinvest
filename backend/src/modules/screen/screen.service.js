@@ -49,9 +49,6 @@ const stands = async () => (await occupantRepository.findPublic()).map((item) =>
   id: item.id, name: item.name, standLabel: item.standLabel, logoUrl: item.logoUrl,
 }));
 
-// Le programme du jour, réduit à ce que l'écran affiche.
-const programItem = (event) => ({ id: event.id, type: event.type, title: event.title, location: event.location, startsAt: event.startsAt, endsAt: event.endsAt });
-
 // Tout ce que le grand écran du Stand affiche (document v4, M7). En mode vidéo, seulement la boucle de repli.
 const getPublic = async (now = new Date()) => {
   const settings = settingsService.current();
@@ -68,7 +65,6 @@ const getPublic = async (now = new Date()) => {
     nextInterview,
     counters: numbers,
     capsules,
-    program: today.today.map(programItem),
     stands: standList,
   };
 };

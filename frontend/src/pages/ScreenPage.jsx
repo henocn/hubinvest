@@ -1,13 +1,17 @@
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Check, MapPin, Mic } from 'lucide-react';
+import { MapPin, Mic } from 'lucide-react';
 import { api, resolveAssetUrl } from '../lib/api';
-import { PROCEDURES_URL, procedures, services } from '../content/services';
+import { services } from '../content/services';
 import hubLogoWhite from '../assets/brand/hub-logo-white.png';
 import hubSymbolWhite from '../assets/brand/hub-symbol-white.png';
 import apizfLogo from '../assets/brand/apizf-logo.png';
+import apizfFilm from '../assets/brand/apizf-logo-animation.mp4';
 import '../screen.css';
 
 // Grand écran du Stand API-ZF (65 pouces, 16:9) : un film de marque qui tourne en boucle, pas une page web.
+// Contenu fixé par le document v4 (M7) : le service du jour, l'entreprise à la une, la prochaine interview, les
+// compteurs mesurés, les dernières capsules ; QR codes vers les rendez-vous, la fiche de l'entreprise et le site.
+// S'y ajoutent l'ouverture, les stands du Hub et la signature de l'API-ZF.
 // - Un seul trait jaune ne quitte jamais l'écran : il glisse d'une scène à l'autre et devient tour à tour le filet
 //   d'un titre, le repère d'une liste, la ligne de base des chiffres.
 // - Les titres montent mot par mot derrière une ligne de masque ; le reste arrive en fondu doux.
@@ -22,17 +26,16 @@ const formats = {
   day: new Intl.DateTimeFormat('fr-FR', { timeZone: TIME_ZONE, weekday: 'long', day: 'numeric' }),
   time: new Intl.DateTimeFormat('fr-FR', { timeZone: TIME_ZONE, hour: '2-digit', minute: '2-digit' }),
 };
-const TYPES = { spotlight: 'À l’affiche', highlight: 'Temps fort', animation: 'Animation', studio: 'Studio', talk: 'Prise de parole' };
 const COUNTERS = [
   ['players', 'Joueurs des Défis'],
   ['guichetMeetings', 'Rendez-vous aux guichets'],
   ['b2bMeetings', 'Rencontres B2B tenues'],
   ['capsules', 'Capsules livrées'],
 ];
-const DOMAINS = [['free_zone', 'Zone Franche'], ['investment_code', 'Code des investissements'], ['blue_book', 'Carnet Bleu']];
-const PROGRAM_STEP = 2400; // temps passé sur chaque ligne du programme
-const SERVICE_STEP = 2300; // temps passé sur chaque service
-const STANDS_PER_ROW = 6; // six stands couvrent la largeur de l'écran
+const STAND_SLOT = 300; // place d'un logo sur le tapis (voir .s-belt-track li)
+const STANDS_START = 1700; // le premier logo tombe (millisecondes après l'arrivée de la scène)
+const STANDS_STEP = 1250; // un logo tombe, se pose, le tapis avance d'une place : puis le suivant
+const CLOSING_SECONDS = 9; // le film du logo API-ZF (6,9 s), puis sa dernière image tenue
 
 // Délai d'entrée d'un élément, en secondes après l'arrivée de la scène.
 const at = (delay) => ({ '--d': `${delay}s` });
@@ -47,6 +50,20 @@ function Anchor({ active = true, className = '', watch }) {
   const place = useContext(ThreadContext);
   useLayoutEffect(() => { if (active) place(ref.current); }, [active, place, watch]);
   return <span ref={ref} className={`s-anchor ${className}`} aria-hidden="true" />;
+}
+
+// Compte de 0 à `count`, un pas par période, après un délai : rythme d'une suite d'éléments qui arrivent un par un.
+function useSteps(count, period, delay) {
+  const [step, setStep] = useState(0);
+  useEffect(() => {
+    let tick;
+    const timer = window.setTimeout(() => {
+      setStep(1);
+      tick = window.setInterval(() => setStep((value) => value + 1), period);
+    }, delay);
+    return () => { window.clearTimeout(timer); window.clearInterval(tick); };
+  }, [period, delay]);
+  return Math.min(step, count);
 }
 
 // Vrai une fois le délai écoulé : sert à faire passer le trait d'un emplacement à un autre dans une même scène.
@@ -91,21 +108,6 @@ function Head({ title, sub, thread = true }) {
   );
 }
 
-// Ligne mise en avant à tour de rôle dans une liste.
-function useCycle(count, period, delay) {
-  const [index, setIndex] = useState(0);
-  useEffect(() => {
-    if (count < 2) return undefined;
-    let tick;
-    const timer = window.setTimeout(() => {
-      setIndex(1);
-      tick = window.setInterval(() => setIndex((value) => (value + 1) % count), period);
-    }, delay + period);
-    return () => { window.clearTimeout(timer); window.clearInterval(tick); };
-  }, [count, period, delay]);
-  return Math.min(index, Math.max(0, count - 1));
-}
-
 // Nombre qui se compte de 0 à sa valeur, une fois la scène arrivée.
 function CountUp({ value, delay = 0, duration = 2200 }) {
   const [shown, setShown] = useState(0);
@@ -138,28 +140,15 @@ function Qr({ url, size = 220 }) {
   return <span className="s-qr" style={{ width: size, height: size }}>{image && <img src={image} alt="" />}</span>;
 }
 
-// Roue qui tourne puis ralentit, sans fin : lots en vert, cases perdantes en blanc.
-function SpinningWheel() {
-  const slices = 10;
-  const point = (angle) => `${100 + 92 * Math.cos(angle)} ${100 + 92 * Math.sin(angle)}`;
-  const paths = Array.from({ length: slices }, (_, index) => {
-    const a = (index / slices) * Math.PI * 2;
-    const b = ((index + 1) / slices) * Math.PI * 2;
-    return <path key={index} d={`M100 100 L${point(a)} A92 92 0 0 1 ${point(b)} Z`} fill={index % 2 ? '#ffffff' : '#156c53'} />;
-  });
+// QR code d'une scène, avec ce qu'il permet de faire.
+function Scan({ url, label, delay = 1.1 }) {
   return (
-    <span className="s-wheel">
-      <svg viewBox="0 0 200 200" aria-hidden="true">
-        <circle cx="100" cy="100" r="98" fill="#ffffff" />
-        <g className="s-wheel-spin">{paths}</g>
-        <circle cx="100" cy="100" r="13" fill="#ffcf15" />
-      </svg>
-      <span className="s-wheel-pin" />
-    </span>
+    <div className="s-scan m-in" style={at(delay)}>
+      <Qr url={url} size={300} />
+      <strong>{label}</strong>
+    </div>
   );
 }
-
-const live = (event, now) => new Date(event.startsAt).getTime() <= now && now < new Date(event.endsAt || event.startsAt).getTime();
 
 // ——— Scènes ———
 
@@ -177,36 +166,6 @@ function OpenerScene() {
   );
 }
 
-function ProgramScene({ items, now }) {
-  const focus = useCycle(items.length, PROGRAM_STEP, 1600);
-  const onList = useAfter(1700); // le trait quitte le titre et devient le repère de la liste
-  return (
-    <div className="s-scene s-program">
-      <Head title="Aujourd’hui au Hub" thread={!onList} />
-      <div className="s-list" style={{ '--i': focus }}>
-        <Anchor className="is-marker" active={onList} watch={focus} />
-        <ol>
-          {items.map((event, index) => {
-            const isLive = live(event, now);
-            return (
-              <li key={event.id} className={`m-in${index === focus ? ' is-focus' : ''}`} style={at(0.8 + index * 0.12)}>
-                <strong className="s-row-time">{formats.time.format(new Date(event.startsAt))}</strong>
-                <span className="s-row-text">
-                  <b>{event.title}</b>
-                  <small className={isLive ? 'is-live' : ''}>
-                    {isLive ? <><i className="s-live-dot" />En ce moment</> : TYPES[event.type]}
-                    {event.location && ` · ${event.location}`}
-                  </small>
-                </span>
-              </li>
-            );
-          })}
-        </ol>
-      </div>
-    </div>
-  );
-}
-
 function ServiceScene({ service }) {
   return (
     <div className="s-scene s-service">
@@ -218,38 +177,7 @@ function ServiceScene({ service }) {
         <In as="p" className="s-lead" delay={1.3}>{service.fr.promise}</In>
         <In as="p" className="s-place" delay={1.7}><MapPin aria-hidden="true" />{service.fr.place}</In>
       </div>
-    </div>
-  );
-}
-
-function ServicesScene() {
-  const focus = useCycle(services.length, SERVICE_STEP, 1800);
-  const onList = useAfter(1900);
-  const cycled = useRef(false);
-  if (focus > 0) cycled.current = true;
-  const base = cycled.current ? 0 : 1;
-  const service = services[focus];
-  return (
-    <div className="s-scene s-services">
-      <div className="s-services-detail">
-        <Head title="Les services de l’API-ZF" thread={!onList} />
-        <div className="s-services-focus" key={service.key}>
-          <In className="s-kicker" delay={base}>Étape {service.stage}</In>
-          <Words as="h3" className="s-services-title" delay={base + 0.1}>{service.fr.title}</Words>
-          <In as="p" className="s-lead" delay={base + 0.35}>{service.fr.promise}</In>
-        </div>
-      </div>
-      <div className="s-list is-index" style={{ '--i': focus }}>
-        <Anchor className="is-marker" active={onList} watch={focus} />
-        <ol>
-          {services.map((item, index) => (
-            <li key={item.key} className={`m-in${index === focus ? ' is-focus' : ''}`} style={at(0.8 + index * 0.1)}>
-              <span className="s-row-stage">{item.stage}</span>
-              <b>{item.fr.title}</b>
-            </li>
-          ))}
-        </ol>
-      </div>
+      <Scan url={`${SITE_URL}/guichets`} label="Prendre rendez-vous" delay={1.5} />
     </div>
   );
 }
@@ -279,12 +207,13 @@ function SpotlightScene({ spotlight }) {
   return (
     <div className="s-scene s-spotlight">
       {image && <div className="s-spotlight-card m-in" style={at(0.3)}><img src={resolveAssetUrl(image)} alt="" /></div>}
-      <div>
+      <div className="s-spotlight-body">
         <In className="s-kicker" delay={0.5}>L’entreprise à la une</In>
         <Words as="h2" className="s-display" delay={0.7}>{occupant.name}</Words>
         <Anchor className="is-rule is-spaced" />
         {place && <In as="p" className="s-place" delay={1.4}><MapPin aria-hidden="true" />{place}</In>}
       </div>
+      {occupant.slug && <Scan url={`${SITE_URL}/stands/${occupant.slug}`} label="Voir sa fiche" delay={1.6} />}
     </div>
   );
 }
@@ -303,61 +232,27 @@ function InterviewScene({ interview }) {
   );
 }
 
-// Une rangée de stands. Assez de stands pour dépasser la largeur de l'écran : la rangée glisse sans fin, et la
-// même entreprise n'est jamais visible deux fois. Sinon, la rangée reste fixe et centrée.
-// Chaque logo arrive de plus loin, un par un, et rattrape sa place dans la rangée.
-function StandsRow({ stands, reverse, moving }) {
-  const track = moving ? [...stands, ...stands] : stands;
-  return (
-    <ul className={`s-stands-track${moving ? '' : ' is-static'}${reverse ? ' is-reverse' : ''}`} style={{ animationDuration: `${stands.length * 7}s` }}>
-      {track.map((stand, index) => (
-        <li key={index}>
-          <span className="s-stands-item" style={at(1.5 + (index % stands.length) * 0.16)}>
-            {stand.logoUrl
-              ? <><span className="s-stands-logo"><img src={resolveAssetUrl(stand.logoUrl)} alt="" /></span><span className="s-stands-name">{stand.name}</span></>
-              : <b className="s-stands-word">{stand.name}</b>}
-          </span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
+// Les stands, sur un tapis roulant. Un logo descend en biais et se pose sur la ligne ; le tapis avance d'une place ;
+// le logo suivant tombe au même endroit, et ainsi de suite. Les premiers arrivés sortent par la gauche.
+// Pas de fond : le logo seul, sur du blanc pour qu'un logo transparent reste lisible. Le trait jaune est le tapis.
 function StandsScene({ stands }) {
-  const twoRows = stands.length >= STANDS_PER_ROW * 2;
-  const split = twoRows ? Math.ceil(stands.length / 2) : stands.length;
-  const rows = [stands.slice(0, split), stands.slice(split)].filter((row) => row.length);
+  const landed = useSteps(stands.length, STANDS_STEP, STANDS_START);
+  const onBelt = useAfter(1100); // le trait quitte le titre et s'étire : il devient la ligne du tapis
   return (
     <div className="s-scene s-stands">
-      <Head title="Les stands du Hub" sub="Pavillon de l’Oti" />
-      <div className="s-stands-band" style={at(0.8)}>
-        {rows.map((row, index) => <StandsRow key={index} stands={row} reverse={index === 1} moving={row.length >= STANDS_PER_ROW} />)}
-      </div>
-    </div>
-  );
-}
-
-function GamesScene() {
-  return (
-    <div className="s-scene s-games">
-      <Head title="Deux jeux, des lots à gagner" />
-      <div className="s-games-row">
-        <section className="m-in" style={at(0.9)}>
-          <span className="s-games-visual">
-            <span className="s-stamps">{[0, 1, 2, 3, 4].map((index) => <i key={index} style={at(1.8 + index * 0.45)}><Check aria-hidden="true" /></i>)}</span>
-          </span>
-          <strong>Défi de passage</strong>
-          <span>Cinq étapes à valider</span>
-        </section>
-        <section className="m-in" style={at(1.1)}>
-          <span className="s-games-visual"><SpinningWheel /></span>
-          <strong>Roue des opportunités</strong>
-          <span>Un code de jeu, un tour de roue</span>
-        </section>
-        <section className="s-games-qr m-in" style={at(1.3)}>
-          <Qr url={`${SITE_URL}/defis`} size={250} />
-          <strong>Scannez pour jouer</strong>
-        </section>
+      <Head title="Les stands du Hub" sub="Pavillon de l’Oti" thread={!onBelt} />
+      <div className="s-belt">
+        <ul className="s-belt-track" style={{ transform: `translateX(${-landed * STAND_SLOT}px)` }}>
+          {stands.map((stand, index) => (
+            <li key={stand.id} className={index < landed ? 'is-landed' : ''}>
+              <span className="s-belt-logo">
+                {stand.logoUrl ? <img src={resolveAssetUrl(stand.logoUrl)} alt="" /> : <b>{stand.name}</b>}
+              </span>
+              {stand.logoUrl && <span className="s-belt-name">{stand.name}</span>}
+            </li>
+          ))}
+        </ul>
+        <Anchor className="is-line" active={onBelt} />
       </div>
     </div>
   );
@@ -380,38 +275,14 @@ function CapsulesScene({ capsules }) {
   );
 }
 
-function ProceduresScene() {
-  return (
-    <div className="s-scene s-procedures">
-      <div>
-        <In className="s-kicker" delay={0.3}>Plateforme de l’API-ZF</In>
-        <In as="strong" className="s-procedures-count" delay={0.5}><CountUp value={procedures.length} delay={0.7} duration={1600} /></In>
-        <Words as="h2" className="s-procedures-title" delay={0.9}>démarches à faire en ligne</Words>
-        <Anchor className="is-rule is-spaced" />
-        <ul>
-          {DOMAINS.map(([domain, label], index) => (
-            <li key={domain} className="m-in" style={at(1.6 + index * 0.15)}>
-              <b>{procedures.filter((item) => item.domain === domain).length}</b>{label}
-            </li>
-          ))}
-        </ul>
-      </div>
-      <div className="s-procedures-qr m-in" style={at(1.1)}>
-        <Qr url={PROCEDURES_URL} size={320} />
-        <strong>services.apizf.tg</strong>
-      </div>
-    </div>
-  );
-}
-
-// Fin de boucle : une bande blanche s'ouvre, le logo de l'API-ZF s'y dévoile de gauche à droite, un reflet le traverse.
+// Fin de boucle : le film du logo de l'API-ZF, plein écran, sans son. Sa dernière image reste affichée.
+// Si la vidéo ne se charge pas, le logo fixe est déjà là, dessous.
 function ClosingScene() {
   return (
     <div className="s-scene s-closing">
-      <In className="s-closing-kicker" delay={0.3}>Une initiative de</In>
-      <Anchor className="is-rule is-center" />
-      <div className="s-closing-band" style={at(0.7)}>
-        <span className="s-closing-logo" style={at(1.5)}><img src={apizfLogo} alt="API-ZF" /></span>
+      <div className="s-closing-film">
+        <img src={apizfLogo} alt="API-ZF" />
+        <video src={apizfFilm} autoPlay muted playsInline preload="auto" />
       </div>
     </div>
   );
@@ -422,25 +293,20 @@ function ClosingScene() {
 const OPENER = { key: 'opener', label: 'Hub de l’investissement', seconds: 8, render: () => <OpenerScene /> };
 
 // Les scènes de la boucle, dans l'ordre, avec leur durée (secondes). Une scène sans donnée n'est pas jouée.
-const buildScenes = (data, now) => {
+const buildScenes = (data) => {
   if (!data) return [OPENER];
   const service = services.find((item) => item.key === data.service);
-  const program = (data.program || []).filter((event) => new Date(event.endsAt || event.startsAt).getTime() > now).slice(0, 5);
   const counters = data.counters || {};
   const hasCounters = COUNTERS.some(([key]) => Number(counters[key]) > 0);
   const scenes = [
     OPENER,
-    program.length && { key: 'program', label: 'Programme', seconds: 4 + (program.length * PROGRAM_STEP) / 1000, render: (time) => <ProgramScene items={program} now={time} /> },
-    service && { key: 'service', label: 'Service du jour', seconds: 11, render: () => <ServiceScene service={service} /> },
-    data.spotlight?.occupant && { key: 'spotlight', label: 'À la une', seconds: 9, render: () => <SpotlightScene spotlight={data.spotlight} /> },
-    { key: 'services', label: 'Services', seconds: 3 + (services.length * SERVICE_STEP) / 1000, render: () => <ServicesScene /> },
-    data.nextInterview && { key: 'interview', label: 'Studio', seconds: 9, render: () => <InterviewScene interview={data.nextInterview} /> },
-    data.stands?.length && { key: 'stands', label: 'Stands', seconds: 14, render: () => <StandsScene stands={data.stands} /> },
+    service && { key: 'service', label: 'Service du jour', seconds: 13, qr: true, render: () => <ServiceScene service={service} /> },
+    data.spotlight?.occupant && { key: 'spotlight', label: 'À la une', seconds: 12, qr: true, render: () => <SpotlightScene spotlight={data.spotlight} /> },
+    data.nextInterview && { key: 'interview', label: 'Studio', seconds: 10, render: () => <InterviewScene interview={data.nextInterview} /> },
     hasCounters && { key: 'counters', label: 'Chiffres', seconds: 10, render: () => <CountersScene counters={counters} /> },
-    { key: 'games', label: 'Jeux', seconds: 12, qr: true, render: () => <GamesScene /> },
-    data.capsules?.length && { key: 'capsules', label: 'Capsules', seconds: 11, qr: true, render: () => <CapsulesScene capsules={data.capsules} /> },
-    { key: 'procedures', label: 'Démarches en ligne', seconds: 11, qr: true, render: () => <ProceduresScene /> },
-    { key: 'closing', label: 'API-ZF', seconds: 8, render: () => <ClosingScene /> },
+    data.capsules?.length && { key: 'capsules', label: 'Capsules', seconds: 12, qr: true, render: () => <CapsulesScene capsules={data.capsules} /> },
+    data.stands?.length && { key: 'stands', label: 'Stands', seconds: Math.min(60, Math.ceil((STANDS_START + data.stands.length * STANDS_STEP) / 1000 + 2.4)), render: () => <StandsScene stands={data.stands} /> },
+    { key: 'closing', label: 'API-ZF', seconds: CLOSING_SECONDS, render: () => <ClosingScene /> },
   ];
   return scenes.filter(Boolean);
 };
@@ -511,8 +377,7 @@ export default function ScreenPage() {
   // Chaque seconde, le trait se recale : une donnée rafraîchie peut avoir déplacé son emplacement.
   useEffect(() => { place(anchorRef.current); }, [now, place]);
 
-  const minute = Math.floor(now / 60_000);
-  const scenes = useMemo(() => buildScenes(data, minute * 60_000), [data, minute]);
+  const scenes = useMemo(() => buildScenes(data), [data]);
   const index = Math.max(0, scenes.findIndex((scene) => scene.key === current.key));
   const scene = scenes[index];
   const sceneRef = useRef(scene);
@@ -525,7 +390,7 @@ export default function ScreenPage() {
     const total = playing.seconds * 1000;
     const leave = window.setTimeout(() => setLeaving(true), total - LEAVE);
     const next = window.setTimeout(() => {
-      const list = buildScenes(dataRef.current, Date.now());
+      const list = buildScenes(dataRef.current);
       const position = list.findIndex((item) => item.key === playing.key);
       const following = list[(position + 1) % list.length];
       setLeaving(false);
@@ -569,7 +434,7 @@ export default function ScreenPage() {
         <div className="s-camera" ref={cameraRef}>
           <ThreadContext.Provider value={place}>
             <section className={`s-frame${leaving ? ' is-leaving' : ''}`} key={`${scene.key}-${current.run}`}>
-              {scene.render(now)}
+              {scene.render()}
             </section>
           </ThreadContext.Provider>
           <span

@@ -460,43 +460,22 @@
   color: #ffcf15;
 }
 
-/* Liste dont une ligne est mise en avant à tour de rôle : le trait jaune devient son repère. */
-.s-list {
-  --row: 108px;
+/* QR code d'une scène : à droite, avec ce qu'il permet de faire. */
+.s-scan {
   position: relative;
-}
-
-.s-list ol {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.s-list li {
-  display: grid;
+  display: flex !important;
+  flex: none;
+  flex-direction: column;
   align-items: center;
-  column-gap: 40px;
-  height: var(--row);
-  padding-left: 44px;
-  border-top: 1px solid var(--hair);
-  opacity: 0.42;
-  transition: opacity 0.9s ease;
+  gap: 26px;
+  margin-left: auto;
+  margin-right: 40px;
 }
 
-.s-list li:last-child {
-  border-bottom: 1px solid var(--hair);
-}
-
-.s-list li.is-focus {
-  opacity: 1;
-}
-
-.s-anchor.is-marker {
-  position: absolute;
-  left: 0;
-  top: calc((var(--row) - 48px) / 2 + var(--i) * var(--row));
-  width: 6px;
-  height: 48px;
+.s-scan strong {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 600;
 }
 
 /* ——— Ouverture ——— */
@@ -543,70 +522,18 @@
   color: var(--soft);
 }
 
-/* ——— Programme du jour ——— */
-
-.s-program .s-list li {
-  grid-template-columns: 190px 1fr;
-}
-
-.s-row-time {
-  font-family: var(--font-display);
-  font-size: 50px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  transition: color 0.9s ease;
-}
-
-.s-list li.is-focus .s-row-time,
-.s-list li.is-focus .s-row-stage {
-  color: #ffcf15;
-}
-
-.s-row-text {
-  display: grid;
-  gap: 4px;
-  min-width: 0;
-}
-
-.s-row-text b {
-  overflow: hidden;
-  font-family: var(--font-display);
-  font-size: 40px;
-  font-weight: 600;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.s-row-text small {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 25px;
-  color: var(--soft);
-}
-
-.s-row-text small.is-live {
-  color: #ffcf15;
-}
-
-.s-live-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #ffcf15;
-  animation: s-pulse 2s ease-out infinite;
-}
-
-@keyframes s-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(255, 207, 21, 0.55); }
-  100% { box-shadow: 0 0 0 16px rgba(255, 207, 21, 0); }
-}
-
 /* ——— Service du jour : un très grand chiffre d'étape, à peine visible, dérive lentement derrière le texte ——— */
+
+.s-service {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 80px;
+}
 
 .s-service-stage {
   position: absolute;
-  right: 20px;
+  right: 420px;
   top: 50%;
   margin-top: -372px;
   font-family: var(--font-display);
@@ -628,56 +555,7 @@
 
 .s-service-body {
   position: relative;
-  max-width: 1180px;
-}
-
-/* ——— Les six services : le détail du service en cours à gauche, la liste à droite ——— */
-
-.s-services {
-  display: grid;
-  grid-template-columns: 1fr 780px;
-  align-items: center;
-  column-gap: 90px;
-}
-
-.s-services-focus {
-  min-height: 330px;
-}
-
-.s-services-title {
-  margin-bottom: 22px !important;
-  font-size: 62px;
-  font-weight: 700;
-  line-height: 1.08;
-}
-
-.s-services .s-lead {
-  font-size: 34px;
-}
-
-.s-list.is-index {
-  --row: 88px;
-}
-
-.s-list.is-index li {
-  grid-template-columns: 40px 1fr;
-  column-gap: 24px;
-}
-
-.s-row-stage {
-  font-family: var(--font-display);
-  font-size: 32px;
-  font-weight: 700;
-  transition: color 0.9s ease;
-}
-
-.s-list.is-index b {
-  overflow: hidden;
-  font-family: var(--font-display);
-  font-size: 33px;
-  font-weight: 600;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  max-width: 1120px;
 }
 
 /* ——— Chiffres : le trait jaune s'étire en ligne de base, les chiffres se comptent en dessous ——— */
@@ -716,16 +594,24 @@
   flex-direction: row;
   align-items: center;
   justify-content: flex-start;
-  gap: 100px;
+  gap: 80px;
+}
+
+.s-spotlight-body {
+  min-width: 0;
+}
+
+.s-spotlight .s-display {
+  font-size: 88px;
 }
 
 .s-spotlight-card {
   display: grid;
   place-items: center;
   flex: none;
-  width: 500px;
-  height: 500px;
-  padding: 60px;
+  width: 420px;
+  height: 420px;
+  padding: 50px;
   background: #ffffff;
 }
 
@@ -791,234 +677,112 @@
   to { opacity: 0; transform: scale(1.9); }
 }
 
-/* ——— Stands : les logos glissent sur une bande blanche qui traverse tout l'écran ——— */
+/* ——— Stands : un tapis roulant. Chaque logo descend en biais, se pose sur la ligne, puis le tapis avance ——— */
 
-.s-stands-band {
+/* La zone du tapis prend toute la largeur de l'écran et monte assez haut pour contenir la chute d'un logo.
+   Son bord gauche s'estompe : les premiers logos sortent en douceur. */
+.s-belt {
   position: relative;
-  display: grid;
-  gap: 26px;
-  margin: 0 -120px;
-  padding: 34px 0 30px;
-  overflow: hidden;
-  background: #ffffff;
-  animation: s-band-open 1.5s var(--ease) var(--d, 0s) backwards;
+  margin: -320px -120px 0;
+  padding-top: 320px;
+  -webkit-mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0) 30px, #000000 280px);
+  mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0) 30px, #000000 280px);
 }
 
-/* Les bords de la bande s'estompent : un logo entre et sort en douceur. */
-.s-stands-band::before,
-.s-stands-band::after {
-  content: '';
-  position: absolute;
-  z-index: 1;
-  top: 0;
-  bottom: 0;
-  width: 150px;
-  pointer-events: none;
-}
-
-.s-stands-band::before {
-  left: 0;
-  background: linear-gradient(90deg, #ffffff 20%, rgba(255, 255, 255, 0));
-}
-
-.s-stands-band::after {
-  right: 0;
-  background: linear-gradient(270deg, #ffffff 20%, rgba(255, 255, 255, 0));
-}
-
-@keyframes s-band-open {
-  from { opacity: 0; clip-path: inset(50% 0 50% 0); }
-  to { opacity: 1; clip-path: inset(0 0 0 0); }
-}
-
-.s-stands-track {
-  --from: 520px;
+/* Le premier logo se pose à droite ; à chaque logo posé, le tapis avance d'une place vers la gauche,
+   une fois la chute terminée (retard de la transition). */
+.s-belt-track {
   display: flex;
   width: max-content;
   margin: 0;
-  padding: 0;
+  padding: 0 0 0 1500px;
   list-style: none;
-  animation: s-marquee linear infinite;
+  transition: transform 0.55s var(--glide) 0.66s;
 }
 
-.s-stands-track.is-reverse {
-  --from: -520px;
-  animation-direction: reverse;
-}
-
-.s-stands-track.is-static {
-  width: 100%;
-  justify-content: center;
-  animation: none;
-}
-
-@keyframes s-marquee { to { transform: translateX(-50%); } }
-
-.s-stands-track li {
+.s-belt-track li {
   flex: none;
-  width: 330px;
-  padding: 0 30px;
+  width: 300px;
 }
 
-/* Chaque logo vient de plus loin, plus petit et flou, et rattrape sa place dans la rangée. */
-.s-stands-item {
-  display: grid;
-  justify-items: center;
-  align-content: center;
-  gap: 12px;
-  height: 176px;
-  animation: s-join 1.7s var(--ease) var(--d, 0s) backwards;
+.s-belt-logo {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 190px;
 }
 
-@keyframes s-join {
-  from { opacity: 0; transform: translateX(var(--from)) scale(0.55); filter: blur(10px); }
-  55% { opacity: 1; }
+/* Le logo seul, sur du blanc : un logo transparent reste lisible sur le vert. */
+.s-belt-logo > * {
+  box-sizing: border-box;
+  opacity: 0;
+  background: #ffffff;
+  transform-origin: 50% 100%;
 }
 
-.s-stands-logo {
-  position: relative;
-  width: 100%;
-  height: 132px;
-}
-
-.s-stands-logo img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+.s-belt-logo img {
+  display: block;
+  width: auto;
+  max-width: 250px;
+  height: 150px;
+  padding: 14px;
   object-fit: contain;
 }
 
-/* Stand sans logo : son nom seul, une seule fois. */
-.s-stands-word {
+/* Stand sans logo : son nom. */
+.s-belt-logo b {
+  display: grid;
+  place-items: center;
+  width: 250px;
+  min-height: 150px;
+  padding: 14px 20px;
   font-family: var(--font-display);
-  font-size: 32px;
+  font-size: 30px;
   font-weight: 700;
   line-height: 1.15;
   text-align: center;
   color: #156c53;
 }
 
-.s-stands-name {
-  max-width: 100%;
+.s-belt-track li.is-landed .s-belt-logo > * {
+  opacity: 1;
+  animation: s-drop 0.66s both;
+}
+
+/* Descente en biais, qui accélère ; le logo se pose, se tasse à peine, puis se redresse. */
+@keyframes s-drop {
+  0% { opacity: 0; transform: translate(120px, -300px) rotate(8deg); animation-timing-function: cubic-bezier(0.45, 0, 0.85, 0.75); }
+  22% { opacity: 1; }
+  70% { transform: translate(0, 0) rotate(0deg); animation-timing-function: ease-out; }
+  83% { transform: translate(0, 0) scale(1.03, 0.95); animation-timing-function: ease-in-out; }
+  100% { transform: translate(0, 0) scale(1, 1); }
+}
+
+/* La ligne du tapis : le trait jaune vient s'y étirer. */
+.s-belt .s-anchor {
+  position: absolute;
+  left: 0;
+  top: 510px;
+}
+
+.s-belt-name {
+  display: block;
+  margin-top: 26px;
   overflow: hidden;
+  padding: 0 20px;
   font-family: var(--font-display);
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
+  text-align: center;
   white-space: nowrap;
   text-overflow: ellipsis;
-  color: #0f1822;
-}
-
-/* ——— Jeux ——— */
-
-.s-games-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr 420px;
-}
-
-.s-games-row section {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 0 60px;
-  border-left: 1px solid var(--hair);
-}
-
-.s-games-row section:first-child {
-  padding-left: 0;
-  border-left: 0;
-}
-
-.s-games-visual {
-  display: flex;
-  align-items: center;
-  height: 300px;
-  margin-bottom: 24px;
-}
-
-.s-games-row strong {
-  font-family: var(--font-display);
-  font-size: 44px;
-  font-weight: 700;
-  line-height: 1.1;
-}
-
-.s-games-row section > span:last-child {
-  font-size: 28px;
   color: var(--soft);
+  opacity: 0;
+  transition: opacity 0.5s ease 0.6s;
 }
 
-.s-stamps {
-  display: flex;
-  gap: 18px;
-}
-
-.s-stamps i {
-  display: grid;
-  place-items: center;
-  width: 92px;
-  height: 92px;
-  border: 3px solid rgba(255, 255, 255, 0.4);
-  border-radius: 50%;
-  color: transparent;
-  animation: s-stamp 11s ease var(--d, 0s) infinite;
-}
-
-.s-stamps svg {
-  width: 48px;
-  height: 48px;
-}
-
-@keyframes s-stamp {
-  0% { background: transparent; border-color: rgba(255, 255, 255, 0.4); color: transparent; transform: scale(1.18); }
-  6%, 84% { background: #ffcf15; border-color: #ffcf15; color: #0f1822; transform: none; }
-  94%, 100% { background: transparent; border-color: rgba(255, 255, 255, 0.4); color: transparent; transform: none; }
-}
-
-.s-wheel {
-  position: relative;
-  width: 280px;
-  height: 280px;
-}
-
-.s-wheel svg {
-  width: 100%;
-  height: 100%;
-}
-
-.s-wheel-spin {
-  transform-origin: 100px 100px;
-  animation: s-spin 7s cubic-bezier(0.2, 0.75, 0.2, 1) infinite;
-}
-
-@keyframes s-spin {
-  0% { transform: rotate(0deg); }
-  75%, 100% { transform: rotate(1098deg); }
-}
-
-.s-wheel-pin {
-  position: absolute;
-  top: -10px;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-left: 15px solid transparent;
-  border-right: 15px solid transparent;
-  border-top: 30px solid #ffcf15;
-  transform: translateX(-50%);
-}
-
-.s-games-row .s-games-qr {
-  align-items: center;
-  justify-content: center;
-  gap: 26px;
-  padding-right: 0;
-}
-
-.s-games-row .s-games-qr strong {
-  font-size: 30px;
-  font-weight: 600;
+.s-belt-track li.is-landed .s-belt-name {
+  opacity: 1;
 }
 
 /* ——— Capsules ——— */
@@ -1050,128 +814,38 @@
   color: var(--soft);
 }
 
-/* ——— Démarches en ligne ——— */
+/* ——— Fin de boucle : le film du logo de l'API-ZF, plein écran ——— */
 
-.s-procedures {
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 100px;
+/* Le film recouvre tout : l'image passe devant l'habillage (logo, heure, chapitre, mosaïque), le trait s'efface. */
+.s-stage[data-scene='closing'] .s-camera {
+  z-index: 6;
 }
 
-.s-procedures-count {
-  font-family: var(--font-display);
-  font-size: 290px;
-  font-weight: 800;
-  line-height: 0.92;
-  font-variant-numeric: tabular-nums;
+.s-stage[data-scene='closing'] .s-thread {
+  opacity: 0;
 }
 
-.s-procedures-title {
-  font-size: 64px;
-  font-weight: 700;
-  line-height: 1.1;
-}
-
-.s-procedures ul {
-  display: flex;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.s-procedures li {
-  display: flex !important;
-  align-items: baseline;
-  gap: 14px;
-  padding: 0 38px;
-  border-left: 1px solid var(--hair);
-  font-size: 30px;
-  color: var(--soft);
-}
-
-.s-procedures li:first-child {
-  padding-left: 0;
-  border-left: 0;
-}
-
-.s-procedures li b {
-  font-family: var(--font-display);
-  font-size: 40px;
-  color: #ffcf15;
-}
-
-.s-procedures-qr {
-  display: flex !important;
-  flex-direction: column;
-  align-items: center;
-  gap: 26px;
-  margin-right: 60px;
-}
-
-.s-procedures-qr strong {
-  font-family: var(--font-display);
-  font-size: 30px;
-  font-weight: 600;
-}
-
-/* ——— Fin de boucle : le logo de l'API-ZF ——— */
-
-.s-closing-kicker {
-  text-align: center;
-  font-family: var(--font-display);
-  font-size: 36px;
-  font-weight: 500;
-  color: var(--soft);
-}
-
-.s-closing .s-anchor {
-  margin-top: 22px;
-  margin-bottom: 40px;
-}
-
-.s-closing-band {
+.s-closing-film {
+  position: absolute;
+  top: -190px;
+  left: -120px;
   display: grid;
   place-items: center;
-  height: 400px;
-  margin: 0 -120px;
-  background: #ffffff;
-  animation: s-band-open 1.5s var(--ease) var(--d, 0s) backwards;
+  width: 1920px;
+  height: 1080px;
+  background: #f6f6f6;
+  animation: s-fade 0.8s ease backwards;
 }
 
-.s-closing-logo {
-  position: relative;
-  display: block;
-  overflow: hidden;
-  animation: s-logo-reveal 2s var(--glide) var(--d, 0s) backwards;
-}
-
-.s-closing-logo img {
-  display: block;
+.s-closing-film img {
   width: 520px;
   height: auto;
-  animation: s-logo-settle 3.2s var(--ease) var(--d, 0s) backwards;
 }
 
-.s-closing-logo::after {
-  content: '';
+.s-closing-film video {
   position: absolute;
   inset: 0;
-  background: linear-gradient(105deg, rgba(255, 255, 255, 0) 38%, rgba(255, 255, 255, 0.85) 50%, rgba(255, 255, 255, 0) 62%);
-  transform: translateX(-120%);
-  animation: s-sheen 1.8s ease-in-out calc(var(--d, 0s) + 2.6s) both;
-}
-
-@keyframes s-logo-reveal {
-  from { opacity: 0; clip-path: inset(0 100% 0 0); }
-  20% { opacity: 1; }
-  to { clip-path: inset(0 0 0 0); }
-}
-
-@keyframes s-logo-settle {
-  from { transform: scale(1.08); filter: blur(8px); }
-}
-
-@keyframes s-sheen {
-  to { transform: translateX(120%); }
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
