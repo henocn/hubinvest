@@ -148,6 +148,8 @@ export const api = {
   settings: (token) => request('/settings', authorized(token)),
   updateSettings: (token, values) => request('/settings', authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
   // Vidéo de repli du grand écran : un gros fichier, envoyé avec l'avancement (0 à 1) pour la barre de progression.
+  // Lien Google Drive : le serveur télécharge la vidéo puis la sert lui-même (Drive refuse la lecture depuis un autre site).
+  importScreenVideo: (token, url) => request('/settings/screen-video', authorized(token, { method: 'POST', body: JSON.stringify({ url }) })),
   uploadScreenVideo: (token, file, onProgress) => new Promise((resolve, reject) => {
     const body = new FormData();
     body.append('video', file);

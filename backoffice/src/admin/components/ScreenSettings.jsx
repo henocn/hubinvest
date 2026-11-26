@@ -28,7 +28,24 @@ export default function ScreenSettings({ settings, saving, saved, onSave, token,
   const link = videoUrl.trim();
   const validUrl = !link || /^https?:\/\/\S+$/.test(link);
   const unchanged = uploaded ? !link : link === current;
-  const isDrive = /drive\.google\.com/.test(link || current);
+  const isDrive = /drive\.google\.com/.test(link);
+  const [importing, setImporting] = useState(false);
+
+  // Un lien Drive est importé : le serveur télécharge la vidéo (une à deux minutes pour quelques centaines de Mo).
+  // Les autres liens sont enregistrés tels quels.
+  const saveLink = async () => {
+    if (!validUrl || unchanged) return;
+    if (!isDrive) { void onSave('screenVideoUrl', link); return; }
+    setUploadError('');
+    setImporting(true);
+    try {
+      onUploaded(await api.importScreenVideo(token, link));
+    } catch (error) {
+      setUploadError(error.message);
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const upload = async (file) => {
     if (!file) return;
@@ -67,20 +84,20 @@ export default function ScreenSettings({ settings, saving, saved, onSave, token,
           {Object.entries(serviceTitles).map(([key, title]) => <option key={key} value={key}>{title}</option>)}
         </select>
       </label>
-      <form className="settings-row screen-video-row" onSubmit={(event) => { event.preventDefault(); if (validUrl && !unchanged) void onSave('screenVideoUrl', link); }}>
+      <form className="settings-row screen-video-row" onSubmit={(event) => { event.preventDefault(); void saveLink(); }}>
         <span>
           <strong>Vidéo de repli</strong>
           {current
             ? <a className="screen-video-source" href={resolveAssetUrl(current)} target="_blank" rel="noreferrer">{sourceOf(current)}</a>
             : <span className="screen-video-source">Aucune</span>}
-          {isDrive && <span className="screen-video-hint">Partagée à « tous ceux qui ont le lien », moins de 100 Mo</span>}
+          {isDrive && <span className="screen-video-hint">Partagée à « tous ceux qui ont le lien »</span>}
         </span>
         {saved === 'screenVideoUrl' && <Check className="settings-saved" size={18} aria-label="Enregistré" />}
         <span className="settings-number">
           <input type="url" value={videoUrl} onChange={(event) => setVideoUrl(event.target.value)} placeholder="Lien YouTube, Google Drive ou fichier vidéo" aria-label="Lien de la vidéo de repli" />
-          <button className="button button-secondary" type="submit" disabled={saving === 'screenVideoUrl' || !validUrl || unchanged}>Enregistrer</button>
+          <button className="button button-secondary" type="submit" disabled={saving === 'screenVideoUrl' || importing || progress !== null || !validUrl || unchanged}>{importing ? 'Import depuis Drive…' : 'Enregistrer'}</button>
           <input ref={fileRef} type="file" accept="video/mp4,video/webm" hidden onChange={(event) => upload(event.target.files?.[0])} />
-          <button className="button button-secondary" type="button" disabled={progress !== null} onClick={() => fileRef.current?.click()}>
+          <button className="button button-secondary" type="button" disabled={progress !== null || importing} onClick={() => fileRef.current?.click()}>
             <Upload size={15} aria-hidden="true" />
             {progress === null ? 'Charger une vidéo' : `Envoi… ${Math.round(progress * 100)} %`}
           </button>

@@ -496,3 +496,6 @@
 .admin-app .screen-video-row .settings-number { flex-wrap: wrap; justify-content: flex-end; }
 .admin-app .screen-video-row .button svg { margin-right: 6px; }
 .admin-app .screen-video-error { width: 100%; margin: 0; }
+/* Une liste déroulante de réglage garde sa largeur : elle ne recouvre pas le libellé de sa ligne. */
+.admin-app .settings-row > select { width: auto; flex: 0 1 auto; max-width: 60%; }
+@media (max-width: 620px) { .admin-app .settings-row > select { max-width: 55%; } }
