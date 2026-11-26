@@ -165,13 +165,15 @@
   align-items: center;
 }
 
-/* Logo de chaîne : le logo du Hub, traversé toutes les 14 secondes par un reflet, puis légèrement lumineux. */
+/* Logo de chaîne : le logo du Hub, traversé par un reflet doré (1,2 s) ; juste après, le logo bouge une demi-seconde
+   (il grossit un peu en pivotant, puis revient) ; puis la pause, et ainsi de suite, toutes les 3,2 s. */
 .s-bug {
   position: relative;
   display: inline-block;
   flex: none;
   line-height: 0;
-  animation: s-bug-glow 14s ease-in-out infinite;
+  transform-origin: 30% 55%;
+  animation: s-bug-glow 3.2s ease-in-out infinite, s-bug-move 3.2s ease-in-out infinite;
 }
 
 .s-bug img {
@@ -187,19 +189,25 @@
   mask-size: 100% 100%;
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
-  background: linear-gradient(105deg, rgba(255, 255, 255, 0) 38%, rgba(255, 236, 160, 0.95) 50%, rgba(255, 255, 255, 0) 62%) no-repeat;
+  background: linear-gradient(105deg, rgba(255, 255, 255, 0) 32%, rgba(255, 207, 21, 0.85) 44%, #fff6cf 50%, rgba(255, 207, 21, 0.85) 56%, rgba(255, 255, 255, 0) 68%) no-repeat;
   background-size: 260% 100%;
-  animation: s-bug-sheen 14s ease-in-out infinite;
+  animation: s-bug-sheen 3.2s ease-in-out infinite;
 }
 
 @keyframes s-bug-sheen {
-  0%, 80% { background-position: 100% 0; }
-  92%, 100% { background-position: 0% 0; }
+  0% { background-position: 100% 0; }
+  37.5%, 100% { background-position: 0% 0; }
+}
+
+@keyframes s-bug-move {
+  0%, 42%, 58%, 100% { transform: none; }
+  47% { transform: scale(1.08) rotate(-3deg); }
+  52.5% { transform: scale(1.03) rotate(2deg); }
 }
 
 @keyframes s-bug-glow {
-  0%, 84%, 100% { filter: drop-shadow(0 0 0 rgba(255, 207, 21, 0)); }
-  91% { filter: drop-shadow(0 0 14px rgba(255, 207, 21, 0.45)); }
+  0%, 55%, 100% { filter: drop-shadow(0 0 0 rgba(255, 207, 21, 0)); }
+  25% { filter: drop-shadow(0 0 16px rgba(255, 207, 21, 0.55)); }
 }
 
 .s-top .s-bug {
