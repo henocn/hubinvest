@@ -151,6 +151,18 @@ function Scan({ url, label, delay = 1.1 }) {
   );
 }
 
+// Logo de chaîne, comme à la télévision : le logo du Hub reste dans le coin, et un reflet le traverse régulièrement.
+// Le reflet est découpé à la forme du logo : seules ses lettres et son symbole s'éclairent.
+function ChannelLogo() {
+  const mask = `url(${hubLogoWhite})`;
+  return (
+    <span className="s-bug" role="img" aria-label="Hub de l’investissement">
+      <img src={hubLogoWhite} alt="" />
+      <span className="s-bug-sheen" style={{ WebkitMaskImage: mask, maskImage: mask }} aria-hidden="true" />
+    </span>
+  );
+}
+
 // ——— Scènes ———
 
 function OpenerScene() {
@@ -418,6 +430,7 @@ export default function ScreenPage() {
         {fallback.kind === 'youtube'
           ? <iframe src={fallback.src} title="Vidéo du Hub" allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" />
           : <video key={fallback.src} src={resolveAssetUrl(fallback.src)} autoPlay muted loop playsInline onError={() => setFailedVideo(data.videoUrl)} />}
+        <ChannelLogo />
       </main>
     );
   }
@@ -436,7 +449,7 @@ export default function ScreenPage() {
         </div>
 
         <header className="s-top">
-          <img src={hubLogoWhite} alt="Hub de l’investissement" />
+          <ChannelLogo />
           <span className="s-top-date">{formats.day.format(new Date(now))}</span>
           <strong className="s-top-clock">{time.slice(0, 2)}<i>:</i>{time.slice(3)}</strong>
         </header>
