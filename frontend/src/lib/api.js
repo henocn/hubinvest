@@ -55,5 +55,6 @@ export const api = {
   createChallengePassport: (values) => request('/challenge-passports/public', { method: 'POST', body: JSON.stringify(values) }),
   publicChallengePassport: (token) => request(`/challenge-passports/public/${encodeURIComponent(token)}`),
   askLiveQuestion: (eventId, values) => request(`/live-questions/public/${encodeURIComponent(eventId)}`, { method: 'POST', body: JSON.stringify(values) }),
+  screenStreamUrl: () => `${API_URL}/realtime/screen`,
   challengePassportStreamUrl: (personalToken) => `${API_URL}/realtime/passports/${encodeURIComponent(personalToken)}`,
 };

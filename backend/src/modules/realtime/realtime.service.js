@@ -20,6 +20,8 @@ const channels = Object.freeze({
   occupant: (occupantId) => `occupant:${occupantId}`,
   admin: (occupantId) => `admin:${occupantId}`,
   passport: (passportId) => `passport:${passportId}`,
+  // Grand écran du Stand : public, il ne reçoit que le nom de ce qui a changé, jamais une donnée.
+  screen: 'screen',
 });
 
 // Liste les canaux qu'un compte a le droit d'écouter, avec le même cloisonnement que l'API.
@@ -104,6 +106,13 @@ const openPassportStream = (request, response, passport) => {
   return hub.open(request, response, { key, channels: [channels.passport(passport.id)] });
 };
 
+// Ouvre le flux public du grand écran : quelques écrans au plus (limite par clé), pour ne jamais priver l'équipe de flux.
+const openScreenStream = (request, response) => {
+  if (!env.realtime.enabled) throw new AppError(503, 'REALTIME_DISABLED', 'Le temps réel est désactivé.');
+  assertCapacity('screen');
+  return hub.open(request, response, { key: 'screen', channels: [channels.screen] });
+};
+
 // Publie sans jamais faire échouer l'action métier qui vient de réussir.
 const safePublish = (targets, topic) => {
   try {
@@ -126,26 +135,29 @@ const events = {
     channels.superAdmins,
     channels.animators,
     passportId && channels.passport(passportId),
+    channels.screen,
   ], 'challenge'),
-  investorRequestsChanged: () => safePublish([channels.apizfTeam], 'investor-requests'),
-  b2bChanged: (occupantIds) => safePublish([...unique([].concat(occupantIds)).map(channels.admin), channels.superAdmins], 'b2b'),
-  studioChanged: (occupantIds) => safePublish([...unique([].concat(occupantIds)).map(channels.admin), channels.superAdmins], 'studio'),
+  // Le grand écran suit aussi ces sujets : compteurs, capsules, prochaine interview, stands, programme, réglages.
+  investorRequestsChanged: () => safePublish([channels.apizfTeam, channels.screen], 'investor-requests'),
+  b2bChanged: (occupantIds) => safePublish([...unique([].concat(occupantIds)).map(channels.admin), channels.superAdmins, channels.screen], 'b2b'),
+  studioChanged: (occupantIds) => safePublish([...unique([].concat(occupantIds)).map(channels.admin), channels.superAdmins, channels.screen], 'studio'),
   // Fiche de stand modifiée : backoffice et en-tête de l'espace occupant (logo, nom).
   occupantsChanged: (occupantId = null) => safePublish([
     channels.superAdmins,
     occupantId && channels.occupant(occupantId),
     occupantId && channels.admin(occupantId),
+    channels.screen,
   ], 'occupants'),
   usersChanged: () => safePublish([channels.superAdmins], 'users'),
   // Compte modifié, désactivé ou supprimé : ses écrans revérifient leur session.
   accountChanged: (userId) => safePublish([channels.user(userId)], 'account'),
-  programChanged: () => safePublish([channels.superAdmins], 'program'),
+  programChanged: () => safePublish([channels.superAdmins, channels.screen], 'program'),
   // Roue des opportunités : cases, stock et codes, partagés par toute l'administration.
   wheelChanged: () => safePublish([channels.superAdmins, channels.admins], 'wheel'),
   // Modules ouverts ou fermés, nombre de stands des Défis : toute l'équipe.
   // Questions du public pendant un direct : animateurs et super administrateurs.
   liveQuestionsChanged: () => safePublish([channels.animators, channels.superAdmins], 'live-questions'),
-  settingsChanged: () => safePublish([channels.superAdmins, channels.admins, channels.animators], 'settings'),
+  settingsChanged: () => safePublish([channels.superAdmins, channels.admins, channels.animators, channels.screen], 'settings'),
 };
 
 module.exports = {
@@ -155,6 +167,7 @@ module.exports = {
   consumeTicket,
   openUserStream,
   openPassportStream,
+  openScreenStream,
   isOnline,
   events,
   closeAll: hub.closeAll,

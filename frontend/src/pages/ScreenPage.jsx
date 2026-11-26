@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useLayoutEffect, use
 import { MapPin, Mic } from 'lucide-react';
 import { api, resolveAssetUrl } from '../lib/api';
 import { videoSource } from '../lib/video-source';
+import { useRealtimeConnection, useRealtimeEvent } from '../lib/realtime';
 import { services } from '../content/services';
 import hubLogoWhite from '../assets/brand/hub-logo-white.png';
 import hubSymbolWhite from '../assets/brand/hub-symbol-white.png';
@@ -20,7 +21,9 @@ import '../screen.css';
 // Les scènes sans donnée sont sautées. En mode repli (Paramètres), une boucle vidéo plein écran.
 
 const TIME_ZONE = 'Africa/Lome';
-const REFRESH = 30_000;
+const REFRESH = 30_000; // relecture de secours, si le flux en temps réel est coupé
+// Ce que le back office change et que l'écran montre : il se recharge aussitôt, sans attendre la relecture.
+const LIVE_TOPICS = ['settings', 'occupants', 'program', 'studio', 'challenge', 'b2b', 'investor-requests'];
 const SITE_URL = 'https://hub.investir.tg';
 const LEAVE = 900; // durée du fondu de sortie d'une scène
 const formats = {
@@ -379,15 +382,21 @@ export default function ScreenPage() {
     setThread((value) => (value && value.x === next.x && value.y === next.y && value.w === next.w && value.h === next.h ? value : next));
   }, []);
 
+  const activeRef = useRef(true);
+  const load = useCallback(() => api.screen().then((result) => { if (activeRef.current) { dataRef.current = result; setData(result); } }).catch(() => {}), []);
+
   useEffect(() => {
-    let active = true;
-    const load = () => api.screen().then((result) => { if (active) { dataRef.current = result; setData(result); } }).catch(() => {});
+    activeRef.current = true;
     load();
     const refresh = window.setInterval(load, REFRESH);
     const clock = window.setInterval(() => setNow(Date.now()), 1000);
-    document.fonts?.ready.then(() => { if (active) place(anchorRef.current); }).catch(() => {});
-    return () => { active = false; window.clearInterval(refresh); window.clearInterval(clock); };
-  }, [place]);
+    document.fonts?.ready.then(() => { if (activeRef.current) place(anchorRef.current); }).catch(() => {});
+    return () => { activeRef.current = false; window.clearInterval(refresh); window.clearInterval(clock); };
+  }, [load, place]);
+
+  // Un changement fait dans le back office (vidéo de repli, service du jour, logo, programme, chiffres…) arrive aussitôt.
+  useRealtimeConnection('screen', async () => api.screenStreamUrl(), { topics: LIVE_TOPICS });
+  useRealtimeEvent(LIVE_TOPICS, load);
 
   // Chaque seconde, le trait se recale : une donnée rafraîchie peut avoir déplacé son emplacement.
   useEffect(() => { place(anchorRef.current); }, [now, place]);

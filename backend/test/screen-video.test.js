@@ -42,3 +42,27 @@ test('un fichier Drive privé, ou qui n’est pas une vidéo, est refusé sans r
   await assert.rejects(importFromDrive('https://youtu.be/dQw4w9WgXcQ'), (error) => error.code === 'SCREEN_VIDEO_NOT_DRIVE');
   assert.equal(fs.readdirSync(directory).length, before);
 });
+
+test('au démarrage, seules les vidéos de repli abandonnées sont supprimées, jamais la vidéo actuelle', async (context) => {
+  const settingsService = require('../src/modules/settings/settings.service');
+  const kept = 'aaaaaaaa-0000-4000-8000-000000000001.mp4';
+  const names = [kept, 'bbbbbbbb-0000-4000-8000-000000000002.mp4', 'cccccccc-0000-4000-8000-000000000003.part'];
+  // Les vidéos déjà présentes (celle de l'environnement de travail) sont mises de côté le temps du test.
+  const existing = fs.readdirSync(directory);
+  const aside = fs.mkdtempSync(path.join(directory, '..', 'screen-aside-'));
+  for (const name of existing) fs.renameSync(path.join(directory, name), path.join(aside, name));
+  context.after(() => {
+    for (const name of fs.readdirSync(directory)) fs.rmSync(path.join(directory, name), { force: true });
+    for (const name of existing) fs.renameSync(path.join(aside, name), path.join(directory, name));
+    fs.rmSync(aside, { recursive: true, force: true });
+  });
+  for (const name of names) fs.writeFileSync(path.join(directory, name), 'x');
+
+  const removed = await settingsService.cleanScreenVideos(`/uploads/screen/${kept}`);
+  assert.deepEqual(removed.sort(), names.slice(1).sort());
+  assert.deepEqual(fs.readdirSync(directory), [kept]);
+
+  // Vidéo de repli YouTube (ou aucune) : plus aucun fichier n'a de raison de rester.
+  await settingsService.cleanScreenVideos('https://youtu.be/dQw4w9WgXcQ');
+  assert.deepEqual(fs.readdirSync(directory), []);
+});

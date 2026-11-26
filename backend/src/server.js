@@ -9,7 +9,10 @@ const server = app.listen(env.port, () => {
   console.log(`HubInvest API ecoute sur le port ${env.port}`);
   if (env.notifications.enabled && env.notifications.workerEnabled) notificationWorker.start();
   // Réglages de l'administration chargés en mémoire ; sans table (migration pas encore passée), les valeurs par défaut restent.
-  settingsService.load().catch((error) => console.error('Réglages non chargés, valeurs par défaut utilisées.', error.message));
+  // Puis les vidéos de repli abandonnées sont retirées (seulement une fois les réglages lus, pour garder la vidéo actuelle).
+  settingsService.load()
+    .then(() => settingsService.cleanScreenVideos())
+    .catch((error) => console.error('Réglages non chargés, valeurs par défaut utilisées.', error.message));
 });
 
 // Arrête proprement le serveur, le traitement des notifications puis la base.

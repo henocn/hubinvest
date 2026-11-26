@@ -158,6 +158,17 @@ const update = async (values, user) => {
 };
 
 // Vidéo de repli chargée depuis les Paramètres : elle devient la vidéo du grand écran.
+// Au démarrage, aucun envoi n'est en cours : toute vidéo du dossier qui n'est pas la vidéo de repli actuelle est
+// supprimée (import interrompu par un redémarrage, fichier abandonné), pour ne pas encombrer le serveur.
+const cleanScreenVideos = async (currentUrl = cache.screenVideoUrl) => {
+  const directory = path.resolve(__dirname, '..', '..', '..', 'uploads', 'screen');
+  const keep = UPLOADED_VIDEO.test(currentUrl || '') ? path.basename(currentUrl) : null;
+  const files = await fs.readdir(directory).catch(() => []);
+  const removed = files.filter((name) => name !== keep);
+  await Promise.all(removed.map((name) => fs.unlink(path.join(directory, name)).catch(() => {})));
+  return removed;
+};
+
 const setScreenVideo = async (file, user) => {
   if (!file) throw new AppError(422, 'SCREEN_VIDEO_REQUIRED', 'Choisissez une vidéo.');
   try {
@@ -174,4 +185,4 @@ const publicSettings = () => {
   return rest;
 };
 
-module.exports = { MODULES, load, current, requiredPassages, challengeRewardStock, wheelSpinsPerCode, b2bSchedule, studioSchedule, guichetSchedule, studioFormats, studioFormatLabel, investorFollowUpDelay, investorQualificationFields, assertOpen, update, setScreenVideo, publicSettings, _reset: () => { cache = defaults(); } };
+module.exports = { MODULES, load, current, requiredPassages, challengeRewardStock, wheelSpinsPerCode, b2bSchedule, studioSchedule, guichetSchedule, studioFormats, studioFormatLabel, investorFollowUpDelay, investorQualificationFields, assertOpen, update, setScreenVideo, cleanScreenVideos, publicSettings, _reset: () => { cache = defaults(); } };

@@ -19,4 +19,9 @@ const passportStream = async (request, response) => {
   realtimeService.openPassportStream(request, response, passport);
 };
 
-module.exports = { ticket, stream, passportStream };
+// Ouvre le flux public du grand écran.
+const screenStream = async (request, response) => {
+  realtimeService.openScreenStream(request, response);
+};
+
+module.exports = { ticket, stream, passportStream, screenStream };

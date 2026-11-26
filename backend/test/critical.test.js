@@ -1008,12 +1008,13 @@ test('un passage validé prévient le stand, ses administrateurs, les animateurs
   assert.equal(published[0].topic, 'challenge');
   assert.deepEqual(
     published[0].channels.filter(Boolean).sort(),
-    ['admin:stand-a', 'animateur', 'occupant:stand-a', 'passport:passport-a', 'super-admin'],
+    ['admin:stand-a', 'animateur', 'occupant:stand-a', 'passport:passport-a', 'screen', 'super-admin'],
   );
 
   published.length = 0;
   realtimeService.events.investorRequestsChanged();
-  assert.deepEqual(published[0], { channels: ['apizf-team'], topic: 'investor-requests' });
+  // Le grand écran est prévenu aussi : ses compteurs (rendez-vous aux guichets) changent.
+  assert.deepEqual(published[0], { channels: ['apizf-team', 'screen'], topic: 'investor-requests' });
 });
 
 test('une diffusion en échec ne fait jamais échouer l’action métier', (context) => {
