@@ -2,6 +2,9 @@ const env = require('../../config/env');
 const AppError = require('../../shared/app-error');
 const { MANAGER_ROLES } = require('../../shared/access');
 const { accessRole, guideFor, ROLE_LABELS } = require('./assistant.guide');
+const { toolsFor, definitions } = require('./assistant.tools');
+const INSTRUCTIONS = require('./assistant.instructions');
+const model = require('./assistant.model');
 const dashboardService = require('../dashboard/dashboard.service');
 const contactService = require('../contact/contact.service');
 const followUpService = require('../follow-up/follow-up.service');
@@ -9,13 +12,13 @@ const studioInvitationService = require('../studio-invitation/studio-invitation.
 const b2bNeedService = require('../b2b-need/b2b-need.service');
 const occupantRepository = require('../occupant/occupant.repository');
 
-// Assistant de l'espace équipe : il répond au compte connecté, dans la limite de ce que ce compte voit.
-// - Le serveur lit les données avec les droits du compte (les mêmes services que les pages de l'espace équipe) et les
-//   joint à la question : l'assistant n'a aucun accès à la base. Un gérant ne voit que son stand, l'équipe API-ZF
-//   voit tous les stands, un animateur seulement ce qui le concerne.
-// - Le guide joint à la question ne contient que les rubriques ouvertes au compte (assistant.guide.js).
-// - L'agent lui-même (consigne, guide, modèle) vit dans Dify ; la clé de Dify ne quitte pas le serveur.
-// - Lecture seule : rien ici ne crée, ne modifie ni ne supprime quoi que ce soit.
+// Agent de l'espace équipe : il travaille pour le compte connecté, dans la limite de ce que ce compte peut faire.
+// - Le modèle (API Anthropic) reçoit la consigne, le guide des seules rubriques ouvertes au compte (assistant.guide.js),
+//   un résumé de ses données lu avec ses droits, et les outils de son rôle (assistant.tools.js).
+// - Chaque outil appelle l'API de HubInvest avec la session du compte : les routes appliquent droits et validations.
+//   Les lectures s'exécutent ; les créations et modifications attendent la confirmation de la personne ;
+//   aucune suppression n'est possible (assistant.actions.js).
+// - La clé de l'API Anthropic ne quitte pas le serveur.
 
 const LIST = 10; // lignes au plus par liste jointe à la question
 // Ce qui attend une action, tel que les pastilles du menu le comptent.
@@ -106,55 +109,97 @@ const snapshot = async (user) => {
 
 const failure = (detail) => {
   // Trace pour le diagnostic (journal du serveur) ; le compte connecté ne reçoit qu'un message simple.
-  console.error('Assistant : Dify n’a pas répondu.', detail);
+  console.error('Assistant : le modèle n’a pas répondu.', detail);
   return new AppError(502, 'ASSISTANT_UNAVAILABLE', 'L’assistant ne répond pas pour le moment. Réessayez dans un instant.');
 };
 
-// Réponse de Dify, reçue en flux d'événements : le texte arrive par morceaux, une erreur peut arriver en cours de route.
-const readReply = (stream) => {
-  let answer = '';
-  for (const block of String(stream).split(/\r?\n\r?\n/)) {
-    const line = block.split(/\r?\n/).find((item) => item.startsWith('data:'));
-    if (!line) continue;
-    let event;
-    try { event = JSON.parse(line.slice(5)); } catch (error) { continue; }
-    if (event.event === 'error') throw failure(event.message || event.code || 'erreur');
-    if (event.event === 'message' || event.event === 'agent_message') answer += event.answer || '';
-    if (event.event === 'message_replace') answer = event.answer || '';
+const enabled = () => Boolean(env.assistant.apiKey);
+
+const TURN = 1500; // caractères gardés par message du fil ; la question en cours est envoyée entière
+const MAX_STEPS = 8; // appels au modèle au plus par question (chaque appel peut utiliser plusieurs outils)
+const RESULT_LIMIT = 12_000; // caractères au plus par résultat d'outil
+// Champs jamais utiles à l'agent : jetons, images, mots de passe.
+const DROPPED = new Set(['token', 'passwordHash', 'password', 'gallery', 'coverImageUrl', 'logoUrl', 'updatedAt']);
+
+// Résultat d'un outil, allégé : sans champs vides ni champs inutiles, textes et listes raccourcis.
+const compact = (value, depth = 0) => {
+  if (Array.isArray(value)) {
+    const items = value.slice(0, 30).map((item) => compact(item, depth + 1));
+    return value.length > 30 ? [...items, `… et ${value.length - 30} de plus`] : items;
   }
-  answer = answer.trim();
-  if (!answer) throw failure('réponse vide');
-  return answer;
+  if (value && typeof value === 'object') {
+    if (depth > 5) return '…';
+    return Object.fromEntries(Object.entries(value)
+      .filter(([key, item]) => !DROPPED.has(key) && item !== null && item !== undefined && item !== '' && !(Array.isArray(item) && !item.length))
+      .map(([key, item]) => [key, compact(item, depth + 1)]));
+  }
+  return typeof value === 'string' && value.length > 600 ? `${value.slice(0, 600)}…` : value;
+};
+const serialize = (value) => {
+  const json = JSON.stringify(compact(value ?? null));
+  return json.length > RESULT_LIMIT ? `${json.slice(0, RESULT_LIMIT)}… (résultat tronqué : précisez la recherche)` : json;
 };
 
-const enabled = () => Boolean(env.assistant.url && env.assistant.key);
+// Le fil gardé par la fenêtre : il commence par la personne, et les messages d'un même auteur sont réunis.
+const conversation = (history) => history.reduce((turns, item) => {
+  const content = item.content.slice(0, TURN);
+  if (!turns.length && item.role !== 'user') return turns;
+  const last = turns[turns.length - 1];
+  if (last?.role === item.role) last.content = `${last.content}\n\n${content}`;
+  else turns.push({ role: item.role, content });
+  return turns;
+}, []);
 
-// Les derniers échanges, tels que l'écran du gérant les garde : l'assistant suit le fil sans que Dify ait à le mémoriser,
-// et les données du stand sont relues à chaque question.
-const TURN = 700; // caractères gardés par message : le fil reste court, la question en cours est envoyée entière
-const transcript = (history) => history.map((item) => `${item.role === 'assistant' ? 'Assistant' : 'Utilisateur'} : ${item.content.slice(0, TURN)}`).join('\n');
-
-const ask = async (user, { message, history = [] }) => {
-  if (!enabled()) throw new AppError(503, 'ASSISTANT_NOT_CONFIGURED', 'L’assistant n’est pas encore disponible.');
-  const context = await snapshot(user);
-  let response;
+// Un outil demandé par le modèle : lecture exécutée, écriture préparée pour confirmation.
+const runTool = async (block, user, session, actions) => {
+  const tool = actions.allowedTool(user, block.name);
+  if (!tool) return { type: 'tool_result', tool_use_id: block.id, is_error: true, content: 'Cet outil n’est pas ouvert à ce compte.' };
   try {
-    response = await fetch(`${env.assistant.url}/chat-messages`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${env.assistant.key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        inputs: { guide: guideFor(user), contexte: JSON.stringify(context), historique: transcript(history) },
-        query: message,
-        response_mode: 'streaming',
-        user: `hubinvest-${user.id}`,
-      }),
-      signal: AbortSignal.timeout(env.assistant.timeout),
-    });
+    if (!tool.write) return { type: 'tool_result', tool_use_id: block.id, content: serialize(await actions.read(tool, block.input || {}, user, session)) };
+    const action = await actions.prepare(tool, block.input || {}, user, session);
+    session.pending.push(action);
+    return { type: 'tool_result', tool_use_id: block.id, content: `Action préparée, en attente de la confirmation de la personne : ${action.summary}.` };
   } catch (error) {
-    throw failure(error.message);
+    return { type: 'tool_result', tool_use_id: block.id, is_error: true, content: error.message || 'Erreur.' };
   }
-  if (!response.ok) throw failure(`HTTP ${response.status} ${(await response.text().catch(() => '')).slice(0, 300)}`);
-  return { answer: readReply(await response.text()) };
 };
 
-module.exports = { enabled, ask, snapshot, readReply };
+// Une question : le modèle utilise ses outils autant que nécessaire, puis répond.
+// Renvoie la réponse et les actions préparées, que la personne confirmera.
+const ask = async (user, { message, history = [] }, session) => {
+  if (!enabled()) throw new AppError(503, 'ASSISTANT_NOT_CONFIGURED', 'L’assistant n’est pas encore disponible.');
+  const actions = require('./assistant.actions');
+  const tools = toolsFor(accessRole(user));
+  const context = await snapshot(user);
+  // Consigne et guide du rôle : identiques d'une question à l'autre pour ce rôle, gardés en cache.
+  const system = [{ type: 'text', text: `${INSTRUCTIONS}\n\n# Guide de l'espace équipe pour ce compte\n\n${guideFor(user)}`, cache_control: { type: 'ephemeral' } }];
+  const messages = [
+    ...conversation(history),
+    { role: 'user', content: `<donnees_du_compte>\n${JSON.stringify(context)}\n</donnees_du_compte>\n\n${message}` },
+  ];
+  const state = { ...session, pending: [] };
+
+  for (let step = 0; step < MAX_STEPS; step += 1) {
+    let response;
+    try {
+      response = await model.create({ model: env.assistant.model, max_tokens: 2000, system, tools: definitions(tools), messages, output_config: { effort: env.assistant.effort } });
+    } catch (error) {
+      throw failure(error.message);
+    }
+    const uses = response.content.filter((block) => block.type === 'tool_use');
+    const answer = response.content.filter((block) => block.type === 'text').map((block) => block.text).join('\n').trim();
+    if (response.stop_reason === 'refusal') return { answer: 'Je ne peux pas traiter cette demande.', actions: state.pending };
+    if (response.stop_reason !== 'tool_use' || !uses.length) {
+      if (!answer && !state.pending.length) throw failure(`réponse vide (${response.stop_reason})`);
+      return { answer: answer || 'Vérifiez puis confirmez :', actions: state.pending };
+    }
+    messages.push({ role: 'assistant', content: response.content });
+    messages.push({ role: 'user', content: await Promise.all(uses.map((block) => runTool(block, user, state, actions))) });
+  }
+  return { answer: state.pending.length ? 'Vérifiez puis confirmez :' : 'Je n’ai pas pu aller au bout de cette demande. Pouvez-vous la préciser ?', actions: state.pending };
+};
+
+// La personne confirme une action préparée.
+const confirm = (user, token, session) => require('./assistant.actions').confirm(user, token, session);
+
+module.exports = { enabled, ask, confirm, snapshot, compact, conversation };

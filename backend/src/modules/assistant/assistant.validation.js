@@ -9,4 +9,7 @@ const message = Joi.object({
   })),
 });
 
-module.exports = { message };
+// Une action préparée par l'agent, à exécuter.
+const action = Joi.object({ token: Joi.string().trim().min(20).max(8000).required() });
+
+module.exports = { message, action };

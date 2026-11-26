@@ -869,6 +869,78 @@ a.contact-row {
   30% { opacity: 1; }
 }
 
+/* Un tour de discussion : le message, puis les actions qu'il a préparées. */
+.assistant-turn {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.assistant-turn > p {
+  margin: 0;
+}
+
+.assistant-turn.is-user {
+  align-items: flex-end;
+}
+
+/* Action préparée par l'agent : ce qui sera fait, puis Confirmer ou Annuler. */
+.assistant-action {
+  align-self: flex-start;
+  width: min(100%, 340px);
+  padding: 12px 14px;
+  border: 1px solid var(--green);
+  background: #ffffff;
+}
+
+.assistant-action p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.assistant-action-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.assistant-action-buttons .button {
+  min-height: 40px;
+  padding: 0 14px;
+}
+
+.assistant-action-result {
+  margin-top: 8px !important;
+  font-weight: 700;
+  color: var(--green-dark);
+}
+
+.assistant-action.is-error {
+  border-color: var(--red);
+}
+
+.assistant-action.is-error .assistant-action-result {
+  color: var(--red);
+}
+
+.assistant-action.is-cancelled {
+  border-color: var(--border);
+}
+
+.assistant-action.is-cancelled p {
+  color: var(--muted);
+}
+
+/* Mot de passe temporaire d'un compte créé : montré une fois, à copier. */
+.assistant-action-reveal {
+  margin-top: 8px !important;
+  padding: 8px 10px;
+  font-family: Consolas, monospace;
+  background: var(--tint);
+  user-select: all;
+}
+
 .assistant-suggestions {
   display: flex;
   flex-wrap: wrap;

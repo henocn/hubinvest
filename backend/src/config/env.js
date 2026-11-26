@@ -89,10 +89,11 @@ module.exports = {
   translation: {
     deeplAuthKey: process.env.DEEPL_AUTH_KEY || '',
   },
-  // Assistant de l'espace équipe : l'agent vit dans Dify (adresse de son API, terminée par /v1, et clé de l'application).
+  // Agent de l'espace équipe : modèle de l'API Anthropic. Sans clé, l'assistant n'est pas affiché.
   assistant: {
-    url: (process.env.DIFY_API_URL || '').replace(/\/$/, ''),
-    key: process.env.DIFY_API_KEY || '',
+    apiKey: process.env.ANTHROPIC_API_KEY || '',
+    model: process.env.ASSISTANT_MODEL || 'claude-haiku-5-5',
+    effort: process.env.ASSISTANT_EFFORT || 'low',
     timeout: duration(process.env.ASSISTANT_TIMEOUT, 60 * 1000),
   },
 };
