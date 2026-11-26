@@ -147,6 +147,27 @@ export const api = {
   dashboard: (token) => request('/dashboard', authorized(token)),
   settings: (token) => request('/settings', authorized(token)),
   updateSettings: (token, values) => request('/settings', authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
+  // Vidéo de repli du grand écran : un gros fichier, envoyé avec l'avancement (0 à 1) pour la barre de progression.
+  // Lien Google Drive : le serveur télécharge la vidéo puis la sert lui-même (Drive refuse la lecture depuis un autre site).
+  importScreenVideo: (token, url) => request('/settings/screen-video', authorized(token, { method: 'POST', body: JSON.stringify({ url }) })),
+  uploadScreenVideo: (token, file, onProgress) => new Promise((resolve, reject) => {
+    const body = new FormData();
+    body.append('video', file);
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${API_URL}/settings/screen-video`);
+    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    xhr.upload.onprogress = (event) => { if (event.lengthComputable) onProgress?.(event.loaded / event.total); };
+    xhr.onload = () => {
+      let payload = {};
+      try { payload = JSON.parse(xhr.responseText); } catch { payload = {}; }
+      if (xhr.status >= 200 && xhr.status < 300) return resolve(payload.data);
+      const error = new Error(xhr.status === 413 ? 'La vidéo est trop lourde pour le serveur.' : payload.message || 'La vidéo n’a pas pu être envoyée.');
+      error.status = xhr.status;
+      return reject(error);
+    };
+    xhr.onerror = () => reject(new Error('La vidéo n’a pas pu être envoyée. Vérifiez la connexion.'));
+    xhr.send(body);
+  }),
   deleteWheelPlay: (token, id) => request(`/wheel/plays/${id}`, authorized(token, { method: 'DELETE' })),
   deleteChallengePassport: (token, id) => request(`/challenge-passports/${id}`, authorized(token, { method: 'DELETE' })),
   claimWheelPlay: (token, id) => request(`/wheel/plays/${id}/claim`, authorized(token, { method: 'POST' })),

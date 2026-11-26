@@ -1008,12 +1008,13 @@ test('un passage validé prévient le stand, ses administrateurs, les animateurs
   assert.equal(published[0].topic, 'challenge');
   assert.deepEqual(
     published[0].channels.filter(Boolean).sort(),
-    ['admin:stand-a', 'animateur', 'occupant:stand-a', 'passport:passport-a', 'super-admin'],
+    ['admin:stand-a', 'animateur', 'occupant:stand-a', 'passport:passport-a', 'screen', 'super-admin'],
   );
 
   published.length = 0;
   realtimeService.events.investorRequestsChanged();
-  assert.deepEqual(published[0], { channels: ['apizf-team'], topic: 'investor-requests' });
+  // Le grand écran est prévenu aussi : ses compteurs (rendez-vous aux guichets) changent.
+  assert.deepEqual(published[0], { channels: ['apizf-team', 'screen'], topic: 'investor-requests' });
 });
 
 test('une diffusion en échec ne fait jamais échouer l’action métier', (context) => {
@@ -1654,7 +1655,7 @@ test('un service inconnu est refusé au diagnostic et à l’engagement de suivi
   assert.ok(investorRequestValidation.difficulty.validate({ difficulty: { company: 'Usine', regime: 'free_zone', nature: 'Douane', description: 'Retards' }, commitmentService: 'inconnu' }).error);
 });
 
-test('grand écran : le service du jour tourne chaque jour, peut être imposé, et la boucle vidéo remplace tout', async (context) => {
+test('grand écran : le service du jour tourne chaque jour, peut être imposé, et la boucle vidéo passe d’abord, les données en direct en réserve', async (context) => {
   const screenService = require('../src/modules/screen/screen.service');
   const settings = { screenService: '', screenMode: 'live', screenVideoUrl: '' };
   context.mock.method(settingsService, 'current', () => ({ ...settings }));
@@ -1666,9 +1667,26 @@ test('grand écran : le service du jour tourne chaque jour, peut être imposé, 
   settings.screenService = 'aftercare';
   assert.equal(screenService.serviceOfDay(day(3)), 'aftercare');
 
+  // Données en direct, sans base : programme, compteurs, capsules et stands.
+  const models = require('../src/models');
+  context.mock.method(programEventService, 'getToday', async () => ({ date: '2026-11-27', spotlight: null, today: [], upcoming: [] }));
+  for (const name of ['ChallengePassport', 'InvestorMeeting', 'B2bMeeting', 'StudioInvitation']) context.mock.method(models[name], 'count', async () => 0);
+  context.mock.method(models.StudioInvitation, 'findAll', async () => []);
+  context.mock.method(occupantRepository, 'findPublic', async () => [{ id: 's1', name: 'Zener', standLabel: null, logoUrl: null }]);
+
   settings.screenMode = 'video';
   settings.screenVideoUrl = 'https://videos.tg/boucle.mp4';
-  assert.deepEqual(await screenService.getPublic(), { mode: 'video', videoUrl: 'https://videos.tg/boucle.mp4' });
+  const video = await screenService.getPublic();
+  assert.equal(video.mode, 'video');
+  assert.equal(video.videoUrl, 'https://videos.tg/boucle.mp4');
+  // Si la vidéo ne peut pas être lue, l'écran repasse en direct avec ces données.
+  assert.equal(video.stands[0].name, 'Zener');
+  assert.equal(video.service, 'aftercare');
+
+  settings.screenMode = 'live';
+  const live = await screenService.getPublic();
+  assert.equal(live.mode, 'live');
+  assert.equal(live.videoUrl, undefined);
 });
 
 test('l’accueil servi aux moteurs contient son texte, l’événement FIL 2026 et les services ; le grand écran n’est pas indexé', async () => {

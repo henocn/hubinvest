@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { MapPin, Mic } from 'lucide-react';
 import { api, resolveAssetUrl } from '../lib/api';
+import { videoSource } from '../lib/video-source';
+import { useRealtimeConnection, useRealtimeEvent } from '../lib/realtime';
 import { services } from '../content/services';
 import hubLogoWhite from '../assets/brand/hub-logo-white.png';
 import hubSymbolWhite from '../assets/brand/hub-symbol-white.png';
@@ -19,7 +21,9 @@ import '../screen.css';
 // Les scènes sans donnée sont sautées. En mode repli (Paramètres), une boucle vidéo plein écran.
 
 const TIME_ZONE = 'Africa/Lome';
-const REFRESH = 30_000;
+const REFRESH = 30_000; // relecture de secours, si le flux en temps réel est coupé
+// Ce que le back office change et que l'écran montre : il se recharge aussitôt, sans attendre la relecture.
+const LIVE_TOPICS = ['settings', 'occupants', 'program', 'studio', 'challenge', 'b2b', 'investor-requests'];
 const SITE_URL = 'https://hub.investir.tg';
 const LEAVE = 900; // durée du fondu de sortie d'une scène
 const formats = {
@@ -147,6 +151,18 @@ function Scan({ url, label, delay = 1.1 }) {
       <Qr url={url} size={300} />
       <strong>{label}</strong>
     </div>
+  );
+}
+
+// Logo de chaîne, comme à la télévision : le logo du Hub reste dans le coin, et un reflet le traverse régulièrement.
+// Le reflet est découpé à la forme du logo : seules ses lettres et son symbole s'éclairent.
+function ChannelLogo() {
+  const mask = `url(${hubLogoWhite})`;
+  return (
+    <span className="s-bug" role="img" aria-label="Hub de l’investissement">
+      <img src={hubLogoWhite} alt="" />
+      <span className="s-bug-sheen" style={{ WebkitMaskImage: mask, maskImage: mask }} aria-hidden="true" />
+    </span>
   );
 }
 
@@ -339,6 +355,8 @@ function useWakeLock() {
 
 export default function ScreenPage() {
   const [data, setData] = useState(null);
+  // Vidéo de repli qui n'a pas pu être lue : l'écran repasse en direct au lieu de rester noir.
+  const [failedVideo, setFailedVideo] = useState('');
   const [now, setNow] = useState(() => Date.now());
   const [current, setCurrent] = useState({ key: 'opener', run: 0 });
   const [leaving, setLeaving] = useState(false);
@@ -364,15 +382,21 @@ export default function ScreenPage() {
     setThread((value) => (value && value.x === next.x && value.y === next.y && value.w === next.w && value.h === next.h ? value : next));
   }, []);
 
+  const activeRef = useRef(true);
+  const load = useCallback(() => api.screen().then((result) => { if (activeRef.current) { dataRef.current = result; setData(result); } }).catch(() => {}), []);
+
   useEffect(() => {
-    let active = true;
-    const load = () => api.screen().then((result) => { if (active) { dataRef.current = result; setData(result); } }).catch(() => {});
+    activeRef.current = true;
     load();
     const refresh = window.setInterval(load, REFRESH);
     const clock = window.setInterval(() => setNow(Date.now()), 1000);
-    document.fonts?.ready.then(() => { if (active) place(anchorRef.current); }).catch(() => {});
-    return () => { active = false; window.clearInterval(refresh); window.clearInterval(clock); };
-  }, [place]);
+    document.fonts?.ready.then(() => { if (activeRef.current) place(anchorRef.current); }).catch(() => {});
+    return () => { activeRef.current = false; window.clearInterval(refresh); window.clearInterval(clock); };
+  }, [load, place]);
+
+  // Un changement fait dans le back office (vidéo de repli, service du jour, logo, programme, chiffres…) arrive aussitôt.
+  useRealtimeConnection('screen', async () => api.screenStreamUrl(), { topics: LIVE_TOPICS });
+  useRealtimeEvent(LIVE_TOPICS, load);
 
   // Chaque seconde, le trait se recale : une donnée rafraîchie peut avoir déplacé son emplacement.
   useEffect(() => { place(anchorRef.current); }, [now, place]);
@@ -408,8 +432,16 @@ export default function ScreenPage() {
     return () => { window.removeEventListener('click', full); window.removeEventListener('keydown', key); };
   }, []);
 
-  if (data?.mode === 'video') {
-    return <main className="screen is-video"><video src={data.videoUrl} autoPlay muted loop playsInline /></main>;
+  const fallback = data?.mode === 'video' && data.videoUrl !== failedVideo ? videoSource(data.videoUrl) : null;
+  if (fallback) {
+    return (
+      <main className="screen is-video">
+        {fallback.kind === 'youtube'
+          ? <iframe src={fallback.src} title="Vidéo du Hub" allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" />
+          : <video key={fallback.src} src={resolveAssetUrl(fallback.src)} autoPlay muted loop playsInline onError={() => setFailedVideo(data.videoUrl)} />}
+        <ChannelLogo />
+      </main>
+    );
   }
 
   const time = formats.time.format(new Date(now));
@@ -426,7 +458,7 @@ export default function ScreenPage() {
         </div>
 
         <header className="s-top">
-          <img src={hubLogoWhite} alt="Hub de l’investissement" />
+          <ChannelLogo />
           <span className="s-top-date">{formats.day.format(new Date(now))}</span>
           <strong className="s-top-clock">{time.slice(0, 2)}<i>:</i>{time.slice(3)}</strong>
         </header>

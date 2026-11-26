@@ -487,3 +487,15 @@
 .admin-app .wheel-code-toggle:hover { background: #f6f7f7; }
 .admin-app .wheel-code-toggle svg { transition: transform .15s ease; }
 .admin-app .wheel-code-toggle.is-open svg { transform: rotate(180deg); }
+
+/* Vidéo de repli du grand écran : sa source (lien vers la vidéo), un lien à coller ou un fichier à charger. */
+.admin-app .screen-video-row { flex-wrap: wrap; }
+.admin-app .screen-video-source { font-size: 13px; color: var(--green); }
+.admin-app span.screen-video-source { color: #4d4d4d; }
+.admin-app .screen-video-hint { width: 100%; font-size: 12px; color: #4d4d4d; }
+.admin-app .screen-video-row .settings-number { flex-wrap: wrap; justify-content: flex-end; }
+.admin-app .screen-video-row .button svg { margin-right: 6px; }
+.admin-app .screen-video-error { width: 100%; margin: 0; }
+/* Une liste déroulante de réglage garde sa largeur : elle ne recouvre pas le libellé de sa ligne. */
+.admin-app .settings-row > select { width: auto; flex: 0 1 auto; max-width: 60%; }
+@media (max-width: 620px) { .admin-app .settings-row > select { max-width: 55%; } }

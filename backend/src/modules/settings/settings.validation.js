@@ -15,7 +15,12 @@ const update = Joi.object({
   liveQuestionsOpen: Joi.boolean(),
   screenMode: Joi.string().valid('live', 'video'),
   screenService: Joi.string().valid('', ...SERVICE_KEYS),
-  screenVideoUrl: Joi.string().trim().uri({ scheme: ['http', 'https'] }).max(500).allow(''),
+  // Vidéo de repli : une adresse (YouTube, Google Drive ou fichier en ligne), ou une vidéo chargée sur la plateforme.
+  screenVideoUrl: Joi.alternatives(
+    Joi.string().trim().uri({ scheme: ['http', 'https'] }).max(500),
+    Joi.string().trim().pattern(/^\/uploads\/screen\/[a-f0-9-]+\.(mp4|webm)$/),
+    Joi.string().valid(''),
+  ),
   challengeRewardStock: Joi.number().integer().min(0).max(100000),
   wheelSpinsPerCode: Joi.number().integer().min(1).max(20),
   b2bTables: Joi.number().integer().min(1).max(50),

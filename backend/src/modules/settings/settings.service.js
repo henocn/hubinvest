@@ -1,3 +1,5 @@
+const fs = require('node:fs/promises');
+const path = require('node:path');
 const env = require('../../config/env');
 const AppError = require('../../shared/app-error');
 const { Op } = require('sequelize');
@@ -129,8 +131,16 @@ const assertOpen = (key) => {
   if (cache[key] === false) throw new AppError(403, 'MODULE_CLOSED', MODULES[key]);
 };
 
+// Une vidéo de repli chargée sur la plateforme, remplacée ou retirée : son fichier est supprimé du serveur.
+const UPLOADED_VIDEO = /^\/uploads\/screen\/[a-f0-9-]+\.(mp4|webm)$/;
+const removeUploadedVideo = async (url) => {
+  if (!UPLOADED_VIDEO.test(url || '')) return;
+  await fs.unlink(path.resolve(__dirname, '..', '..', '..', url.slice(1))).catch(() => {});
+};
+
 const update = async (values, user) => {
   const known = Object.entries(values).filter(([key]) => key in defaults());
+  const previousVideo = cache.screenVideoUrl;
   // Un format encore utilisé par une invitation ne se retire pas : on le renomme.
   if (Array.isArray(values.studioFormats)) {
     const used = await StudioInvitation.count({ where: { format: { [Op.notIn]: values.studioFormats.map((item) => item.key) } } });
@@ -142,8 +152,31 @@ const update = async (values, user) => {
     }
   });
   await load();
+  if (previousVideo !== cache.screenVideoUrl) await removeUploadedVideo(previousVideo);
   realtime.settingsChanged();
   return current();
+};
+
+// Vidéo de repli chargée depuis les Paramètres : elle devient la vidéo du grand écran.
+// Au démarrage, aucun envoi n'est en cours : toute vidéo du dossier qui n'est pas la vidéo de repli actuelle est
+// supprimée (import interrompu par un redémarrage, fichier abandonné), pour ne pas encombrer le serveur.
+const cleanScreenVideos = async (currentUrl = cache.screenVideoUrl) => {
+  const directory = path.resolve(__dirname, '..', '..', '..', 'uploads', 'screen');
+  const keep = UPLOADED_VIDEO.test(currentUrl || '') ? path.basename(currentUrl) : null;
+  const files = await fs.readdir(directory).catch(() => []);
+  const removed = files.filter((name) => name !== keep);
+  await Promise.all(removed.map((name) => fs.unlink(path.join(directory, name)).catch(() => {})));
+  return removed;
+};
+
+const setScreenVideo = async (file, user) => {
+  if (!file) throw new AppError(422, 'SCREEN_VIDEO_REQUIRED', 'Choisissez une vidéo.');
+  try {
+    return await update({ screenVideoUrl: `/uploads/screen/${file.filename}` }, user);
+  } catch (error) {
+    await removeUploadedVideo(`/uploads/screen/${file.filename}`);
+    throw error;
+  }
 };
 
 // Ce que le site public a besoin de savoir : modules ouverts et nombre de stands des Défis.
@@ -152,4 +185,4 @@ const publicSettings = () => {
   return rest;
 };
 
-module.exports = { MODULES, load, current, requiredPassages, challengeRewardStock, wheelSpinsPerCode, b2bSchedule, studioSchedule, guichetSchedule, studioFormats, studioFormatLabel, investorFollowUpDelay, investorQualificationFields, assertOpen, update, publicSettings, _reset: () => { cache = defaults(); } };
+module.exports = { MODULES, load, current, requiredPassages, challengeRewardStock, wheelSpinsPerCode, b2bSchedule, studioSchedule, guichetSchedule, studioFormats, studioFormatLabel, investorFollowUpDelay, investorQualificationFields, assertOpen, update, setScreenVideo, cleanScreenVideos, publicSettings, _reset: () => { cache = defaults(); } };

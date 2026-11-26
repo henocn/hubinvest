@@ -19,6 +19,16 @@
   object-fit: cover;
 }
 
+/* Vidéo YouTube : le lecteur couvre tout l'écran ; la vidéo ne reçoit aucun clic (pas de pause, pas de menu). */
+.screen.is-video iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  pointer-events: none;
+}
+
 .screen h1::before,
 .screen h2::before {
   content: none !important;
@@ -155,9 +165,59 @@
   align-items: center;
 }
 
-.s-top img {
-  height: 78px;
+/* Logo de chaîne : le logo du Hub, traversé toutes les 14 secondes par un reflet, puis légèrement lumineux. */
+.s-bug {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  line-height: 0;
+  animation: s-bug-glow 14s ease-in-out infinite;
+}
+
+.s-bug img {
+  display: block;
   width: auto;
+  height: 100%;
+}
+
+.s-bug-sheen {
+  position: absolute;
+  inset: 0;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  background: linear-gradient(105deg, rgba(255, 255, 255, 0) 38%, rgba(255, 236, 160, 0.95) 50%, rgba(255, 255, 255, 0) 62%) no-repeat;
+  background-size: 260% 100%;
+  animation: s-bug-sheen 14s ease-in-out infinite;
+}
+
+@keyframes s-bug-sheen {
+  0%, 80% { background-position: 100% 0; }
+  92%, 100% { background-position: 0% 0; }
+}
+
+@keyframes s-bug-glow {
+  0%, 84%, 100% { filter: drop-shadow(0 0 0 rgba(255, 207, 21, 0)); }
+  91% { filter: drop-shadow(0 0 14px rgba(255, 207, 21, 0.45)); }
+}
+
+.s-top .s-bug {
+  height: 78px;
+}
+
+/* Sur une vidéo : en haut à gauche, comme une chaîne de télévision, avec une ombre qui le détache de l'image. */
+.screen.is-video .s-bug {
+  position: absolute;
+  z-index: 2;
+  top: 5vh;
+  left: 3.4vw;
+  height: 7vh;
+  opacity: 0.92;
+}
+
+.screen.is-video .s-bug img {
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.5));
 }
 
 .s-top-date {
