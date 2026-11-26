@@ -763,3 +763,184 @@ a.contact-row {
   color: rgba(255, 255, 255, 0.55);
   font-size: 0.7rem;
 }
+
+/* Assistant : un bouton rond en bas à droite (au-dessus des onglets sur téléphone) ouvre la discussion,
+   en plein écran sur téléphone, en panneau au coin de l'écran sur ordinateur. */
+.assistant-launcher {
+  position: fixed;
+  z-index: 32;
+  right: 14px;
+  bottom: calc(80px + env(safe-area-inset-bottom));
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border: 0;
+  border-radius: 50%;
+  color: #ffffff;
+  background: var(--green);
+  box-shadow: 0 4px 16px rgba(15, 24, 34, 0.28);
+  cursor: pointer;
+}
+
+.assistant-launcher:hover {
+  background: var(--green-dark);
+}
+
+.assistant-panel {
+  position: fixed;
+  z-index: 65;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  background: #f4f5f5;
+}
+
+.assistant-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 64px;
+  padding: calc(8px + env(safe-area-inset-top)) 12px 8px 20px;
+  color: #ffffff;
+  background: var(--green);
+}
+
+.assistant-head h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.assistant-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  padding: 16px;
+  overscroll-behavior: contain;
+}
+
+.assistant-thread > p {
+  margin: 0;
+}
+
+.assistant-message {
+  max-width: 88%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  font-size: 15px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: #ffffff;
+}
+
+.assistant-message.is-assistant {
+  align-self: flex-start;
+  border-left: 3px solid var(--yellow);
+}
+
+.assistant-message.is-user {
+  align-self: flex-end;
+  border-color: var(--green);
+  color: #ffffff;
+  background: var(--green);
+}
+
+.assistant-message.is-writing {
+  display: flex;
+  gap: 5px;
+  padding: 16px 14px;
+}
+
+.assistant-message.is-writing i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: assistant-writing 1.2s ease-in-out infinite;
+}
+
+.assistant-message.is-writing i:nth-child(2) { animation-delay: 0.18s; }
+.assistant-message.is-writing i:nth-child(3) { animation-delay: 0.36s; }
+
+@keyframes assistant-writing {
+  0%, 60%, 100% { opacity: 0.25; }
+  30% { opacity: 1; }
+}
+
+.assistant-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.assistant-suggestions button {
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--green);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  color: var(--green-dark);
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.assistant-suggestions button:hover {
+  background: var(--tint);
+}
+
+.assistant-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+  background: #ffffff;
+}
+
+.assistant-form input {
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 0;
+  font: inherit;
+  font-size: 16px;
+}
+
+.assistant-form .button {
+  width: 48px;
+  padding: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .assistant-message.is-writing i { animation: none; opacity: 0.6; }
+}
+
+@media (min-width: 640px) {
+  .assistant-panel {
+    inset: auto 20px 20px auto;
+    width: 400px;
+    height: min(620px, calc(100vh - 40px));
+    border: 1px solid var(--border);
+    box-shadow: 0 12px 40px rgba(15, 24, 34, 0.24);
+  }
+
+  .assistant-head {
+    min-height: 56px;
+    padding-top: 8px;
+  }
+
+  .assistant-form {
+    padding-bottom: 12px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .assistant-launcher {
+    right: 24px;
+    bottom: 24px;
+  }
+}

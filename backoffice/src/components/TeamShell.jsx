@@ -5,6 +5,7 @@ import hubLogoWhite from '../assets/brand/hub-logo-white.png';
 import hubLogo from '../assets/brand/hub-logo.png';
 import PushToggleButton from '../admin/components/PushToggleButton';
 import NotificationPrompt from './NotificationPrompt';
+import Assistant from './Assistant';
 import { DashboardProvider, useDashboard } from '../admin/dashboard';
 import { api, resolveAssetUrl } from '../lib/api';
 import { disablePush } from '../lib/push';
@@ -180,6 +181,8 @@ function TeamShellLayout() {
       </div>
 
       <NotificationPrompt token={token} />
+      {/* Assistant : pour tous les comptes ; il ne connaît que les rubriques et les données de ce compte. */}
+      <Assistant token={token} user={user} />
 
       <nav className="team-tabs" aria-label="Rubriques principales">
         <div>
