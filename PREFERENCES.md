@@ -12,6 +12,7 @@
 - Ne jamais forcer un retour à la ligne (largeur maximale étroite, `<br>`) : le texte occupe la largeur disponible.
 - Conserver les accents dans tous les textes français.
 - Vérifier chaque écran à 320 px, 375 px et sur ordinateur, sans débordement horizontal.
+- Pensé d’abord pour le téléphone. Pour présenter des éléments, des cartes sobres (contour net, pas de bandeau ni d’icône en pastille) plutôt qu’une liste entre filets façon document ; un repère (guichet, lieu) se donne par son nom seul, sans guillemets ni phrase autour.
 
 ## Textes
 
@@ -36,7 +37,7 @@
 
 - Façon application mobile : en-tête vert fixe (menu à gauche, logo blanc à droite), panneau latéral pour les rubriques, la langue et l'espace équipe, barre d'onglets verte en bas qui ne disparaît pas au défilement.
 - FR/EN pour toutes les chaînes ; sélecteur compact (nom de la langue puis drapeau).
-- Accueil : bandeau vert (signature, bouton rouge « Guichet API-ZF » vers la page des guichets), « En ce moment », le programme (à l'affiche, du jour, à venir), puis « Les services de l'API-ZF » (six cartes compactes pensées d’abord pour le téléphone, une par ligne puis deux puis trois : petite icône sur la ligne du titre, la promesse, puis où trouver le service au stand dans le pied vert pâle de la carte ; contour vert ; ni bandeau de couleur, ni icône en pastille, ni chiffre d’étape), les démarches en ligne (un bloc encadré par domaine, bouton « Faire une démarche en ligne » vers services.apizf.tg dans un nouvel onglet).
+- Accueil : bandeau vert (signature, bouton rouge « Guichet API-ZF » vers la page des guichets), « En ce moment », le programme (à l'affiche, du jour, à venir), puis « Les services de l'API-ZF » (six cartes compactes pensées d’abord pour le téléphone, une par ligne puis deux puis trois : petite icône sur la ligne du titre, la promesse, puis le nom du guichet où trouver le service, seul (sans guillemets ni texte de plus), dans le pied vert pâle de la carte ; contour vert foncé de 2 px, petits coins arrondis (6 px, exception aux angles droits) ; ni bandeau de couleur, ni icône en pastille, ni chiffre d’étape), les démarches en ligne (un bloc encadré par domaine, bouton « Faire une démarche en ligne » vers services.apizf.tg dans un nouvel onglet).
 - Rencontres : deux tuiles cliquables (titre et une phrase), centrées dans la page, côte à côte sur grand écran.
 - Carte de stand : image et informations séparées, rien posé sur la photo ; seulement le nom et le numéro du stand, sans description. Cartes compactes : deux stands par ligne sur téléphone. Chaque carte a un contour net ; le Stand API-ZF est toujours le premier de la liste. Sous « Les stands du Hub » : « Pavillon de l’Oti ». Fiche : carrousel (défilement toutes les 2 s, arrêt au survol), « Prendre contact » en haut et en fin de fiche.
 
