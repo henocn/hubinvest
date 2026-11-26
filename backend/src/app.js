@@ -28,6 +28,7 @@ const httpLogger = require('./middlewares/http-logger.middleware');
 const audit = require('./middlewares/audit.middleware');
 const auditLogRoutes = require('./modules/audit-log/audit-log.route');
 const whatsappRoutes = require('./modules/whatsapp/whatsapp.route');
+const assistantRoutes = require('./modules/assistant/assistant.route');
 const notFound = require('./middlewares/not-found.middleware');
 const errorHandler = require('./middlewares/error.middleware');
 
@@ -79,6 +80,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/live-questions', liveQuestionRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
+app.use('/api/assistant', assistantRoutes);
 
 // Pages HTML et sitemap servis par Nginx via l'API ; l'en-tête CSP de Helmet ne s'applique pas au site.
 app.use((request, response, next) => {

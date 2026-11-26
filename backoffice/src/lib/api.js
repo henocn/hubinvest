@@ -62,6 +62,8 @@ export const api = {
   claimWheelPrize: (token, code) => request(`/wheel/prizes/${encodeURIComponent(code)}/claim`, authorized(token, { method: 'POST' })),
   liveQuestions: (token) => request('/live-questions', authorized(token)),
   updateLiveQuestion: (token, id, status) => request(`/live-questions/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify({ status }) })),
+  assistantStatus: (token) => request('/assistant', authorized(token)),
+  askAssistant: (token, values) => request('/assistant/messages', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   realtimeTicket: (token) => request('/realtime/ticket', authorized(token, { method: 'POST' })),
   realtimeStreamUrl: (ticket) => `${API_URL}/realtime/stream?ticket=${encodeURIComponent(ticket)}`,
   pushPublicKey: () => request('/push-subscriptions/public-key'),
