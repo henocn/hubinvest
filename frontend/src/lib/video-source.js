@@ -11,7 +11,7 @@ export const videoSource = (url) => {
   const youtube = value.match(YOUTUBE);
   if (youtube) {
     const id = youtube[1];
-    const options = new URLSearchParams({ autoplay: '1', mute: '1', loop: '1', playlist: id, controls: '0', rel: '0', playsinline: '1', iv_load_policy: '3', disablekb: '1' });
+    const options = new URLSearchParams({ autoplay: '1', mute: '1', loop: '1', playlist: id, controls: '0', rel: '0', playsinline: '1', iv_load_policy: '3', disablekb: '1', enablejsapi: '1' });
     return { kind: 'youtube', src: `https://www.youtube-nocookie.com/embed/${id}?${options}` };
   }
   return value ? { kind: 'file', src: value } : null;
