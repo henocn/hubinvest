@@ -21,8 +21,16 @@ router.get('/', (request, response) => {
   response.json({ data: { enabled: assistantService.enabled() } });
 });
 
+// La session de la personne accompagne la question : les outils appellent l'API avec ses droits.
+const session = (request) => ({ authorization: request.headers.authorization, ip: request.ip });
+
 router.post('/messages', validate(assistantValidation.message), perDay, perMinutes, asyncHandler(async (request, response) => {
-  response.json({ data: await assistantService.ask(request.user, request.body) });
+  response.json({ data: await assistantService.ask(request.user, request.body, session(request)) });
+}));
+
+// La personne confirme une action préparée par l'agent : elle s'exécute alors avec ses droits.
+router.post('/actions', validate(assistantValidation.action), asyncHandler(async (request, response) => {
+  response.json({ data: await assistantService.confirm(request.user, request.body.token, session(request)) });
 }));
 
 module.exports = router;
