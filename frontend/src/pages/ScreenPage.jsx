@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { MapPin, Mic } from 'lucide-react';
+import { MapPin, Mic, Pause } from 'lucide-react';
 import { api, resolveAssetUrl } from '../lib/api';
 import { videoSource } from '../lib/video-source';
 import { useRealtimeConnection, useRealtimeEvent } from '../lib/realtime';
@@ -56,27 +56,56 @@ function Anchor({ active = true, className = '', watch }) {
   return <span ref={ref} className={`s-anchor ${className}`} aria-hidden="true" />;
 }
 
+// ——— Horloge de lecture : la touche P met tout en pause (scènes, apparitions, chiffres, vidéo), puis reprend ———
+// Elle avance avec le temps réel, sauf pendant une pause : chaque minuterie de l'écran passe par elle et reprend
+// exactement où elle en était.
+const playback = { paused: false, offset: 0, pausedAt: 0, listeners: new Set() };
+const playbackNow = () => (playback.paused ? playback.pausedAt : performance.now()) - playback.offset;
+const setPlaybackPaused = (paused) => {
+  if (paused === playback.paused) return;
+  if (paused) playback.pausedAt = performance.now();
+  else playback.offset += performance.now() - playback.pausedAt;
+  playback.paused = paused;
+  [...playback.listeners].forEach((listener) => listener());
+};
+
+// Appelle `callback` après `delay` millisecondes de lecture (pauses non comptées). Renvoie de quoi l'annuler.
+const after = (delay, callback) => {
+  const due = playbackNow() + delay;
+  let timer = null;
+  const arm = () => {
+    window.clearTimeout(timer);
+    if (playback.paused) return;
+    timer = window.setTimeout(() => { playback.listeners.delete(arm); callback(); }, Math.max(0, due - playbackNow()));
+  };
+  playback.listeners.add(arm);
+  arm();
+  return () => { window.clearTimeout(timer); playback.listeners.delete(arm); };
+};
+
 // Compte de 0 à `count`, un pas par période, après un délai : rythme d'une suite d'éléments qui arrivent un par un.
 function useSteps(count, period, delay) {
   const [step, setStep] = useState(0);
   useEffect(() => {
-    let tick;
-    const timer = window.setTimeout(() => {
-      setStep(1);
-      tick = window.setInterval(() => setStep((value) => value + 1), period);
-    }, delay);
-    return () => { window.clearTimeout(timer); window.clearInterval(tick); };
-  }, [period, delay]);
+    let cancel = () => {};
+    let reached = 0;
+    const next = (wait) => {
+      cancel = after(wait, () => {
+        reached += 1;
+        setStep(reached);
+        if (reached < count) next(period);
+      });
+    };
+    next(delay);
+    return () => cancel();
+  }, [count, period, delay]);
   return Math.min(step, count);
 }
 
 // Vrai une fois le délai écoulé : sert à faire passer le trait d'un emplacement à un autre dans une même scène.
 function useAfter(delay) {
   const [done, setDone] = useState(false);
-  useEffect(() => {
-    const timer = window.setTimeout(() => setDone(true), delay);
-    return () => window.clearTimeout(timer);
-  }, [delay]);
+  useEffect(() => after(delay, () => setDone(true)), [delay]);
   return done;
 }
 
@@ -118,15 +147,16 @@ function CountUp({ value, delay = 0, duration = 2200 }) {
   useEffect(() => {
     let tick;
     const target = Number(value) || 0;
-    const timer = window.setTimeout(() => {
-      const start = Date.now();
+    // Le comptage suit l'horloge de lecture : en pause, le chiffre reste où il en est.
+    const cancel = after(delay * 1000, () => {
+      const start = playbackNow();
       tick = window.setInterval(() => {
-        const progress = Math.min(1, (Date.now() - start) / duration);
+        const progress = Math.min(1, (playbackNow() - start) / duration);
         setShown(Math.round(target * (1 - (1 - progress) ** 4)));
         if (progress === 1) window.clearInterval(tick);
       }, 33);
-    }, delay * 1000);
-    return () => { window.clearTimeout(timer); window.clearInterval(tick); };
+    });
+    return () => { cancel(); window.clearInterval(tick); };
   }, [value, delay, duration]);
   return <>{shown.toLocaleString('fr-FR')}</>;
 }
@@ -357,6 +387,18 @@ export default function ScreenPage() {
   const [data, setData] = useState(null);
   // Vidéo de repli qui n'a pas pu être lue : l'écran repasse en direct au lieu de rester noir.
   const [failedVideo, setFailedVideo] = useState('');
+  // Pause (touche P) : la scène, les animations et la vidéo s'arrêtent, puis reprennent où elles en étaient.
+  const [paused, setPaused] = useState(false);
+  const videoRef = useRef(null);
+  const frameRef = useRef(null);
+  useEffect(() => {
+    setPlaybackPaused(paused);
+    const video = videoRef.current;
+    if (video) { if (paused) video.pause(); else video.play().catch(() => {}); }
+    // Lecteur YouTube : commandé par messages (l'adresse du lecteur autorise ces commandes).
+    frameRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: paused ? 'pauseVideo' : 'playVideo', args: [] }), '*');
+  }, [paused, data?.videoUrl, data?.mode]);
+  useEffect(() => () => setPlaybackPaused(false), []);
   const [now, setNow] = useState(() => Date.now());
   const [current, setCurrent] = useState({ key: 'opener', run: 0 });
   const [leaving, setLeaving] = useState(false);
@@ -412,34 +454,40 @@ export default function ScreenPage() {
   useEffect(() => {
     const playing = sceneRef.current;
     const total = playing.seconds * 1000;
-    const leave = window.setTimeout(() => setLeaving(true), total - LEAVE);
-    const next = window.setTimeout(() => {
+    // Minuteries de lecture : en pause, la scène reste à l'écran et reprend où elle en était.
+    const cancelLeave = after(total - LEAVE, () => setLeaving(true));
+    const cancelNext = after(total, () => {
       const list = buildScenes(dataRef.current);
       const position = list.findIndex((item) => item.key === playing.key);
       const following = list[(position + 1) % list.length];
       setLeaving(false);
       setCurrent((value) => ({ key: following.key, run: value.run + 1 }));
-    }, total);
-    return () => { window.clearTimeout(leave); window.clearTimeout(next); };
+    });
+    return () => { cancelLeave(); cancelNext(); };
   }, [current.run]);
 
-  // Plein écran au premier clic ou à la touche F.
+  // Plein écran au premier clic ou à la touche F ; pause et reprise à la touche P.
   useEffect(() => {
     const full = () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {}); };
-    const key = (event) => { if (event.key === 'f' || event.key === 'F') full(); };
+    const key = (event) => {
+      if (event.key === 'f' || event.key === 'F') full();
+      if ((event.key === 'p' || event.key === 'P') && !event.repeat) setPaused((value) => !value);
+    };
     window.addEventListener('click', full);
     window.addEventListener('keydown', key);
     return () => { window.removeEventListener('click', full); window.removeEventListener('keydown', key); };
   }, []);
 
   const fallback = data?.mode === 'video' && data.videoUrl !== failedVideo ? videoSource(data.videoUrl) : null;
+  const pauseMark = paused && <span className="s-paused" aria-label="En pause"><Pause aria-hidden="true" /></span>;
   if (fallback) {
     return (
-      <main className="screen is-video">
+      <main className={`screen is-video${paused ? ' is-paused' : ''}`}>
         {fallback.kind === 'youtube'
-          ? <iframe src={fallback.src} title="Vidéo du Hub" allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" />
-          : <video key={fallback.src} src={resolveAssetUrl(fallback.src)} autoPlay muted loop playsInline onError={() => setFailedVideo(data.videoUrl)} />}
+          ? <iframe ref={frameRef} src={fallback.src} title="Vidéo du Hub" allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" />
+          : <video ref={videoRef} key={fallback.src} src={resolveAssetUrl(fallback.src)} autoPlay={!paused} muted loop playsInline onError={() => setFailedVideo(data.videoUrl)} />}
         <ChannelLogo />
+        {pauseMark}
       </main>
     );
   }
@@ -447,7 +495,7 @@ export default function ScreenPage() {
   const time = formats.time.format(new Date(now));
 
   return (
-    <main className="screen">
+    <main className={`screen${paused ? ' is-paused' : ''}`}>
       <div className="s-stage" data-tone={current.run % 3} data-scene={scene.key} style={{ transform: `translate(-50%, -50%) scale(${scale})` }}>
         <div className="s-backdrop" aria-hidden="true">
           <span className="s-aura is-a"><i /></span>
@@ -484,6 +532,7 @@ export default function ScreenPage() {
         <footer className={`s-site${scene.qr ? ' is-hidden' : ''}`}><Qr url={SITE_URL} size={84} /><b>hub.investir.tg</b></footer>
         <span className="s-band" aria-hidden="true" />
       </div>
+      {pauseMark}
     </main>
   );
 }

@@ -29,6 +29,33 @@
   pointer-events: none;
 }
 
+/* Pause (touche P) : toutes les animations s'arrêtent là où elles en sont ; une marque discrète au centre le signale. */
+.screen.is-paused *,
+.screen.is-paused *::before,
+.screen.is-paused *::after {
+  animation-play-state: paused !important;
+}
+
+.s-paused {
+  position: fixed;
+  z-index: 20;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 9vh;
+  height: 9vh;
+  border-radius: 50%;
+  color: #ffffff;
+  background: rgba(15, 24, 34, 0.55);
+  transform: translate(-50%, -50%);
+}
+
+.s-paused svg {
+  width: 4.4vh;
+  height: 4.4vh;
+}
+
 .screen h1::before,
 .screen h2::before {
   content: none !important;
