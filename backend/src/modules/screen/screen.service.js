@@ -49,16 +49,18 @@ const stands = async () => (await occupantRepository.findPublic()).map((item) =>
   id: item.id, name: item.name, standLabel: item.standLabel, logoUrl: item.logoUrl,
 }));
 
-// Tout ce que le grand écran du Stand affiche (document v4, M7). En mode vidéo, seulement la boucle de repli.
+// Tout ce que le grand écran du Stand affiche (document v4, M7). En mode vidéo, la boucle de repli passe d'abord ;
+// les données en direct l'accompagnent, pour que l'écran y revienne si la vidéo ne peut pas être lue.
 const getPublic = async (now = new Date()) => {
   const settings = settingsService.current();
-  if (settings.screenMode === 'video' && settings.screenVideoUrl) return { mode: 'video', videoUrl: settings.screenVideoUrl };
   const [today, numbers, capsules, standList] = await Promise.all([programEventService.getToday('fr', now), counters(), latestCapsules(), stands()]);
   const nextInterview = today.today.find((event) => event.type === 'studio' && new Date(event.endsAt || event.startsAt) > now)
     || today.upcoming.find((event) => event.type === 'studio')
     || null;
+  const video = settings.screenMode === 'video' && settings.screenVideoUrl;
   return {
-    mode: 'live',
+    mode: video ? 'video' : 'live',
+    ...(video && { videoUrl: settings.screenVideoUrl }),
     date: today.date,
     service: serviceOfDay(now),
     spotlight: today.spotlight,

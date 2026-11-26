@@ -127,7 +127,7 @@ export default function SettingsPage({ session, onLogout }) {
             <StudioFormatSettings formats={settings.studioFormats} saving={savingKey === 'studioFormats'} saved={savedKey === 'studioFormats'} onSave={save} />
           </section>
 
-          <ScreenSettings settings={settings} saving={savingKey} saved={savedKey} onSave={save} />
+          <ScreenSettings settings={settings} saving={savingKey} saved={savedKey} onSave={save} token={session.token} onUploaded={setSettings} />
 
           <section className="data-panel settings-panel">
             <h2>Rendez-vous B2B</h2>

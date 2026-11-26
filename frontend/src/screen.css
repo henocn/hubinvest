@@ -19,6 +19,16 @@
   object-fit: cover;
 }
 
+/* Vidéo YouTube : le lecteur couvre tout l'écran ; la vidéo ne reçoit aucun clic (pas de pause, pas de menu). */
+.screen.is-video iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  pointer-events: none;
+}
+
 .screen h1::before,
 .screen h2::before {
   content: none !important;

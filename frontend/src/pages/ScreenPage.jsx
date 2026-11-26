@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { MapPin, Mic } from 'lucide-react';
 import { api, resolveAssetUrl } from '../lib/api';
+import { videoSource } from '../lib/video-source';
 import { services } from '../content/services';
 import hubLogoWhite from '../assets/brand/hub-logo-white.png';
 import hubSymbolWhite from '../assets/brand/hub-symbol-white.png';
@@ -339,6 +340,8 @@ function useWakeLock() {
 
 export default function ScreenPage() {
   const [data, setData] = useState(null);
+  // Vidéo de repli qui n'a pas pu être lue : l'écran repasse en direct au lieu de rester noir.
+  const [failedVideo, setFailedVideo] = useState('');
   const [now, setNow] = useState(() => Date.now());
   const [current, setCurrent] = useState({ key: 'opener', run: 0 });
   const [leaving, setLeaving] = useState(false);
@@ -408,8 +411,15 @@ export default function ScreenPage() {
     return () => { window.removeEventListener('click', full); window.removeEventListener('keydown', key); };
   }, []);
 
-  if (data?.mode === 'video') {
-    return <main className="screen is-video"><video src={data.videoUrl} autoPlay muted loop playsInline /></main>;
+  const fallback = data?.mode === 'video' && data.videoUrl !== failedVideo ? videoSource(data.videoUrl) : null;
+  if (fallback) {
+    return (
+      <main className="screen is-video">
+        {fallback.kind === 'youtube'
+          ? <iframe src={fallback.src} title="Vidéo du Hub" allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" />
+          : <video key={fallback.src} src={resolveAssetUrl(fallback.src)} autoPlay muted loop playsInline onError={() => setFailedVideo(data.videoUrl)} />}
+      </main>
+    );
   }
 
   const time = formats.time.format(new Date(now));
