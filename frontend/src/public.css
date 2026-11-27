@@ -3660,3 +3660,344 @@ main h1:not(.sr-only)::before {
   text-align: center;
   font-weight: 700;
 }
+
+
+/* ===== Accueil vivant ===== */
+
+/* Défilé des stands en bas du bandeau : vraies photos, nom sous la photo (rien posé dessus), boucle continue. */
+.home-reel {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 12px;
+  margin-top: clamp(24px, 4vw, 36px);
+}
+
+.home-reel-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--yellow);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.home-reel-title svg {
+  transition: transform 160ms ease;
+}
+
+.home-reel-title:hover svg {
+  transform: translateX(4px);
+}
+
+.home-reel-viewport {
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+
+.home-reel-track {
+  display: flex;
+  gap: 12px;
+  width: max-content;
+  margin: 0;
+  padding: 4px 0 6px;
+  list-style: none;
+  animation: home-reel var(--reel-duration, 45s) linear infinite;
+}
+
+.home-reel-viewport:hover .home-reel-track,
+.home-reel-viewport:focus-within .home-reel-track,
+.home-reel-viewport:active .home-reel-track {
+  animation-play-state: paused;
+}
+
+@keyframes home-reel {
+  to { transform: translateX(calc(-50% - 6px)); }
+}
+
+.home-reel-track a {
+  display: grid;
+  width: clamp(138px, 34vw, 190px);
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 6px;
+  color: var(--ink);
+  background: #fff;
+  text-decoration: none;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.home-reel-track a:hover,
+.home-reel-track a:focus-visible {
+  transform: translateY(-4px) rotate(-1deg);
+  box-shadow: 0 14px 24px rgba(0, 0, 0, 0.24);
+}
+
+.home-reel-photo {
+  display: block;
+  aspect-ratio: 4 / 3;
+  background: var(--tint);
+}
+
+.home-reel-photo img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.home-reel-name {
+  overflow: hidden;
+  padding: 8px 10px;
+  color: var(--green-dark);
+  background: var(--tint);
+  font-size: 0.84rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* « Jouez et gagnez » : bandeau jaune, petite roue qui tourne, cadeau qui sautille. */
+.home-play {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  overflow: hidden;
+  padding: clamp(20px, 4vw, 30px) clamp(18px, 4vw, 34px);
+  border: 2px solid var(--green-dark);
+  border-radius: 6px;
+  color: var(--ink);
+  background: var(--yellow);
+}
+
+.home-play-text {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+}
+
+.home-play h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1.35rem, 4vw, 1.9rem);
+  letter-spacing: -0.02em;
+}
+
+.home-play p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.home-play .button {
+  gap: 8px;
+  margin-top: 4px;
+  text-decoration: none;
+}
+
+.home-play-visual {
+  position: relative;
+  width: clamp(92px, 24vw, 150px);
+  aspect-ratio: 1;
+}
+
+.home-play .play-deco-wheel {
+  width: 100%;
+  height: 100%;
+  transform: none;
+  animation: home-play-spin 9s linear infinite;
+}
+
+.home-play-pointer {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform: translateX(-50%);
+  border-top: 16px solid var(--red);
+  border-right: 9px solid transparent;
+  border-left: 9px solid transparent;
+  filter: drop-shadow(0 2px 1px rgba(15, 24, 34, 0.3));
+}
+
+.home-play-gift {
+  position: absolute;
+  right: -8px;
+  bottom: -4px;
+  padding: 6px;
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  color: #fff;
+  background: var(--red);
+  animation: home-play-hop 1.6s ease-in-out infinite;
+}
+
+@keyframes home-play-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes home-play-hop {
+  0%, 60%, 100% { transform: translateY(0) rotate(0deg); }
+  70% { transform: translateY(-10px) rotate(-8deg); }
+  80% { transform: translateY(0) rotate(4deg); }
+  90% { transform: translateY(-4px) rotate(0deg); }
+}
+
+@media (max-width: 420px) {
+  .home-play {
+    grid-template-columns: 1fr;
+  }
+
+  .home-play-visual {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 64px;
+  }
+
+  .home-play h2 {
+    padding-right: 76px;
+  }
+}
+
+/* Apparition des sections au défilement ; les cartes de services arrivent l'une après l'autre. */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 520ms ease, transform 520ms cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+.reveal .service-card {
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+.reveal.is-visible .service-card {
+  animation: home-card-in 480ms cubic-bezier(0.2, 0.8, 0.3, 1) calc(var(--i, 0) * 70ms + 120ms) both;
+}
+
+@keyframes home-card-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+
+.service-card {
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.service-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0, 91, 63, 0.14);
+}
+
+.service-card h3 svg {
+  transition: transform 260ms cubic-bezier(0.2, 0.9, 0.3, 1.4);
+}
+
+.service-card:hover h3 svg {
+  transform: rotate(-12deg) scale(1.15);
+}
+
+/* Démarches repliées par domaine : on ouvre celui qui intéresse. */
+.procedure-group summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  color: var(--green-dark);
+  background: var(--tint);
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+
+.procedure-group summary::-webkit-details-marker {
+  display: none;
+}
+
+.procedure-group summary > span:first-child {
+  flex: 1;
+}
+
+.procedure-count {
+  min-width: 26px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--green);
+  font-family: Arial, sans-serif;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.procedure-group summary svg {
+  flex: none;
+  transition: transform 200ms ease;
+}
+
+.procedure-group[open] summary {
+  border-bottom: 1px solid #c4cac7;
+}
+
+.procedure-group[open] summary svg {
+  transform: rotate(180deg);
+}
+
+.procedure-group summary:hover {
+  background: #e3efe9;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-reel-track {
+    animation: none;
+  }
+
+  .home-reel-viewport {
+    overflow-x: auto;
+    mask-image: none;
+  }
+
+  .home-reel-track li[aria-hidden] {
+    display: none;
+  }
+
+  .home-play .play-deco-wheel,
+  .home-play-gift,
+  .reveal.is-visible .service-card {
+    animation: none;
+  }
+
+  .reveal,
+  .reveal .service-card {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Sur ordinateur : le bouton du guichet reste sous la signature ; « En ce moment » occupe la colonne de droite. */
+@media (min-width: 900px) {
+  .home-hero-heading,
+  .home-hero-actions {
+    grid-column: 1;
+  }
+
+  .home-hero-actions {
+    margin-top: 0;
+  }
+
+  .home-hero-now {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+}

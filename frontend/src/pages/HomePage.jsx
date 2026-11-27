@@ -8,6 +8,9 @@ import { useSiteSettings } from '../lib/settings';
 import LiveQuestionDialog from '../components/LiveQuestionDialog';
 import DayTimeline from '../components/DayTimeline';
 import HomeServices from '../components/HomeServices';
+import HomeStandsReel from '../components/HomeStandsReel';
+import HomePlay from '../components/HomePlay';
+import Reveal from '../components/Reveal';
 
 const HUB_TIME_ZONE = 'Africa/Lome';
 
@@ -98,6 +101,7 @@ function HomeHero({ data, formats, now }) {
           </div>
         )}
       </div>
+      <HomeStandsReel />
     </section>
   );
 }
@@ -185,8 +189,9 @@ function UpcomingSchedule({ events, formats }) {
   );
 }
 
-// Page d'accueil (document v4, M1) : la signature et les trois actions, « Nos services » et les démarches en ligne,
-// puis ce qui se passe maintenant, l'entreprise à l'affiche, le programme du jour et les prochains rendez-vous.
+// Page d'accueil (document v4, M1) : le bandeau (signature, guichet, ce qui se passe maintenant, les stands qui défilent),
+// le programme quand il existe, « Jouez et gagnez », les services de l'API-ZF et les démarches en ligne.
+// Chaque section apparaît en douceur au défilement.
 export default function HomePage() {
   const { t, i18n } = useTranslation();
   const [data, setData] = useState(null);
@@ -231,21 +236,17 @@ export default function HomePage() {
       <main className="public-container home-main">
         {loading && <p className="public-message">{t('home.loading')}</p>}
         {error && <div className="public-message is-error"><p>{error}</p></div>}
-        {!loading && !error && isEmpty && (
-          <div className="public-message home-empty">
-            <p>{t('home.empty')}</p>
-            <Link to="/stands">{t('home.exploreStands')} <ArrowRight size={16} aria-hidden="true" /></Link>
-          </div>
-        )}
+        {/* Programme encore vide : rien à la place (les stands défilent déjà dans le bandeau). */}
         {!loading && !error && data && !isEmpty && (
-          <>
+          <Reveal className="home-program">
             {data.spotlight && <SpotlightCard spotlight={data.spotlight} />}
             <div className="home-columns">
               <TodaySchedule events={data.today} formats={formats} now={now} />
               {data.upcoming.length > 0 && <UpcomingSchedule events={data.upcoming} formats={formats} />}
             </div>
-          </>
+          </Reveal>
         )}
+        <Reveal><HomePlay /></Reveal>
         <HomeServices />
       </main>
     </>
