@@ -20,9 +20,9 @@ const ROLE_LABELS = {
 const MENUS = {
   [roles.SUPER_ADMIN]: { menu: ['Tableau de bord', 'Stands', 'Relances', 'Programme', 'Studio', 'Rencontres B2B', 'Guichets', 'Jeux et défis', 'Questions', 'Utilisateurs', 'Journal', 'Paramètres'], bas: ['Accueil', 'Stands', 'Relances', 'Rencontres B2B'] },
   [roles.ADMIN]: { menu: ['Tableau de bord', 'Stands', 'Relances', 'Programme', 'Studio', 'Rencontres B2B', 'Guichets', 'Jeux et défis', 'Questions'], bas: ['Accueil', 'Stands', 'Relances', 'Rencontres B2B'] },
-  [roles.OCCUPANT]: { menu: ['Tableau de bord', 'Mon stand', 'Mes contacts', 'Scan de passage', 'Relances', 'Rencontres B2B'], bas: ['Accueil', 'Mes contacts', 'Scan', 'Relances'] },
-  [APIZF_OCCUPANT]: { menu: ['Tableau de bord', 'Mon stand', 'Mes contacts', 'Scan de passage', 'Relances', 'Rencontres B2B', 'Guichets', 'Jeux et défis'], bas: ['Accueil', 'Mes contacts', 'Scan', 'Relances'] },
-  [roles.ANIMATOR]: { menu: ['Scan', 'Questions', 'Remises'], bas: ['Scan', 'Questions', 'Remises'] },
+  [roles.OCCUPANT]: { menu: ['Tableau de bord', 'Mon stand', 'Mes contacts', 'Relances', 'Rencontres B2B'], bas: ['Accueil', 'Mes contacts', 'Relances', 'Rencontres B2B'] },
+  [APIZF_OCCUPANT]: { menu: ['Tableau de bord', 'Mon stand', 'Mes contacts', 'Relances', 'Rencontres B2B', 'Guichets', 'Jeux et défis'], bas: ['Accueil', 'Mes contacts', 'Relances', 'Rencontres B2B'] },
+  [roles.ANIMATOR]: { menu: ['Questions', 'Remises'], bas: ['Questions', 'Remises'] },
 };
 
 // Rubriques du guide ouvertes à chaque rôle.
@@ -53,10 +53,9 @@ Fiche d'un contact (un clic sur sa ligne) : nom, classe, bouton « Appeler », c
 « Demande du site » sur une ligne : la personne a écrit depuis la page publique du stand.
 Sans réseau : un contact saisi est gardé sur le téléphone (« Enregistré sur ce téléphone · À synchroniser ») et part tout seul au retour du réseau ou quand on revient sur Mes contacts. Sans réseau, on ne peut ni modifier la classe ni ajouter de relance. Les autres rubriques demandent du réseau.`,
 
-  'scan-stand': `Scan de passage (« Scan » dans la barre du bas)
-Sert à valider le passage d'un joueur du Défi sur le stand. « Scanner » ouvre l'appareil photo pour lire le QR code du joueur. On peut aussi taper son « Code participant » (6 caractères) puis « OK ». « Code perdu ? Retrouver le joueur » cherche par nom, téléphone ou e-mail. « Liste des scans » montre les joueurs déjà scannés par le stand, avec l'heure. Le passage est validé aussitôt : « Passage validé pour … ».
-Messages possibles : « Code participant introuvable. », « Ce stand a déjà validé ce parcours. » (un joueur ne se scanne qu'une fois par stand), « Ce parcours est déjà terminé. », « La récompense a déjà été remise. », « Les quatre étapes de l'Espace Industrie sont validées : la dernière se valide au Stand API-ZF. »
-Le parcours compte cinq étapes : quatre sur des stands de l'Espace Industrie, la cinquième au Stand API-ZF, où le joueur reçoit sa récompense.`,
+  'scan-stand': `Défi de passage sur le stand
+Il n'y a plus de scan par le stand ni de « Scan de passage » dans le menu : le visiteur scanne lui-même le QR posé devant le stand et répond à deux questions automatiques sur les produits et services de la fiche du stand. Pour que les questions soient justes, la fiche (Mon stand) doit lister les produits et les services, un par ligne.
+Le parcours compte cinq étapes : quatre stands de l'Espace Industrie, validés par le visiteur lui-même en scannant le QR posé devant le stand puis en répondant à deux questions automatiques sur les produits et services de la fiche (l'occupant n'a rien à faire : il n'y a plus de scan par le stand) ; la cinquième, au Stand API-ZF, où le joueur touche « Récupérer » et scanne le QR du comptoir : la récompense est marquée récupérée et son téléphone affiche un écran vert avec l'heure qui défile, que l'équipe regarde avant de donner le lot. Les affiches QR s'impriment depuis Paramètres → Affiches QR des stands.`,
 
   relances: `Relances
 Onglets « Contacts » et « B2B ». Les relances à faire viennent d'abord, de la plus proche à la plus lointaine ; une relance en retard affiche « En retard ». Filtre : À faire, Faites, Toutes. « Exporter » exporte les lignes cochées, sinon tout le tableau. Sous la date, « Automatique (classe A) » ou « Automatique (classe B) » signale une relance créée par la classe du contact.
@@ -138,8 +137,7 @@ En plus des onglets Contacts et B2B : les relances des contacts des guichets, av
   jeux: `Jeux et défis
 Deux onglets.
 « Défi de passage » : tous les joueurs du parcours. Colonnes : Participant, Code, Étapes, Récompense, Actions. Un clic montre les stands visités et qui les a validés. « QR des Défis » affiche le QR à montrer aux visiteurs. Remettre la récompense : bouton cadeau (actif seulement quand le parcours est terminé) → « Confirmer la remise ». Erreurs : « Le parcours n'est pas encore terminé. », « La récompense a déjà été remise. », « Il ne reste plus de récompense en stock. »
-« Roue des opportunités » : les parties jouées. Colonnes : Jouée le, Code, Joueur, Résultat, Statut (Perdu, Lot à remettre, Lot remis). Il n'y a plus de code à donner : le visiteur identifié (même compte que les Défis) joue directement, autant de tours que le réglage « Tours de roue par joueur » ; s'il gagne, la roue lui affiche un code de 4 caractères à montrer pour recevoir son lot. Remettre un lot : bouton cadeau → « Confirmer la remise ».
-Au Scan de passage, un gérant du Stand API-ZF peut aussi taper le code affiché par la roue au gagnant (4 caractères) pour remettre un lot.`,
+« Roue des opportunités » : les parties jouées. Colonnes : Jouée le, Code, Joueur, Résultat, Statut (Perdu, Lot à remettre, Lot remis). Il n'y a plus de code à donner : le visiteur identifié (même compte que les Défis) joue directement, autant de tours que le réglage « Tours de roue par joueur » ; s'il gagne, il récupère son lot au comptoir du Stand API-ZF en touchant « Récupérer » et en scannant le QR du comptoir. Remettre un lot : bouton cadeau → « Confirmer la remise ».`,
 
   'jeux-equipe': `Jeux et défis : supprimer un participant
 L'équipe API-ZF (super administrateur et administrateur) peut supprimer un participant du Défi depuis sa ligne.`,
@@ -169,11 +167,8 @@ Chaque réglage s'applique aussitôt.
 - Guichets : jours, heures et durée des rendez-vous, délais de relance des classes A (heures) et B (jours), informations de qualification du diagnostic.
 - Roue des opportunités : tours de roue par joueur, et les cases de la roue (« + Case » : type, texte sur la roue, quantité totale, affichée ou masquée).`,
 
-  'scan-animateur': `Scan (animateur)
-« Remettre une récompense ou un lot ». « Scanner » ouvre l'appareil photo ; on peut aussi taper le code puis « OK ». « Code perdu ? Retrouver le joueur » cherche par nom, téléphone ou e-mail.
-- Code participant (6 caractères) : le joueur s'affiche avec ses étapes et « Remettre la récompense » quand le parcours est terminé ; sinon « Parcours non terminé. » ou « Récompense déjà remise. »
-- Code de la roue montré par un gagnant (4 caractères) : la fiche « Lot de la roue » s'affiche avec « Remettre le lot », ou « Déjà remis à … par … ».
-Erreurs : « Ce code n'existe pas. », « Ce code n'a pas encore été joué. », « Ce code n'a pas gagné de lot. », « Ce lot a déjà été remis. », « Il ne reste plus de récompense en stock. »`,
+  'scan-animateur': `Remise des récompenses et des lots
+Il n'y a plus de scan dans l'espace équipe. Le joueur touche « Récupérer » sur la page des jeux et scanne le QR du comptoir du Stand API-ZF : sa récompense du Défi (4 stands trouvés) et ses lots de la roue sont marqués récupérés d'un coup. Son écran devient vert, à son nom, avec ce qui lui revient et l'heure qui défile à la seconde : on remet ce qui est listé. Écran rouge « Déjà récupéré » : tout a déjà été pris.`,
 
   remises: `Remises (animateur)
 « Récompenses remises » : Participant, Contact, Remise le, la plus récente d'abord ; les remises de l'animateur connecté sont surlignées. Bouton « Excel ». Cette liste ne contient que les récompenses du Défi, pas les lots de la roue.`,

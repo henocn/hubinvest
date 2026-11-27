@@ -67,8 +67,8 @@ function TeamShellLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const panelRef = useRef(null);
   const isAdmin = isManagerRole(user.role);
-  // Pages propres à l'occupant (carnet, scan des Défis, profil) : elles gardent leur présentation d'espace de stand.
-  const standPage = user.role === 'occupant' && ['/contacts', '/defis', '/profil'].some((path) => location.pathname === path || location.pathname.startsWith(`${path}/`));
+  // Pages propres à l'occupant (carnet, profil) : elles gardent leur présentation d'espace de stand.
+  const standPage = user.role === 'occupant' && ['/contacts', '/profil'].some((path) => location.pathname === path || location.pathname.startsWith(`${path}/`));
   const links = linksForRole(accessRole(user));
   const tabs = tabsForRole(accessRole(user));
   const occupant = user.occupant;

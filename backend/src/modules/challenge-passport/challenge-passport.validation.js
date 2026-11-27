@@ -27,4 +27,10 @@ const rewardCodeParams = Joi.object({
   code: Joi.string().trim().uppercase().pattern(/^(?:[A-HJ-NP-Z2-9]{6}|[A-HJ-NP-Z2-9]{8})$/).required(),
 });
 
-module.exports = { tokenParams, idParams, createPublic, rewardCode, rewardCodeParams, searchQuery };
+// Récompense récupérée au comptoir : le joueur et la signature du QR du comptoir.
+const claim = Joi.object({
+  player: Joi.string().hex().length(64).required(),
+  sig: Joi.string().trim().max(40).required(),
+});
+
+module.exports = { claim, tokenParams, idParams, createPublic, rewardCode, rewardCodeParams, searchQuery };

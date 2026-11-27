@@ -1,7 +1,7 @@
 import { Check } from 'lucide-react';
 
 // Petite roue décorative (sans texte) : elle dépasse dans le coin de la pastille de la roue.
-function DecoWheel() {
+export function DecoWheel() {
   const slices = 8;
   const colors = ['#156c53', '#ffffff', '#ffcf15', '#ffffff', '#156c53', '#ffffff', '#d31b34', '#ffffff'];
   const path = (index) => {

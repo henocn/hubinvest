@@ -39,4 +39,7 @@ const remove = async (request, response) => {
   response.json({ message: 'Participant supprimé.' });
 };
 
-module.exports = { createPublic, getPublic, list, listRewards, getByCode, redeem, redeemByCode, search, remove };
+// Récompense récupérée par le joueur au comptoir du Stand API-ZF (QR du comptoir).
+const claim = async (request, response) => response.json({ data: await challengePassportService.claim(request.body) });
+
+module.exports = { claim, createPublic, getPublic, list, listRewards, getByCode, redeem, redeemByCode, search, remove };

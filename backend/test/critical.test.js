@@ -625,13 +625,14 @@ test('un stand ne peut valider qu’une fois le même parcours', async (context)
   const passport = { id: 'passport-a', code: 'ABCD2345', status: 'active' };
   context.mock.method(challengePassageRepository.sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));
   context.mock.method(challengePassportRepository, 'findByCodeForUpdate', async () => passport);
+  context.mock.method(challengePassageRepository, 'findOccupant', async (id) => ({ id, space: 'industry' }));
   context.mock.method(challengePassageRepository, 'findExisting', async () => ({ id: 'passage-a' }));
   context.mock.method(challengePassageRepository, 'create', async () => {
     throw new Error('La création ne doit pas être appelée.');
   });
 
   await assert.rejects(
-    challengePassageService.validate({ id: 'user-a', occupantId: 'occupant-a' }, { code: passport.code }),
+    challengePassageService.recordPassage({ passport, occupantId: 'occupant-a' }, { LOCK: { UPDATE: 'UPDATE' } }),
     (error) => error.status === 409 && error.code === 'PASSAGE_ALREADY_VALIDATED',
   );
 });
@@ -653,7 +654,7 @@ test('le compteur des joueurs scannés reste limité à l’occupant connecté',
   );
 });
 
-test('« Trouvez les 5 étapes » : quatre stands de l’Espace Industrie, puis la dernière étape au Stand API-ZF', async (context) => {
+test('« Trouvez les 5 étapes » : quatre stands de l’Espace Industrie terminent le parcours ; le Stand API-ZF ne valide plus d’étape', async (context) => {
   const passport = { id: 'passport-a', code: 'ABCD2345', displayName: 'Visiteur Test', status: 'active' };
   const passages = [];
   const spaces = { 'industry-1': 'industry', 'industry-2': 'industry', 'industry-3': 'industry', 'industry-4': 'industry', 'industry-5': 'industry', apizf: 'apizf' };
@@ -662,23 +663,92 @@ test('« Trouvez les 5 étapes » : quatre stands de l’Espace Industrie, puis 
   context.mock.method(challengePassportRepository, 'findByCodeForUpdate', async () => passport);
   context.mock.method(challengePassageRepository, 'findExisting', async (_id, occupantId) => passages.find((item) => item.occupantId === occupantId) || null);
   context.mock.method(challengePassageRepository, 'findOccupant', async (id) => ({ id, space: spaces[id] }));
-  context.mock.method(challengePassageRepository, 'findByPassport', async () => passages.map((item) => ({ occupant: { space: spaces[item.occupantId] } })));
+  context.mock.method(challengePassageRepository, 'findByPassport', async () => passages.map((item) => ({ createdAt: new Date(0), occupant: { space: spaces[item.occupantId] } })));
   context.mock.method(challengePassageRepository, 'create', async (values) => { passages.push(values); return values; });
-  context.mock.method(challengePassageRepository, 'countByPassport', async () => passages.length);
   context.mock.method(challengePassportRepository, 'update', async (_passport, values) => { saved = values; Object.assign(passport, values); return passport; });
-  const scan = (occupantId) => challengePassageService.validate({ id: 'user-c', occupantId }, { code: passport.code });
+  const scan = (occupantId) => challengePassageService.recordPassage({ passport, occupantId }, { LOCK: { UPDATE: 'UPDATE' } });
 
-  await assert.rejects(scan('apizf'), (error) => error.code === 'CHALLENGE_APIZF_LAST');
-  for (const stand of ['industry-1', 'industry-2', 'industry-3']) assert.equal((await scan(stand)).status, 'active');
-  await assert.rejects(scan('apizf'), (error) => error.code === 'CHALLENGE_APIZF_LAST');
-  assert.equal((await scan('industry-4')).passageCount, 4);
-  await assert.rejects(scan('industry-5'), (error) => error.code === 'CHALLENGE_FINISH_AT_APIZF');
-
-  const result = await scan('apizf');
-  assert.equal(result.status, 'completed');
-  assert.equal(result.requiredPassages, 5);
+  await assert.rejects(scan('apizf'), (error) => error.code === 'CHALLENGE_APIZF_REWARD');
+  for (const stand of ['industry-1', 'industry-2', 'industry-3']) assert.equal((await scan(stand)).completed, false);
+  const result = await scan('industry-4');
+  assert.equal(result.passageCount, 4);
+  assert.equal(result.completed, true);
   assert.equal(saved.status, 'completed');
   assert.ok(saved.completedAt instanceof Date);
+  await assert.rejects(scan('industry-5'), (error) => error.code === 'CHALLENGE_ALREADY_COMPLETED');
+});
+
+test('passage par QR : questions sur les produits et services du stand, ticket signé, deux bonnes réponses valident', async (context) => {
+  const { sign } = require('../src/shared/passage-sign');
+  const stands = [
+    { id: 'stand-a', name: 'Gount', slug: 'gount', space: 'industry', products: '- Poteaux en béton\n- Pavés', services: '- Livraison sur chantier' },
+    { id: 'stand-b', name: 'Sofaco', slug: 'sofaco', space: 'industry', products: 'Réfrigérateurs\nCongélateurs', services: null },
+    { id: 'stand-c', name: 'Inpit', slug: 'inpit', space: 'industry', products: null, services: 'Protection des marques\nDépôt de brevets' },
+  ];
+  const passport = { id: 'passport-q', status: 'active', passages: [] };
+  const created = [];
+  context.mock.method(challengePassageRepository, 'findStands', async () => stands);
+  context.mock.method(challengePassportRepository, 'findPublicByToken', async (token) => (token === PLAYER ? passport : null));
+  context.mock.method(challengePassageRepository.sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));
+  context.mock.method(challengePassportRepository, 'findByIdForUpdate', async () => passport);
+  context.mock.method(challengePassageRepository, 'findOccupant', async (id) => ({ id, space: 'industry' }));
+  context.mock.method(challengePassageRepository, 'findExisting', async () => null);
+  context.mock.method(challengePassageRepository, 'findByPassport', async () => []);
+  context.mock.method(challengePassageRepository, 'create', async (values) => { created.push(values); return values; });
+
+  await assert.rejects(challengePassageService.quiz({ slug: 'sofaco', sig: 'faux', player: PLAYER }, 'fr'), (error) => error.code === 'PASSAGE_QR_INVALID');
+  await assert.rejects(challengePassageService.quiz({ slug: 'sofaco', sig: sign('stand', 'stand-b'), player: 'b'.repeat(64) }, 'fr'), (error) => error.code === 'CHALLENGE_PLAYER_REQUIRED');
+
+  const quiz = await challengePassageService.quiz({ slug: 'sofaco', sig: sign('stand', 'stand-b'), player: PLAYER }, 'fr');
+  assert.equal(quiz.status, 'ready');
+  assert.deepEqual(quiz.questions.map((question) => question.kind), ['products', 'services']);
+  // Produits : un vrai produit du stand parmi les choix ; services : le stand n'en a pas, seule « Aucune » est juste.
+  assert.ok(quiz.questions[0].options.some((option) => ['Réfrigérateurs', 'Congélateurs'].includes(option)));
+  assert.equal(quiz.questions[1].options.at(-1), '');
+  assert.ok(!JSON.stringify(quiz).includes('"answer"'));
+
+  const products = quiz.questions[0].options.findIndex((option) => ['Réfrigérateurs', 'Congélateurs'].includes(option));
+  const wrong = await challengePassageService.answer({ ticket: quiz.ticket, player: PLAYER, answers: [products, 0] });
+  assert.deepEqual(wrong, { correct: false, retryIn: 30 });
+  assert.equal(created.length, 0);
+  assert.equal((await challengePassageService.quiz({ slug: 'sofaco', sig: sign('stand', 'stand-b'), player: PLAYER }, 'fr')).status, 'wait');
+
+  const right = await challengePassageService.answer({ ticket: quiz.ticket, player: PLAYER, answers: [products, 3] });
+  assert.deepEqual(right, { correct: true });
+  assert.equal(created[0].occupantId, 'stand-b');
+  assert.equal(created[0].validatedByUserId, null);
+
+  await assert.rejects(challengePassageService.answer({ ticket: `${quiz.ticket.split('.')[0]}.falsifie`, player: PLAYER, answers: [0, 0] }), (error) => error.code === 'PASSAGE_QUIZ_EXPIRED');
+});
+
+test('récompense : le joueur qui a ses 4 stands la récupère au QR du comptoir, une seule fois', async (context) => {
+  const { deskSignature } = require('../src/shared/passage-sign');
+  const passport = { id: 'passport-r', status: 'active', passages: [] };
+  context.mock.method(sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));
+  context.mock.method(challengePassportRepository, 'findByTokenForUpdate', async (token) => (token === PLAYER ? passport : null));
+  context.mock.method(challengePassportRepository, 'findPublicByToken', async () => passport);
+  context.mock.method(challengePassportRepository, 'findOccupantIds', async () => []);
+  context.mock.method(challengePassportRepository, 'countRedeemed', async () => 0);
+  context.mock.method(challengePassportRepository, 'update', async (_passport, values) => Object.assign(passport, values));
+  const prizes = [];
+  context.mock.method(wheelRepository, 'findPassportPrizes', async () => prizes);
+  context.mock.method(wheelRepository, 'updatePlay', async (play, values) => Object.assign(play, values));
+
+  await assert.rejects(challengePassportService.claim({ player: PLAYER, sig: 'faux' }), (error) => error.code === 'REWARD_QR_INVALID');
+  await assert.rejects(challengePassportService.claim({ player: PLAYER, sig: deskSignature() }), (error) => error.code === 'CHALLENGE_NOT_COMPLETED');
+
+  // Un lot gagné à la roue se récupère au même comptoir, même sans avoir fini le Défi.
+  prizes.push({ id: 'play-1', resultLabel: 'Casquette', claimedAt: null });
+  assert.deepEqual((await challengePassportService.claim({ player: PLAYER, sig: deskSignature() })).items, [{ kind: 'prize', label: 'Casquette' }]);
+  assert.ok(prizes[0].claimedAt instanceof Date);
+  assert.equal(prizes[0].claimedByUserId, null);
+
+  passport.status = 'completed';
+  const claimed = await challengePassportService.claim({ player: PLAYER, sig: deskSignature() });
+  assert.deepEqual(claimed.items, [{ kind: 'reward' }]);
+  assert.equal(passport.status, 'redeemed');
+  assert.equal(passport.redeemedByUserId, null);
+  await assert.rejects(challengePassportService.claim({ player: PLAYER, sig: deskSignature() }), (error) => error.code === 'REWARD_ALREADY_REDEEMED' && Boolean(error.details.redeemedAt));
 });
 
 test('la remise d’une récompense respecte le stock suivi', async (context) => {

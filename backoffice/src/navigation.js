@@ -1,7 +1,7 @@
-import { AlarmClock, BriefcaseBusiness, Building2, CalendarDays, Clapperboard, Disc3, Gift, Handshake, LayoutDashboard, MessageCircleQuestion, ScanLine, ScrollText, SlidersHorizontal, Trophy, Users } from 'lucide-react';
+import { AlarmClock, BriefcaseBusiness, Building2, CalendarDays, Clapperboard, Disc3, Gift, Handshake, LayoutDashboard, MessageCircleQuestion, ScrollText, SlidersHorizontal, Trophy, Users } from 'lucide-react';
 
 // Rôles : le super administrateur voit tout ; l'administrateur (l'API-ZF) tout sauf Utilisateurs et Paramètres ;
-// l'occupant administre son stand (sa fiche, B2B, scan de passage, son carnet de contacts ; pas le Studio) ; l'animateur scanne et remet.
+// l'occupant administre son stand (sa fiche, B2B, son carnet de contacts ; pas le Studio ni de scan des joueurs) ; l'animateur suit les questions et les remises.
 // Les occupants du Stand API-ZF (« occupant-apizf ») tiennent en plus les Guichets et la Roue des opportunités.
 export const isGlobalRole = (role) => role === 'super-admin' || role === 'admin';
 export const isOccupantRole = (role) => role === 'occupant' || role === 'occupant-apizf';
@@ -28,7 +28,7 @@ export const adminSections = [
   // Guichets du Stand API-ZF et registre unique des contacts : l'équipe API-ZF et les occupants du Stand API-ZF.
   { section: 'investor-requests', path: '/guichets', label: 'Guichets', Icon: BriefcaseBusiness, apizf: true },
   // Jeux et défis (tous les joueurs, remise des récompenses et des lots) : l'équipe API-ZF et les occupants du Stand API-ZF,
-  // qui remettent quand l'animateur n'est pas là ; un autre occupant a sa « Liste des scans ».
+  // qui remettent quand l'animateur n'est pas là. Les passages se valident par le QR du stand : pas de scan par l'occupant.
   { section: 'challenges', path: '/participants', label: 'Défi de passage', Icon: Trophy, group: 'games', apizf: true },
   { section: 'wheel', path: '/roue', label: 'Roue des opportunités', Icon: Disc3, group: 'games', apizf: true },
 ];
@@ -74,7 +74,6 @@ const occupantLinks = (role) => [
   dashboardLink,
   { path: '/mon-stand', label: 'Mon stand', Icon: Building2 },
   { path: '/contacts', label: 'Mes contacts', Icon: Users, tab: true },
-  { path: '/defis', label: 'Scan de passage', tabLabel: 'Scan', Icon: ScanLine, tab: true },
   ...menuSections(role),
 ];
 
@@ -82,11 +81,11 @@ const roleLinks = {
   // Utilisateurs, Journal puis Paramètres, en bas du menu.
   'super-admin': [dashboardLink, ...menuSections('super-admin'), { ...questionsLink, tab: false }, usersLink, auditLink, settingsLink],
   admin: [dashboardLink, ...menuSections('admin'), { ...questionsLink, tab: false }],
-  // L'occupant : son stand (sa fiche, jamais la liste des stands), son carnet et le scan des joueurs, puis ce qu'il administre.
+  // L'occupant : son stand (sa fiche, jamais la liste des stands), son carnet, puis ce qu'il administre.
   occupant: occupantLinks('occupant'),
   'occupant-apizf': occupantLinks('occupant-apizf'),
   animateur: [
-    { path: '/scan', label: 'Scan', Icon: ScanLine, tab: true },
+    // Plus de scan : récompenses et lots se récupèrent au QR du comptoir du Stand API-ZF.
     questionsLink,
     { path: '/remises', label: 'Remises', Icon: Gift, tab: true },
   ],

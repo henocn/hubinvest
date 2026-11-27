@@ -67,6 +67,12 @@ const findByCodeForUpdate = (code, transaction) => ChallengePassport.findOne({
   lock: transaction.LOCK.UPDATE,
 });
 
+const findByTokenForUpdate = (token, transaction) => ChallengePassport.findOne({
+  where: { token },
+  transaction,
+  lock: transaction.LOCK.UPDATE,
+});
+
 const findByIdForUpdate = (id, transaction) => ChallengePassport.findByPk(id, {
   transaction,
   lock: transaction.LOCK.UPDATE,
@@ -103,4 +109,4 @@ module.exports = {
   search,
   findById,
   remove,
-  findPublicByToken, findRedeemed, findIdByToken, findOccupantIds, findAll, findByCode, findByCodeForUpdate, findByIdForUpdate, create, update };
+  findPublicByToken, findRedeemed, findIdByToken, findOccupantIds, findAll, findByCode, findByCodeForUpdate, findByIdForUpdate, findByTokenForUpdate, create, update };

@@ -115,6 +115,15 @@ const findCodeByValue = (code, transaction) => WheelCode.findOne({ where: { code
 
 const countPlays = (wheelCodeId) => WheelPlay.count({ where: { wheelCodeId } });
 
+// Lots gagnés à la roue par un joueur, le plus ancien d'abord ; verrouillés quand ils sont remis au comptoir.
+const findPassportPrizes = (passportId, transaction) => WheelPlay.findAll({
+  where: { passportId, resultKind: 'prize' },
+  attributes: ['id', 'resultLabel', 'claimedAt', 'claimedByUserId', 'playedAt'],
+  order: [['playedAt', 'ASC']],
+  transaction,
+  ...(transaction && { lock: transaction.LOCK.UPDATE }),
+});
+
 // Compte les tours réellement joués.
 const countPlayed = () => WheelPlay.count();
 
@@ -144,4 +153,5 @@ module.exports = {
   findCodeByValue,
   countPlays,
   countPlayed,
+  findPassportPrizes,
 };

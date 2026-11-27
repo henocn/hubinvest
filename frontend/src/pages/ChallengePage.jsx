@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { BookOpen, Disc3, QrCode } from 'lucide-react';
+import { BookOpen, Check, Disc3, Package, QrCode } from 'lucide-react';
 import GameRulesDialog from '../components/GameRulesDialog';
 import PlayCard from '../components/PlayCard';
 import PlayCta from '../components/PlayCta';
 import PlayerIdentifyDialog from '../components/PlayerIdentifyDialog';
-import ScanMeDialog from '../components/ScanMeDialog';
+import QrScanner from '../components/QrScanner';
 import WheelDialog from '../components/WheelDialog';
 import NotFoundPage from './NotFoundPage';
 import { api } from '../lib/api';
@@ -25,12 +25,14 @@ export default function ChallengePage({ token, openWheel = false }) {
   const [notFound, setNotFound] = useState(false);
   const [identifying, setIdentifying] = useState(false);
   const [wheelOpen, setWheelOpen] = useState(false);
-  const [scanOpen, setScanOpen] = useState(false);
+  // Lecteur de QR : « stand » (affiche devant un stand) ou « desk » (comptoir des récompenses du Stand API-ZF).
+  const [scanner, setScanner] = useState(null);
   const [rulesOpen, setRulesOpen] = useState(false);
   const wantsWheel = useRef(openWheel);
   const settings = useSiteSettings();
   const navigate = useNavigate();
   const location = useLocation();
+  const scanned = useCallback((path) => { setScanner(null); navigate(path); }, [navigate]);
 
   useEffect(() => {
     if (!personalToken || passport) return undefined;
@@ -87,8 +89,10 @@ export default function ChallengePage({ token, openWheel = false }) {
     }
   }, [loading, passport, settings.challengeOpen, settings.wheelOpen]);
 
+  // En fermant la roue, le passeport se recharge : un lot gagné fait apparaître « Récupérer » sur la carte de la roue.
   const closeWheel = () => {
     setWheelOpen(false);
+    refresh();
     if (location.pathname === '/roue') navigate('/defis', { replace: true });
   };
 
@@ -155,14 +159,20 @@ export default function ChallengePage({ token, openWheel = false }) {
             title={t('play.routeTitle')}
             progress={hasPassport ? { done: passport.passageCount, total: passport.requiredPassages, shown: true } : { done: 0, total: 5, shown: false }}
             progressLabel={hasPassport ? t('challenge.progress', { count: passport.passageCount, total: passport.requiredPassages }) : undefined}
-            action={hasPassport && <button className="button button-secondary" type="button" onClick={() => setScanOpen(true)}><QrCode size={18} />{t('play.routeAction')}</button>}
+            action={hasPassport && (passport.status === 'redeemed'
+              ? <p className="play-done"><Check size={18} aria-hidden="true" />{t('play.rewardDone')}</p>
+              : passport.status === 'completed'
+                ? <button className="button button-primary play-claim" type="button" onClick={() => setScanner('desk')}><Package className="play-claim-box" size={20} aria-hidden="true" />{t('play.claim')}</button>
+                : <button className="button button-secondary" type="button" onClick={() => setScanner('stand')}><QrCode size={18} />{t('play.routeAction')}</button>)}
           />
           <PlayCard
             tone="wheel"
             title={t('wheel.title')}
-            action={hasPassport && (settings.wheelOpen
-              ? <button className="button button-primary" type="button" onClick={() => setWheelOpen(true)}><Disc3 size={18} />{t('play.wheelAction')}</button>
-              : <p className="play-closed">{t('closed.wheel')}</p>)}
+            action={hasPassport && (passport.prizes?.some((prize) => !prize.claimed)
+              ? <button className="button button-primary play-claim" type="button" onClick={() => setScanner('desk')}><Package className="play-claim-box" size={20} aria-hidden="true" />{t('play.claim')}</button>
+              : settings.wheelOpen
+                ? <button className="button button-primary" type="button" onClick={() => setWheelOpen(true)}><Disc3 size={18} />{t('play.wheelAction')}</button>
+                : <p className="play-closed">{t('closed.wheel')}</p>)}
           />
         </div>
       )}
@@ -170,8 +180,15 @@ export default function ChallengePage({ token, openWheel = false }) {
       {!loading && !hasPassport && settings.challengeOpen && <PlayCta onClick={() => setIdentifying(true)} />}
       {identifying && <PlayerIdentifyDialog onClose={() => { setIdentifying(false); wantsWheel.current = false; }} onIdentified={identified} />}
       {rulesOpen && <GameRulesDialog onClose={() => setRulesOpen(false)} />}
-      {scanOpen && hasPassport && <ScanMeDialog passport={passport} onClose={() => setScanOpen(false)} />}
-      {wheelOpen && hasPassport && <WheelDialog player={personalToken} onClose={closeWheel} onPlayerLost={playerLost} />}
+      {scanner && hasPassport && (
+        <QrScanner
+          title={t(scanner === 'desk' ? 'scanner.deskTitle' : 'scanner.standTitle')}
+          intro={t(scanner === 'desk' ? 'scanner.deskIntro' : 'scanner.standIntro')}
+          onResult={scanned}
+          onClose={() => setScanner(null)}
+        />
+      )}
+      {wheelOpen && hasPassport && <WheelDialog player={personalToken} onClose={closeWheel} onPlayerLost={playerLost} onClaim={() => { closeWheel(); setScanner('desk'); }} />}
     </main>
   );
 }

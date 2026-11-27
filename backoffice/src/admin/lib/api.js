@@ -140,6 +140,7 @@ export const api = {
     request(`/program-events/${id}`, authorized(token, { method: 'PATCH', body: JSON.stringify(values) })),
   deleteProgramEvent: (token, id) =>
     request(`/program-events/${id}`, authorized(token, { method: 'DELETE' })),
+  passageQrCodes: (token) => request('/challenge-passages/qr-codes', authorized(token)),
   challengePassports: (token) => request('/challenge-passports', authorized(token)),
   redeemChallengePassport: (token, id) =>
     request(`/challenge-passports/${id}/redeem`, authorized(token, { method: 'PATCH' })),

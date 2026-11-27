@@ -213,15 +213,9 @@ const READ = [
   },
   {
     name: 'retrouver_joueur', roles: [S, A, O, P, N],
-    description: 'Retrouve un joueur du Défi qui a perdu son code, par nom, téléphone ou e-mail.',
+    description: 'Retrouve un joueur du Défi par nom, téléphone ou e-mail.',
     input: schema({ recherche: text('Au moins 2 caractères') }, ['recherche']),
     request: (input) => ({ method: 'GET', path: '/challenge-passports/search', query: { q: input.recherche } }),
-  },
-  {
-    name: 'recompense_par_code', roles: [...DESK, N],
-    description: 'État d’un joueur du Défi à partir de son code participant (6 caractères) : étapes, récompense.',
-    input: schema({ code: text('Code participant') }, ['code']),
-    request: (input) => ({ method: 'GET', path: `/challenge-passports/code/${segment(input.code, 'code')}` }),
   },
   {
     name: 'historique_roue', roles: DESK,
@@ -231,14 +225,8 @@ const READ = [
     view: (data, input) => ({ ...data, plays: matching(data?.plays, input.recherche), codes: matching(data?.codes, input.recherche) }),
   },
   {
-    name: 'lot_par_code', roles: [...DESK, N],
-    description: 'Lot gagné à la roue, à partir du code du joueur (4 caractères, affiché quand il gagne), et s’il a été remis.',
-    input: schema({ code: text('Code de jeu') }, ['code']),
-    request: (input) => ({ method: 'GET', path: `/wheel/prizes/${segment(input.code, 'code')}` }),
-  },
-  {
     name: 'statistiques_scan', roles: STANDS,
-    description: 'Joueurs du Défi scannés par le stand.',
+    description: 'Joueurs du Défi passés par le stand (QR du stand et questions).',
     input: schema({}),
     request: () => ({ method: 'GET', path: '/challenge-passages/stats' }),
   },
@@ -388,30 +376,6 @@ const WRITE = [
     }),
     summary: (input) => `Modifier la fiche du stand ${input.nom} (${['activites', 'produits', 'services', 'siteWeb', 'nouveauNom', 'emplacement', 'statut'].filter((key) => input[key]).map((key) => ({ activites: 'activités', siteWeb: 'site web', nouveauNom: 'nom' }[key] || key)).join(', ')})`,
     done: (data, input) => `Fiche du stand ${input.nom} mise à jour.`,
-  },
-  {
-    name: 'valider_passage', roles: STANDS,
-    description: 'Valide le passage d’un joueur du Défi sur le stand, avec son code participant (6 caractères).',
-    input: schema({ code: text('Code participant') }, ['code']),
-    request: (input) => ({ method: 'POST', path: '/challenge-passages', body: { code: input.code } }),
-    summary: (input) => `Valider le passage du joueur ${input.code} sur le stand`,
-    done: (data) => `Passage validé${data?.passport?.fullName ? ` pour ${data.passport.fullName}` : ''}.`,
-  },
-  {
-    name: 'remettre_recompense', roles: [...DESK, N],
-    description: 'Enregistre la remise de la récompense du Défi à un joueur qui a terminé le parcours (code participant).',
-    input: schema({ code: text('Code participant'), nom: label() }, ['code', 'nom']),
-    request: (input) => ({ method: 'POST', path: '/challenge-passports/redeem-by-code', body: { code: input.code } }),
-    summary: (input) => `Remettre la récompense du Défi à ${input.nom} (code ${input.code})`,
-    done: (data, input) => `Récompense remise à ${input.nom}.`,
-  },
-  {
-    name: 'remettre_lot', roles: [...DESK, N],
-    description: 'Enregistre la remise du lot gagné à la roue (code du joueur, 4 caractères).',
-    input: schema({ code: text('Code de jeu') }, ['code']),
-    request: (input) => ({ method: 'POST', path: `/wheel/prizes/${segment(input.code, 'code')}/claim` }),
-    summary: (input) => `Remettre le lot gagné avec le code ${input.code}`,
-    done: (data, input) => `Lot du code ${input.code} remis.`,
   },
   {
     name: 'ajouter_au_programme', roles: TEAM,

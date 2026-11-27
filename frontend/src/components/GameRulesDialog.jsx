@@ -9,8 +9,8 @@ export default function GameRulesDialog({ onClose }) {
   // Tours de roue de chaque joueur, réglés dans le back office.
   const spins = Math.max(1, Number(useSiteSettings().wheelSpinsPerCode) || 1);
   const games = [
-    { key: 'route', Icon: Route, title: t('play.routeTitle'), steps: [1, 2, 3, 4].map((step) => t(`rules.route${step}`)) },
-    { key: 'wheel', Icon: Disc3, title: t('wheel.title'), steps: [t('rules.wheel1'), t('rules.wheel2', { count: spins }), t('rules.wheel3')] },
+    { key: 'route', Icon: Route, title: t('play.routeTitle'), steps: [t('rules.route1'), t('rules.route2'), t('rules.route3')] },
+    { key: 'wheel', Icon: Disc3, title: t('wheel.title'), steps: [t('rules.wheel1', { count: spins }), t('rules.wheel2')] },
   ];
   return (
     <PublicDialog title={t('rules.title')} onClose={onClose} className="rules-dialog">
