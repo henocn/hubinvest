@@ -1,8 +1,11 @@
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 
 // Fenêtre modale des pages publiques : fond assombri, titre, fermeture par la croix, Échap ou clic à côté.
+// Rendue directement dans <body> : ouverte depuis le bandeau d'accueil, elle passait sous le programme du jour
+// (le bloc rouge « En ce moment » recouvrait le formulaire), le bandeau formant sa propre couche d'affichage.
 export default function PublicDialog({ title, intro, onClose, locked = false, className = '', children }) {
   const { t } = useTranslation();
 
@@ -17,7 +20,7 @@ export default function PublicDialog({ title, intro, onClose, locked = false, cl
     };
   }, [locked, onClose]);
 
-  return (
+  return createPortal(
     <div className="player-dialog-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !locked) onClose(); }}>
       <section className={`player-dialog ${className}`.trim()} role="dialog" aria-modal="true" aria-labelledby="public-dialog-title">
         <header>
@@ -29,6 +32,7 @@ export default function PublicDialog({ title, intro, onClose, locked = false, cl
         </header>
         {children}
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }
