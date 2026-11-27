@@ -10,7 +10,6 @@ import AnimatorRewardsPage from './pages/AnimatorRewardsPage';
 import AnimatorScanPage from './pages/AnimatorScanPage';
 import ContactsPage from './pages/ContactsPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import OccupantChallengePage from './pages/OccupantChallengePage';
 import OccupantProfilePage from './pages/OccupantProfilePage';
 import LiveQuestionsPage from './pages/LiveQuestionsPage';
 import StudioPage from './admin/pages/StudioPage';
@@ -116,7 +115,6 @@ function TeamRoutes() {
           <>
             {/* Une seule route : le carnet reste chargé entre la liste, la fiche et le formulaire. */}
             <Route path="/contacts/*" element={<ContactsPage {...props} />} />
-            <Route path="/defis" element={<OccupantChallengePage {...props} />} />
             <Route path="/mon-stand" element={<MyStandPage {...props} />} />
           </>
         )}

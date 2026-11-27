@@ -111,7 +111,7 @@ export default function DashboardPage({ session }) {
             <div className="dashboard-grid">
               {isApizf && <Stat value={data.stands.active} label="Stands actifs" to="/stands" />}
               {isApizf && <Stat value={data.contacts.total} label="Contacts captés" detail={`dont ${data.contacts.today} aujourd’hui · ${data.contacts.fromSite} via le site`} />}
-              <Stat value={data.challenges.players} label={isApizf ? 'Joueurs des Défis' : 'Joueurs passés par le stand'} detail={`${data.challenges.rewardsHanded} récompense${data.challenges.rewardsHanded > 1 ? 's' : ''} remise${data.challenges.rewardsHanded > 1 ? 's' : ''}`} to={hasGuichets ? '/participants' : '/defis'} />
+              <Stat value={data.challenges.players} label={isApizf ? 'Joueurs des Défis' : 'Joueurs passés par le stand'} detail={`${data.challenges.rewardsHanded} récompense${data.challenges.rewardsHanded > 1 ? 's' : ''} remise${data.challenges.rewardsHanded > 1 ? 's' : ''}`} to={hasGuichets ? '/participants' : undefined} />
               {hasGuichets && <Stat value={data.wheel.played} label="Parties de roue" detail={`dont ${data.wheel.playedToday} aujourd’hui`} to="/roue" />}
               {hasGuichets && <Stat value={data.investor.total} label="Contacts aux guichets" detail={`${data.investor.inProgress} en suivi`} to="/guichets" />}
               {hasGuichets && <Stat value={data.investor.diagnosed ?? 0} label="Diagnostics réalisés" detail="fiches de diagnostic en 15 minutes" to="/guichets" />}

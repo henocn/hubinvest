@@ -6,7 +6,6 @@ import GameRulesDialog from '../components/GameRulesDialog';
 import PlayCard from '../components/PlayCard';
 import PlayCta from '../components/PlayCta';
 import PlayerIdentifyDialog from '../components/PlayerIdentifyDialog';
-import ScanMeDialog from '../components/ScanMeDialog';
 import QrScanner from '../components/QrScanner';
 import WheelDialog from '../components/WheelDialog';
 import NotFoundPage from './NotFoundPage';
@@ -26,7 +25,6 @@ export default function ChallengePage({ token, openWheel = false }) {
   const [notFound, setNotFound] = useState(false);
   const [identifying, setIdentifying] = useState(false);
   const [wheelOpen, setWheelOpen] = useState(false);
-  const [scanOpen, setScanOpen] = useState(false);
   // Lecteur de QR : « stand » (affiche devant un stand) ou « desk » (comptoir des récompenses du Stand API-ZF).
   const [scanner, setScanner] = useState(null);
   const [rulesOpen, setRulesOpen] = useState(false);
@@ -184,10 +182,8 @@ export default function ChallengePage({ token, openWheel = false }) {
           intro={t(scanner === 'desk' ? 'scanner.deskIntro' : 'scanner.standIntro')}
           onResult={scanned}
           onClose={() => setScanner(null)}
-          footer={<button className="qr-scanner-fallback" type="button" onClick={() => { setScanner(null); setScanOpen(true); }}>{t('scanner.fallback')}</button>}
         />
       )}
-      {scanOpen && hasPassport && <ScanMeDialog passport={passport} onClose={() => setScanOpen(false)} />}
       {wheelOpen && hasPassport && <WheelDialog player={personalToken} onClose={closeWheel} onPlayerLost={playerLost} />}
     </main>
   );

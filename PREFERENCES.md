@@ -35,7 +35,7 @@
 
 ## Site public
 
-- Façon application mobile : en-tête vert fixe (menu à gauche, logo blanc à droite), panneau latéral pour les rubriques, la langue et l'espace équipe, barre d'onglets verte en bas qui ne disparaît pas au défilement.
+- Façon application mobile : en-tête vert fixe (menu à gauche, logo blanc à droite), panneau latéral pour les rubriques, la langue et l'espace équipe, barre d'onglets verte en bas qui ne disparaît pas au défilement. L'onglet « Jouer » danse en permanence (étoile jaune pleine qui se dandine, halo qui pulse) pour être bien en évidence.
 - FR/EN pour toutes les chaînes ; sélecteur compact (nom de la langue puis drapeau).
 - Accueil vivant et fun (jugé « pas joli » quand ce n'était que du texte et des cadres) : de vraies photos, du mouvement, chaque section apparaît en douceur au défilement. Bandeau vert (signature, bouton rouge « Guichet API-ZF » sous la signature, « En ce moment » à droite sur ordinateur), puis en bas du bandeau les photos des stands qui défilent en continu (nom sous la photo, pause au survol ou au toucher, « Les N stands du Hub » mène à la liste) ; le programme seulement s'il existe (pas de message « bientôt publié ») ; un bandeau jaune « Jouez et gagnez au Hub » (petite roue qui tourne, cadeau qui sautille, bouton « Jouer ») ; puis « Les services de l'API-ZF » (six tuiles à toucher, deux par ligne sur téléphone puis trois : grande icône verte et titre seulement ; un toucher déplie en douceur la promesse et le nom du guichet, seul, dans le pied vert pâle, la tuile ouverte prenant toute la ligne ; contour vert foncé de 2 px, coins arrondis de 6 px ; ni bandeau de couleur, ni icône en pastille, ni chiffre d’étape), les démarches en ligne (un bloc replié par domaine avec son nombre de démarches, ouvert d'un clic, bouton « Faire une démarche en ligne » vers services.apizf.tg dans un nouvel onglet).
 - Rencontres : deux tuiles cliquables (titre et une phrase), centrées dans la page, côte à côte sur grand écran.
@@ -45,7 +45,7 @@
 
 - Le public est peu à l’aise avec le numérique : rien à faire pour les occupants, et le moins de touchers possible pour le visiteur.
 - Un QR posé devant chaque stand de l’Espace Industrie (affiches imprimées depuis Paramètres) ouvre la page du stand avec deux gros boutons : « Valider mon passage » et « Prendre contact ». Valider = deux questions automatiques à un toucher (produits, puis services, tirés de la fiche du stand ; les autres choix viennent des autres stands ; « Aucune de ces réponses » est la bonne réponse quand la fiche n’a ni produit ni service). Bonne réponse : tampon et confettis ; erreur : « Pas tout à fait… », nouvel essai après 30 s.
-- Plus de scan au Stand API-ZF : les 4 stands trouvés, un bouton « Récupérer » avec un colis qui sautille ; le joueur scanne le QR du comptoir et son écran devient vert et vivant (heure qui défile) pour l’équipe, rouge si déjà récupérée. Le scan du code par l’équipe reste en secours.
+- Plus de scan au Stand API-ZF : les 4 stands trouvés, un bouton « Récupérer » avec un colis qui sautille ; le joueur scanne le QR du comptoir et son écran devient vert et vivant (heure qui défile) pour l’équipe, rouge si déjà récupérée. Pas de « Montrer mon code à l’équipe » : on scanne, ou rien.
 
 ## Back office
 
@@ -59,7 +59,7 @@
 - Statut d'une ligne signalé par un fond très léger (vert ou rouge), pas par une colonne de plus.
 - Une échéance qui approche se voit dans la liste, sans ouvrir la fiche : ligne sur fond rouge léger si elle est en retard, jaune léger si elle est pour aujourd'hui, avec une horloge et « En retard · … » ou « Aujourd'hui, 19:28 » ; un bouton « Relances du jour » (avec son nombre) filtre ces lignes.
 - Tableau de bord : d'abord « Aujourd'hui » (relances à faire et rendez-vous du jour, chaque ligne ouvre la fiche), puis « À traiter » sans les lignes à zéro, puis les chiffres.
-- Menu de l'occupant : Mon stand, Mes contacts, Scan de passage (« Scan » dans la barre du bas), Rencontres B2B. La page Scan de passage a « Liste des scans » (fenêtre avec les joueurs scannés, le plus récent d'abord), pas de code de jeu. Les occupants du Stand API-ZF ont en plus Guichets et « Jeux et défis » (onglets Défi de passage et Roue des opportunités) : ils remettent récompenses et lots quand l'animateur n'est pas là.
+- Menu de l'occupant : Mon stand, Mes contacts, Rencontres B2B. Plus de « Scan de passage » ni de scan des joueurs : les passages se valident par le QR posé devant le stand. Les occupants du Stand API-ZF ont en plus Guichets et « Jeux et défis » (onglets Défi de passage et Roue des opportunités) : ils remettent récompenses et lots quand l'animateur n'est pas là.
 
 ## Écrans particuliers
 

@@ -238,7 +238,7 @@ const READ = [
   },
   {
     name: 'statistiques_scan', roles: STANDS,
-    description: 'Joueurs du Défi scannés par le stand.',
+    description: 'Joueurs du Défi passés par le stand (QR du stand et questions).',
     input: schema({}),
     request: () => ({ method: 'GET', path: '/challenge-passages/stats' }),
   },
@@ -388,14 +388,6 @@ const WRITE = [
     }),
     summary: (input) => `Modifier la fiche du stand ${input.nom} (${['activites', 'produits', 'services', 'siteWeb', 'nouveauNom', 'emplacement', 'statut'].filter((key) => input[key]).map((key) => ({ activites: 'activités', siteWeb: 'site web', nouveauNom: 'nom' }[key] || key)).join(', ')})`,
     done: (data, input) => `Fiche du stand ${input.nom} mise à jour.`,
-  },
-  {
-    name: 'valider_passage', roles: STANDS,
-    description: 'Valide le passage d’un joueur du Défi sur le stand, avec son code participant (6 caractères).',
-    input: schema({ code: text('Code participant') }, ['code']),
-    request: (input) => ({ method: 'POST', path: '/challenge-passages', body: { code: input.code } }),
-    summary: (input) => `Valider le passage du joueur ${input.code} sur le stand`,
-    done: (data) => `Passage validé${data?.passport?.fullName ? ` pour ${data.passport.fullName}` : ''}.`,
   },
   {
     name: 'remettre_recompense', roles: [...DESK, N],

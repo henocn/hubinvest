@@ -632,7 +632,7 @@ test('un stand ne peut valider qu’une fois le même parcours', async (context)
   });
 
   await assert.rejects(
-    challengePassageService.validate({ id: 'user-a', occupantId: 'occupant-a' }, { code: passport.code }),
+    challengePassageService.recordPassage({ passport, occupantId: 'occupant-a' }, { LOCK: { UPDATE: 'UPDATE' } }),
     (error) => error.status === 409 && error.code === 'PASSAGE_ALREADY_VALIDATED',
   );
 });
@@ -666,14 +666,13 @@ test('« Trouvez les 5 étapes » : quatre stands de l’Espace Industrie termin
   context.mock.method(challengePassageRepository, 'findByPassport', async () => passages.map((item) => ({ createdAt: new Date(0), occupant: { space: spaces[item.occupantId] } })));
   context.mock.method(challengePassageRepository, 'create', async (values) => { passages.push(values); return values; });
   context.mock.method(challengePassportRepository, 'update', async (_passport, values) => { saved = values; Object.assign(passport, values); return passport; });
-  const scan = (occupantId) => challengePassageService.validate({ id: 'user-c', occupantId }, { code: passport.code });
+  const scan = (occupantId) => challengePassageService.recordPassage({ passport, occupantId }, { LOCK: { UPDATE: 'UPDATE' } });
 
   await assert.rejects(scan('apizf'), (error) => error.code === 'CHALLENGE_APIZF_REWARD');
-  for (const stand of ['industry-1', 'industry-2', 'industry-3']) assert.equal((await scan(stand)).status, 'active');
+  for (const stand of ['industry-1', 'industry-2', 'industry-3']) assert.equal((await scan(stand)).completed, false);
   const result = await scan('industry-4');
   assert.equal(result.passageCount, 4);
-  assert.equal(result.status, 'completed');
-  assert.equal(result.requiredPassages, 5);
+  assert.equal(result.completed, true);
   assert.equal(saved.status, 'completed');
   assert.ok(saved.completedAt instanceof Date);
   await assert.rejects(scan('industry-5'), (error) => error.code === 'CHALLENGE_ALREADY_COMPLETED');

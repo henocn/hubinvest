@@ -9,6 +9,7 @@ const links = [
   { key: 'play', href: '/defis', Icon: Star, matches: (path) => path.startsWith('/defis') || path === '/roue' },
 ];
 
+// L'onglet « Jouer » danse en permanence (étoile jaune pleine qui se dandine, halo qui pulse) pour attirer vers les jeux.
 export default function PublicBottomNav({ path }) {
   const { t } = useTranslation();
 
@@ -18,7 +19,7 @@ export default function PublicBottomNav({ path }) {
         {links.map(({ key, href, Icon, matches }) => {
           const active = matches(path);
           return (
-            <Link key={key} to={href} className={active ? 'is-active' : ''} aria-current={active ? 'page' : undefined}>
+            <Link key={key} to={href} className={[active && 'is-active', key === 'play' && 'is-play'].filter(Boolean).join(' ') || undefined} aria-current={active ? 'page' : undefined}>
               <Icon size={20} strokeWidth={active ? 2.2 : 1.8} aria-hidden="true" />
               <span>{t(`nav.${key}`)}</span>
             </Link>

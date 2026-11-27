@@ -246,7 +246,6 @@ export default {
     camera: "Image de l’appareil photo",
     denied: "L’appareil photo n’est pas disponible. Scannez le QR avec l’appareil photo de votre téléphone.",
     wrong: "Ce n’est pas un QR du Hub.",
-    fallback: "Ça ne marche pas ? Montrer mon code à l’équipe",
   },
   passage: {
     validate: "Valider mon passage",

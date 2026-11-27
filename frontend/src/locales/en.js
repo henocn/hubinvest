@@ -246,7 +246,6 @@ export default {
     camera: "Camera view",
     denied: "The camera is not available. Scan the QR code with your phone camera.",
     wrong: "This is not a Hub QR code.",
-    fallback: "Not working? Show my code to the team",
   },
   passage: {
     validate: "Validate my visit",

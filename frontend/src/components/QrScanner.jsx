@@ -7,8 +7,8 @@ const HUB_PATH = /^\/(passage\/[a-z0-9-]+\/[A-Za-z0-9_-]+|recuperer\/[A-Za-z0-9_
 
 // Lit un QR du Hub avec l'appareil photo, sans quitter l'application (le joueur reste identifié). Rend le chemin lu.
 // Si l'appareil photo est refusé ou absent, le joueur peut toujours scanner l'affiche avec l'appareil photo du
-// téléphone ; `footer` propose en plus la solution de secours (montrer son code à l'équipe).
-export default function QrScanner({ title, intro, onResult, onClose, footer }) {
+// téléphone. Pas d'autre solution proposée : on scanne, ou rien.
+export default function QrScanner({ title, intro, onResult, onClose }) {
   const { t } = useTranslation();
   const videoRef = useRef(null);
   const [state, setState] = useState('starting');
@@ -82,7 +82,6 @@ export default function QrScanner({ title, intro, onResult, onClose, footer }) {
         </div>
       )}
       {wrongCode && <p className="form-error qr-scanner-wrong" role="alert">{t('scanner.wrong')}</p>}
-      {footer}
     </PublicDialog>
   );
 }

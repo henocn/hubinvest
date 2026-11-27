@@ -33,7 +33,7 @@ const stats = async (user) => {
 
 const industryPassages = (passages) => passages.filter((passage) => passage.occupant?.space !== 'apizf');
 
-// Enregistre le passage d'un joueur sur un stand de l'Espace Industrie (scan par l'occupant, ou QR et questions).
+// Enregistre le passage d'un joueur sur un stand de l'Espace Industrie (QR du stand et deux questions ; plus de scan par l'occupant).
 // « Trouvez les 5 étapes » : quatre stands de l'Espace Industrie, puis la cinquième étape en récupérant sa récompense
 // au comptoir du Stand API-ZF ; le Stand API-ZF ne valide donc plus de passage.
 const recordPassage = async ({ passport, occupantId, validatedByUserId = null, minGap = false }, transaction) => {
@@ -64,37 +64,6 @@ const recordPassage = async ({ passport, occupantId, validatedByUserId = null, m
   const completed = done.length + 1 >= INDUSTRY_STEPS;
   if (completed) await challengePassportRepository.update(passport, { status: 'completed', completedAt: new Date() }, transaction);
   return { passageCount: done.length + 1, completed };
-};
-
-const duplicateAsConflict = (error) => {
-  if (error instanceof UniqueConstraintError) throw new AppError(409, 'PASSAGE_ALREADY_VALIDATED', 'Ce stand a déjà validé ce parcours.');
-  throw error;
-};
-
-// Scan par l'occupant (secours) : il tape ou scanne le code du joueur.
-const validate = async (user, values) => {
-  settingsService.assertOpen('challengeOpen');
-  if (!user.occupantId) throw new AppError(403, 'OCCUPANT_REQUIRED', 'Ce compte ne dépend pas d’un occupant.');
-  let passportId = null;
-  try {
-    const result = await challengePassageRepository.sequelize.transaction(async (transaction) => {
-      const passport = await challengePassportRepository.findByCodeForUpdate(values.code, transaction);
-      if (!passport) throw new AppError(404, 'CHALLENGE_PASSPORT_NOT_FOUND', 'Code participant introuvable.');
-      passportId = passport.id;
-      const { passageCount, completed } = await recordPassage({ passport, occupantId: user.occupantId, validatedByUserId: user.id }, transaction);
-      return {
-        displayName: passport.displayName,
-        code: passport.code,
-        passageCount,
-        requiredPassages: settingsService.requiredPassages(),
-        status: completed ? 'completed' : 'active',
-      };
-    });
-    realtime.challengeChanged({ passportId, occupantIds: [user.occupantId] });
-    return result;
-  } catch (error) {
-    return duplicateAsConflict(error);
-  }
 };
 
 // Stand d'une affiche : retrouvé par son adresse, et la signature doit être celle imprimée sur l'affiche.
@@ -157,7 +126,8 @@ const answer = async ({ ticket, player, answers }) => {
       await recordPassage({ passport: locked, occupantId: content.o, minGap: true }, transaction);
     });
   } catch (error) {
-    duplicateAsConflict(error);
+    if (error instanceof UniqueConstraintError) throw new AppError(409, 'PASSAGE_ALREADY_VALIDATED', 'Ce stand a déjà validé ce parcours.');
+    throw error;
   }
   realtime.challengeChanged({ passportId: passport.id, occupantIds: [content.o] });
   return { correct: true };
@@ -177,4 +147,4 @@ const qrCodes = async () => {
   };
 };
 
-module.exports = { validate, stats, quiz, answer, qrCodes, recordPassage, RETRY_SECONDS };
+module.exports = { stats, quiz, answer, qrCodes, recordPassage, RETRY_SECONDS };

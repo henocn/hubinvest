@@ -14,8 +14,7 @@ router.post('/public/answer', validate(challengePassageValidation.answer), async
 
 router.use(asyncHandler(authenticate));
 router.get('/qr-codes', requireRoles(roles.SUPER_ADMIN, roles.ADMIN), asyncHandler(challengePassageController.qrCodes));
-// Secours : l'occupant scanne ou tape le code du joueur.
+// Nombre de joueurs passés par le stand de l'occupant (pour son tableau de bord). Plus de scan par l'occupant.
 router.get('/stats', requireRoles(roles.OCCUPANT), asyncHandler(challengePassageController.stats));
-router.post('/', requireRoles(roles.OCCUPANT), validate(challengePassageValidation.create), asyncHandler(challengePassageController.create));
 
 module.exports = router;
