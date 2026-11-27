@@ -4505,3 +4505,21 @@ main h1:not(.sr-only)::before {
     animation: none;
   }
 }
+
+/* Démarches en ligne : chaque domaine en une ligne, son nom et son nombre de démarches, sans liste à déplier. */
+.procedure-group.is-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 16px;
+  color: var(--green-dark);
+  background: var(--tint);
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.procedure-group.is-summary > span:first-child {
+  flex: 1;
+}

@@ -8,7 +8,7 @@ const DOMAINS = ['free_zone', 'investment_code', 'blue_book'];
 // Une icône par service de l'API-ZF.
 const ICONS = { orientation: Compass, regimes: Scale, facilitation: FileCheck2, industrial_site: Factory, aftercare: LifeBuoy, partnerships: Handshake };
 
-// « Les services de l'API-ZF » (document v4, M1) : les six services en cartes (titre, promesse, où les trouver au stand), puis les démarches déjà en ligne, repliées par domaine (on ouvre celui qui intéresse). Contenu statique : content/services.js.
+// « Les services de l'API-ZF » (document v4, M1) : les six services en cartes (titre, promesse, où les trouver au stand), puis les démarches déjà en ligne, résumées par domaine (titre et nombre de démarches). Contenu statique : content/services.js.
 export default function HomeServices() {
   const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(null);
@@ -66,23 +66,12 @@ export default function HomeServices() {
             <a className="button button-primary" href={PROCEDURES_URL} target="_blank" rel="noreferrer">{t('services.openPlatform')}<ExternalLink size={16} aria-hidden="true" /></a>
           </header>
           <div className="procedure-groups">
+            {/* Le domaine et son nombre de démarches, sans le détail : le bouton mène à la plateforme. */}
             {byDomain.map(({ domain, items }) => (
-              <details key={domain} className="procedure-group">
-                <summary>
-                  <span>{t(`services.domains.${domain}`)}</span>
-                  <span className="procedure-count">{items.length}</span>
-                  <ChevronDown size={18} aria-hidden="true" />
-                </summary>
-                <ul>
-                  {items.map((item) => (
-                    <li key={item.id}>
-                      {item.url
-                        ? <a href={item.url} target="_blank" rel="noreferrer">{item.title}<ExternalLink size={15} aria-label={t('services.external')} /></a>
-                        : <span>{item.title}</span>}
-                    </li>
-                  ))}
-                </ul>
-              </details>
+              <p key={domain} className="procedure-group is-summary">
+                <span>{t(`services.domains.${domain}`)}</span>
+                <span className="procedure-count">{items.length}</span>
+              </p>
             ))}
           </div>
         </Reveal>
