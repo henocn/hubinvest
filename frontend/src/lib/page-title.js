@@ -10,7 +10,7 @@ const titles = {
   '/investor-desk': `Être recontacté par l’API-ZF · ${SITE_NAME}`,
   '/ecran': `Grand écran · ${SITE_NAME}`,
   '/rencontres': `Rencontrer l’API-ZF et les entreprises · ${SITE_NAME}`,
-  '/b2b': `Opportunités d’investissement et besoins B2B · ${SITE_NAME}`,
+  '/b2b': `Rencontres B2B · ${SITE_NAME}`,
   '/defis': `Trouvez les 5 étapes et la roue des opportunités · ${SITE_NAME}`,
   '/roue': `Trouvez les 5 étapes et la roue des opportunités · ${SITE_NAME}`,
 };

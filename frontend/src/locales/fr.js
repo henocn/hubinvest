@@ -121,7 +121,7 @@ export default {
     title: "Rencontres",
     deskTile: "Guichets de l’API-ZF",
     deskText: "Rendez-vous avec un expert de l’API-ZF au Stand.",
-    b2bTile: "Opportunités d’investissement",
+    b2bTile: "Rencontres B2B",
     b2bText: "Trouvez une opportunité parmi les besoins publiés par les entreprises.",
   },
   b2b: {
@@ -311,7 +311,7 @@ export default {
     press: "Appuyer pour faire tourner la roue",
     spinning: "Relâchez pour arrêter la roue…",
     won: "Bravo, vous gagnez",
-    claim: "Votre lot vous attend au Stand API-ZF : touchez « Récupérer » sur la page des jeux et scannez le QR du comptoir.",
+    claim: "Votre lot vous attend au Stand API-ZF : touchez « Récupérer » et scannez le QR du comptoir.",
     lost: "Merci d’avoir joué. Bonne visite au Hub !",
     turns_one: "1 tour à jouer",
     turns_other: "{{count}} tours à jouer",

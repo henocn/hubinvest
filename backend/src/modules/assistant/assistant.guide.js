@@ -137,7 +137,7 @@ En plus des onglets Contacts et B2B : les relances des contacts des guichets, av
   jeux: `Jeux et défis
 Deux onglets.
 « Défi de passage » : tous les joueurs du parcours. Colonnes : Participant, Code, Étapes, Récompense, Actions. Un clic montre les stands visités et qui les a validés. « QR des Défis » affiche le QR à montrer aux visiteurs. Remettre la récompense : bouton cadeau (actif seulement quand le parcours est terminé) → « Confirmer la remise ». Erreurs : « Le parcours n'est pas encore terminé. », « La récompense a déjà été remise. », « Il ne reste plus de récompense en stock. »
-« Roue des opportunités » : les parties jouées. Colonnes : Jouée le, Code, Joueur, Résultat, Statut (Perdu, Lot à remettre, Lot remis). Il n'y a plus de code à donner : le visiteur identifié (même compte que les Défis) joue directement, autant de tours que le réglage « Tours de roue par joueur » ; s'il gagne, la roue lui affiche un code de 4 caractères à montrer pour recevoir son lot. Remettre un lot : bouton cadeau → « Confirmer la remise ».`,
+« Roue des opportunités » : les parties jouées. Colonnes : Jouée le, Code, Joueur, Résultat, Statut (Perdu, Lot à remettre, Lot remis). Il n'y a plus de code à donner : le visiteur identifié (même compte que les Défis) joue directement, autant de tours que le réglage « Tours de roue par joueur » ; s'il gagne, il récupère son lot au comptoir du Stand API-ZF en touchant « Récupérer » et en scannant le QR du comptoir. Remettre un lot : bouton cadeau → « Confirmer la remise ».`,
 
   'jeux-equipe': `Jeux et défis : supprimer un participant
 L'équipe API-ZF (super administrateur et administrateur) peut supprimer un participant du Défi depuis sa ligne.`,

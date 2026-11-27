@@ -121,7 +121,7 @@ export default {
     title: "Meetings",
     deskTile: "API-ZF desks",
     deskText: "Meet an API-ZF expert at the Stand.",
-    b2bTile: "Investment opportunities",
+    b2bTile: "B2B meetings",
     b2bText: "Find an opportunity among the needs published by companies.",
   },
   b2b: {
@@ -311,7 +311,7 @@ export default {
     press: "Press to spin the wheel",
     spinning: "Let go to stop the wheel…",
     won: "Congratulations, you win",
-    claim: "Your prize is waiting at the API-ZF Stand: tap “Collect” on the games page and scan the counter QR code.",
+    claim: "Your prize is waiting at the API-ZF Stand: tap “Collect” and scan the counter QR code.",
     lost: "Thanks for playing. Enjoy your visit to the Hub!",
     turns_one: "1 spin to play",
     turns_other: "{{count}} spins to play",

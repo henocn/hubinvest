@@ -30,13 +30,13 @@ const STATIC_PAGES = {
     priority: '0.9',
   },
   '/b2b': {
-    title: `Opportunités d’investissement et besoins B2B · ${SITE_NAME}`,
+    title: `Rencontres B2B · ${SITE_NAME}`,
     description: 'Les besoins publiés par les entreprises de l’Espace Industrie : proposez une rencontre B2B de 20 minutes et trouvez une opportunité d’investissement au Togo.',
     priority: '0.8',
   },
   '/rencontres': {
     title: `Rencontrer l’API-ZF et les entreprises · ${SITE_NAME}`,
-    description: 'Guichets de l’API-ZF et opportunités d’investissement : rencontrez un expert de l’API-ZF ou une entreprise de l’Espace Industrie.',
+    description: 'Guichets de l’API-ZF et rencontres B2B : rencontrez un expert de l’API-ZF ou une entreprise de l’Espace Industrie.',
     priority: '0.8',
   },
   '/guichets/rappel': {
@@ -128,7 +128,7 @@ const breadcrumbLd = (items) => ({
 });
 
 const link = (href, text) => `<a href="${href}">${escapeHtml(text)}</a>`;
-const navigation = () => `<nav>${[['/', 'Accueil'], ['/guichets', 'Prendre rendez-vous aux guichets'], ['/stands', 'Entreprises'], ['/b2b', 'Opportunités d’investissement'], ['/defis', 'Trouvez les 5 étapes']].map(([href, text]) => link(href, text)).join(' · ')}</nav>`;
+const navigation = () => `<nav>${[['/', 'Accueil'], ['/guichets', 'Prendre rendez-vous aux guichets'], ['/stands', 'Entreprises'], ['/b2b', 'Rencontres B2B'], ['/defis', 'Trouvez les 5 étapes']].map(([href, text]) => link(href, text)).join(' · ')}</nav>`;
 
 // Accueil : la signature, les services par étape du parcours et les démarches en ligne.
 const homeBody = () => [
@@ -158,7 +158,7 @@ const standsBody = async () => {
 
 const needsBody = async () => {
   const needs = await seoRepository.listNeeds();
-  return `<h1>Opportunités d’investissement et besoins B2B</h1><ul>${needs.map((need) => `<li>${link(`/b2b/${need.id}`, `${need.title} · ${need.occupant.name}`)}</li>`).join('')}</ul>`;
+  return `<h1>Rencontres B2B</h1><ul>${needs.map((need) => `<li>${link(`/b2b/${need.id}`, `${need.title} · ${need.occupant.name}`)}</li>`).join('')}</ul>`;
 };
 
 const STATIC_BODIES = { '/': homeBody, '/guichets': guichetsBody, '/stands': standsBody, '/b2b': needsBody };
@@ -211,7 +211,7 @@ const needMeta = async (id) => {
     image: absoluteUrl(need.occupant.coverImageUrl || need.occupant.logoUrl),
     jsonLd: {
       '@context': 'https://schema.org',
-      '@graph': [breadcrumbLd([[SITE_NAME, '/'], ['Opportunités d’investissement', '/b2b'], [need.title, url]])],
+      '@graph': [breadcrumbLd([[SITE_NAME, '/'], ['Rencontres B2B', '/b2b'], [need.title, url]])],
     },
   };
 };

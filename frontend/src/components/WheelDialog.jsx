@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Gift, Heart, PartyPopper, RotateCcw } from 'lucide-react';
+import { Gift, Heart, Package, PartyPopper, RotateCcw } from 'lucide-react';
 import Confetti from './Confetti';
 import PublicDialog from './PublicDialog';
 import WheelOfFortune from './WheelOfFortune';
@@ -28,7 +28,8 @@ const stopDistance = (angle, speed, target, minDuration) => {
 
 // Sans code : le joueur identifié voit la roue et la fait tourner en appuyant dessus, autant de tours que le réglage
 // du back office (« Tours de roue par joueur »), comptés par le serveur.
-export default function WheelDialog({ player, onClose, onPlayerLost }) {
+// onClaim : ouvre le lecteur du QR du comptoir pour récupérer le lot, directement depuis cette fenêtre.
+export default function WheelDialog({ player, onClose, onPlayerLost, onClaim }) {
   const { t, i18n } = useTranslation();
   const [segments, setSegments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -196,6 +197,7 @@ export default function WheelDialog({ player, onClose, onPlayerLost }) {
           <span><Gift size={18} aria-hidden="true" />{t('wheel.alreadyWon')}</span>
           <strong>{previousWin.label}</strong>
           <p>{t('wheel.claim')}</p>
+          {onClaim && <button className="button button-primary play-claim" type="button" onClick={onClaim}><Package className="play-claim-box" size={20} aria-hidden="true" />{t('play.claim')}</button>}
         </div>
       )}
       {!loading && !previousWin && segments.length > 0 && spinsLeft === 0 && !outcome && <p className="public-message">{t('wheel.noSpins')}</p>}
@@ -222,6 +224,7 @@ export default function WheelDialog({ player, onClose, onPlayerLost }) {
           {won ? <span><PartyPopper size={18} aria-hidden="true" />{t('wheel.won')}</span> : <Heart className="wheel-result-icon" size={22} aria-hidden="true" />}
           <strong>{outcome.result.label}</strong>
           <p>{won ? t('wheel.claim') : t('wheel.lost')}</p>
+          {won && onClaim && <button className="button button-primary play-claim" type="button" onClick={onClaim}><Package className="play-claim-box" size={20} aria-hidden="true" />{t('play.claim')}</button>}
           {outcome.spinsLeft > 0 && <button className="button button-primary" type="button" onClick={spinAgain}><RotateCcw size={17} aria-hidden="true" />{t('wheel.spinAgain', { count: outcome.spinsLeft })}</button>}
         </div>
       ) : segments.length > 0 && spinsLeft > 0 && (

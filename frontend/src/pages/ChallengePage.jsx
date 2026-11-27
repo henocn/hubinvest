@@ -89,8 +89,10 @@ export default function ChallengePage({ token, openWheel = false }) {
     }
   }, [loading, passport, settings.challengeOpen, settings.wheelOpen]);
 
+  // En fermant la roue, le passeport se recharge : un lot gagné fait apparaître « Récupérer » sur la carte de la roue.
   const closeWheel = () => {
     setWheelOpen(false);
+    refresh();
     if (location.pathname === '/roue') navigate('/defis', { replace: true });
   };
 
@@ -186,7 +188,7 @@ export default function ChallengePage({ token, openWheel = false }) {
           onClose={() => setScanner(null)}
         />
       )}
-      {wheelOpen && hasPassport && <WheelDialog player={personalToken} onClose={closeWheel} onPlayerLost={playerLost} />}
+      {wheelOpen && hasPassport && <WheelDialog player={personalToken} onClose={closeWheel} onPlayerLost={playerLost} onClaim={() => { closeWheel(); setScanner('desk'); }} />}
     </main>
   );
 }
