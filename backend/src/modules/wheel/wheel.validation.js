@@ -6,15 +6,13 @@ const idParams = Joi.object({
 });
 
 const spin = Joi.object({
-  code: Joi.string().trim().min(4).max(16).required(),
   player: Joi.string().hex().length(64).required(),
   // La roue affichée au joueur (identifiants des cases, dans l'ordre), reprise pour le tirage.
   wheel: Joi.array().items(Joi.string().guid()).max(40),
 });
 
-// Vérification du code avant d'afficher la roue.
-const checkCode = Joi.object({
-  code: Joi.string().trim().min(4).max(16).required(),
+// Tours restants du joueur, avant d'afficher la roue.
+const status = Joi.object({
   player: Joi.string().hex().length(64).required(),
 });
 
@@ -35,4 +33,4 @@ const updateSegment = Joi.object(fields).min(1);
 
 const codeParams = Joi.object({ code: Joi.string().trim().pattern(/^[A-Za-z0-9-]{3,16}$/).required() });
 
-module.exports = { idParams, codeParams, checkCode, spin, createSegment, updateSegment };
+module.exports = { idParams, codeParams, status, spin, createSegment, updateSegment };

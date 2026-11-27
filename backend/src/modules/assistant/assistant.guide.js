@@ -138,8 +138,8 @@ En plus des onglets Contacts et B2B : les relances des contacts des guichets, av
   jeux: `Jeux et défis
 Deux onglets.
 « Défi de passage » : tous les joueurs du parcours. Colonnes : Participant, Code, Étapes, Récompense, Actions. Un clic montre les stands visités et qui les a validés. « QR des Défis » affiche le QR à montrer aux visiteurs. Remettre la récompense : bouton cadeau (actif seulement quand le parcours est terminé) → « Confirmer la remise ». Erreurs : « Le parcours n'est pas encore terminé. », « La récompense a déjà été remise. », « Il ne reste plus de récompense en stock. »
-« Roue des opportunités » : les parties jouées. Colonnes : Jouée le, Code, Joueur, Résultat, Statut (Perdu, Lot à remettre, Lot remis). Créer un code de jeu pour un visiteur : « Code de jeu » → « Nouveau code » ; le code s'affiche en grand avec le nombre de tours qu'il donne. Les codes déjà délivrés sont repliés en dessous. Remettre un lot : bouton cadeau → « Confirmer la remise ».
-Au Scan de passage, un gérant du Stand API-ZF peut aussi taper le code de jeu de la roue (4 caractères) pour remettre un lot.`,
+« Roue des opportunités » : les parties jouées. Colonnes : Jouée le, Code, Joueur, Résultat, Statut (Perdu, Lot à remettre, Lot remis). Il n'y a plus de code à donner : le visiteur identifié (même compte que les Défis) joue directement, autant de tours que le réglage « Tours de roue par joueur » ; s'il gagne, la roue lui affiche un code de 4 caractères à montrer pour recevoir son lot. Remettre un lot : bouton cadeau → « Confirmer la remise ».
+Au Scan de passage, un gérant du Stand API-ZF peut aussi taper le code affiché par la roue au gagnant (4 caractères) pour remettre un lot.`,
 
   'jeux-equipe': `Jeux et défis : supprimer un participant
 L'équipe API-ZF (super administrateur et administrateur) peut supprimer un participant du Défi depuis sa ligne.`,
@@ -167,12 +167,12 @@ Chaque réglage s'applique aussitôt.
 - Grand écran : affichage « En direct » ou « Boucle vidéo (repli) », service du jour, vidéo de repli, « Ouvrir l'écran ».
 - Rendez-vous B2B : nombre de tables, durée, premier et dernier rendez-vous.
 - Guichets : jours, heures et durée des rendez-vous, délais de relance des classes A (heures) et B (jours), informations de qualification du diagnostic.
-- Roue des opportunités : tours de roue par code de jeu, et les cases de la roue (« + Case » : type, texte sur la roue, quantité totale, affichée ou masquée).`,
+- Roue des opportunités : tours de roue par joueur, et les cases de la roue (« + Case » : type, texte sur la roue, quantité totale, affichée ou masquée).`,
 
   'scan-animateur': `Scan (animateur)
 « Remettre une récompense ou un lot ». « Scanner » ouvre l'appareil photo ; on peut aussi taper le code puis « OK ». « Code perdu ? Retrouver le joueur » cherche par nom, téléphone ou e-mail.
 - Code participant (6 caractères) : le joueur s'affiche avec ses étapes et « Remettre la récompense » quand le parcours est terminé ; sinon « Parcours non terminé. » ou « Récompense déjà remise. »
-- Code de jeu de la roue (4 caractères) : la fiche « Lot de la roue » s'affiche avec « Remettre le lot », ou « Déjà remis à … par … ».
+- Code de la roue montré par un gagnant (4 caractères) : la fiche « Lot de la roue » s'affiche avec « Remettre le lot », ou « Déjà remis à … par … ».
 Erreurs : « Ce code n'existe pas. », « Ce code n'a pas encore été joué. », « Ce code n'a pas gagné de lot. », « Ce lot a déjà été remis. », « Il ne reste plus de récompense en stock. »`,
 
   remises: `Remises (animateur)

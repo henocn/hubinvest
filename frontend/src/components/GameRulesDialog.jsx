@@ -1,13 +1,16 @@
 import { Disc3, Route } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import PublicDialog from './PublicDialog';
+import { useSiteSettings } from '../lib/settings';
 
 // Règles des deux jeux, ouvertes depuis « Règles du jeu » : les pastilles de la page restent visuelles.
 export default function GameRulesDialog({ onClose }) {
   const { t } = useTranslation();
+  // Tours de roue de chaque joueur, réglés dans le back office.
+  const spins = Math.max(1, Number(useSiteSettings().wheelSpinsPerCode) || 1);
   const games = [
     { key: 'route', Icon: Route, title: t('play.routeTitle'), steps: [1, 2, 3, 4].map((step) => t(`rules.route${step}`)) },
-    { key: 'wheel', Icon: Disc3, title: t('wheel.title'), steps: [1, 2, 3, 4].map((step) => t(`rules.wheel${step}`)) },
+    { key: 'wheel', Icon: Disc3, title: t('wheel.title'), steps: [t('rules.wheel1'), t('rules.wheel2', { count: spins }), t('rules.wheel3')] },
   ];
   return (
     <PublicDialog title={t('rules.title')} onClose={onClose} className="rules-dialog">

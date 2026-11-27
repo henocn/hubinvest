@@ -5,9 +5,6 @@ import WheelOfFortune from './WheelOfFortune';
 import { api } from '../lib/api';
 import { publicErrorMessage } from '../lib/public-error';
 
-const CODE_LENGTH = 4;
-const CODE_CHARACTERS = /[^ABCDEFGHJKMNPQRSTUVWXYZ2-9]/g;
-
 // Vitesses en degrés par seconde : la roue accélère tant qu'on appuie, puis ralentit jusqu'à la case tirée.
 const START_SPEED = 260;
 const MAX_SPEED = 1100;
@@ -16,8 +13,6 @@ const RELEASE_SPEED = 640;
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const mod = (value) => ((value % 360) + 360) % 360;
-// Erreurs qui viennent du code (inexistant, déjà servi, pris par un autre joueur…) : retour à la saisie du code.
-const CODE_ERRORS = new Set(['WHEEL_CODE_INVALID', 'WHEEL_CODE_USED', 'WHEEL_CODE_TAKEN', 'WHEEL_RATE_LIMITED']);
 
 // Distance à parcourir pour s'arrêter au centre (à peu près) de la case gagnante, avec un ralentissement d'au moins minDuration.
 const stopDistance = (angle, speed, target, minDuration) => {
@@ -26,28 +21,38 @@ const stopDistance = (angle, speed, target, minDuration) => {
   return aligned >= minimum ? aligned : aligned + 360 * Math.ceil((minimum - aligned) / 360);
 };
 
-// En deux temps : d'abord le code de jeu seul ; une fois validé, la roue, à faire tourner en appuyant dessus.
+// Sans code : le joueur identifié voit la roue et la fait tourner en appuyant dessus, autant de tours que le réglage
+// du back office (« Tours de roue par joueur »), comptés par le serveur.
 export default function WheelDialog({ player, onClose, onPlayerLost }) {
   const { t, i18n } = useTranslation();
   const [segments, setSegments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [code, setCode] = useState('');
+  const [spinsLeft, setSpinsLeft] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [outcome, setOutcome] = useState(null);
-  const [step, setStep] = useState('code');
   const discRef = useRef(null);
-  const inputRef = useRef(null);
+  // Fonction du parent recréée à chaque rendu : gardée à part pour ne pas recharger la roue.
+  const playerLost = useRef(onPlayerLost);
+  playerLost.current = onPlayerLost;
   const motion = useRef({ phase: 'idle', angle: 0, speed: 0, last: 0, frame: 0, stop: null, response: null });
 
   useEffect(() => {
     let active = true;
-    api.publicWheel()
-      .then((data) => { if (active) setSegments(data.segments); })
-      .catch((requestError) => { if (active) setError(publicErrorMessage(t, requestError)); })
+    Promise.all([api.publicWheel(), api.wheelStatus(player)])
+      .then(([wheel, status]) => {
+        if (!active) return;
+        setSegments(wheel.segments);
+        setSpinsLeft(status.spinsLeft);
+      })
+      .catch((requestError) => {
+        if (!active) return;
+        if (requestError.code === 'WHEEL_PLAYER_REQUIRED') playerLost.current();
+        setError(publicErrorMessage(t, requestError));
+      })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [i18n.resolvedLanguage, t]);
+  }, [i18n.resolvedLanguage, player, t]);
 
   useEffect(() => () => window.cancelAnimationFrame(motion.current.frame), []);
 
@@ -62,10 +67,11 @@ export default function WheelDialog({ player, onClose, onPlayerLost }) {
     const { response } = state;
     if (response?.data) {
       setOutcome(response.data);
+      setSpinsLeft(response.data.spinsLeft);
       return;
     }
     if (response?.error?.code === 'WHEEL_PLAYER_REQUIRED') onPlayerLost();
-    if (CODE_ERRORS.has(response?.error?.code)) setStep('code');
+    if (response?.error?.code === 'WHEEL_NO_SPINS_LEFT') setSpinsLeft(0);
     setError(publicErrorMessage(t, response?.error));
   }, [onPlayerLost, t]);
 
@@ -117,21 +123,16 @@ export default function WheelDialog({ player, onClose, onPlayerLost }) {
     state.frame = window.requestAnimationFrame(tick);
   }, [finish, startStopping]);
 
-  // Appui sur la roue : le code part au serveur et la roue accélère.
+  // Appui sur la roue : le tirage part au serveur et la roue accélère.
   const press = (event) => {
     const state = motion.current;
-    if (state.phase !== 'idle' || outcome || !segments.length) return;
-    if (code.length !== CODE_LENGTH) {
-      setError(t('wheel.codeRequired'));
-      inputRef.current?.focus();
-      return;
-    }
+    if (state.phase !== 'idle' || outcome || !segments.length || !(spinsLeft > 0)) return;
     event.preventDefault();
     if (event.pointerId !== undefined) event.currentTarget.setPointerCapture?.(event.pointerId);
     setError('');
     setBusy(true);
     Object.assign(state, { phase: 'holding', speed: START_SPEED, response: null, last: performance.now() });
-    api.spinWheel(code, player, segments.map((segment) => segment.id))
+    api.spinWheel(player, segments.map((segment) => segment.id))
       .then((data) => { state.response = { data }; })
       .catch((requestError) => { state.response = { error: requestError }; });
     state.frame = window.requestAnimationFrame(tick);
@@ -151,31 +152,10 @@ export default function WheelDialog({ player, onClose, onPlayerLost }) {
     release();
   };
 
-  // Un code peut donner plusieurs tours (réglage) : « Tourner encore » garde le code.
+  // Plusieurs tours possibles (réglage) : « Tourner encore » tant qu'il en reste.
   const spinAgain = () => {
     setOutcome(null);
     setError('');
-  };
-
-  // Le code est vérifié par le serveur d'abord : la roue ne s'affiche que pour un code valable.
-  const [checking, setChecking] = useState(false);
-  const submitCode = async (event) => {
-    event.preventDefault();
-    if (code.length !== CODE_LENGTH) {
-      setError(t('wheel.codeRequired'));
-      return;
-    }
-    setError('');
-    setChecking(true);
-    try {
-      await api.checkWheelCode(code, player);
-      setStep('wheel');
-    } catch (requestError) {
-      if (requestError.code === 'WHEEL_PLAYER_REQUIRED') onPlayerLost();
-      setError(publicErrorMessage(t, requestError));
-    } finally {
-      setChecking(false);
-    }
   };
 
   const won = outcome?.result.kind === 'prize';
@@ -184,7 +164,8 @@ export default function WheelDialog({ player, onClose, onPlayerLost }) {
     <PublicDialog title={t('wheel.title')} onClose={onClose} locked={busy} className="wheel-dialog">
       {loading && <p className="public-message">{t('wheel.loading')}</p>}
       {!loading && !segments.length && <p className="public-message">{error || t('wheel.notReady')}</p>}
-      {segments.length > 0 && step === 'wheel' && (
+      {!loading && segments.length > 0 && spinsLeft === 0 && !outcome && <p className="public-message">{t('wheel.noSpins')}</p>}
+      {segments.length > 0 && (spinsLeft > 0 || outcome) && (
         <div
           className={`wheel-stage${busy ? ' is-busy' : ''}`}
           role="button"
@@ -209,30 +190,10 @@ export default function WheelDialog({ player, onClose, onPlayerLost }) {
           {won && <code>{outcome.code}</code>}
           {outcome.spinsLeft > 0 && <button className="button button-primary" type="button" onClick={spinAgain}>{t('wheel.spinAgain', { count: outcome.spinsLeft })}</button>}
         </div>
-      ) : segments.length > 0 && step === 'wheel' ? (
+      ) : segments.length > 0 && spinsLeft > 0 && (
         <div className="wheel-form">
-          {error ? <p className="form-error" role="alert">{error}</p> : <p className="wheel-hint">{busy ? t('wheel.spinning') : t('wheel.hint')}</p>}
+          {error ? <p className="form-error" role="alert">{error}</p> : <p className="wheel-hint">{busy ? t('wheel.spinning') : `${t('wheel.hint')} ${t('wheel.turns', { count: spinsLeft })}.`}</p>}
         </div>
-      ) : segments.length > 0 && (
-        <form className="wheel-form" onSubmit={submitCode}>
-          <label>
-            {t('wheel.code')}
-            <input
-              ref={inputRef}
-              value={code}
-              onChange={(event) => { setCode(event.target.value.toUpperCase().replace(CODE_CHARACTERS, '').slice(0, CODE_LENGTH)); setError(''); }}
-              autoComplete="off"
-              autoCapitalize="characters"
-              spellCheck="false"
-              inputMode="text"
-              maxLength={CODE_LENGTH}
-              placeholder="A7K2"
-              autoFocus
-            />
-          </label>
-          {error && <p className="form-error" role="alert">{error}</p>}
-          <button className="button button-primary" type="submit" disabled={code.length !== CODE_LENGTH || checking}>{checking ? t('wheel.checking') : t('wheel.submitCode')}</button>
-        </form>
       )}
     </PublicDialog>
   );

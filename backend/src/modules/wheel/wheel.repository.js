@@ -36,30 +36,44 @@ const releaseAward = (segmentId, transaction) => WheelSegment.decrement('awarded
 
 const removePlay = (play, transaction) => play.destroy({ transaction });
 
-// Retrouve un code de jeu en le verrouillant le temps d'un tirage.
-const findCodeForUpdate = (code, transaction) => WheelCode.findOne({
-  where: { code },
+// Retrouve le joueur identifié à partir de son lien personnel, verrouillé le temps d'un tirage : deux appuis rapides
+// ne peuvent pas jouer le même dernier tour.
+const findPlayerForUpdate = (token, transaction) => ChallengePassport.findOne({
+  where: { token },
+  attributes: ['id', 'email', 'phone'],
   transaction,
   lock: transaction.LOCK.UPDATE,
 });
 
-// Tours déjà joués avec un code (joueur compris), pour savoir s'il en reste et à qui il appartient.
-const findCodePlays = (wheelCodeId, transaction) => WheelPlay.findAll({
-  where: { wheelCodeId },
-  attributes: ['id', 'passportId'],
-  transaction,
-});
+// Tours déjà joués par la personne : ce joueur, et tout autre joueur identifié avec le même e-mail ou téléphone.
+const countPlayerPlays = (passport, transaction) => {
+  const same = [{ id: passport.id }];
+  if (passport.email) same.push({ email: passport.email });
+  if (passport.phone) same.push({ phone: passport.phone });
+  return WheelPlay.count({
+    include: [{ model: ChallengePassport, as: 'player', attributes: [], required: true, where: { [Op.or]: same } }],
+    transaction,
+  });
+};
 
-// Retrouve le joueur identifié à partir de son lien personnel.
-const findPlayerByToken = (token, transaction) => ChallengePassport.findOne({ where: { token }, attributes: ['id'], transaction });
+// Code déjà attribué au joueur (celui de son premier tour).
+const findPlayerCode = async (passportId, transaction) => {
+  const play = await WheelPlay.findOne({
+    where: { passportId },
+    include: [{ model: WheelCode, as: 'wheelCode', attributes: ['id', 'code'] }],
+    order: [['playedAt', 'ASC']],
+    transaction,
+  });
+  return play?.wheelCode || null;
+};
 
-const createCode = (values) => WheelCode.create(values);
+const createCode = (values, transaction) => WheelCode.create(values, { transaction });
 
 const createPlay = (values, transaction) => WheelPlay.create(values, { transaction });
 
 const updatePlay = (play, values, transaction) => play.update(values, { transaction });
 
-// Tous les codes délivrés, avec le résultat de leurs tours : pour la fenêtre « Code de jeu ».
+// Tous les codes des joueurs, avec le résultat de leurs tours.
 const findCodes = () => WheelCode.findAll({
   attributes: ['id', 'code', 'spinsAllowed', 'createdAt'],
   include: [{ model: WheelPlay, as: 'plays', attributes: ['resultKind'], required: false }],
@@ -91,7 +105,7 @@ const findPlayForClaim = (id, transaction) => WheelPlay.findByPk(id, {
   lock: { level: transaction.LOCK.UPDATE, of: WheelPlay },
 });
 
-const findCodeByValue = (code) => WheelCode.findOne({ where: { code }, attributes: ['id'] });
+const findCodeByValue = (code, transaction) => WheelCode.findOne({ where: { code }, attributes: ['id'], transaction });
 
 const countPlays = (wheelCodeId) => WheelPlay.count({ where: { wheelCodeId } });
 
@@ -111,9 +125,9 @@ module.exports = {
   recordAward,
   releaseAward,
   removePlay,
-  findCodeForUpdate,
-  findCodePlays,
-  findPlayerByToken,
+  findPlayerForUpdate,
+  countPlayerPlays,
+  findPlayerCode,
   createCode,
   createPlay,
   updatePlay,
