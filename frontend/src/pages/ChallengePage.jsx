@@ -184,6 +184,7 @@ export default function ChallengePage({ token, openWheel = false }) {
         <QrScanner
           title={t(scanner === 'desk' ? 'scanner.deskTitle' : 'scanner.standTitle')}
           intro={t(scanner === 'desk' ? 'scanner.deskIntro' : 'scanner.standIntro')}
+          mode={scanner}
           onResult={scanned}
           onClose={() => setScanner(null)}
         />

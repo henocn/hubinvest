@@ -246,6 +246,8 @@ export default {
     camera: "Camera view",
     denied: "The camera is not available. Scan the QR code with your phone camera.",
     wrong: "This is not a Hub QR code.",
+    wrongDesk: "This is not the counter QR code. Aim at the “Collect your reward” poster at the API-ZF Stand.",
+    wrongStand: "This is not a stand QR code. Aim at the poster in front of the stand.",
   },
   passage: {
     validate: "Validate my visit",

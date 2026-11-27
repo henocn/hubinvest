@@ -246,6 +246,8 @@ export default {
     camera: "Image de l’appareil photo",
     denied: "L’appareil photo n’est pas disponible. Scannez le QR avec l’appareil photo de votre téléphone.",
     wrong: "Ce n’est pas un QR du Hub.",
+    wrongDesk: "Ce n’est pas le QR du comptoir. Visez l’affiche « Récupérez votre récompense », au Stand API-ZF.",
+    wrongStand: "Ce n’est pas le QR d’un stand. Visez l’affiche posée devant le stand.",
   },
   passage: {
     validate: "Valider mon passage",
