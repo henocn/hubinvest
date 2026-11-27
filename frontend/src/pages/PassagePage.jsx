@@ -119,6 +119,16 @@ export default function PassagePage({ slug, sig }) {
   const [notice, setNotice] = useState(null);
   const [loading, setLoading] = useState(false);
   const waitLeft = useCountdown(notice?.retryIn || 0);
+  // Parcours du joueur : « Valider mon passage » disparaît quand ce stand est déjà validé, que les 4 stands sont trouvés
+  // ou que la récompense est récupérée ; il ne reste que « Garder contact ».
+  const [passport, setPassport] = useState(null);
+  useEffect(() => {
+    if (!player) return undefined;
+    let active = true;
+    api.publicChallengePassport(player).then((data) => { if (active) setPassport(data); }).catch(() => {});
+    return () => { active = false; };
+  }, [player]);
+  const passageDone = Boolean(passport && (['completed', 'redeemed'].includes(passport.status) || (passport.passages || []).some((passage) => passage.occupant?.slug === slug)));
 
   useEffect(() => {
     let active = true;
@@ -170,7 +180,7 @@ export default function PassagePage({ slug, sig }) {
           <h1>{stand?.name || '…'}</h1>
           {stand?.standLabel && <p className="passage-place"><MapPin size={15} aria-hidden="true" />{stand.standLabel}</p>}
           <div className="passage-actions">
-            {settings.challengeOpen !== false && !isApizf && (
+            {settings.challengeOpen !== false && !isApizf && !passageDone && (
               <button className="button button-primary button-large passage-go" type="button" onClick={validatePassage} disabled={loading}>
                 <Stamp size={20} aria-hidden="true" />{loading ? t('passage.loading') : t('passage.validate')}
               </button>
@@ -194,7 +204,7 @@ export default function PassagePage({ slug, sig }) {
 
       {identifying && <PlayerIdentifyDialog onClose={() => setIdentifying(false)} onIdentified={identified} />}
       {contacting && stand && <ContactRequestForm stand={stand} onClose={() => setContacting(false)} />}
-      {quiz && <QuizDialog quiz={quiz} player={player} onClose={() => setQuiz(null)} onRetry={() => startQuiz(player)} />}
+      {quiz && <QuizDialog quiz={quiz} player={player} onClose={() => { setQuiz(null); api.publicChallengePassport(player).then(setPassport).catch(() => {}); }} onRetry={() => startQuiz(player)} />}
     </main>
   );
 }

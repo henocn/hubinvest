@@ -36,7 +36,7 @@ const publicPayload = (passport, includeToken = false) => {
     redeemedAt: values.redeemedAt,
     passages: passages.map((passage) => ({
       validatedAt: passage.createdAt,
-      occupant: passage.occupant && { name: passage.occupant.name, standLabel: passage.occupant.standLabel, space: passage.occupant.space },
+      occupant: passage.occupant && { name: passage.occupant.name, slug: passage.occupant.slug, standLabel: passage.occupant.standLabel, space: passage.occupant.space },
     })),
   };
 };

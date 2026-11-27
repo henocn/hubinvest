@@ -104,7 +104,7 @@ export default {
     unavailable: "This stand is unavailable or no longer exists.",
   },
   contact: {
-    title: "Get in touch",
+    title: "Keep in touch",
     intro: "Send your request to the {{name}} team.",
     success: "Your request has been recorded. This stand’s team can now contact you.",
     fullName: "Full name",
@@ -297,7 +297,7 @@ export default {
   },
   rules: {
     title: "Game rules",
-    route1: "Scan the QR code in front of 4 Industry Area stands.",
+    route1: "Scan the QR code in front of 4 stands of the Investment Hub.",
     route2: "Answer 2 quick questions about what they offer.",
     route3: "You win: your reward is waiting for you!",
     wheel1_one: "Press the wheel and let go whenever you like: you have 1 spin.",

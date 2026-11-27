@@ -5,7 +5,7 @@ const publicPassageInclude = [{
   model: ChallengePassage,
   as: 'passages',
   attributes: ['id', 'createdAt'],
-  include: [{ model: Occupant, as: 'occupant', attributes: ['id', 'name', 'standLabel', 'space'] }],
+  include: [{ model: Occupant, as: 'occupant', attributes: ['id', 'name', 'slug', 'standLabel', 'space'] }],
 }];
 
 const managerPassageInclude = [{
