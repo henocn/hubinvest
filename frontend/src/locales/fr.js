@@ -18,7 +18,7 @@ export default {
     challenges: "Défis et roue",
     team: "Espace équipe",
     home: "Accueil",
-    explore: "Explorer",
+    explore: "Stands",
     meetings: "Rencontres",
     play: "Jouer",
     account: "Mon espace",
