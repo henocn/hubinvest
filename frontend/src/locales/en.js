@@ -257,6 +257,7 @@ export default {
     turns_one: "1 spin to play",
     turns_other: "{{count}} spins to play",
     noSpins: "You have played all your spins. Thank you and enjoy your visit to the Hub!",
+    alreadyWon: "You have already won",
     spinAgain_one: "Spin again (1 spin left)",
     spinAgain_other: "Spin again ({{count}} spins left)",
     errors: {

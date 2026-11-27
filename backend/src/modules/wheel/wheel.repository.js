@@ -46,12 +46,18 @@ const findPlayerForUpdate = (token, transaction) => ChallengePassport.findOne({
 });
 
 // Tours déjà joués par la personne : ce joueur, et tout autre joueur identifié avec le même e-mail ou téléphone.
-const countPlayerPlays = (passport, transaction) => {
+// Avec le résultat et le code de chaque tour, pour savoir si elle a déjà gagné.
+const findPlayerPlays = (passport, transaction) => {
   const same = [{ id: passport.id }];
   if (passport.email) same.push({ email: passport.email });
   if (passport.phone) same.push({ phone: passport.phone });
-  return WheelPlay.count({
-    include: [{ model: ChallengePassport, as: 'player', attributes: [], required: true, where: { [Op.or]: same } }],
+  return WheelPlay.findAll({
+    attributes: ['id', 'resultKind', 'resultLabel', 'playedAt'],
+    include: [
+      { model: ChallengePassport, as: 'player', attributes: [], required: true, where: { [Op.or]: same } },
+      { model: WheelCode, as: 'wheelCode', attributes: ['code'] },
+    ],
+    order: [['playedAt', 'ASC']],
     transaction,
   });
 };
@@ -126,7 +132,7 @@ module.exports = {
   releaseAward,
   removePlay,
   findPlayerForUpdate,
-  countPlayerPlays,
+  findPlayerPlays,
   findPlayerCode,
   createCode,
   createPlay,

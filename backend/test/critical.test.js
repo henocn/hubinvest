@@ -1049,9 +1049,10 @@ const wheelSetup = (context, { segments, spins = 1, plays = [] }) => {
   context.mock.method(settingsService, 'wheelSpinsPerPlayer', () => spins);
   context.mock.method(wheelRepository.sequelize, 'transaction', async (callback) => callback({ LOCK: { UPDATE: 'UPDATE' } }));
   context.mock.method(wheelRepository, 'findPlayerForUpdate', async (token) => PASSPORTS[token] || null);
-  context.mock.method(wheelRepository, 'countPlayerPlays', async (passport) => {
+  context.mock.method(wheelRepository, 'findPlayerPlays', async (passport) => {
     const same = Object.values(PASSPORTS).filter((item) => item.id === passport.id || (passport.phone && item.phone === passport.phone) || (passport.email && item.email === passport.email));
-    return plays.filter((play) => same.some((item) => item.id === play.passportId)).length;
+    return plays.filter((play) => same.some((item) => item.id === play.passportId))
+      .map((play) => ({ ...play, wheelCode: codes.find((code) => code.id === play.wheelCodeId) }));
   });
   context.mock.method(wheelRepository, 'findPlayerCode', async (passportId) => {
     const play = plays.find((item) => item.passportId === passportId);
@@ -1070,7 +1071,7 @@ test('la roue se joue sans code : un tour par défaut, le lot décompté et un c
   const lose = { id: 'l1', kind: 'lose', label: 'Presque !', quantity: null, awarded: 0, isActive: true };
   const { plays, codes } = wheelSetup(context, { segments: [prize, lose] });
 
-  assert.deepEqual(await wheelService.status({ player: PLAYER }), { spinsAllowed: 1, spinsLeft: 1 });
+  assert.deepEqual(await wheelService.status({ player: PLAYER }), { spinsAllowed: 1, spinsLeft: 1, won: null });
   const outcome = await wheelService.spin({ player: PLAYER }, 'fr', (length) => { assert.equal(length, 2); return 0; });
   assert.equal(outcome.result.id, 'p1');
   assert.deepEqual(Object.keys(outcome.result).sort(), ['id', 'kind', 'label']);
@@ -1081,8 +1082,27 @@ test('la roue se joue sans code : un tour par défaut, le lot décompté et un c
   assert.equal(plays.length, 1);
   assert.equal(plays[0].passportId, 'passport-a');
 
-  await assert.rejects(wheelService.spin({ player: PLAYER }, 'fr', () => 0), (error) => error.status === 409 && error.code === 'WHEEL_NO_SPINS_LEFT');
-  assert.deepEqual(await wheelService.status({ player: PLAYER }), { spinsAllowed: 1, spinsLeft: 0 });
+  await assert.rejects(wheelService.spin({ player: PLAYER }, 'fr', () => 0), (error) => error.status === 409 && error.code === 'WHEEL_ALREADY_WON');
+  assert.deepEqual(await wheelService.status({ player: PLAYER }), { spinsAllowed: 1, spinsLeft: 0, won: { code: outcome.code, label: 'T-shirt' } });
+  assert.equal(prize.awarded, 1);
+});
+
+test('dès qu’on gagne un lot, c’est fini : plus de tour même s’il en restait', async (context) => {
+  const prize = { id: 'p1', kind: 'prize', label: 'Casquette', quantity: 5, awarded: 0, isActive: true };
+  const lose = { id: 'l1', kind: 'lose', label: 'Dommage !', quantity: null, awarded: 0, isActive: true };
+  const { plays } = wheelSetup(context, { segments: [prize, lose], spins: 3 });
+
+  const first = await wheelService.spin({ player: PLAYER }, 'fr', () => 1);
+  assert.equal(first.result.kind, 'lose');
+  assert.equal(first.spinsLeft, 2);
+  const second = await wheelService.spin({ player: PLAYER }, 'fr', () => 0);
+  assert.equal(second.result.kind, 'prize');
+  assert.equal(second.spinsLeft, 0);
+  assert.equal((await wheelService.status({ player: PLAYER })).spinsLeft, 0);
+  await assert.rejects(wheelService.spin({ player: PLAYER }, 'fr', () => 1), (error) => error.code === 'WHEEL_ALREADY_WON');
+  // Un autre compte avec le même téléphone a déjà gagné lui aussi.
+  await assert.rejects(wheelService.spin({ player: OTHER_PLAYER }, 'fr', () => 1), (error) => error.code === 'WHEEL_ALREADY_WON');
+  assert.equal(plays.length, 2);
   assert.equal(prize.awarded, 1);
 });
 

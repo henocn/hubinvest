@@ -9,6 +9,7 @@ const errorKeys = {
   STUDIO_INVITATION_CLOSED: 'studio.errors.closed',
   STUDIO_INVITATION_NOT_FOUND: 'studio.notFound',
   WHEEL_NO_SPINS_LEFT: 'wheel.noSpins',
+  WHEEL_ALREADY_WON: 'wheel.alreadyWon',
   WHEEL_EMPTY: 'wheel.notReady',
   WHEEL_PLAYER_REQUIRED: 'play.identifyFirst',
   MODULE_CLOSED: 'closed.generic',

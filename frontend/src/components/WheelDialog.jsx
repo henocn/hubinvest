@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Gift, Heart, PartyPopper, RotateCcw } from 'lucide-react';
+import Confetti from './Confetti';
 import PublicDialog from './PublicDialog';
 import WheelOfFortune from './WheelOfFortune';
 import { api } from '../lib/api';
@@ -13,6 +15,9 @@ const RELEASE_SPEED = 640;
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const mod = (value) => ((value % 360) + 360) % 360;
+
+// Petite vibration sur téléphone (Android) : un léger tic à chaque case, une salve quand on gagne.
+const vibrate = (pattern) => { if (!reducedMotion()) navigator.vibrate?.(pattern); };
 
 // Distance à parcourir pour s'arrêter au centre (à peu près) de la case gagnante, avec un ralentissement d'au moins minDuration.
 const stopDistance = (angle, speed, target, minDuration) => {
@@ -28,10 +33,13 @@ export default function WheelDialog({ player, onClose, onPlayerLost }) {
   const [segments, setSegments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [spinsLeft, setSpinsLeft] = useState(null);
+  // Lot déjà gagné : la partie est finie, la fenêtre rappelle le lot et le code pour le recevoir.
+  const [previousWin, setPreviousWin] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [outcome, setOutcome] = useState(null);
   const discRef = useRef(null);
+  const pointerRef = useRef(null);
   // Fonction du parent recréée à chaque rendu : gardée à part pour ne pas recharger la roue.
   const playerLost = useRef(onPlayerLost);
   playerLost.current = onPlayerLost;
@@ -44,6 +52,7 @@ export default function WheelDialog({ player, onClose, onPlayerLost }) {
         if (!active) return;
         setSegments(wheel.segments);
         setSpinsLeft(status.spinsLeft);
+        setPreviousWin(status.won || null);
       })
       .catch((requestError) => {
         if (!active) return;
@@ -56,8 +65,22 @@ export default function WheelDialog({ player, onClose, onPlayerLost }) {
 
   useEffect(() => () => window.cancelAnimationFrame(motion.current.frame), []);
 
+  // À chaque séparation de case qui passe sous l'aiguille, l'aiguille reçoit un petit coup (et le téléphone un tic).
   const paint = () => {
-    if (discRef.current) discRef.current.style.transform = `rotate(${motion.current.angle}deg)`;
+    const state = motion.current;
+    if (discRef.current) discRef.current.style.transform = `rotate(${state.angle}deg)`;
+    const slice = 360 / Math.max(state.count, 1);
+    const crossed = Math.floor(state.angle / slice);
+    if (crossed !== state.crossed) {
+      state.crossed = crossed;
+      if (!reducedMotion()) {
+        pointerRef.current?.animate(
+          [{ transform: 'translateX(-50%) rotate(0deg)' }, { transform: 'translateX(-50%) rotate(-22deg)' }, { transform: 'translateX(-50%) rotate(0deg)' }],
+          { duration: Math.min(160, Math.max(60, 9000 / Math.max(state.speed, 1))), easing: 'ease-out' },
+        );
+      }
+      if (state.speed < 700) vibrate(4);
+    }
   };
 
   const finish = useCallback(() => {
@@ -68,12 +91,13 @@ export default function WheelDialog({ player, onClose, onPlayerLost }) {
     if (response?.data) {
       setOutcome(response.data);
       setSpinsLeft(response.data.spinsLeft);
+      if (response.data.result.kind === 'prize') vibrate([60, 40, 60, 40, 120]);
       return;
     }
-    if (response?.error?.code === 'WHEEL_PLAYER_REQUIRED') onPlayerLost();
-    if (response?.error?.code === 'WHEEL_NO_SPINS_LEFT') setSpinsLeft(0);
+    if (response?.error?.code === 'WHEEL_PLAYER_REQUIRED') playerLost.current();
+    if (response?.error?.code === 'WHEEL_NO_SPINS_LEFT' || response?.error?.code === 'WHEEL_ALREADY_WON') setSpinsLeft(0);
     setError(publicErrorMessage(t, response?.error));
-  }, [onPlayerLost, t]);
+  }, [t]);
 
   // Lance le ralentissement : vers la case tirée si le serveur a répondu, sinon un simple arrêt en cas d'erreur.
   const startStopping = useCallback((now) => {
@@ -158,13 +182,24 @@ export default function WheelDialog({ player, onClose, onPlayerLost }) {
     setError('');
   };
 
+  // Nombre de cases lu par paint, appelé image par image hors de React.
+  motion.current.count = segments.length;
   const won = outcome?.result.kind === 'prize';
+  const winner = outcome ? segments.findIndex((segment) => segment.id === outcome.result.id) : -1;
 
   return (
     <PublicDialog title={t('wheel.title')} onClose={onClose} locked={busy} className="wheel-dialog">
       {loading && <p className="public-message">{t('wheel.loading')}</p>}
       {!loading && !segments.length && <p className="public-message">{error || t('wheel.notReady')}</p>}
-      {!loading && segments.length > 0 && spinsLeft === 0 && !outcome && <p className="public-message">{t('wheel.noSpins')}</p>}
+      {!loading && previousWin && !outcome && (
+        <div className="wheel-result is-won" role="status">
+          <span><Gift size={18} aria-hidden="true" />{t('wheel.alreadyWon')}</span>
+          <strong>{previousWin.label}</strong>
+          <p>{t('wheel.claim')}</p>
+          {previousWin.code && <code>{previousWin.code}</code>}
+        </div>
+      )}
+      {!loading && !previousWin && segments.length > 0 && spinsLeft === 0 && !outcome && <p className="public-message">{t('wheel.noSpins')}</p>}
       {segments.length > 0 && (spinsLeft > 0 || outcome) && (
         <div
           className={`wheel-stage${busy ? ' is-busy' : ''}`}
@@ -178,17 +213,18 @@ export default function WheelDialog({ player, onClose, onPlayerLost }) {
           onKeyDown={pressWithKeyboard}
           onContextMenu={(event) => event.preventDefault()}
         >
-          <WheelOfFortune segments={segments} discRef={discRef} />
+          <WheelOfFortune segments={segments} discRef={discRef} pointerRef={pointerRef} spinning={busy} winner={won ? winner : -1} />
+          {won && <Confetti key={outcome.code + outcome.spinsLeft} />}
         </div>
       )}
 
       {outcome ? (
         <div className={`wheel-result${won ? ' is-won' : ''}`} role="status">
-          {won && <span>{t('wheel.won')}</span>}
+          {won ? <span><PartyPopper size={18} aria-hidden="true" />{t('wheel.won')}</span> : <Heart className="wheel-result-icon" size={22} aria-hidden="true" />}
           <strong>{outcome.result.label}</strong>
           <p>{won ? t('wheel.claim') : t('wheel.lost')}</p>
           {won && <code>{outcome.code}</code>}
-          {outcome.spinsLeft > 0 && <button className="button button-primary" type="button" onClick={spinAgain}>{t('wheel.spinAgain', { count: outcome.spinsLeft })}</button>}
+          {outcome.spinsLeft > 0 && <button className="button button-primary" type="button" onClick={spinAgain}><RotateCcw size={17} aria-hidden="true" />{t('wheel.spinAgain', { count: outcome.spinsLeft })}</button>}
         </div>
       ) : segments.length > 0 && spinsLeft > 0 && (
         <div className="wheel-form">

@@ -82,12 +82,15 @@ const generateCodeValue = () => Array.from({ length: CODE_LENGTH }, () => CODE_A
 
 // Joueur identifié et tours qu'il lui reste. Le nombre de tours (réglage « tours par joueur ») vaut pour la personne :
 // les tours joués sous un autre compte avec le même e-mail ou le même téléphone comptent aussi.
+// Dès qu'elle gagne un lot, c'est fini : plus aucun tour, même s'il lui en restait.
 const playerTurns = async (player, transaction) => {
   const passport = await wheelRepository.findPlayerForUpdate(player, transaction);
   if (!passport) throw new AppError(422, 'WHEEL_PLAYER_REQUIRED', 'Identifiez-vous avant de jouer.');
   const allowed = settingsService.wheelSpinsPerPlayer();
-  const used = await wheelRepository.countPlayerPlays(passport, transaction);
-  return { passport, allowed, spinsLeft: Math.max(allowed - used, 0) };
+  const plays = (await wheelRepository.findPlayerPlays(passport, transaction)).map(plain);
+  const prize = plays.find((play) => play.resultKind === 'prize');
+  const won = prize ? { code: prize.wheelCode?.code || null, label: prize.resultLabel } : null;
+  return { passport, allowed, won, spinsLeft: won ? 0 : Math.max(allowed - plays.length, 0) };
 };
 
 // Code du joueur, montré quand il gagne pour recevoir son lot : créé à son premier tour, puis repris à chaque tour.
@@ -106,8 +109,8 @@ const playerCode = async (passport, allowed, transaction) => {
 // Tours restants du joueur, avant d'afficher la roue : rien n'est joué ni enregistré.
 const status = async ({ player }) => {
   settingsService.assertOpen('wheelOpen');
-  const { allowed, spinsLeft } = await wheelRepository.sequelize.transaction((transaction) => playerTurns(player, transaction));
-  return { spinsAllowed: allowed, spinsLeft };
+  const { allowed, spinsLeft, won } = await wheelRepository.sequelize.transaction((transaction) => playerTurns(player, transaction));
+  return { spinsAllowed: allowed, spinsLeft, won };
 };
 
 // Tire une case au hasard parmi celles visibles : le tour est enregistré et le stock décompté dans la même transaction.
@@ -115,7 +118,8 @@ const status = async ({ player }) => {
 const spin = async ({ player, wheel }, language, randomIndex = crypto.randomInt) => {
   settingsService.assertOpen('wheelOpen');
   const outcome = await wheelRepository.sequelize.transaction(async (transaction) => {
-    const { passport, allowed, spinsLeft } = await playerTurns(player, transaction);
+    const { passport, allowed, spinsLeft, won } = await playerTurns(player, transaction);
+    if (won) throw new AppError(409, 'WHEEL_ALREADY_WON', 'Vous avez déjà gagné un lot.');
     if (spinsLeft <= 0) throw new AppError(409, 'WHEEL_NO_SPINS_LEFT', 'Vous avez joué tous vos tours.');
 
     const segments = wheelFrom(await wheelRepository.findActiveSegmentsForUpdate(transaction), wheel, randomIndex);
@@ -137,7 +141,8 @@ const spin = async ({ player, wheel }, language, randomIndex = crypto.randomInt)
       code: wheelCode.code,
       result: publicSegment(chosen),
       segments: segments.map(publicSegment),
-      spinsLeft: spinsLeft - 1,
+      // Un lot gagné arrête la partie.
+      spinsLeft: chosen.kind === 'prize' ? 0 : spinsLeft - 1,
     };
   });
 
