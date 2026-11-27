@@ -132,7 +132,7 @@ export default function SettingsPage({ session, onLogout }) {
           <section className="data-panel settings-panel">
             <h2>Rendez-vous B2B</h2>
             <SettingField settingKey="b2bTables" label="Nombre de tables" type="number" min="1" max="50" value={settings.b2bTables} saving={savingKey} saved={savedKey} onSave={save} />
-            <SettingField settingKey="b2bMeetingMinutes" label="Durée d’un rendez-vous (minutes)" hint="20 minutes selon le document" type="number" min="5" max="120" value={settings.b2bMeetingMinutes} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="b2bMeetingMinutes" label="Durée d’un rendez-vous (minutes)" type="number" min="5" max="120" value={settings.b2bMeetingMinutes} saving={savingKey} saved={savedKey} onSave={save} />
             <SettingField settingKey="b2bDayStart" label="Premier rendez-vous" type="time" value={settings.b2bDayStart} saving={savingKey} saved={savedKey} onSave={save} />
             <SettingField settingKey="b2bDayEnd" label="Fin des rendez-vous" hint="Le dernier rendez-vous se termine au plus tard à cette heure" type="time" value={settings.b2bDayEnd} saving={savingKey} saved={savedKey} onSave={save} />
           </section>
@@ -143,9 +143,9 @@ export default function SettingsPage({ session, onLogout }) {
             <SettingField settingKey="guichetLastDay" label="Dernier jour des rendez-vous" type="date" value={settings.guichetLastDay} saving={savingKey} saved={savedKey} onSave={save} />
             <SettingField settingKey="guichetDayStart" label="Premier rendez-vous de la journée" type="time" value={settings.guichetDayStart} saving={savingKey} saved={savedKey} onSave={save} />
             <SettingField settingKey="guichetDayEnd" label="Fin des rendez-vous" hint="Le dernier rendez-vous se termine au plus tard à cette heure" type="time" value={settings.guichetDayEnd} saving={savingKey} saved={savedKey} onSave={save} />
-            <SettingField settingKey="guichetSlotMinutes" label="Durée d’un rendez-vous (minutes)" hint="Diagnostic en 15 minutes selon le document" type="number" min="5" max="120" value={settings.guichetSlotMinutes} saving={savingKey} saved={savedKey} onSave={save} />
-            <SettingField settingKey="investorDelayAHours" label="Relance d’un contact A (heures)" hint="48 heures selon le document" type="number" min="1" max="720" value={settings.investorDelayAHours} saving={savingKey} saved={savedKey} onSave={save} />
-            <SettingField settingKey="investorDelayBDays" label="Relance d’un contact B (jours)" hint="7 jours selon le document" type="number" min="1" max="90" value={settings.investorDelayBDays} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="guichetSlotMinutes" label="Durée d’un rendez-vous (minutes)" type="number" min="5" max="120" value={settings.guichetSlotMinutes} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="investorDelayAHours" label="Relance d’un contact A (heures)" type="number" min="1" max="720" value={settings.investorDelayAHours} saving={savingKey} saved={savedKey} onSave={save} />
+            <SettingField settingKey="investorDelayBDays" label="Relance d’un contact B (jours)" type="number" min="1" max="90" value={settings.investorDelayBDays} saving={savingKey} saved={savedKey} onSave={save} />
             <InvestorQualificationSettings fields={settings.investorQualificationFields} saving={savingKey === 'investorQualificationFields'} saved={savedKey === 'investorQualificationFields'} onSave={save} />
           </section>
         </>
