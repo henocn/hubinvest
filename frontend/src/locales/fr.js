@@ -104,7 +104,7 @@ export default {
     unavailable: "Ce stand n’est pas disponible ou n’existe plus.",
   },
   contact: {
-    title: "Prendre contact",
+    title: "Garder contact",
     intro: "Adressez votre demande à l’équipe de {{name}}.",
     success: "Votre demande a été enregistrée. L’équipe de ce stand pourra vous recontacter.",
     fullName: "Nom complet",
@@ -246,6 +246,8 @@ export default {
     camera: "Image de l’appareil photo",
     denied: "L’appareil photo n’est pas disponible. Scannez le QR avec l’appareil photo de votre téléphone.",
     wrong: "Ce n’est pas un QR du Hub.",
+    wrongDesk: "Ce n’est pas le QR du comptoir. Visez l’affiche « Récupérez votre récompense », au Stand API-ZF.",
+    wrongStand: "Ce n’est pas le QR d’un stand. Visez l’affiche posée devant le stand.",
   },
   passage: {
     validate: "Valider mon passage",
@@ -295,7 +297,7 @@ export default {
   },
   rules: {
     title: "Règles du jeu",
-    route1: "Scannez le QR devant 4 stands de l’Espace Industrie.",
+    route1: "Scannez le QR devant 4 stands du Hub de l’investissement.",
     route2: "Répondez à 2 petites questions sur ce qu’ils proposent.",
     route3: "C’est gagné : votre récompense vous attend !",
     wheel1_one: "Appuyez sur la roue, lâchez quand vous voulez : vous avez 1 tour.",

@@ -8,11 +8,13 @@ const HUB_PATH = /^\/(passage\/[a-z0-9-]+\/[A-Za-z0-9_-]+|recuperer\/[A-Za-z0-9_
 // Lit un QR du Hub avec l'appareil photo, sans quitter l'application (le joueur reste identifié). Rend le chemin lu.
 // Si l'appareil photo est refusé ou absent, le joueur peut toujours scanner l'affiche avec l'appareil photo du
 // téléphone. Pas d'autre solution proposée : on scanne, ou rien.
-export default function QrScanner({ title, intro, onResult, onClose }) {
+// mode : « desk » (comptoir des récompenses) ou « stand », pour dire quelle affiche viser quand le QR lu est un autre QR du Hub
+// (QR des Défis, QR de la fiche d'un stand…).
+export default function QrScanner({ title, intro, mode = 'stand', onResult, onClose }) {
   const { t } = useTranslation();
   const videoRef = useRef(null);
   const [state, setState] = useState('starting');
-  const [wrongCode, setWrongCode] = useState(false);
+  const [wrongCode, setWrongCode] = useState('');
 
   useEffect(() => {
     let stream = null;
@@ -46,14 +48,16 @@ export default function QrScanner({ title, intro, onResult, onClose }) {
           context.drawImage(video, 0, 0, width, height);
           const code = jsQR(context.getImageData(0, 0, width, height).data, width, height, { inversionAttempts: 'dontInvert' });
           if (!code?.data) return;
-          let path = '';
-          try { path = new URL(code.data, window.location.origin).pathname; } catch { path = ''; }
+          let url = null;
+          try { url = new URL(code.data.trim(), window.location.origin); } catch { url = null; }
+          const path = url?.pathname || '';
           if (HUB_PATH.test(path)) {
             active = false;
             navigator.vibrate?.(40);
             onResult(path.replace(/\/$/, ''));
           } else {
-            setWrongCode(true);
+            const fromHub = url && (url.host === window.location.host || url.hostname.endsWith('investir.tg'));
+            setWrongCode(fromHub ? (mode === 'desk' ? 'wrongDesk' : 'wrongStand') : 'wrong');
           }
         };
         frame = window.requestAnimationFrame(scan);
@@ -68,7 +72,7 @@ export default function QrScanner({ title, intro, onResult, onClose }) {
       window.cancelAnimationFrame(frame);
       stream?.getTracks().forEach((track) => track.stop());
     };
-  }, [onResult]);
+  }, [mode, onResult]);
 
   return (
     <PublicDialog title={title} intro={intro} onClose={onClose} className="qr-scanner-dialog">
@@ -81,7 +85,7 @@ export default function QrScanner({ title, intro, onResult, onClose }) {
           {state === 'starting' && <p className="qr-scanner-status">{t('scanner.starting')}</p>}
         </div>
       )}
-      {wrongCode && <p className="form-error qr-scanner-wrong" role="alert">{t('scanner.wrong')}</p>}
+      {wrongCode && <p className="form-error qr-scanner-wrong" role="alert">{t(`scanner.${wrongCode}`)}</p>}
     </PublicDialog>
   );
 }
