@@ -96,20 +96,35 @@ const timeLabel = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Africa/Lome', ho
 const dayKey = (value) => new Date(value).toISOString().slice(0, 10);
 
 function ScheduleForm({ invitation, token, loading, error, onClose, onSave }) {
-  const [slots, setSlots] = useState(null);
+  const [loaded, setLoaded] = useState(null);
   const [loadError, setLoadError] = useState('');
   const [day, setDay] = useState('');
   const [time, setTime] = useState('');
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     api.studioTeamSlots(token, invitation.id)
       .then((data) => {
-        setSlots(data.slots);
+        setLoaded(data.slots);
         const first = invitation.scheduledAt && data.slots.includes(new Date(invitation.scheduledAt).toISOString()) ? new Date(invitation.scheduledAt).toISOString() : data.slots[0];
         if (first) { setDay(dayKey(first)); setTime(first); }
       })
       .catch((requestError) => setLoadError(requestError.message));
   }, [invitation.id, invitation.scheduledAt, token]);
+
+  // Fenêtre restée ouverte : chaque minute, une heure passée sort de la liste (et un jour sans heure restante).
+  // Si l'heure choisie vient de passer, la suivante du même jour est proposée, sinon la première qui reste.
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const slots = useMemo(() => (loaded ? loaded.filter((slot) => new Date(slot).getTime() > now) : null), [loaded, now]);
+  useEffect(() => {
+    if (!slots || !time || slots.includes(time)) return;
+    const next = slots.find((slot) => dayKey(slot) === day) || slots[0] || '';
+    setTime(next);
+    if (next) setDay(dayKey(next));
+  }, [slots, time, day]);
 
   const days = [...new Set((slots || []).map(dayKey))];
   const times = (slots || []).filter((slot) => dayKey(slot) === day);
