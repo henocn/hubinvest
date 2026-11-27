@@ -46,7 +46,7 @@ const STATIC_PAGES = {
   },
   '/defis': {
     title: `Trouvez les 5 étapes et la roue des opportunités · ${SITE_NAME}`,
-    description: 'Le jeu de la Foire internationale de Lomé : trouvez les 5 étapes de l’investisseur sur les stands de l’Espace Industrie et au Stand API-ZF, et tentez votre chance à la roue des opportunités.',
+    description: 'Le jeu de la Foire internationale de Lomé : scannez le QR de 4 stands de l’Espace Industrie, répondez à deux questions et récupérez votre récompense au Stand API-ZF, et tentez votre chance à la roue des opportunités.',
     priority: '0.6',
   },
 };

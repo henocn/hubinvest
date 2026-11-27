@@ -17,4 +17,11 @@ const findByPassport = (passportId, transaction) => ChallengePassage.findAll({
 });
 const findOccupant = (occupantId, transaction) => Occupant.findByPk(occupantId, { attributes: ['id', 'space'], transaction });
 
-module.exports = { sequelize, findExisting, create, countByPassport, countByOccupant, findByPassport, findOccupant };
+// Stands actifs avec leurs produits et services : pour les affiches QR et les questions du passage.
+const findStands = () => Occupant.findAll({
+  where: { status: 'active' },
+  attributes: ['id', 'name', 'slug', 'standLabel', 'space', 'products', 'services'],
+  order: [['name', 'ASC']],
+});
+
+module.exports = { sequelize, findExisting, create, countByPassport, countByOccupant, findByPassport, findOccupant, findStands };

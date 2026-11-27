@@ -7,6 +7,8 @@ const { sequelize } = require('../../models');
 const challengePassportRepository = require('./challenge-passport.repository');
 const { events: realtime } = require('../realtime/realtime.service');
 const settingsService = require('../settings/settings.service');
+const { INDUSTRY_STEPS } = require('../../shared/challenge-steps');
+const { verifyDesk } = require('../../shared/passage-sign');
 
 const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
@@ -14,21 +16,26 @@ const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const CODE_LENGTH = 6;
 const createCode = () => Array.from({ length: CODE_LENGTH }, () => alphabet[crypto.randomInt(alphabet.length)]).join('');
 
+// Étapes trouvées : les stands de l'Espace Industrie (4 au plus), puis la cinquième quand la récompense est récupérée.
+// Les anciens passages au Stand API-ZF ne comptent plus comme étape.
+const stepsDone = (values) => Math.min((values.passages || []).filter((passage) => passage.occupant?.space !== 'apizf').length, INDUSTRY_STEPS)
+  + (values.status === 'redeemed' ? 1 : 0);
+
 const publicPayload = (passport, includeToken = false) => {
   const values = passport.toJSON ? passport.toJSON() : passport;
-  const passages = values.passages || [];
+  const passages = (values.passages || []).filter((passage) => passage.occupant?.space !== 'apizf');
   return {
     ...(includeToken && { token: values.token }),
     displayName: values.displayName,
     code: values.code,
     status: values.status,
-    passageCount: passages.length,
+    passageCount: stepsDone(values),
     requiredPassages: settingsService.requiredPassages(),
     completedAt: values.completedAt,
     redeemedAt: values.redeemedAt,
     passages: passages.map((passage) => ({
       validatedAt: passage.createdAt,
-      occupant: passage.occupant,
+      occupant: passage.occupant && { name: passage.occupant.name, standLabel: passage.occupant.standLabel, space: passage.occupant.space },
     })),
   };
 };
@@ -38,7 +45,7 @@ const managerPayload = (passport) => {
   const { token: _token, ...values } = passport.toJSON ? passport.toJSON() : passport;
   return {
     ...values,
-    passageCount: (values.passages || []).length,
+    passageCount: stepsDone(values),
     requiredPassages: settingsService.requiredPassages(),
   };
 };
@@ -146,6 +153,34 @@ const redeemByCode = (user, code) => redeemAndPublish(async (transaction) => {
   return redeemPassport(user, passport, transaction);
 });
 
+// Cinquième étape : le joueur qui a trouvé ses 4 stands scanne le QR du comptoir du Stand API-ZF, et la récompense est
+// marquée récupérée sans que l'équipe tape quoi que ce soit. Son téléphone affiche alors un écran vivant (heure qui
+// défile) que l'équipe regarde avant de donner le lot : une capture d'écran ou un second scan ne trompent pas.
+const claim = async ({ player, sig }) => {
+  if (!verifyDesk(sig)) throw new AppError(404, 'REWARD_QR_INVALID', 'Ce QR code n’est pas celui du comptoir des récompenses.');
+  let passportId = null;
+  await sequelize.transaction(async (transaction) => {
+    const passport = await challengePassportRepository.findByTokenForUpdate(player, transaction);
+    if (!passport) throw new AppError(422, 'CHALLENGE_PLAYER_REQUIRED', 'Identifiez-vous avant de jouer.');
+    passportId = passport.id;
+    if (passport.status === 'redeemed') {
+      const error = new AppError(409, 'REWARD_ALREADY_REDEEMED', 'La récompense a déjà été récupérée.');
+      error.details = { redeemedAt: passport.redeemedAt };
+      throw error;
+    }
+    if (passport.status !== 'completed') throw new AppError(409, 'CHALLENGE_NOT_COMPLETED', 'Le parcours n’est pas encore terminé.');
+    const stock = settingsService.challengeRewardStock();
+    if (stock && (await challengePassportRepository.countRedeemed(transaction)) >= stock) {
+      throw new AppError(409, 'REWARD_OUT_OF_STOCK', 'Il ne reste plus de récompense en stock.');
+    }
+    await challengePassportRepository.update(passport, { status: 'redeemed', redeemedAt: new Date(), redeemedByUserId: null }, transaction);
+  });
+  challengePassportRepository.findOccupantIds(passportId)
+    .then((occupantIds) => realtime.challengeChanged({ passportId, occupantIds }))
+    .catch(() => realtime.challengeChanged({ passportId }));
+  return publicPayload(await challengePassportRepository.findPublicByToken(player));
+};
+
 // Joueurs correspondant à une recherche (nom, e-mail, téléphone, code), pour retrouver un code perdu.
 const search = async (query) => (await challengePassportRepository.search(query.trim())).map((passport) => {
   const values = passport.toJSON ? passport.toJSON() : passport;
@@ -162,4 +197,4 @@ const remove = async (id) => {
   realtime.challengeChanged({ passportId: id, occupantIds });
 };
 
-module.exports = { createPublic, getPublic, list, listRewards, getByCode, redeem, redeemByCode, publicPayload, search, remove };
+module.exports = { createPublic, getPublic, list, listRewards, getByCode, redeem, redeemByCode, claim, publicPayload, search, remove };

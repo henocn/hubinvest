@@ -6,6 +6,7 @@ import WheelSettings from '../components/WheelSettings';
 import InvestorQualificationSettings from '../components/InvestorQualificationSettings';
 import StudioFormatSettings from '../components/StudioFormatSettings';
 import ScreenSettings from '../components/ScreenSettings';
+import PassageQrSettings from '../components/PassageQrSettings';
 
 const modules = [
   { key: 'contactRequestsOpen', title: 'Demandes de contact aux stands' },
@@ -116,6 +117,8 @@ export default function SettingsPage({ session, onLogout }) {
             <h2>Trouvez les 5 étapes</h2>
             <SettingField settingKey="challengeRewardStock" label="Récompenses en stock" hint="0 = stock non suivi ; à zéro restant, la remise est refusée" type="number" min="0" max="100000" value={settings.challengeRewardStock} saving={savingKey} saved={savedKey} onSave={save} />
           </section>
+
+          <PassageQrSettings token={session.token} />
 
           <section className="data-panel settings-panel">
             <h2>Studio</h2>

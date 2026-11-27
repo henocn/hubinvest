@@ -13,6 +13,8 @@ import StudioInvitationPage from './pages/StudioInvitationPage';
 import ChallengePage from './pages/ChallengePage';
 import MeetingsPage from './pages/MeetingsPage';
 import ScreenPage from './pages/ScreenPage';
+import PassagePage from './pages/PassagePage';
+import RewardPage from './pages/RewardPage';
 import { setPageTitle, titleForPath } from './lib/page-title';
 import './public.css';
 
@@ -27,6 +29,9 @@ export default function PublicPages({ path }) {
   const b2bDetail = path.match(/^\/b2b\/([a-f0-9-]+)$/i);
   const studioInvitation = path.match(/^\/studio\/([a-f0-9]{64})$/i);
   const challengePassport = path.match(/^\/defis\/([a-f0-9]{64})$/i);
+  // QR posé devant un stand, et QR du comptoir des récompenses du Stand API-ZF.
+  const passage = path.match(/^\/passage\/([a-z0-9-]+)\/([A-Za-z0-9_-]+)$/);
+  const reward = path.match(/^\/recuperer\/([A-Za-z0-9_-]+)$/);
 
   // Grand écran du Stand : plein écran, sans en-tête, menu ni pied de page.
   if (path === '/ecran') return <ScreenPage />;
@@ -55,6 +60,10 @@ export default function PublicPages({ path }) {
     page = <ChallengePage />;
   } else if (path === '/roue') {
     page = <ChallengePage openWheel />;
+  } else if (passage) {
+    page = <PassagePage key={path} slug={passage[1]} sig={passage[2]} />;
+  } else if (reward) {
+    page = <RewardPage key={path} sig={reward[1]} />;
   } else if (challengePassport) {
     page = <ChallengePage token={challengePassport[1]} />;
   } else {

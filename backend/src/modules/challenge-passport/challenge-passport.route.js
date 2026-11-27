@@ -17,6 +17,7 @@ const rewardTeamOnly = (request, response, next) => next(isApizfTeam(request.use
   : new AppError(403, 'FORBIDDEN', "Vous n’avez pas accès à cette action."));
 
 router.post('/public', rateLimit.publicForm('challenge'), validate(challengePassportValidation.createPublic), asyncHandler(challengePassportController.createPublic));
+router.post('/public/claim', validate(challengePassportValidation.claim), asyncHandler(challengePassportController.claim));
 router.get('/public/:token', validate(challengePassportValidation.tokenParams, 'params'), asyncHandler(challengePassportController.getPublic));
 
 router.use(asyncHandler(authenticate));

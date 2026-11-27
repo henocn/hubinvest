@@ -483,3 +483,12 @@
 /* Une liste déroulante de réglage garde sa largeur : elle ne recouvre pas le libellé de sa ligne. */
 .admin-app .settings-row > select { width: auto; flex: 0 1 auto; max-width: 60%; }
 @media (max-width: 620px) { .admin-app .settings-row > select { max-width: 55%; } }
+
+
+/* Paramètres → affiches QR des stands : aperçu des QR avant impression. */
+.admin-app .qr-poster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin: 12px 0 14px; padding: 0; list-style: none; }
+.admin-app .qr-poster-grid li { display: grid; justify-items: center; gap: 6px; padding: 10px 8px; border: 1px solid var(--frame); text-align: center; }
+.admin-app .qr-poster-grid li.is-desk { border-color: var(--red); }
+.admin-app .qr-poster-grid img { width: 100%; max-width: 110px; height: auto; }
+.admin-app .qr-poster-grid strong { font-size: 12px; line-height: 1.3; }
+.admin-app .settings-note { margin: 4px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }

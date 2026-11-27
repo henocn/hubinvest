@@ -7,10 +7,15 @@ const challengePassageValidation = require('./challenge-passage.validation');
 const challengePassageController = require('./challenge-passage.controller');
 
 const router = express.Router();
-const occupantTeamOnly = requireRoles(roles.OCCUPANT);
 
-router.use(asyncHandler(authenticate), occupantTeamOnly);
-router.get('/stats', asyncHandler(challengePassageController.stats));
-router.post('/', validate(challengePassageValidation.create), asyncHandler(challengePassageController.create));
+// Le visiteur scanne le QR posé devant un stand : deux questions, puis le passage est validé sans l'occupant.
+router.post('/public/quiz', validate(challengePassageValidation.quiz), asyncHandler(challengePassageController.quiz));
+router.post('/public/answer', validate(challengePassageValidation.answer), asyncHandler(challengePassageController.answer));
+
+router.use(asyncHandler(authenticate));
+router.get('/qr-codes', requireRoles(roles.SUPER_ADMIN, roles.ADMIN), asyncHandler(challengePassageController.qrCodes));
+// Secours : l'occupant scanne ou tape le code du joueur.
+router.get('/stats', requireRoles(roles.OCCUPANT), asyncHandler(challengePassageController.stats));
+router.post('/', requireRoles(roles.OCCUPANT), validate(challengePassageValidation.create), asyncHandler(challengePassageController.create));
 
 module.exports = router;
