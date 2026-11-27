@@ -18,7 +18,7 @@ export default {
     challenges: "Challenges and wheel",
     team: "Team space",
     home: "Home",
-    explore: "Explore",
+    explore: "Stands",
     meetings: "Meetings",
     play: "Play",
     account: "My space",
