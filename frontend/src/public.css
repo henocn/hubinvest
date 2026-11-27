@@ -845,9 +845,9 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  /* Un contour net sur chaque carte, vert au survol. */
-  border: 1px solid #c4cac7;
-  border-radius: 0;
+  /* Même contour que les cartes de services : vert foncé, 2 px, coins légèrement arrondis ; vert de la charte au survol. */
+  border: 2px solid var(--green-dark);
+  border-radius: 6px;
   color: inherit;
   background: #fff;
   text-decoration: none;
@@ -855,7 +855,7 @@
 }
 
 .stand-card:hover {
-  border-color: rgba(21, 108, 83, 0.7);
+  border-color: var(--green);
 }
 
 .stand-card-cover {
@@ -881,6 +881,8 @@
   flex-direction: column;
   align-items: start;
   padding: 17px 18px 16px;
+  /* Nom et emplacement sur fond vert pâle, comme le pied des cartes de services. */
+  background: var(--tint);
 }
 
 .stand-location {
