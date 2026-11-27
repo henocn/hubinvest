@@ -1,9 +1,20 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 // Choix d'un créneau avec deux listes simples : le jour, puis l'heure. Heure de Lomé = UTC.
-export default function SlotPicker({ slots, value, onChange }) {
+// Le serveur n'envoie que les créneaux à venir ; si la page reste ouverte, une heure passée disparaît aussi de la liste
+// (et un jour dont il ne reste plus d'heure), vérifié chaque minute.
+export default function SlotPicker({ slots: allSlots, value, onChange }) {
   const { t, i18n } = useTranslation();
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const slots = useMemo(() => allSlots.filter((slot) => new Date(slot).getTime() > now), [allSlots, now]);
+  useEffect(() => {
+    if (value && !slots.includes(value)) onChange('');
+  }, [slots, value, onChange]);
   const locale = i18n.resolvedLanguage?.startsWith('en') ? 'en-GB' : 'fr-FR';
   const formats = useMemo(() => ({
     day: new Intl.DateTimeFormat(locale, { timeZone: 'Africa/Lome', weekday: 'long', day: 'numeric', month: 'long' }),
