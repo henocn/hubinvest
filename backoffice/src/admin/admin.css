@@ -207,18 +207,6 @@
 .admin-app .wheel-row.is-hidden td strong { color: #8a8f94; }
 .admin-app .wheel-row.is-sold-out { background: rgba(211, 27, 52, .035); }
 .admin-app .wheel-stock-total { color: var(--muted); font-weight: 400; }
-.admin-app .wheel-code-value { display: block; margin: 26px 0 10px; color: var(--ink); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: clamp(40px, 12vw, 56px); font-weight: 800; letter-spacing: .16em; text-align: center; }
-.admin-app .wheel-code-hint { margin: 0; color: var(--muted); font-size: 13px; text-align: center; }
-.admin-app .wheel-code-dialog { width: min(520px, 100%); max-height: calc(100vh - 40px); display: flex; flex-direction: column; }
-.admin-app .wheel-code-new { align-self: center; margin: 16px 0 14px; }
-.admin-app .wheel-code-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 6px; min-height: 0; margin: 0; padding: 12px 0 0; overflow-y: auto; border-top: 1px solid var(--frame); list-style: none; }
-.admin-app .wheel-code-grid li { display: grid; justify-items: center; padding: 6px 4px; border: 1px solid var(--frame); border-radius: 0; color: var(--ink); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 14px; font-weight: 700; letter-spacing: .08em; }
-.admin-app .wheel-code-grid li small { color: inherit; font-family: inherit; font-size: 10px; font-weight: 400; letter-spacing: 0; opacity: .8; }
-.admin-app .wheel-code-grid li.is-won, .admin-app .wheel-code-legend .is-won { border-color: var(--green); color: #fff; background: var(--green); }
-.admin-app .wheel-code-grid li.is-lost, .admin-app .wheel-code-legend .is-lost { border-color: var(--red); color: #fff; background: var(--red); }
-.admin-app .wheel-code-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 10px 0 0; color: var(--muted); font-size: 12px; }
-.admin-app .wheel-code-legend span { width: 12px; height: 12px; margin-left: 6px; border: 1px solid var(--frame); border-radius: 0; }
-.admin-app .wheel-code-legend span:first-child { margin-left: 0; }
 /* Rencontre B2B : choix du créneau, compte rendu en un clic, note du rendez-vous. */
 .admin-app .meeting-slots { margin: 0; padding: 0; border: 0; }
 .admin-app .meeting-slots legend { margin-bottom: 8px; color: var(--muted); font-size: 12px; font-weight: 700; }
@@ -483,10 +471,6 @@
 .admin-app .follow-up-call { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 
 /* Codes de jeu déjà délivrés : repliés par défaut, ouverts au besoin. */
-.admin-app .wheel-code-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 10px; padding: 8px 10px; border: 1px solid var(--frame); color: var(--ink); background: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
-.admin-app .wheel-code-toggle:hover { background: #f6f7f7; }
-.admin-app .wheel-code-toggle svg { transition: transform .15s ease; }
-.admin-app .wheel-code-toggle.is-open svg { transform: rotate(180deg); }
 
 /* Vidéo de repli du grand écran : sa source (lien vers la vidéo), un lien à coller ou un fichier à charger. */
 .admin-app .screen-video-row { flex-wrap: wrap; }

@@ -25,7 +25,7 @@ const defaults = () => ({
   screenVideoUrl: '',
   // Récompenses du parcours en stock (document v4 : « récompenses à stock suivi ») ; 0 = stock non suivi.
   challengeRewardStock: 0,
-  // Tours de roue donnés par un code de jeu (un code n'expire pas).
+  // Tours de roue de chaque joueur identifié (sans code à saisir). Clé historique : « par code ».
   wheelSpinsPerCode: 1,
   // Rencontre B2B : tables, durée d'un rendez-vous et horaires (heure de Lomé). Le document fixe 20 minutes ; le reste est à confirmer.
   b2bTables: 4,
@@ -83,7 +83,7 @@ const current = () => ({ ...cache, requiredPassages: CHALLENGE_STEPS });
 const requiredPassages = () => CHALLENGE_STEPS;
 const challengeRewardStock = () => Math.max(0, Number(cache.challengeRewardStock) || 0);
 
-const wheelSpinsPerCode = () => Math.max(1, Number(cache.wheelSpinsPerCode) || 1);
+const wheelSpinsPerPlayer = () => Math.max(1, Number(cache.wheelSpinsPerCode) || 1);
 
 const b2bSchedule = () => ({
   tables: Math.max(1, Number(cache.b2bTables) || 1),
@@ -185,4 +185,4 @@ const publicSettings = () => {
   return rest;
 };
 
-module.exports = { MODULES, load, current, requiredPassages, challengeRewardStock, wheelSpinsPerCode, b2bSchedule, studioSchedule, guichetSchedule, studioFormats, studioFormatLabel, investorFollowUpDelay, investorQualificationFields, assertOpen, update, setScreenVideo, cleanScreenVideos, publicSettings, _reset: () => { cache = defaults(); } };
+module.exports = { MODULES, load, current, requiredPassages, challengeRewardStock, wheelSpinsPerPlayer, b2bSchedule, studioSchedule, guichetSchedule, studioFormats, studioFormatLabel, investorFollowUpDelay, investorQualificationFields, assertOpen, update, setScreenVideo, cleanScreenVideos, publicSettings, _reset: () => { cache = defaults(); } };

@@ -171,7 +171,6 @@ export const api = {
   deleteWheelPlay: (token, id) => request(`/wheel/plays/${id}`, authorized(token, { method: 'DELETE' })),
   deleteChallengePassport: (token, id) => request(`/challenge-passports/${id}`, authorized(token, { method: 'DELETE' })),
   claimWheelPlay: (token, id) => request(`/wheel/plays/${id}/claim`, authorized(token, { method: 'POST' })),
-  createWheelCode: (token) => request('/wheel/codes', authorized(token, { method: 'POST' })),
   createWheelSegment: (token, values) =>
     request('/wheel/segments', authorized(token, { method: 'POST', body: JSON.stringify(values) })),
   updateWheelSegment: (token, id, values) =>

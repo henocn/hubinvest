@@ -10,38 +10,17 @@ const wheelController = require('./wheel.controller');
 
 const router = express.Router();
 
-// Limite les essais de codes erronés par adresse : seuls les échecs comptent,
-// car beaucoup de visiteurs peuvent partager la même adresse sur le réseau mobile.
-const failedSpins = new Map();
-const failureWindow = 15 * 60 * 1000;
-const maxFailures = 20;
-const limitFailedSpins = (request, response, next) => {
-  const now = Date.now();
-  const current = failedSpins.get(request.ip);
-  if (current && current.expiresAt > now && current.count >= maxFailures) {
-    return next(new AppError(429, 'WHEEL_RATE_LIMITED', 'Trop de codes erronés. Réessayez dans quelques minutes.'));
-  }
-  response.on('finish', () => {
-    if (![404, 409, 410].includes(response.statusCode)) return;
-    if (failedSpins.size > 5000) failedSpins.forEach((entry, key) => { if (entry.expiresAt <= Date.now()) failedSpins.delete(key); });
-    const entry = failedSpins.get(request.ip);
-    if (!entry || entry.expiresAt <= Date.now()) failedSpins.set(request.ip, { count: 1, expiresAt: Date.now() + failureWindow });
-    else entry.count += 1;
-  });
-  return next();
-};
-
 router.get('/public', asyncHandler(wheelController.getPublic));
-// Vérifie le code avant d'afficher la roue ; les codes erronés comptent dans la même limite que le tirage.
-router.post('/public/check', limitFailedSpins, validate(wheelValidation.checkCode), asyncHandler(wheelController.checkCode));
-router.post('/public/spin', limitFailedSpins, validate(wheelValidation.spin), asyncHandler(wheelController.spin));
+// Tours restants du joueur, avant d'afficher la roue.
+router.post('/public/status', validate(wheelValidation.status), asyncHandler(wheelController.status));
+// Pas de code à deviner : pas de limite d'essais par adresse (beaucoup de visiteurs partagent la même sur le réseau mobile).
+router.post('/public/spin', validate(wheelValidation.spin), asyncHandler(wheelController.spin));
 
 router.use(asyncHandler(authenticate));
-// Roue : seule l'API-ZF délivre les codes et remet les lots (équipe API-ZF, occupants du Stand API-ZF, animateurs pour les lots).
+// Roue : seule l'API-ZF remet les lots (équipe API-ZF, occupants du Stand API-ZF, animateurs pour les lots).
 const forbidden = () => new AppError(403, 'FORBIDDEN', "Vous n’avez pas accès à cette action.");
 const wheelTeam = (request, response, next) => next(isApizfTeam(request.user) ? undefined : forbidden());
 const prizeTeam = (request, response, next) => next(isApizfTeam(request.user) || request.user?.role === roles.ANIMATOR ? undefined : forbidden());
-router.post('/codes', wheelTeam, asyncHandler(wheelController.generateCode));
 router.get('/prizes/:code', prizeTeam, validate(wheelValidation.codeParams, 'params'), asyncHandler(wheelController.findPrize));
 router.post('/prizes/:code/claim', prizeTeam, validate(wheelValidation.codeParams, 'params'), asyncHandler(wheelController.claimPrize));
 // Bouton « Remis » de l'historique du back office : un tour précis.

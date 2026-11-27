@@ -2106,6 +2106,7 @@
 }
 
 .wheel-stage {
+  position: relative;
   display: grid;
   justify-items: center;
   margin-bottom: 18px;
@@ -2156,12 +2157,114 @@
   filter: drop-shadow(0 2px 2px rgba(15, 24, 34, 0.35));
 }
 
+.wheel-face {
+  position: relative;
+}
+
 .wheel-disc {
   width: 100%;
   height: auto;
   display: block;
   font-family: var(--font-display);
   transform-origin: 50% 50%;
+}
+
+/* Cadre fixe posé sur le disque : anneau, lumières, moyeu. */
+.wheel-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.wheel-pointer {
+  transform-origin: 50% 0;
+}
+
+/* Lumières du pourtour : elles clignotent en alternance au repos, défilent vite pendant le tour, s'allument toutes
+   ensemble quand on gagne. */
+.wheel-bulb {
+  fill: #ffcf15;
+  animation: wheel-bulb 1.4s steps(1, end) infinite;
+}
+
+.wheel-bulb.is-odd {
+  animation-delay: -0.7s;
+}
+
+.wheel.is-spinning .wheel-bulb {
+  animation-duration: 0.24s;
+}
+
+.wheel.is-spinning .wheel-bulb.is-odd {
+  animation-delay: -0.12s;
+}
+
+.wheel.is-won .wheel-bulb {
+  animation: wheel-bulb-won 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes wheel-bulb {
+  0% { fill: #ffcf15; }
+  50% { fill: #ffffff; }
+}
+
+@keyframes wheel-bulb-won {
+  from { fill: #ffcf15; }
+  to { fill: #fff3bf; }
+}
+
+/* Moyeu : une onde douce invite à appuyer tant que la roue est au repos. */
+.wheel-hub-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: wheel-hub 1.8s ease-out infinite;
+}
+
+.wheel.is-spinning .wheel-hub-ring,
+.wheel.is-won .wheel-hub-ring {
+  animation: none;
+  opacity: 0;
+}
+
+@keyframes wheel-hub {
+  0% { transform: scale(1); opacity: 0.9; }
+  100% { transform: scale(2.1); opacity: 0; }
+}
+
+/* Case gagnante : elle clignote en jaune une fois la roue arrêtée. */
+.wheel-slice.is-winner path {
+  animation: wheel-winner 0.6s ease-in-out 4 alternate;
+}
+
+@keyframes wheel-winner {
+  to { fill: #e2a700; }
+}
+
+.confetti {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.confetti span {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  box-shadow: 0 0 0 0.5px rgba(15, 24, 34, 0.15);
+  animation: confetti-burst 1.6s cubic-bezier(0.15, 0.7, 0.3, 1) var(--d) forwards;
+}
+
+@keyframes confetti-burst {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+  70% { opacity: 1; }
+  100% { transform: translate(var(--x), calc(var(--y) + 120px)) rotate(var(--r)); opacity: 0; }
 }
 
 .wheel-form {
@@ -2195,6 +2298,25 @@
   border-radius: 0;
   text-align: center;
   background: #f4f5f5;
+  animation: wheel-result-in 360ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+.wheel-result.is-won strong {
+  animation: wheel-prize-pop 520ms cubic-bezier(0.2, 0.9, 0.3, 1.4) 120ms both;
+}
+
+.wheel-result-icon {
+  color: var(--green);
+}
+
+@keyframes wheel-result-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes wheel-prize-pop {
+  from { opacity: 0; transform: scale(0.6); }
+  to { opacity: 1; transform: none; }
 }
 
 .wheel-result.is-won {
@@ -2203,6 +2325,9 @@
 }
 
 .wheel-result > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   color: var(--green);
   font-size: 0.82rem;
   font-weight: 800;
@@ -2242,6 +2367,21 @@
 
 .wheel-result .button {
   margin-top: 8px;
+  gap: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wheel-bulb,
+  .wheel-hub-ring,
+  .wheel-slice.is-winner path,
+  .wheel-result,
+  .wheel-result.is-won strong {
+    animation: none;
+  }
+
+  .confetti {
+    display: none;
+  }
 }
 
 /* Module fermé depuis l'administration : message calme à la place du formulaire ou du jeu. */

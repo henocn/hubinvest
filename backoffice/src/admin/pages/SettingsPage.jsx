@@ -154,12 +154,12 @@ export default function SettingsPage({ session, onLogout }) {
         {settings && (
           <form className="settings-row" onSubmit={saveSpinsPerCode}>
             <span>
-              <strong>Tours de roue par code de jeu</strong>
-              <small>Un code n’expire pas ; il sert jusqu’à son dernier tour</small>
+              <strong>Tours de roue par joueur</strong>
+              <small>Sans code : chaque joueur identifié a ce nombre de tours (même e-mail ou téléphone = même joueur)</small>
             </span>
             {savedKey === 'wheelSpinsPerCode' && <Check className="settings-saved" size={18} aria-label="Enregistré" />}
             <span className="settings-number">
-              <input type="number" min="1" max="20" value={spinsPerCode} onChange={(event) => setSpinsPerCode(event.target.value)} aria-label="Tours par code" />
+              <input type="number" min="1" max="20" value={spinsPerCode} onChange={(event) => setSpinsPerCode(event.target.value)} aria-label="Tours par joueur" />
               <button className="button button-secondary" type="submit" disabled={savingKey === 'wheelSpinsPerCode' || Number(spinsPerCode) === settings.wheelSpinsPerCode}>Enregistrer</button>
             </span>
           </form>

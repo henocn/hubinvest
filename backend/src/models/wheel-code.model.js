@@ -1,5 +1,4 @@
-// Code de jeu de la roue : il n'expire pas et donne un nombre de tours fixé à sa création (réglage « tours par code »).
-// Chaque tour joué est une ligne de wheel_plays.
+// Code de la roue d'un joueur : créé à son premier tour, il est montré quand il gagne pour recevoir son lot. Chaque tour joué est une ligne de wheel_plays.
 module.exports = (sequelize, DataTypes) =>
   sequelize.define(
     'WheelCode',

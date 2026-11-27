@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { AlarmClock, Download, Plus, QrCode, Search, Ticket } from 'lucide-react';
+import { AlarmClock, Download, Plus, QrCode, Search } from 'lucide-react';
 import ConfirmDelete from '../components/ConfirmDelete';
 import OccupantDetail from '../components/OccupantDetail';
 import B2bProposalDetail from '../components/B2bProposalDetail';
@@ -21,7 +21,6 @@ import OccupantsTable from '../components/tables/OccupantsTable';
 import ProgramEventsTable from '../components/tables/ProgramEventsTable';
 import UsersTable from '../components/tables/UsersTable';
 import WheelPlaysTable from '../components/tables/WheelPlaysTable';
-import WheelCodeDialog from '../components/WheelCodeDialog';
 import { publicBaseUrl } from '../constants/access';
 import { tableSettings } from '../constants/tables';
 import { exportToExcel } from '../../lib/excel';
@@ -72,7 +71,6 @@ export default function BackofficePage({ session, onLogout, section }) {
   const [challengePassports, setChallengePassports] = useState([]);
   const [contactStats, setContactStats] = useState({ total: 0, byOccupant: {} });
   const [wheel, setWheel] = useState({ segments: [], codes: [], plays: [], stats: { played: 0, awarded: 0, remaining: 0 } });
-  const [wheelCode, setWheelCode] = useState(null);
   const [search, setSearch] = useState('');
   const [sortValue, setSortValue] = useState('');
   const [exporting, setExporting] = useState(false);
@@ -352,18 +350,6 @@ export default function BackofficePage({ session, onLogout, section }) {
     setPendingDelete({ type: 'b2b-proposal', item: proposal, label: `la demande B2B de ${proposal.fullName}` });
   };
 
-  // Délivre un code de jeu, l'affiche en grand pour le joueur et l'ajoute à la liste des codes.
-  const generateWheelCode = async () => {
-    setWheelCode((current) => ({ data: current?.data || null, loading: true, error: '' }));
-    try {
-      const data = await api.createWheelCode(session.token);
-      setWheelCode({ data, loading: false, error: '' });
-      void reloadTopic('wheel');
-    } catch (requestError) {
-      setWheelCode((current) => ({ data: current?.data || null, loading: false, error: requestError.message }));
-    }
-  };
-
   const confirmDelete = async () => {
     setDeleting(true);
     setDeleteError('');
@@ -422,7 +408,6 @@ export default function BackofficePage({ session, onLogout, section }) {
           {(section === 'occupants' || section === 'users' || section === 'program' || section === 'investor-requests' || section === 'challenges' || section === 'wheel') && <div className="workspace-actions">
             {section === 'challenges' && <button className="button button-secondary" type="button" onClick={() => setQrCode({ title: 'QR des Défis', url: `${publicBaseUrl}/defis`, fileName: 'hubinvest-defis' })}><QrCode size={16} /> QR des Défis</button>}
             {section === 'program' && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: 'program', item: null })}><Plus size={16} /> Ajouter au programme</button>}
-            {section === 'wheel' && <button className="button button-primary" type="button" onClick={() => setWheelCode({ data: null, loading: false, error: '' })}><Ticket size={16} /> Code de jeu</button>}
             {(section === 'occupants' || section === 'users' || section === 'investor-requests') && <button className="button button-primary" type="button" onClick={() => setDrawer({ type: section === 'occupants' ? 'occupant' : section === 'users' ? 'user' : 'investor-request', item: null })}><Plus size={16} /> {section === 'occupants' ? 'Stand' : section === 'users' ? 'Nouvel utilisateur' : 'Contact'}</button>}
           </div>}
         </header>
@@ -470,7 +455,6 @@ export default function BackofficePage({ session, onLogout, section }) {
       {drawer?.type === 'program' && <ProgramEventDrawer programEvent={drawer.item} occupants={occupants} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'investor-request' && <InvestorRequestDrawer token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
       {drawer?.type === 'b2b-proposal' && <B2bProposalDrawer proposal={drawer.item} token={session.token} onClose={() => setDrawer(null)} onSaved={saved} />}
-      {wheelCode && <WheelCodeDialog codes={wheel.codes} created={wheelCode.data} loading={wheelCode.loading} error={wheelCode.error} onNew={generateWheelCode} onClose={() => setWheelCode(null)} />}
       {pendingDelete && <ConfirmDelete subject={pendingDelete} loading={deleting} error={deleteError} onCancel={() => setPendingDelete(null)} onConfirm={confirmDelete} />}
       {pendingDecision && <ConfirmDecision {...pendingDecision} loading={deciding} error={decisionError} onCancel={() => setPendingDecision(null)} onConfirm={confirmDecision} />}
       {pendingClaim && <ConfirmReward passport={{ displayName: pendingClaim.player?.displayName || 'ce joueur', code: pendingClaim.code }} prize={pendingClaim.result.label} loading={rewarding} error={rewardError} onCancel={() => setPendingClaim(null)} onConfirm={confirmWheelClaim} />}

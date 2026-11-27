@@ -57,7 +57,6 @@ export const api = {
   challengeRewards: (token) => request('/challenge-passports/rewards', authorized(token)),
   challengeRewardByCode: (token, code) => request(`/challenge-passports/code/${encodeURIComponent(code)}`, authorized(token)),
   redeemChallengeReward: (token, code) => request('/challenge-passports/redeem-by-code', authorized(token, { method: 'POST', body: JSON.stringify({ code }) })),
-  createWheelCode: (token) => request('/wheel/codes', authorized(token, { method: 'POST' })),
   wheelPrize: (token, code) => request(`/wheel/prizes/${encodeURIComponent(code)}`, authorized(token)),
   claimWheelPrize: (token, code) => request(`/wheel/prizes/${encodeURIComponent(code)}/claim`, authorized(token, { method: 'POST' })),
   liveQuestions: (token) => request('/live-questions', authorized(token)),

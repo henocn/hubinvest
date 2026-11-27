@@ -1,12 +1,11 @@
 const crypto = require('node:crypto');
-const { UniqueConstraintError } = require('sequelize');
 const AppError = require('../../shared/app-error');
 const { translatePublicContent } = require('../../shared/translation.service');
 const wheelRepository = require('./wheel.repository');
 const { events: realtime } = require('../realtime/realtime.service');
 const settingsService = require('../settings/settings.service');
 
-// Lettres et chiffres sans ambiguïté à l'oral ou à l'écrit (pas de 0/O, 1/I/L).
+// Code du joueur, montré pour recevoir un lot : lettres et chiffres sans ambiguïté à l'oral ou à l'écrit (pas de 0/O, 1/I/L).
 const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const CODE_LENGTH = 4;
 
@@ -79,42 +78,54 @@ const listPublic = async (language) => {
 
 const normalizeCode = (value) => String(value || '').trim().toUpperCase().replace(/[\s-]/g, '');
 
-// Un code peut-il jouer pour ce joueur ? (existe, tours restants, pas pris par un autre joueur). Partagé par la
-// vérification du code, faite avant d'afficher la roue, et par le tirage.
-const playableCode = async (code, player, transaction) => {
-  const passport = await wheelRepository.findPlayerByToken(player, transaction);
+const generateCodeValue = () => Array.from({ length: CODE_LENGTH }, () => CODE_ALPHABET[crypto.randomInt(CODE_ALPHABET.length)]).join('');
+
+// Joueur identifié et tours qu'il lui reste. Le nombre de tours (réglage « tours par joueur ») vaut pour la personne :
+// les tours joués sous un autre compte avec le même e-mail ou le même téléphone comptent aussi.
+// Dès qu'elle gagne un lot, c'est fini : plus aucun tour, même s'il lui en restait.
+const playerTurns = async (player, transaction) => {
+  const passport = await wheelRepository.findPlayerForUpdate(player, transaction);
   if (!passport) throw new AppError(422, 'WHEEL_PLAYER_REQUIRED', 'Identifiez-vous avant de jouer.');
-  const wheelCode = await wheelRepository.findCodeForUpdate(code, transaction);
-  if (!wheelCode) throw new AppError(404, 'WHEEL_CODE_INVALID', 'Code invalide.');
-  const plays = await wheelRepository.findCodePlays(wheelCode.id, transaction);
-  if (plays.length >= wheelCode.spinsAllowed) throw new AppError(409, 'WHEEL_CODE_USED', 'Code déjà utilisé.');
-  if (plays.some((play) => play.passportId && play.passportId !== passport.id)) {
-    throw new AppError(409, 'WHEEL_CODE_TAKEN', 'Code déjà utilisé.');
-  }
-  return { passport, wheelCode, plays };
+  const allowed = settingsService.wheelSpinsPerPlayer();
+  const plays = (await wheelRepository.findPlayerPlays(passport, transaction)).map(plain);
+  const prize = plays.find((play) => play.resultKind === 'prize');
+  const won = prize ? { code: prize.wheelCode?.code || null, label: prize.resultLabel } : null;
+  return { passport, allowed, won, spinsLeft: won ? 0 : Math.max(allowed - plays.length, 0) };
 };
 
-// Vérifie le code avant d'afficher la roue : rien n'est joué ni enregistré.
-const checkCode = async ({ code: rawCode, player }) => {
+// Code du joueur, montré quand il gagne pour recevoir son lot : créé à son premier tour, puis repris à chaque tour.
+const playerCode = async (passport, allowed, transaction) => {
+  const existing = await wheelRepository.findPlayerCode(passport.id, transaction);
+  if (existing) return existing;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const code = generateCodeValue();
+    if (!(await wheelRepository.findCodeByValue(code, transaction))) {
+      return wheelRepository.createCode({ code, createdByUserId: null, spinsAllowed: allowed }, transaction);
+    }
+  }
+  throw new AppError(503, 'WHEEL_CODE_UNAVAILABLE', 'La roue est momentanément indisponible. Réessayez.');
+};
+
+// Tours restants du joueur, avant d'afficher la roue : rien n'est joué ni enregistré.
+const status = async ({ player }) => {
   settingsService.assertOpen('wheelOpen');
-  const code = normalizeCode(rawCode);
-  const { wheelCode, plays } = await wheelRepository.sequelize.transaction((transaction) => playableCode(code, player, transaction));
-  return { code, spinsLeft: Math.max(wheelCode.spinsAllowed - plays.length, 0) };
+  const { allowed, spinsLeft, won } = await wheelRepository.sequelize.transaction((transaction) => playerTurns(player, transaction));
+  return { spinsAllowed: allowed, spinsLeft, won };
 };
 
 // Tire une case au hasard parmi celles visibles : le tour est enregistré et le stock décompté dans la même transaction.
-// Seul un joueur identifié peut jouer. Un code n'expire pas : il donne le nombre de tours fixé à sa création
-// et appartient au premier joueur qui l'utilise.
-const spin = async ({ code: rawCode, player, wheel }, language, randomIndex = crypto.randomInt) => {
+// Pas de code à saisir : le joueur identifié joue directement, autant de tours que le réglage le permet.
+const spin = async ({ player, wheel }, language, randomIndex = crypto.randomInt) => {
   settingsService.assertOpen('wheelOpen');
-  const code = normalizeCode(rawCode);
   const outcome = await wheelRepository.sequelize.transaction(async (transaction) => {
-    // Pas de limite de parties : chaque code de jeu remis par l'API-ZF donne ses tours.
-    const { passport, wheelCode, plays } = await playableCode(code, player, transaction);
+    const { passport, allowed, spinsLeft, won } = await playerTurns(player, transaction);
+    if (won) throw new AppError(409, 'WHEEL_ALREADY_WON', 'Vous avez déjà gagné un lot.');
+    if (spinsLeft <= 0) throw new AppError(409, 'WHEEL_NO_SPINS_LEFT', 'Vous avez joué tous vos tours.');
 
     const segments = wheelFrom(await wheelRepository.findActiveSegmentsForUpdate(transaction), wheel, randomIndex);
     if (!segments.length) throw new AppError(409, 'WHEEL_EMPTY', 'La roue n’est pas encore prête. Revenez dans un instant.');
 
+    const wheelCode = await playerCode(passport, allowed, transaction);
     const chosen = segments[randomIndex(segments.length)];
     if (chosen.kind === 'prize') await wheelRepository.recordAward(chosen, transaction);
     await wheelRepository.createPlay({
@@ -127,10 +138,11 @@ const spin = async ({ code: rawCode, player, wheel }, language, randomIndex = cr
     }, transaction);
 
     return {
-      code,
+      code: wheelCode.code,
       result: publicSegment(chosen),
       segments: segments.map(publicSegment),
-      spinsLeft: Math.max(wheelCode.spinsAllowed - plays.length - 1, 0),
+      // Un lot gagné arrête la partie.
+      spinsLeft: chosen.kind === 'prize' ? 0 : spinsLeft - 1,
     };
   });
 
@@ -140,24 +152,6 @@ const spin = async ({ code: rawCode, player, wheel }, language, randomIndex = cr
     translateSegments([outcome.result], language),
   ]);
   return { code: outcome.code, result, segments, spinsLeft: outcome.spinsLeft };
-};
-
-const generateCodeValue = () => Array.from({ length: CODE_LENGTH }, () => CODE_ALPHABET[crypto.randomInt(CODE_ALPHABET.length)]).join('');
-
-// Délivre un code de jeu : il n'expire pas et donne le nombre de tours réglé dans les paramètres.
-const generateCode = async (user) => {
-  settingsService.assertOpen('wheelOpen');
-  const spinsAllowed = settingsService.wheelSpinsPerCode();
-  for (let attempt = 0; attempt < 5; attempt += 1) {
-    try {
-      const created = await wheelRepository.createCode({ code: generateCodeValue(), createdByUserId: user.id, spinsAllowed });
-      realtime.wheelChanged();
-      return { code: created.code, spinsAllowed: created.spinsAllowed };
-    } catch (error) {
-      if (!(error instanceof UniqueConstraintError)) throw error;
-    }
-  }
-  throw new AppError(503, 'WHEEL_CODE_UNAVAILABLE', 'Impossible de créer un code pour le moment. Réessayez.');
 };
 
 const personName = (person) => (person ? { firstName: person.firstName, lastName: person.lastName } : null);
@@ -176,7 +170,7 @@ const adminPlay = (item) => {
   };
 };
 
-// Code délivré, pour la fenêtre « Code de jeu » : gagnant si un tour a donné un lot, perdant s'il a été joué sans lot.
+// Code d'un joueur, avec ses tours : gagnant si un tour a donné un lot, perdant s'il a été joué sans lot.
 const adminCode = (item) => {
   const values = plain(item);
   const plays = values.plays || [];
@@ -307,7 +301,7 @@ const claimPlay = async (user, id) => {
 };
 
 // Supprime une partie (essai, erreur de saisie…). Un lot gagné et pas encore remis retourne au stock ;
-// un lot déjà remis reste décompté, puisqu'il est parti. Le tour du code est rendu : le code peut resservir.
+// un lot déjà remis reste décompté, puisqu'il est parti. Le tour est rendu au joueur.
 const removePlay = async (id) => {
   await wheelRepository.sequelize.transaction(async (transaction) => {
     const play = await wheelRepository.findPlayForClaim(id, transaction);
@@ -320,9 +314,8 @@ const removePlay = async (id) => {
 
 module.exports = {
   listPublic,
-  checkCode,
+  status,
   spin,
-  generateCode,
   overview,
   createSegment,
   updateSegment,
