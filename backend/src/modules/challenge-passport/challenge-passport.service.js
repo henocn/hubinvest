@@ -9,6 +9,7 @@ const { events: realtime } = require('../realtime/realtime.service');
 const settingsService = require('../settings/settings.service');
 const { INDUSTRY_STEPS } = require('../../shared/challenge-steps');
 const { verifyDesk } = require('../../shared/passage-sign');
+const wheelRepository = require('../wheel/wheel.repository');
 
 const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
@@ -74,6 +75,8 @@ const getPublic = async (token, language) => {
   const passport = await challengePassportRepository.findPublicByToken(token);
   if (!passport) throw new AppError(404, 'CHALLENGE_PASSPORT_NOT_FOUND', 'Parcours introuvable.');
   const payload = publicPayload(passport);
+  // Lots de la roue gagnés par le joueur : le bouton « Récupérer » apparaît tant qu'il en reste à prendre au comptoir.
+  payload.prizes = (await wheelRepository.findPassportPrizes(passport.id)).map((play) => ({ label: play.resultLabel, claimed: Boolean(play.claimedAt) }));
   payload.passages = await translatePublicContent(
     payload.passages,
     ['occupant.name', 'occupant.standLabel'],
@@ -153,32 +156,53 @@ const redeemByCode = (user, code) => redeemAndPublish(async (transaction) => {
   return redeemPassport(user, passport, transaction);
 });
 
-// Cinquième étape : le joueur qui a trouvé ses 4 stands scanne le QR du comptoir du Stand API-ZF, et la récompense est
-// marquée récupérée sans que l'équipe tape quoi que ce soit. Son téléphone affiche alors un écran vivant (heure qui
-// défile) que l'équipe regarde avant de donner le lot : une capture d'écran ou un second scan ne trompent pas.
+// Comptoir du Stand API-ZF : le joueur touche « Récupérer » et scanne le QR du comptoir. Tout ce qui lui revient est
+// marqué récupéré d'un coup, sans que l'équipe tape quoi que ce soit : la récompense du Défi (ses 4 stands trouvés,
+// cinquième étape) et les lots gagnés à la roue. Son téléphone affiche alors un écran vivant (heure qui défile) que
+// l'équipe regarde avant de donner : une capture d'écran ou un second scan ne trompent pas.
 const claim = async ({ player, sig }) => {
   if (!verifyDesk(sig)) throw new AppError(404, 'REWARD_QR_INVALID', 'Ce QR code n’est pas celui du comptoir des récompenses.');
   let passportId = null;
-  await sequelize.transaction(async (transaction) => {
+  const outcome = await sequelize.transaction(async (transaction) => {
     const passport = await challengePassportRepository.findByTokenForUpdate(player, transaction);
     if (!passport) throw new AppError(422, 'CHALLENGE_PLAYER_REQUIRED', 'Identifiez-vous avant de jouer.');
     passportId = passport.id;
-    if (passport.status === 'redeemed') {
-      const error = new AppError(409, 'REWARD_ALREADY_REDEEMED', 'La récompense a déjà été récupérée.');
-      error.details = { redeemedAt: passport.redeemedAt };
-      throw error;
+    const now = new Date();
+    const items = [];
+    let rewardOutOfStock = false;
+
+    if (passport.status === 'completed') {
+      const stock = settingsService.challengeRewardStock();
+      if (stock && (await challengePassportRepository.countRedeemed(transaction)) >= stock) rewardOutOfStock = true;
+      else {
+        await challengePassportRepository.update(passport, { status: 'redeemed', redeemedAt: now, redeemedByUserId: null }, transaction);
+        items.push({ kind: 'reward' });
+      }
     }
-    if (passport.status !== 'completed') throw new AppError(409, 'CHALLENGE_NOT_COMPLETED', 'Le parcours n’est pas encore terminé.');
-    const stock = settingsService.challengeRewardStock();
-    if (stock && (await challengePassportRepository.countRedeemed(transaction)) >= stock) {
-      throw new AppError(409, 'REWARD_OUT_OF_STOCK', 'Il ne reste plus de récompense en stock.');
+    const prizes = await wheelRepository.findPassportPrizes(passport.id, transaction);
+    for (const play of prizes.filter((item) => !item.claimedAt)) {
+      await wheelRepository.updatePlay(play, { claimedAt: now, claimedByUserId: null }, transaction);
+      items.push({ kind: 'prize', label: play.resultLabel });
     }
-    await challengePassportRepository.update(passport, { status: 'redeemed', redeemedAt: new Date(), redeemedByUserId: null }, transaction);
+
+    if (!items.length) {
+      if (rewardOutOfStock) throw new AppError(409, 'REWARD_OUT_OF_STOCK', 'Il ne reste plus de récompense en stock.');
+      const times = [passport.redeemedAt, ...prizes.map((play) => play.claimedAt)].filter(Boolean).map((value) => new Date(value).getTime());
+      if (times.length) {
+        const error = new AppError(409, 'REWARD_ALREADY_REDEEMED', 'Tout a déjà été récupéré.');
+        error.details = { redeemedAt: new Date(Math.max(...times)), displayName: passport.displayName };
+        throw error;
+      }
+      throw new AppError(409, 'CHALLENGE_NOT_COMPLETED', 'Rien à récupérer pour le moment.');
+    }
+    return { displayName: passport.displayName, items, rewardOutOfStock };
   });
+
   challengePassportRepository.findOccupantIds(passportId)
     .then((occupantIds) => realtime.challengeChanged({ passportId, occupantIds }))
     .catch(() => realtime.challengeChanged({ passportId }));
-  return publicPayload(await challengePassportRepository.findPublicByToken(player));
+  if (outcome.items.some((item) => item.kind === 'prize')) realtime.wheelChanged();
+  return outcome;
 };
 
 // Joueurs correspondant à une recherche (nom, e-mail, téléphone, code), pour retrouver un code perdu.

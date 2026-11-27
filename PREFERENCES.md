@@ -45,7 +45,8 @@
 
 - Le public est peu à l’aise avec le numérique : rien à faire pour les occupants, et le moins de touchers possible pour le visiteur.
 - Un QR posé devant chaque stand de l’Espace Industrie (affiches imprimées depuis Paramètres) ouvre la page du stand avec deux gros boutons : « Valider mon passage » et « Prendre contact ». Valider = deux questions automatiques à un toucher (produits, puis services, tirés de la fiche du stand ; les autres choix viennent des autres stands ; « Aucune de ces réponses » est la bonne réponse quand la fiche n’a ni produit ni service). Bonne réponse : tampon et confettis ; erreur : « Pas tout à fait… », nouvel essai après 30 s.
-- Plus de scan au Stand API-ZF : les 4 stands trouvés, un bouton « Récupérer » avec un colis qui sautille ; le joueur scanne le QR du comptoir et son écran devient vert et vivant (heure qui défile) pour l’équipe, rouge si déjà récupérée. Pas de « Montrer mon code à l’équipe » : on scanne, ou rien.
+- Plus aucun scan dans l’espace équipe (ni occupant, ni animateur). Les 4 stands trouvés, ou un lot gagné à la roue : un bouton « Récupérer » avec un colis qui sautille ; le joueur scanne le QR du comptoir du Stand API-ZF et tout ce qui lui revient (récompense du Défi, lots de la roue) est marqué récupéré d’un coup. Son écran devient vert et vivant (à son nom, liste de ce qui lui revient, heure qui défile) pour l’équipe ; rouge « Déjà récupéré » sinon. Pas de « Montrer mon code à l’équipe » : on scanne, ou rien.
+- Règles du jeu humaines et courtes : trois phrases pour le Défi, deux pour la roue, une note « tout se récupère au Stand API-ZF » ; pas d’étape d’identification ni de détail inutile.
 
 ## Back office
 

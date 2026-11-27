@@ -21,9 +21,9 @@ function LiveClock({ since }) {
   return <p className="reward-clock"><span>{time}</span><small>{seconds < 60 ? `${seconds} s` : `${Math.floor(seconds / 60)} min`}</small></p>;
 }
 
-// Page ouverte par le QR du comptoir des récompenses (Stand API-ZF) : cinquième étape. La récompense est marquée
-// récupérée, et l'écran, vert et vivant, est montré à l'équipe qui remet le lot. Un second scan affiche en rouge
-// l'heure de la première récupération.
+// Page ouverte par le QR du comptoir (Stand API-ZF) : la récompense du Défi (cinquième étape) et les lots gagnés à la
+// roue sont marqués récupérés, et l'écran, vert et vivant, liste ce que l'équipe remet. Un second scan affiche en rouge
+// l'heure de la dernière récupération.
 export default function RewardPage({ sig }) {
   const { t, i18n } = useTranslation();
   const [player] = useState(() => readChallengePassportToken());
@@ -33,15 +33,13 @@ export default function RewardPage({ sig }) {
     if (!player) return undefined;
     let active = true;
     api.claimReward({ player, sig })
-      .then((passport) => { if (active) { navigator.vibrate?.([80, 50, 80, 50, 160]); setState({ status: 'claimed', passport, at: new Date() }); } })
+      .then((result) => { if (active) { navigator.vibrate?.([80, 50, 80, 50, 160]); setState({ status: 'claimed', result, at: new Date() }); } })
       .catch((error) => {
         if (!active) return;
         const at = error.details?.redeemedAt ? new Date(error.details.redeemedAt) : null;
         // Récupérée il y a quelques secondes (page rechargée, double chargement) : c'est la même remise, l'écran reste vert.
         if (error.code === 'REWARD_ALREADY_REDEEMED' && at && Date.now() - at.getTime() < 15_000) {
-          api.publicChallengePassport(player)
-            .then((passport) => { if (active) setState({ status: 'claimed', passport, at }); })
-            .catch(() => { if (active) setState({ status: 'claimed', passport: { displayName: '' }, at }); });
+          setState({ status: 'claimed', result: { displayName: error.details?.displayName || '', items: [] }, at });
         } else if (error.code === 'REWARD_ALREADY_REDEEMED') setState({ status: 'already', at });
         else if (error.code === 'CHALLENGE_NOT_COMPLETED') setState({ status: 'incomplete' });
         else if (error.code === 'CHALLENGE_PLAYER_REQUIRED') setState({ status: 'identify' });
@@ -58,8 +56,13 @@ export default function RewardPage({ sig }) {
       <main className="reward-page is-claimed" role="status">
         <Confetti />
         <span className="reward-box" aria-hidden="true"><PackageOpen size={84} strokeWidth={1.6} /></span>
-        <p className="reward-name">{state.passport.displayName}</p>
+        <p className="reward-name">{state.result.displayName}</p>
         <h1>{t('reward.claimed')}</h1>
+        {state.result.items.length > 0 && (
+          <ul className="reward-items">
+            {state.result.items.map((item, index) => <li key={index}>{item.kind === 'reward' ? t('reward.challengeReward') : t('reward.wheelPrize', { label: item.label })}</li>)}
+          </ul>
+        )}
         <p>{t('reward.show')}</p>
         <LiveClock since={state.at} />
       </main>

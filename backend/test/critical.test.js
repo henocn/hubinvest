@@ -730,13 +730,23 @@ test('récompense : le joueur qui a ses 4 stands la récupère au QR du comptoir
   context.mock.method(challengePassportRepository, 'findOccupantIds', async () => []);
   context.mock.method(challengePassportRepository, 'countRedeemed', async () => 0);
   context.mock.method(challengePassportRepository, 'update', async (_passport, values) => Object.assign(passport, values));
+  const prizes = [];
+  context.mock.method(wheelRepository, 'findPassportPrizes', async () => prizes);
+  context.mock.method(wheelRepository, 'updatePlay', async (play, values) => Object.assign(play, values));
 
   await assert.rejects(challengePassportService.claim({ player: PLAYER, sig: 'faux' }), (error) => error.code === 'REWARD_QR_INVALID');
   await assert.rejects(challengePassportService.claim({ player: PLAYER, sig: deskSignature() }), (error) => error.code === 'CHALLENGE_NOT_COMPLETED');
+
+  // Un lot gagné à la roue se récupère au même comptoir, même sans avoir fini le Défi.
+  prizes.push({ id: 'play-1', resultLabel: 'Casquette', claimedAt: null });
+  assert.deepEqual((await challengePassportService.claim({ player: PLAYER, sig: deskSignature() })).items, [{ kind: 'prize', label: 'Casquette' }]);
+  assert.ok(prizes[0].claimedAt instanceof Date);
+  assert.equal(prizes[0].claimedByUserId, null);
+
   passport.status = 'completed';
   const claimed = await challengePassportService.claim({ player: PLAYER, sig: deskSignature() });
-  assert.equal(claimed.status, 'redeemed');
-  assert.equal(claimed.passageCount, 1);
+  assert.deepEqual(claimed.items, [{ kind: 'reward' }]);
+  assert.equal(passport.status, 'redeemed');
   assert.equal(passport.redeemedByUserId, null);
   await assert.rejects(challengePassportService.claim({ player: PLAYER, sig: deskSignature() }), (error) => error.code === 'REWARD_ALREADY_REDEEMED' && Boolean(error.details.redeemedAt));
 });

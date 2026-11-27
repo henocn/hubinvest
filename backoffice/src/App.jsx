@@ -7,7 +7,6 @@ import BackofficePage from './admin/pages/BackofficePage';
 import SettingsPage from './admin/pages/SettingsPage';
 import DashboardPage from './admin/pages/DashboardPage';
 import AnimatorRewardsPage from './pages/AnimatorRewardsPage';
-import AnimatorScanPage from './pages/AnimatorScanPage';
 import ContactsPage from './pages/ContactsPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import OccupantProfilePage from './pages/OccupantProfilePage';
@@ -120,7 +119,6 @@ function TeamRoutes() {
         )}
         {role === 'animateur' && (
           <>
-            <Route path="/scan" element={<AnimatorScanPage {...props} />} />
             <Route path="/remises" element={<AnimatorRewardsPage {...props} />} />
           </>
         )}

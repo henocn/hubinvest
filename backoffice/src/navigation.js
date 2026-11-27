@@ -1,7 +1,7 @@
-import { AlarmClock, BriefcaseBusiness, Building2, CalendarDays, Clapperboard, Disc3, Gift, Handshake, LayoutDashboard, MessageCircleQuestion, ScanLine, ScrollText, SlidersHorizontal, Trophy, Users } from 'lucide-react';
+import { AlarmClock, BriefcaseBusiness, Building2, CalendarDays, Clapperboard, Disc3, Gift, Handshake, LayoutDashboard, MessageCircleQuestion, ScrollText, SlidersHorizontal, Trophy, Users } from 'lucide-react';
 
 // Rôles : le super administrateur voit tout ; l'administrateur (l'API-ZF) tout sauf Utilisateurs et Paramètres ;
-// l'occupant administre son stand (sa fiche, B2B, son carnet de contacts ; pas le Studio ni de scan des joueurs) ; l'animateur scanne et remet.
+// l'occupant administre son stand (sa fiche, B2B, son carnet de contacts ; pas le Studio ni de scan des joueurs) ; l'animateur suit les questions et les remises.
 // Les occupants du Stand API-ZF (« occupant-apizf ») tiennent en plus les Guichets et la Roue des opportunités.
 export const isGlobalRole = (role) => role === 'super-admin' || role === 'admin';
 export const isOccupantRole = (role) => role === 'occupant' || role === 'occupant-apizf';
@@ -85,7 +85,7 @@ const roleLinks = {
   occupant: occupantLinks('occupant'),
   'occupant-apizf': occupantLinks('occupant-apizf'),
   animateur: [
-    { path: '/scan', label: 'Scan', Icon: ScanLine, tab: true },
+    // Plus de scan : récompenses et lots se récupèrent au QR du comptoir du Stand API-ZF.
     questionsLink,
     { path: '/remises', label: 'Remises', Icon: Gift, tab: true },
   ],

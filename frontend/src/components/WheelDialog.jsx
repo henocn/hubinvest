@@ -33,7 +33,7 @@ export default function WheelDialog({ player, onClose, onPlayerLost }) {
   const [segments, setSegments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [spinsLeft, setSpinsLeft] = useState(null);
-  // Lot déjà gagné : la partie est finie, la fenêtre rappelle le lot et le code pour le recevoir.
+  // Lot déjà gagné : la partie est finie, la fenêtre rappelle le lot et où le récupérer.
   const [previousWin, setPreviousWin] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -196,7 +196,6 @@ export default function WheelDialog({ player, onClose, onPlayerLost }) {
           <span><Gift size={18} aria-hidden="true" />{t('wheel.alreadyWon')}</span>
           <strong>{previousWin.label}</strong>
           <p>{t('wheel.claim')}</p>
-          {previousWin.code && <code>{previousWin.code}</code>}
         </div>
       )}
       {!loading && !previousWin && segments.length > 0 && spinsLeft === 0 && !outcome && <p className="public-message">{t('wheel.noSpins')}</p>}
@@ -223,7 +222,6 @@ export default function WheelDialog({ player, onClose, onPlayerLost }) {
           {won ? <span><PartyPopper size={18} aria-hidden="true" />{t('wheel.won')}</span> : <Heart className="wheel-result-icon" size={22} aria-hidden="true" />}
           <strong>{outcome.result.label}</strong>
           <p>{won ? t('wheel.claim') : t('wheel.lost')}</p>
-          {won && <code>{outcome.code}</code>}
           {outcome.spinsLeft > 0 && <button className="button button-primary" type="button" onClick={spinAgain}><RotateCcw size={17} aria-hidden="true" />{t('wheel.spinAgain', { count: outcome.spinsLeft })}</button>}
         </div>
       ) : segments.length > 0 && spinsLeft > 0 && (

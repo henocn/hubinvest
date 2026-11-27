@@ -22,7 +22,7 @@ const MENUS = {
   [roles.ADMIN]: { menu: ['Tableau de bord', 'Stands', 'Relances', 'Programme', 'Studio', 'Rencontres B2B', 'Guichets', 'Jeux et défis', 'Questions'], bas: ['Accueil', 'Stands', 'Relances', 'Rencontres B2B'] },
   [roles.OCCUPANT]: { menu: ['Tableau de bord', 'Mon stand', 'Mes contacts', 'Relances', 'Rencontres B2B'], bas: ['Accueil', 'Mes contacts', 'Relances', 'Rencontres B2B'] },
   [APIZF_OCCUPANT]: { menu: ['Tableau de bord', 'Mon stand', 'Mes contacts', 'Relances', 'Rencontres B2B', 'Guichets', 'Jeux et défis'], bas: ['Accueil', 'Mes contacts', 'Relances', 'Rencontres B2B'] },
-  [roles.ANIMATOR]: { menu: ['Scan', 'Questions', 'Remises'], bas: ['Scan', 'Questions', 'Remises'] },
+  [roles.ANIMATOR]: { menu: ['Questions', 'Remises'], bas: ['Questions', 'Remises'] },
 };
 
 // Rubriques du guide ouvertes à chaque rôle.
@@ -167,11 +167,8 @@ Chaque réglage s'applique aussitôt.
 - Guichets : jours, heures et durée des rendez-vous, délais de relance des classes A (heures) et B (jours), informations de qualification du diagnostic.
 - Roue des opportunités : tours de roue par joueur, et les cases de la roue (« + Case » : type, texte sur la roue, quantité totale, affichée ou masquée).`,
 
-  'scan-animateur': `Scan (animateur)
-« Remettre une récompense ou un lot ». « Scanner » ouvre l'appareil photo ; on peut aussi taper le code puis « OK ». « Code perdu ? Retrouver le joueur » cherche par nom, téléphone ou e-mail.
-- Code participant (6 caractères) : le joueur s'affiche avec ses étapes et « Remettre la récompense » quand le parcours est terminé ; sinon « Parcours non terminé. » ou « Récompense déjà remise. »
-- Code de la roue montré par un gagnant (4 caractères) : la fiche « Lot de la roue » s'affiche avec « Remettre le lot », ou « Déjà remis à … par … ».
-Erreurs : « Ce code n'existe pas. », « Ce code n'a pas encore été joué. », « Ce code n'a pas gagné de lot. », « Ce lot a déjà été remis. », « Il ne reste plus de récompense en stock. »`,
+  'scan-animateur': `Remise des récompenses et des lots
+Il n'y a plus de scan dans l'espace équipe. Le joueur touche « Récupérer » sur la page des jeux et scanne le QR du comptoir du Stand API-ZF : sa récompense du Défi (4 stands trouvés) et ses lots de la roue sont marqués récupérés d'un coup. Son écran devient vert, à son nom, avec ce qui lui revient et l'heure qui défile à la seconde : on remet ce qui est listé. Écran rouge « Déjà récupéré » : tout a déjà été pris.`,
 
   remises: `Remises (animateur)
 « Récompenses remises » : Participant, Contact, Remise le, la plus récente d'abord ; les remises de l'animateur connecté sont surlignées. Bouton « Excel ». Cette liste ne contient que les récompenses du Défi, pas les lots de la roue.`,

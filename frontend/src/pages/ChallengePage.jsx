@@ -166,9 +166,11 @@ export default function ChallengePage({ token, openWheel = false }) {
           <PlayCard
             tone="wheel"
             title={t('wheel.title')}
-            action={hasPassport && (settings.wheelOpen
-              ? <button className="button button-primary" type="button" onClick={() => setWheelOpen(true)}><Disc3 size={18} />{t('play.wheelAction')}</button>
-              : <p className="play-closed">{t('closed.wheel')}</p>)}
+            action={hasPassport && (passport.prizes?.some((prize) => !prize.claimed)
+              ? <button className="button button-primary play-claim" type="button" onClick={() => setScanner('desk')}><Package className="play-claim-box" size={20} aria-hidden="true" />{t('play.claim')}</button>
+              : settings.wheelOpen
+                ? <button className="button button-primary" type="button" onClick={() => setWheelOpen(true)}><Disc3 size={18} />{t('play.wheelAction')}</button>
+                : <p className="play-closed">{t('closed.wheel')}</p>)}
           />
         </div>
       )}

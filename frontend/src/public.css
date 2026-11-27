@@ -4523,3 +4523,21 @@ main h1:not(.sr-only)::before {
 .procedure-group.is-summary > span:first-child {
   flex: 1;
 }
+
+/* Comptoir : ce qui vient d'être récupéré (récompense du Défi, lots de la roue). */
+.reward-items {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.reward-items li {
+  padding: 8px 16px;
+  border-radius: 6px;
+  color: var(--ink);
+  background: var(--yellow);
+}
